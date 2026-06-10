@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { setupInterceptors } from '../../../lib/api';
 
 interface User {
@@ -15,28 +16,35 @@ interface AuthState {
   logout: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => {
-  // Initialize interceptors with our store's getters/setters
-  setupInterceptors(
-    () => get().accessToken,
-    () => get().logout()
-  );
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => {
+      // Initialize interceptors with our store's getters/setters
+      setupInterceptors(
+        () => get().accessToken,
+        () => get().logout()
+      );
 
-  return {
-    user: null,
-    accessToken: null,
-    isAuthenticated: false,
-    
-    setAuth: (user, accessToken) => set({
-      user,
-      accessToken,
-      isAuthenticated: true
-    }),
-    
-    logout: () => set({
-      user: null,
-      accessToken: null,
-      isAuthenticated: false
-    })
-  };
-});
+      return {
+        user: null,
+        accessToken: null,
+        isAuthenticated: false,
+        
+        setAuth: (user, accessToken) => set({
+          user,
+          accessToken,
+          isAuthenticated: true
+        }),
+        
+        logout: () => set({
+          user: null,
+          accessToken: null,
+          isAuthenticated: false
+        })
+      };
+    },
+    {
+      name: 'pos-auth-storage',
+    }
+  )
+);
