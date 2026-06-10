@@ -1,4 +1,4 @@
-import { eq, and, gt } from 'drizzle-orm';
+import { eq, and, gt, desc } from 'drizzle-orm';
 import { db } from '../../db';
 import { users, otps, sessions, businesses } from '../../db/schema';
 import argon2 from 'argon2';
@@ -39,7 +39,7 @@ export class AuthService {
         eq(otps.used, false),
         gt(otps.expiresAt, new Date())
       ))
-      .orderBy(otps.createdAt)
+      .orderBy(desc(otps.createdAt))
       .limit(1);
 
     if (!otpRecord) {
