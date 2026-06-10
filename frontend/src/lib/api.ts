@@ -34,6 +34,7 @@ export const setupInterceptors = (getAccessToken: () => string | null, logout: (
           
           // For now, we just logout because we haven't implemented /refresh yet
           logout();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (refreshError) {
           logout();
         }
