@@ -3,6 +3,7 @@ import { useAuthStore } from './features/auth/stores/auth.store';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardLayout } from './components/DashboardLayout';
 import { CatalogPage } from './pages/CatalogPage';
+import { TeamPage } from './pages/TeamPage';
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -28,6 +29,7 @@ function App() {
               </div>
             } />
             <Route path="/catalog" element={<CatalogPage />} />
+            <Route path="/team" element={<TeamPage />} />
           </Route>
         </Routes>
       </div>

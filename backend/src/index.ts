@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import * as dotenv from 'dotenv';
 import authRoutes from './modules/auth/auth.routes';
 import catalogRoutes from './modules/catalog/catalog.routes';
+import usersRoutes from './modules/users/users.routes';
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use(cookieParser());
 
 app.use('/auth', authRoutes);
 app.use('/catalog', catalogRoutes);
+app.use('/users', usersRoutes);
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });

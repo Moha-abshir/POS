@@ -24,6 +24,7 @@ export const DashboardLayout: React.FC = () => {
     { name: 'Inventory', path: '/inventory', icon: Briefcase },
     { name: 'Customers', path: '/customers', icon: Users },
     { name: 'Suppliers', path: '/suppliers', icon: Users },
+    { name: 'Team', path: '/team', icon: Users },
     { name: 'Reports', path: '/reports', icon: FileText },
   ];
 
