@@ -1,22 +1,49 @@
 @import "tailwindcss";
 
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-  color-scheme: light dark;
-  background-color: #ffffff;
-}
+@theme {
+  --color-bg-base: #F7F6F4;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-sunken: #EEECE8;
+  --color-bg-sidebar: #1C1F24;
+  
+  --color-accent: #D97706;
+  --color-accent-hover: #B45309;
+  --color-accent-subtle: #FEF3C7;
+  
+  --color-text-primary: #111827;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #9CA3AF;
+  --color-text-inverse: #F9FAFB;
+  
+  --color-border: #E5E1DA;
+  --color-border-strong: #C9C4BB;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    background-color: #242424;
-  }
+  --color-success: #16A34A;
+  --color-success-bg: #DCFCE7;
+  --color-warning: #D97706;
+  --color-warning-bg: #FEF3C7;
+  --color-danger: #DC2626;
+  --color-danger-bg: #FEE2E2;
+  --color-info: #2563EB;
+  --color-info-bg: #DBEAFE;
+
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'DM Serif Display', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  --shadow-modal: 0 20px 60px rgba(0,0,0,0.18);
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
 }

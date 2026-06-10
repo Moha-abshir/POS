@@ -1,73 +1,130 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuthStore } from '../features/auth/stores/auth.store';
-import { Package, LayoutDashboard, LogOut } from 'lucide-react';
+import { 
+  Package, 
+  LayoutDashboard, 
+  LogOut, 
+  Settings,
+  ShoppingCart,
+  Users,
+  Briefcase,
+  FileText,
+  Bell
+} from 'lucide-react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 
 export const DashboardLayout: React.FC = () => {
   const logout = useAuthStore((state) => state.logout);
-  const user = useAuthStore((state) => state.user);
   const location = useLocation();
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { name: 'POS', path: '/pos', icon: ShoppingCart },
     { name: 'Catalog', path: '/catalog', icon: Package },
+    { name: 'Inventory', path: '/inventory', icon: Briefcase },
+    { name: 'Customers', path: '/customers', icon: Users },
+    { name: 'Suppliers', path: '/suppliers', icon: Users },
+    { name: 'Reports', path: '/reports', icon: FileText },
   ];
 
+  // Helper for tooltip
+  const [hoveredNav, setHoveredNav] = useState<string | null>(null);
+
+  const today = new Date().toLocaleDateString('en-GB', { 
+    weekday: 'short', 
+    day: 'numeric', 
+    month: 'short' 
+  });
+
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="h-16 flex items-center px-6 border-b border-gray-200">
-          <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-            <span className="text-white font-bold text-sm">POS</span>
-          </div>
-          <span className="font-bold text-gray-900 text-lg">Hardware Store</span>
+    <div className="min-h-screen bg-[var(--color-bg-base)] flex text-[var(--color-text-primary)] font-sans">
+      
+      {/* Sidebar (64px wide, dark) */}
+      <div className="w-16 bg-[var(--color-bg-sidebar)] flex flex-col items-center py-4 relative z-20">
+        <div className="h-10 w-10 bg-white/10 rounded flex items-center justify-center mb-6">
+          <span className="text-[var(--color-accent)] font-bold text-sm">HW</span>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1">
+        <nav className="flex-1 w-full flex flex-col space-y-2">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || (location.pathname.startsWith(item.path) && item.path !== '/');
             const Icon = item.icon;
+            
             return (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive 
-                    ? 'bg-blue-50 text-blue-700' 
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+              <div 
+                key={item.name} 
+                className="relative w-full flex justify-center"
+                onMouseEnter={() => setHoveredNav(item.name)}
+                onMouseLeave={() => setHoveredNav(null)}
               >
-                <Icon className={`h-5 w-5 ${isActive ? 'text-blue-700' : 'text-gray-400'}`} />
-                {item.name}
-              </Link>
+                <Link
+                  to={item.path}
+                  className={`relative flex items-center justify-center w-full h-12 transition-colors ${
+                    isActive 
+                      ? 'text-[var(--color-accent)] bg-white/5' 
+                      : 'text-[var(--color-text-inverse)]/60 hover:text-[var(--color-text-inverse)] hover:bg-white/5'
+                  }`}
+                >
+                  {/* Active Indicator (3px amber border on the left) */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-[3px] transition-colors ${
+                    isActive ? 'bg-[var(--color-accent)]' : hoveredNav === item.name ? 'bg-[var(--color-border-strong)]/30' : 'bg-transparent'
+                  }`} />
+                  
+                  <Icon className="h-5 w-5" />
+                </Link>
+
+                {/* Tooltip */}
+                {hoveredNav === item.name && (
+                  <div className="absolute left-[72px] top-1/2 -translate-y-1/2 bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] px-3 py-1.5 rounded-md shadow-md text-sm font-medium whitespace-nowrap z-50 pointer-events-none">
+                    {item.name}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
-              {user?.email[0].toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{user?.email}</p>
-              <p className="text-xs text-gray-500 truncate">{user?.role}</p>
-            </div>
-          </div>
-          <button
+        <div className="w-full flex flex-col items-center space-y-2 mt-auto">
+          <button className="relative flex items-center justify-center w-full h-12 text-[var(--color-text-inverse)]/60 hover:text-[var(--color-text-inverse)] hover:bg-white/5 transition-colors">
+             <Settings className="h-5 w-5" />
+          </button>
+          <button 
             onClick={logout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+            className="relative flex items-center justify-center w-full h-12 text-red-400 hover:text-red-300 hover:bg-white/5 transition-colors"
+            title="Sign Out"
           >
-            <LogOut className="h-4 w-4" />
-            Sign Out
+             <LogOut className="h-5 w-5" />
           </button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <Outlet />
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        
+        {/* Top Bar */}
+        <header className="h-16 border-b border-[var(--color-border)] bg-[var(--color-bg-surface)] flex items-center justify-between px-6 shrink-0">
+          {/* We would typically render the page title dynamically here based on route. For now, we leave it to the page components or grab a default */}
+          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
+            {navItems.find(i => location.pathname === i.path || (location.pathname.startsWith(i.path) && i.path !== '/'))?.name || 'Dashboard'}
+          </h1>
+          
+          <div className="flex items-center gap-6">
+            <span className="text-sm font-medium text-[var(--color-text-muted)] tracking-wide uppercase">
+              {today}
+            </span>
+            <button className="relative text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">
+              <Bell className="h-5 w-5" />
+              {/* Notification badge example */}
+              <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[var(--color-danger)]"></span>
+            </button>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-auto bg-[var(--color-bg-base)]">
+          <Outlet />
+        </main>
+        
       </div>
     </div>
   );
