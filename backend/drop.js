@@ -6,9 +6,14 @@ const pool = new Pool({
 });
 
 async function drop() {
-  await pool.query('DROP TABLE otps CASCADE;');
-  console.log('otps table dropped');
-  process.exit(0);
+  try {
+    await pool.query('DROP TABLE IF EXISTS otps CASCADE');
+    console.log('Dropped otps table');
+    process.exit(0);
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
 }
 
-drop().catch(console.error);
+drop();
