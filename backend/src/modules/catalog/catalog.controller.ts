@@ -7,7 +7,8 @@ export class CatalogController {
   static async createCategory(req: Request, res: Response) {
     try {
       const data = createCategorySchema.parse(req.body);
-      const category = await CatalogService.createCategory(data);
+      const businessId = req.user!.businessId;
+      const category = await CatalogService.createCategory(data, businessId);
       res.status(201).json({ success: true, data: category });
     } catch (error: any) {
       res.status(400).json({ success: false, error: { message: error.message } });
@@ -16,7 +17,8 @@ export class CatalogController {
 
   static async getCategories(req: Request, res: Response) {
     try {
-      const categories = await CatalogService.getCategories();
+      const businessId = req.user!.businessId;
+      const categories = await CatalogService.getCategories(businessId);
       res.json({ success: true, data: categories });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { message: error.message } });
@@ -28,7 +30,8 @@ export class CatalogController {
     try {
       const data = createProductSchema.parse(req.body);
       const userId = req.user!.id; // Available because of authenticate middleware
-      const product = await CatalogService.createProduct(data, userId);
+      const businessId = req.user!.businessId;
+      const product = await CatalogService.createProduct(data, businessId, userId);
       res.status(201).json({ success: true, data: product });
     } catch (error: any) {
       res.status(400).json({ success: false, error: { message: error.message } });
@@ -37,7 +40,8 @@ export class CatalogController {
 
   static async getProducts(req: Request, res: Response) {
     try {
-      const products = await CatalogService.getProducts();
+      const businessId = req.user!.businessId;
+      const products = await CatalogService.getProducts(businessId);
       res.json({ success: true, data: products });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { message: error.message } });
@@ -47,7 +51,8 @@ export class CatalogController {
   static async getProductDetails(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-      const product = await CatalogService.getProductDetails(id);
+      const businessId = req.user!.businessId;
+      const product = await CatalogService.getProductDetails(id, businessId);
       res.json({ success: true, data: product });
     } catch (error: any) {
       res.status(404).json({ success: false, error: { message: error.message } });
@@ -58,7 +63,8 @@ export class CatalogController {
   static async createProductUnit(req: Request, res: Response) {
     try {
       const data = createProductUnitSchema.parse(req.body);
-      const unit = await CatalogService.createProductUnit(data);
+      const businessId = req.user!.businessId;
+      const unit = await CatalogService.createProductUnit(data, businessId);
       res.status(201).json({ success: true, data: unit });
     } catch (error: any) {
       res.status(400).json({ success: false, error: { message: error.message } });

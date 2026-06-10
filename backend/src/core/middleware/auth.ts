@@ -7,6 +7,7 @@ export interface AuthUser {
   id: string;
   email: string;
   role: string;
+  businessId: string;
 }
 
 declare global {
@@ -39,6 +40,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
       id: payload.sub,
       email: payload.email,
       role: payload.role,
+      businessId: payload.businessId,
     };
     
     next();

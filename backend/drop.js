@@ -7,8 +7,14 @@ const pool = new Pool({
 
 async function drop() {
   try {
+    await pool.query('DROP TABLE IF EXISTS product_units CASCADE');
+    await pool.query('DROP TABLE IF EXISTS products CASCADE');
+    await pool.query('DROP TABLE IF EXISTS categories CASCADE');
+    await pool.query('DROP TABLE IF EXISTS sessions CASCADE');
     await pool.query('DROP TABLE IF EXISTS otps CASCADE');
-    console.log('Dropped otps table');
+    await pool.query('DROP TABLE IF EXISTS users CASCADE');
+    await pool.query('DROP TABLE IF EXISTS businesses CASCADE');
+    console.log('Dropped all tables');
     process.exit(0);
   } catch (err) {
     console.error(err);

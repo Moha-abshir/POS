@@ -1,6 +1,6 @@
 import { eq, and, gt } from 'drizzle-orm';
 import { db } from '../../db';
-import { users, otps, sessions } from '../../db/schema';
+import { users, otps, sessions, businesses } from '../../db/schema';
 import argon2 from 'argon2';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
@@ -70,8 +70,18 @@ export class AuthService {
     let [user] = await db.select().from(users).where(eq(users.email, email));
     
     if (!user) {
-      // Create user if they don't exist yet
-      const [newUser] = await db.insert(users).values({ email }).returning();
+      // Auto-create a new Business for first-time owners
+      const [newBusiness] = await db.insert(businesses).values({ 
+        name: 'My Hardware Store' 
+      }).returning();
+
+      // Create the user as the OWNER of this new business
+      const [newUser] = await db.insert(users).values({ 
+        email,
+        businessId: newBusiness.id,
+        role: 'OWNER'
+      }).returning();
+      
       user = newUser;
     } else if (!user.isActive) {
       throw new Error('User account is deactivated');
@@ -79,7 +89,7 @@ export class AuthService {
 
     // 5. Generate Access Token (JWT) - 15 minutes
     const accessToken = jwt.sign(
-      { sub: user.id, email: user.email, role: user.role },
+      { sub: user.id, email: user.email, role: user.role, businessId: user.businessId },
       JWT_SECRET,
       { expiresIn: '15m' }
     );
@@ -91,6 +101,7 @@ export class AuthService {
 
     await db.insert(sessions).values({
       userId: user.id,
+      businessId: user.businessId,
       refreshTokenHash,
       expiresAt: refreshExpiresAt,
     });
@@ -102,6 +113,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         role: user.role,
+        businessId: user.businessId
       }
     };
   }
