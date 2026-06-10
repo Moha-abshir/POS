@@ -14,6 +14,7 @@ interface VerifyOtpResponse {
       id: string;
       email: string;
       role: string;
+      businessId: string;
     };
   };
 }
