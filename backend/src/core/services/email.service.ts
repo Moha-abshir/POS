@@ -20,7 +20,7 @@ export class EmailService {
         body: JSON.stringify({
           sender: { 
             name: "Hardware Store POS", 
-            email: "onboarding@abshir-pos.com" // Update if you verify a different domain in Brevo
+            email: process.env.BREVO_SENDER_EMAIL || "onboarding@abshir-pos.com"
           },
           to: [{ email: email }],
           subject: 'Your Login Code',
