@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './features/auth/stores/auth.store';
 import { LoginPage } from './pages/LoginPage';
+import { DashboardLayout } from './components/DashboardLayout';
+import { CatalogPage } from './pages/CatalogPage';
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -17,25 +19,16 @@ function App() {
 
           {/* Protected Routes */}
           <Route 
-            path="/" 
-            element={
-              isAuthenticated ? (
-                <div className="flex h-screen items-center justify-center">
-                  <h1 className="text-4xl font-bold tracking-tight text-blue-600">
-                    Dashboard
-                  </h1>
-                  <button 
-                    onClick={() => useAuthStore.getState().logout()}
-                    className="ml-4 px-4 py-2 bg-red-600 text-white rounded"
-                  >
-                    Logout
-                  </button>
-                </div>
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            } 
-          />
+            element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" replace />}
+          >
+            <Route path="/" element={
+              <div className="p-6">
+                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+                <p className="text-gray-500 mt-1">Welcome back to Hardware Store POS!</p>
+              </div>
+            } />
+            <Route path="/catalog" element={<CatalogPage />} />
+          </Route>
         </Routes>
       </div>
     </BrowserRouter>
