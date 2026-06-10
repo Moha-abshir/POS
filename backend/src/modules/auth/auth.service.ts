@@ -87,11 +87,11 @@ export class AuthService {
       throw new Error('User account is deactivated');
     }
 
-    // 5. Generate Access Token (JWT) - 15 minutes
+    // 5. Generate Access Token (JWT) - 7 days
     const accessToken = jwt.sign(
       { sub: user.id, email: user.email, role: user.role, businessId: user.businessId },
       JWT_SECRET,
-      { expiresIn: '15m' }
+      { expiresIn: '7d' }
     );
 
     // 6. Generate Refresh Token - 7 days
