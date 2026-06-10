@@ -13,7 +13,7 @@ export class EmailService {
     }
 
     try {
-      await resend.emails.send({
+      const { data, error } = await resend.emails.send({
         from: 'Hardware Store <onboarding@resend.dev>', // In production, use a verified domain
         to: email,
         subject: 'Your Login Code',
@@ -27,9 +27,14 @@ export class EmailService {
           </div>
         `,
       });
-    } catch (error) {
+      
+      if (error) {
+        console.error('Resend API Error:', error);
+        throw new Error(error.message);
+      }
+    } catch (error: any) {
       console.error('Failed to send email:', error);
-      throw new Error('Failed to send OTP email');
+      throw new Error(error.message || 'Failed to send OTP email');
     }
   }
 }
