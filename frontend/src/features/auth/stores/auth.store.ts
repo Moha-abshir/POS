@@ -37,6 +37,7 @@ export const useAuthStore = create<AuthState>()(
         user: null,
         accessToken: null,
         isAuthenticated: false,
+        hasSkippedOnboarding: false,
         
         setAuth: (user, accessToken) => set({
           user,
@@ -44,15 +45,25 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true
         }),
         
-        logout: () => set({
-          user: null,
-          accessToken: null,
-          isAuthenticated: false
-        })
+        logout: async () => {
+          try {
+            await api.post('/auth/logout');
+          } catch (error) {
+            console.error('Logout failed:', error);
+          }
+          set({
+            user: null,
+            accessToken: null,
+            isAuthenticated: false,
+            hasSkippedOnboarding: false
+          });
+        },
+        
+        skipOnboarding: () => set({ hasSkippedOnboarding: true })
       };
     },
     {
-      name: 'pos-auth-storage',
+      name: 'pos-auth-storage-v2',
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated
