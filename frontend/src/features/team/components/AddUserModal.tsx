@@ -40,8 +40,17 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) =
     try {
       await addTeamMember.mutateAsync(formData);
       onClose();
-    } catch (err) {
-      setErrorMsg((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to add cashier');
+    } catch (err: any) {
+      const responseData = err.response?.data;
+      let msg = 'Failed to add cashier';
+      if (responseData?.errors && responseData.errors.length > 0) {
+        msg = responseData.errors[0].message;
+      } else if (responseData?.message) {
+        msg = responseData.message;
+      } else if (responseData?.error?.message) {
+        msg = responseData.error.message;
+      }
+      setErrorMsg(msg);
     }
   };
 
@@ -68,10 +77,6 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) =
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-6">
           <div className="mb-6 space-y-4">
-            <p className="text-[var(--text-sm)] text-[var(--color-text-secondary)] mb-2">
-              Enter the details of the cashier. They will be able to log in and process sales, but cannot view reports or manage the team.
-            </p>
-            
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
@@ -134,9 +139,14 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) =
             </div>
 
             {errorMsg && (
-              <p className="mt-2 text-[var(--text-sm)] text-[var(--color-danger)]">
-                {errorMsg}
-              </p>
+              <div className="mt-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-[var(--radius-sm)]">
+                <div className="text-red-500 mt-0.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <p className="text-[var(--text-sm)] font-medium text-red-600">
+                  {errorMsg}
+                </p>
+              </div>
             )}
           </div>
 
