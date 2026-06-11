@@ -103,7 +103,7 @@ backend/
 │   ├── integrations/
 │   │   ├── email/
 │   │   │   ├── email.interface.ts      # IEmailService interface
-│   │   │   ├── resend.provider.ts      # Resend implementation
+│   │   │   ├── brevo.provider.ts       # Brevo implementation
 │   │   │   └── email.templates.ts      # OTP email template
 │   │   └── storage/
 │   │       ├── storage.interface.ts    # IStorageService interface
@@ -132,7 +132,7 @@ backend/
 
 **Layers have clear responsibilities.** Controllers handle HTTP (parse req, call service, send res). Services contain business rules. Repositories contain database queries. Nothing crosses these boundaries.
 
-**Integrations are behind interfaces.** If you switch from Resend to SendGrid, you create `sendgrid.provider.ts` implementing `IEmailService` and change one line in the DI setup. Nothing else changes.
+**Integrations are behind interfaces.** If you switch from Brevo to SendGrid, you create `sendgrid.provider.ts` implementing `IEmailService` and change one line in the DI setup. Nothing else changes.
 
 **`core/` is for infrastructure, not business.** Middleware, error classes, and the logger are technical concerns shared by everything. They don't belong in any module.
 

@@ -24,7 +24,7 @@ CREATE TYPE movement_type AS ENUM ('PURCHASE', 'SALE', 'REFUND', 'DAMAGE', 'ADJU
 CREATE TYPE payment_method AS ENUM ('CASH', 'MPESA');
 CREATE TYPE payment_reference_type AS ENUM ('SALE', 'PURCHASE', 'CUSTOMER_DEBT', 'SUPPLIER_DEBT');
 CREATE TYPE payment_status AS ENUM ('PAID', 'PARTIAL', 'UNPAID');
-CREATE TYPE user_role AS ENUM ('OWNER');
+CREATE TYPE user_role AS ENUM ('OWNER', 'CASHIER');
 CREATE TYPE audit_action AS ENUM ('CREATE', 'UPDATE', 'DELETE');
 ```
 
@@ -32,10 +32,25 @@ CREATE TYPE audit_action AS ENUM ('CREATE', 'UPDATE', 'DELETE');
 
 ## Tables
 
+### `businesses`
+```sql
+CREATE TABLE businesses (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name              VARCHAR(255) NOT NULL,
+  sector            VARCHAR(100),
+  phone             VARCHAR(50),
+  location          TEXT,
+  is_setup_complete BOOLEAN NOT NULL DEFAULT false,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
 ### `users`
 ```sql
 CREATE TABLE users (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   email        VARCHAR(255) NOT NULL UNIQUE,
   role         user_role NOT NULL DEFAULT 'OWNER',
   is_active    BOOLEAN NOT NULL DEFAULT true,
@@ -65,6 +80,7 @@ CREATE TABLE otps (
 ```sql
 CREATE TABLE sessions (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   user_id           UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   refresh_token_hash VARCHAR(255) NOT NULL UNIQUE,
   expires_at        TIMESTAMPTZ NOT NULL,
@@ -80,6 +96,7 @@ CREATE TABLE sessions (
 ```sql
 CREATE TABLE categories (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   name         VARCHAR(100) NOT NULL UNIQUE,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -90,6 +107,7 @@ CREATE TABLE categories (
 ```sql
 CREATE TABLE products (
   id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   category_id          UUID NOT NULL REFERENCES categories(id),
   name                 VARCHAR(255) NOT NULL,
   description          TEXT,
@@ -113,6 +131,7 @@ CREATE TABLE products (
 ```sql
 CREATE TABLE product_units (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   product_id        UUID NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
   name              VARCHAR(100) NOT NULL,
   selling_price     DECIMAL(12,2) NOT NULL CHECK (selling_price >= 0),
@@ -132,6 +151,7 @@ CREATE TABLE product_units (
 ```sql
 CREATE TABLE suppliers (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   name         VARCHAR(255) NOT NULL,
   phone        VARCHAR(20),
   email        VARCHAR(255),
@@ -148,6 +168,7 @@ CREATE TABLE suppliers (
 ```sql
 CREATE TABLE purchases (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   supplier_id      UUID NOT NULL REFERENCES suppliers(id),
   total_amount     DECIMAL(12,2) NOT NULL CHECK (total_amount >= 0),
   amount_paid      DECIMAL(12,2) NOT NULL DEFAULT 0 CHECK (amount_paid >= 0),
@@ -166,6 +187,7 @@ CREATE TABLE purchases (
 ```sql
 CREATE TABLE purchase_items (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   purchase_id UUID NOT NULL REFERENCES purchases(id) ON DELETE RESTRICT,
   product_id  UUID NOT NULL REFERENCES products(id),
   quantity    DECIMAL(10,3) NOT NULL CHECK (quantity > 0),
@@ -182,6 +204,7 @@ CREATE TABLE purchase_items (
 ```sql
 CREATE TABLE customers (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   name         VARCHAR(255) NOT NULL,
   phone        VARCHAR(20),
   credit_balance DECIMAL(12,2) NOT NULL DEFAULT 0,
@@ -200,6 +223,7 @@ CREATE TABLE customers (
 ```sql
 CREATE TABLE sales (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   customer_id      UUID REFERENCES customers(id),
   total_amount     DECIMAL(12,2) NOT NULL CHECK (total_amount >= 0),
   discount_amount  DECIMAL(12,2) NOT NULL DEFAULT 0 CHECK (discount_amount >= 0),
@@ -220,6 +244,7 @@ CREATE TABLE sales (
 ```sql
 CREATE TABLE sale_items (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   sale_id          UUID NOT NULL REFERENCES sales(id) ON DELETE RESTRICT,
   product_unit_id  UUID NOT NULL REFERENCES product_units(id),
   quantity         DECIMAL(10,3) NOT NULL CHECK (quantity > 0),
@@ -235,6 +260,7 @@ CREATE TABLE sale_items (
 ```sql
 CREATE TABLE payments (
   id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   reference_type       payment_reference_type NOT NULL,
   reference_id         UUID NOT NULL,
   amount               DECIMAL(12,2) NOT NULL CHECK (amount > 0),
@@ -252,6 +278,7 @@ CREATE TABLE payments (
 ```sql
 CREATE TABLE stock_movements (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   product_id       UUID NOT NULL REFERENCES products(id),
   type             movement_type NOT NULL,
   quantity_change  DECIMAL(10,3) NOT NULL,
@@ -272,6 +299,7 @@ CREATE TABLE stock_movements (
 ```sql
 CREATE TABLE refunds (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   sale_id      UUID NOT NULL REFERENCES sales(id),
   total_amount DECIMAL(12,2) NOT NULL CHECK (total_amount >= 0),
   reason       TEXT,
@@ -287,6 +315,7 @@ CREATE TABLE refunds (
 ```sql
 CREATE TABLE refund_items (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   refund_id        UUID NOT NULL REFERENCES refunds(id) ON DELETE RESTRICT,
   product_unit_id  UUID NOT NULL REFERENCES product_units(id),
   quantity         DECIMAL(10,3) NOT NULL CHECK (quantity > 0),
@@ -301,6 +330,7 @@ CREATE TABLE refund_items (
 ```sql
 CREATE TABLE damaged_goods (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   product_id  UUID NOT NULL REFERENCES products(id),
   quantity    DECIMAL(10,3) NOT NULL CHECK (quantity > 0),
   reason      TEXT,
@@ -317,6 +347,7 @@ CREATE TABLE damaged_goods (
 ```sql
 CREATE TABLE audit_logs (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id  UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   user_id      UUID REFERENCES users(id),
   action       audit_action NOT NULL,
   entity_type  VARCHAR(100) NOT NULL,

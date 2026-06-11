@@ -4,7 +4,7 @@
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│     Vercel       │     │    Railway       │     │      Neon        │
+│     Netlify       │     │    Railway       │     │      Neon        │
 │   (Frontend)     │────▶│   (Backend)      │────▶│   (PostgreSQL)   │
 │   React + Vite   │     │  Node.js/Express │     │   Serverless     │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
@@ -12,7 +12,7 @@
                     ┌────────────┴────────────┐
                     │                         │
              ┌──────▼──────┐          ┌───────▼──────┐
-             │   Resend     │          │  Cloudinary   │
+             │   Brevo     │          │  Cloudinary   │
              │   (Email)    │          │  (Images)     │
              └─────────────┘          └──────────────┘
                     
@@ -21,7 +21,7 @@
 
 ---
 
-## Frontend — Vercel
+## Frontend — Netlify
 
 **Deployment:** Push to `main` branch triggers automatic production deployment. Push to any other branch creates a preview deployment.
 
@@ -29,7 +29,7 @@
 
 **Output directory:** `dist`
 
-**Environment variables (Vercel dashboard):**
+**Environment variables (Netlify dashboard):**
 ```
 VITE_API_BASE_URL=https://your-backend.railway.app/api/v1
 ```
@@ -71,8 +71,8 @@ OTP_MAX_ATTEMPTS=5
 OTP_RATE_LIMIT_WINDOW_MINUTES=15
 OTP_RATE_LIMIT_MAX=3
 
-# Email (Resend)
-RESEND_API_KEY=re_...
+# Email (Brevo)
+BREVO_API_KEY=re_...
 FROM_EMAIL=noreply@yourdomain.com
 
 # M-Pesa
@@ -132,15 +132,15 @@ DATABASE_URL=$PROD_DATABASE_URL npx drizzle-kit migrate
 | Environment | Frontend | Backend | Database |
 |---|---|---|---|
 | Development | `localhost:5173` | `localhost:3000` | Neon dev branch |
-| Preview | Vercel preview URL | Railway staging service | Neon staging branch |
-| Production | Vercel production URL | Railway production service | Neon main branch |
+| Preview | Netlify preview URL | Railway staging service | Neon staging branch |
+| Production | Netlify production URL | Railway production service | Neon main branch |
 
 ---
 
 ## CI/CD
 
 - No custom CI pipeline required initially.
-- Vercel and Railway both deploy automatically from `main` on push.
+- Netlify and Railway both deploy automatically from `main` on push.
 - Before merging to `main`: run `npm run typecheck` and `npm run lint` locally.
 - Add GitHub Actions for automated type checking as the project matures.
 
@@ -150,9 +150,9 @@ DATABASE_URL=$PROD_DATABASE_URL npx drizzle-kit migrate
 
 - [ ] `JWT_SECRET` is a random 64-byte hex string (not a guessable value)
 - [ ] `DATABASE_URL` points to the production Neon branch
-- [ ] CORS `ALLOWED_ORIGINS` only includes the production Vercel URL
+- [ ] CORS `ALLOWED_ORIGINS` only includes the production Netlify URL
 - [ ] M-Pesa callback URL is reachable from Safaricom servers (Railway URL, not localhost)
-- [ ] Resend sender domain is verified
+- [ ] Brevo sender domain is verified
 - [ ] Neon paid plan is active (for production reliability guarantees)
 - [ ] At least one successful backup restore has been tested
 - [ ] All `console.log` statements removed from production code
