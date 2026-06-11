@@ -18,10 +18,10 @@ The system handles inventory, sales, purchasing, credit management, M-Pesa payme
 | Backend | Node.js + Express | Familiar stack, lightweight, great ecosystem |
 | ORM | Drizzle ORM | Type-safe queries, SQL-first migrations, no magic |
 | Database | PostgreSQL (Neon) | ACID compliance critical for financial transactions |
-| Frontend Host | Vercel | Zero-config deployments, edge caching |
+| Frontend Host | Netlify | Zero-config deployments, edge caching |
 | Backend Host | Railway | Dockerized deploys, simple env management |
 | File Storage | Cloudinary or AWS S3 | Product images |
-| Email | Resend | Simple API, reliable delivery for OTPs |
+| Email | Brevo | Simple API, reliable delivery for OTPs |
 
 ---
 
@@ -44,7 +44,7 @@ The system handles inventory, sales, purchasing, credit management, M-Pesa payme
 └─────────────────────────────────────┘
 ```
 
-External services (M-Pesa, Resend, Cloudinary) are isolated behind interface abstractions so they can be swapped without touching business logic.
+External services (M-Pesa, Brevo, Cloudinary) are isolated behind interface abstractions so they can be swapped without touching business logic.
 
 ---
 
@@ -75,13 +75,13 @@ The system is divided into eight distinct domains. Each owns its data and expose
 
 **M-Pesa isolation.** The entire M-Pesa integration lives in `modules/payments`. No other module knows about STK push or Safaricom callbacks. If the payment provider changes, only this module changes.
 
-**Single user, role-ready.** There is currently one user (the owner) with full permissions. The schema and JWT claims include a `role` field so additional roles can be introduced without schema changes.
+**Multi-tenant & Roles.** The system supports multiple businesses via a `businesses` table. Users belong to a business and have roles like `OWNER` or `CASHIER`. The schema and JWT claims include the business ID and role.
 
 ---
 
 ## Constraints
 
-- Single branch only (no multi-tenancy required, but IDs are UUID so branching can be added later)
+- Multi-tenant architecture allowing multiple businesses on the same deployment
 - Always online (no offline sync required)
 - Windows desktop primary (browser-based, so platform-agnostic)
 - 5-year data retention (no automatic deletion of historical records)

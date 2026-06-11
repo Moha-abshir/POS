@@ -52,7 +52,7 @@ export const OnboardingModal: React.FC = () => {
         }, accessToken);
       }
     } catch (err) {
-      setErrorMsg((err as AxiosError<any>).response?.data?.error?.message || 'Failed to complete onboarding');
+      setErrorMsg((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to complete onboarding');
     } finally {
       setIsSubmitting(false);
     }

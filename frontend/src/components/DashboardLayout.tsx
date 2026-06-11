@@ -6,7 +6,7 @@ import {
   LayoutDashboard, 
   LogOut, 
   Settings,
-  ShoppingCart,
+  ShoppingCart, Store,
   Users,
   Briefcase,
   FileText,
@@ -38,19 +38,7 @@ export const DashboardLayout: React.FC = () => {
     month: 'short' 
   });
 
-  const extractInitials = (name?: string) => {
-    if (!name) return 'SS';
-    const words = name.split(' ').filter(Boolean);
-    if (words.length >= 2) {
-      return (words[0][0] + words[1][0]).toUpperCase();
-    }
-    if (words.length === 1) {
-      return words[0].substring(0, 2).toUpperCase();
-    }
-    return 'SS';
-  };
-
-  const { hasSkippedOnboarding } = useAuthStore();
+    const { hasSkippedOnboarding } = useAuthStore();
   const showOnboarding = user && !hasSkippedOnboarding && (!user.firstName || (user.role === 'OWNER' && !user.isSetupComplete));
 
   return (
@@ -60,9 +48,7 @@ export const DashboardLayout: React.FC = () => {
       {/* Sidebar (56px wide, dark) */}
       <div className="w-14 bg-[var(--color-bg-sidebar)] flex flex-col items-center py-4 relative z-20">
         <div className="h-10 w-10 bg-[var(--color-accent)]/20 rounded flex items-center justify-center mb-6">
-          <span className="text-[var(--color-accent)] font-bold text-sm">
-            {extractInitials(user?.businessName)}
-          </span>
+          <Store className="text-[var(--color-accent)] w-5 h-5" />
         </div>
 
         <nav className="flex-1 w-full flex flex-col space-y-2">
@@ -135,7 +121,7 @@ export const DashboardLayout: React.FC = () => {
             <button className="relative text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">
               <Bell className="h-5 w-5" />
               {/* Notification badge example */}
-              <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[var(--color-danger)]"></span>
+              {/* <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[var(--color-danger)]"></span> */}
             </button>
           </div>
         </header>

@@ -76,3 +76,20 @@ export const useCreateProduct = () => {
     },
   });
 };
+
+export interface CreateProductUnitInput {
+  productId: string;
+  name: string;
+  sellingPrice: number;
+  conversionFactor?: number;
+  isDefault?: boolean;
+}
+
+export const useCreateProductUnit = () => {
+  return useMutation({
+    mutationFn: async (data: CreateProductUnitInput) => {
+      const response = await api.post('/catalog/product-units', data);
+      return response.data;
+    },
+  });
+};

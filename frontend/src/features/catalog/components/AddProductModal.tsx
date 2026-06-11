@@ -11,6 +11,7 @@ interface AddProductModalProps {
 export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose }) => {
   const { data: categories } = useCategories();
   const createProduct = useCreateProduct();
+  const createProductUnit = useCreateProductUnit();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -56,7 +57,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
       });
       onClose();
     } catch (err) {
-      setErrorMsg((err as AxiosError<any>).response?.data?.error?.message || 'Failed to create product');
+      setErrorMsg((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to create product');
     }
   };
 
@@ -116,7 +117,38 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
               </select>
             </div>
 
+                        <div className="col-span-2 sm:col-span-1">
+              <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                Base Unit Name *
+              </label>
+              <input
+                name="unitName"
+                type="text"
+                required
+                value={formData.unitName}
+                onChange={handleChange}
+                placeholder="e.g., Piece, Box"
+                className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+              />
+            </div>
+
             <div className="col-span-2 sm:col-span-1">
+              <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                Selling Price ($) *
+              </label>
+              <input
+                name="sellingPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                value={formData.sellingPrice}
+                onChange={handleChange}
+                placeholder="0.00"
+                className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+              />
+            </div>
+<div className="col-span-2 sm:col-span-1">
               <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
                 Cost Price ($) *
               </label>
@@ -197,7 +229,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
             </button>
             <button
               type="submit"
-              disabled={createProduct.isPending || !formData.name || !formData.categoryId || !formData.costPrice}
+              disabled={createProduct.isPending || createProductUnit.isPending || !formData.name || !formData.categoryId || !formData.costPrice || !formData.sellingPrice || !formData.unitName}
               className="h-10 px-6 flex items-center justify-center rounded-[var(--radius-md)] text-[var(--text-base)] font-semibold text-white bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-accent)] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer select-none"
             >
               {createProduct.isPending ? (
