@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { useCreateProduct, useCategories } from '../api/catalog.api';
@@ -54,8 +55,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
         lowStockThreshold: Number(formData.lowStockThreshold),
       });
       onClose();
-    } catch (error: any) {
-      setErrorMsg(error.response?.data?.error?.message || 'Failed to create product');
+    } catch (err) {
+      setErrorMsg((err as AxiosError<any>).response?.data?.error?.message || 'Failed to create product');
     }
   };
 

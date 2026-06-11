@@ -50,7 +50,8 @@ export const DashboardLayout: React.FC = () => {
     return 'SS';
   };
 
-  const showOnboarding = user && (!user.firstName || (user.role === 'OWNER' && !user.isSetupComplete));
+  const { hasSkippedOnboarding } = useAuthStore();
+  const showOnboarding = user && !hasSkippedOnboarding && (!user.firstName || (user.role === 'OWNER' && !user.isSetupComplete));
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)] flex text-[var(--color-text-primary)] font-sans">
@@ -104,9 +105,9 @@ export const DashboardLayout: React.FC = () => {
         </nav>
 
         <div className="w-full flex flex-col items-center space-y-2 mt-auto">
-          <button className="relative flex items-center justify-center w-full h-12 text-[var(--color-text-inverse)]/60 hover:text-[var(--color-text-inverse)] hover:bg-white/5 transition-colors">
+          <Link to="/settings" className="relative flex items-center justify-center w-full h-12 text-[var(--color-text-inverse)]/60 hover:text-[var(--color-text-inverse)] hover:bg-white/5 transition-colors" title="Settings">
              <Settings className="h-5 w-5" />
-          </button>
+          </Link>
           <button 
             onClick={logout}
             className="relative flex items-center justify-center w-full h-12 text-red-400 hover:text-red-300 hover:bg-white/5 transition-colors"

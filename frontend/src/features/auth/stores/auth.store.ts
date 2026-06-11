@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { setupInterceptors } from '../../../lib/api';
+import { setupInterceptors, api } from '../../../lib/api';
 
 interface User {
   id: string;
@@ -18,8 +18,10 @@ interface AuthState {
   user: User | null;
   accessToken: string | null;
   isAuthenticated: boolean;
+  hasSkippedOnboarding?: boolean;
   setAuth: (user: User, accessToken: string) => void;
   logout: () => void;
+  skipOnboarding: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
