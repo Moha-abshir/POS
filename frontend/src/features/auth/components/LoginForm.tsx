@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import React, { useState } from 'react';
 import { useRequestOtp, useVerifyOtp } from '../api/auth.api';
 import { useAuthStore } from '../stores/auth.store';
@@ -19,8 +20,8 @@ export const LoginForm: React.FC = () => {
     try {
       await requestOtpMutation.mutateAsync(email);
       setStep('verify');
-    } catch (error: any) {
-      setErrorMsg(error.response?.data?.error?.message || 'Failed to send OTP');
+    } catch (err) {
+      setErrorMsg((err as AxiosError<any>).response?.data?.error?.message || 'Failed to send OTP');
     }
   };
 
@@ -30,8 +31,8 @@ export const LoginForm: React.FC = () => {
     try {
       const res = await verifyOtpMutation.mutateAsync({ email, otp });
       setAuth(res.data.user, res.data.accessToken);
-    } catch (error: any) {
-      setErrorMsg(error.response?.data?.error?.message || 'Invalid OTP');
+    } catch (err) {
+      setErrorMsg((err as AxiosError<any>).response?.data?.error?.message || 'Invalid OTP');
     }
   };
 

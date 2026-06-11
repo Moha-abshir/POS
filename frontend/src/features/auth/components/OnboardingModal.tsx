@@ -1,10 +1,11 @@
+import { AxiosError } from 'axios';
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../stores/auth.store';
 
 export const OnboardingModal: React.FC = () => {
-  const { user, accessToken, setAuth } = useAuthStore();
+  const { user, accessToken, setAuth, skipOnboarding } = useAuthStore();
   
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
@@ -50,8 +51,8 @@ export const OnboardingModal: React.FC = () => {
           isSetupComplete: true
         }, accessToken);
       }
-    } catch (error: any) {
-      setErrorMsg(error.response?.data?.error?.message || 'Failed to complete onboarding');
+    } catch (err) {
+      setErrorMsg((err as AxiosError<any>).response?.data?.error?.message || 'Failed to complete onboarding');
     } finally {
       setIsSubmitting(false);
     }
@@ -211,7 +212,7 @@ export const OnboardingModal: React.FC = () => {
           )}
 
           {/* Footer */}
-          <div className="mt-8 pt-6 border-t border-[var(--color-border)]">
+          <div className="mt-8 pt-6 border-t border-[var(--color-border)] flex flex-col gap-3">
             <button
               type="submit"
               disabled={isSubmitting}
@@ -223,6 +224,15 @@ export const OnboardingModal: React.FC = () => {
                 'Complete Setup & Continue'
               )}
             </button>
+            {user?.role === 'OWNER' && (
+              <button
+                type="button"
+                onClick={() => skipOnboarding()}
+                className="w-full h-12 flex items-center justify-center rounded-[var(--radius-lg)] text-[var(--text-base)] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-sunken)] focus:outline-none transition-all"
+              >
+                Skip for now
+              </button>
+            )}
           </div>
         </form>
       </div>

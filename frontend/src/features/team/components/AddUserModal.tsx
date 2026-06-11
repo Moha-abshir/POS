@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { useAddTeamMember } from '../api/team.api';
@@ -39,8 +40,8 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) =
     try {
       await addTeamMember.mutateAsync(formData);
       onClose();
-    } catch (error: any) {
-      setErrorMsg(error.response?.data?.error?.message || 'Failed to add cashier');
+    } catch (err) {
+      setErrorMsg((err as AxiosError<any>).response?.data?.error?.message || 'Failed to add cashier');
     }
   };
 

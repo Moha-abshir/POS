@@ -54,10 +54,20 @@ export const useCreateCategory = () => {
   });
 };
 
+export interface CreateProductInput {
+  categoryId: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  costPrice: number;
+  baseStockQuantity?: number;
+  lowStockThreshold?: number;
+}
+
 export const useCreateProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: CreateProductInput) => {
       const response = await api.post('/catalog/products', data);
       return response.data;
     },
