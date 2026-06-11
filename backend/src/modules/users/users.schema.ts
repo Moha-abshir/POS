@@ -4,7 +4,7 @@ export const addUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().min(1, 'Last name is required').max(100),
-  mobileNumber: z.string().regex(/^\+?[0-9\s\-()]{7,20}$/, 'Invalid mobile number format.'),
+  mobileNumber: z.string().regex(/^(?:\+254|0)[17]\d{8}$/, 'Invalid mobile number format. Must be a valid Kenyan number (e.g. 07... or +254...).'),
 });
 
 export type AddUserInput = z.infer<typeof addUserSchema>;

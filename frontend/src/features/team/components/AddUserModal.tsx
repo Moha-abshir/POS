@@ -133,7 +133,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) =
                 required
                 value={formData.mobileNumber}
                 onChange={handleChange}
-                placeholder="+1 234 567 890"
+                placeholder="0712345678 or +254712345678"
                 className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
               />
             </div>
