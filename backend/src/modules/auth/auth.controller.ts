@@ -1,9 +1,9 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
 import { requestOtpSchema, verifyOtpSchema, onboardingSchema } from './auth.schema';
 
 export class AuthController {
-  static async requestOtp(req: Request, res: Response) {
+  static async requestOtp(req: Request, res: Response, next: NextFunction) {
     try {
       const { email } = requestOtpSchema.parse(req.body);
       
@@ -13,18 +13,12 @@ export class AuthController {
         success: true,
         message: 'OTP sent successfully',
       });
-    } catch (error: any) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: error.message || 'Invalid request',
-        }
-      });
+    } catch (error) {
+      next(error);
     }
   }
 
-  static async verifyOtp(req: Request, res: Response) {
+  static async verifyOtp(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, otp } = verifyOtpSchema.parse(req.body);
       
@@ -45,28 +39,28 @@ export class AuthController {
           user,
         }
       });
-    } catch (error: any) {
-      res.status(401).json({
-        success: false,
-        error: {
-          code: 'UNAUTHORIZED',
-          message: error.message || 'Verification failed',
-        }
-      });
+    } catch (error) {
+      next(error);
     }
   }
 
-  static async logout(req: Request, res: Response) {
-    // We would revoke the session in DB here using the refresh token
-    // For now, just clear the cookie
-    res.clearCookie('refresh_token');
-    res.json({
-      success: true,
-      message: 'Logged out successfully'
-    });
+  static async logout(req: Request, res: Response, next: NextFunction) {
+    try {
+      const refreshToken = req.cookies?.refresh_token;
+      if (refreshToken && req.user) {
+        await AuthService.logout(req.user.id, refreshToken);
+      }
+      res.clearCookie('refresh_token');
+      res.json({
+        success: true,
+        message: 'Logged out successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 
-  static async onboarding(req: Request, res: Response) {
+  static async onboarding(req: Request, res: Response, next: NextFunction) {
     try {
       // The user ID is expected to be attached to req.user by an auth middleware.
       // But wait, the onboarding route should be protected by the requireAuth middleware.
@@ -80,14 +74,8 @@ export class AuthController {
         success: true,
         message: 'Onboarding completed successfully',
       });
-    } catch (error: any) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: error.message || 'Invalid onboarding data',
-        }
-      });
+    } catch (error) {
+      next(error);
     }
   }
 }

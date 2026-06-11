@@ -2,9 +2,10 @@ import { eq } from 'drizzle-orm';
 import { db } from '../../db';
 import { users } from '../../db/schema';
 import { AddUserInput } from './users.schema';
+import { AppError } from '../../core/utils/AppError';
 
 export class UsersService {
-  static async getUsersByBusinessId(businessId: string) {
+  static async getUsersByBusinessId(businessId: string, limit = 50, offset = 0) {
     return db.select({
       id: users.id,
       email: users.email,
@@ -17,14 +18,16 @@ export class UsersService {
     })
     .from(users)
     .where(eq(users.businessId, businessId))
-    .orderBy(users.createdAt);
+    .orderBy(users.createdAt)
+    .limit(limit)
+    .offset(offset);
   }
 
   static async addCashier(data: AddUserInput, businessId: string) {
     // Check if user already exists across the platform
     const [existing] = await db.select().from(users).where(eq(users.email, data.email));
     if (existing) {
-      throw new Error('User with this email already exists.');
+      throw new AppError('User with this email already exists.', 400);
     }
 
     const [newUser] = await db.insert(users).values({

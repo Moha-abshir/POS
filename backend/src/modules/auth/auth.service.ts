@@ -5,6 +5,7 @@ import argon2 from 'argon2';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { EmailService } from '../../core/services/email.service';
+import { AppError } from '../../core/utils/AppError';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 
@@ -49,11 +50,11 @@ export class AuthService {
         .limit(1);
 
       if (!otpRecord) {
-        throw new Error('Invalid or expired OTP');
+        throw new AppError('Invalid or expired OTP', 400);
       }
 
       if (otpRecord.attempts >= 5) {
-        throw new Error('Too many attempts. Please request a new OTP.');
+        throw new AppError('Too many attempts. Please request a new OTP.', 400);
       }
 
       // 2. Verify hash
@@ -64,7 +65,7 @@ export class AuthService {
         await tx.update(otps)
           .set({ attempts: sql`${otps.attempts} + 1` })
           .where(eq(otps.id, otpRecord.id));
-        throw new Error('Invalid OTP');
+        throw new AppError('Invalid OTP', 400);
       }
 
       // 3. Mark OTP as used atomically
@@ -74,7 +75,7 @@ export class AuthService {
         .returning();
 
       if (!updatedOtp) {
-        throw new Error('OTP already used');
+        throw new AppError('OTP already used', 400);
       }
 
       // 4. Find or Create User
@@ -100,7 +101,7 @@ export class AuthService {
         user = newUser;
       } else {
         if (!user.isActive) {
-          throw new Error('User account is deactivated');
+          throw new AppError('User account is deactivated', 403);
         }
         businessId = user.businessId;
         const [business] = await tx.select().from(businesses).where(eq(businesses.id, businessId));
@@ -158,7 +159,7 @@ export class AuthService {
   }) {
     // Get user to find businessId
     const [user] = await db.select().from(users).where(eq(users.id, userId));
-    if (!user) throw new Error('User not found');
+    if (!user) throw new AppError('User not found', 404);
 
     // Update user personal details
     await db.update(users)
@@ -181,6 +182,18 @@ export class AuthService {
         updatedAt: new Date()
       })
       .where(eq(businesses.id, user.businessId));
+  }
+
+
+  static async logout(userId: string, rawRefreshToken: string) {
+    const userSessions = await db.select().from(sessions).where(and(eq(sessions.userId, userId), eq(sessions.revoked, false)));
+    for (const session of userSessions) {
+      const isValid = await argon2.verify(session.refreshTokenHash, rawRefreshToken);
+      if (isValid) {
+        await db.update(sessions).set({ revoked: true }).where(eq(sessions.id, session.id));
+        break;
+      }
+    }
   }
 
   static async refreshSession(rawRefreshToken: string) {

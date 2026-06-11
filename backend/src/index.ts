@@ -8,6 +8,7 @@ import rateLimit from 'express-rate-limit';
 import authRoutes from './modules/auth/auth.routes';
 import catalogRoutes from './modules/catalog/catalog.routes';
 import usersRoutes from './modules/users/users.routes';
+import { errorHandler } from './core/middleware/errorHandler';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -39,6 +40,8 @@ app.use('/users', usersRoutes);
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
