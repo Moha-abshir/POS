@@ -3,6 +3,10 @@ import { pgTable, uuid, varchar, timestamp, integer, boolean, decimal, text } fr
 export const businesses = pgTable('businesses', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 255 }).notNull(),
+  sector: varchar('sector', { length: 100 }),
+  phone: varchar('phone', { length: 50 }),
+  location: text('location'),
+  isSetupComplete: boolean('is_setup_complete').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -11,6 +15,9 @@ export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
   email: varchar('email', { length: 255 }).notNull().unique(),
+  firstName: varchar('first_name', { length: 100 }),
+  lastName: varchar('last_name', { length: 100 }),
+  mobileNumber: varchar('mobile_number', { length: 50 }),
   role: varchar('role', { length: 50 }).notNull().default('OWNER'),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

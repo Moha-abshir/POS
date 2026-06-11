@@ -5,8 +5,13 @@ import { setupInterceptors } from '../../../lib/api';
 interface User {
   id: string;
   email: string;
+  firstName?: string;
+  lastName?: string;
+  mobileNumber?: string;
   role: string;
   businessId: string;
+  businessName?: string;
+  isSetupComplete?: boolean;
 }
 
 interface AuthState {

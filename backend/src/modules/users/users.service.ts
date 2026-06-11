@@ -8,6 +8,9 @@ export class UsersService {
     return db.select({
       id: users.id,
       email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      mobileNumber: users.mobileNumber,
       role: users.role,
       isActive: users.isActive,
       createdAt: users.createdAt,
@@ -26,11 +29,17 @@ export class UsersService {
 
     const [newUser] = await db.insert(users).values({
       email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      mobileNumber: data.mobileNumber,
       businessId,
       role: 'CASHIER',
     }).returning({
       id: users.id,
       email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      mobileNumber: users.mobileNumber,
       role: users.role,
       isActive: users.isActive,
       createdAt: users.createdAt,

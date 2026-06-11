@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../features/auth/stores/auth.store';
+import { OnboardingModal } from '../features/auth/components/OnboardingModal';
 import { 
   Package, 
   LayoutDashboard, 
@@ -14,7 +15,7 @@ import {
 import { Outlet, Link, useLocation } from 'react-router-dom';
 
 export const DashboardLayout: React.FC = () => {
-  const logout = useAuthStore((state) => state.logout);
+  const { user, logout } = useAuthStore();
   const location = useLocation();
 
   const navItems = [
@@ -37,13 +38,30 @@ export const DashboardLayout: React.FC = () => {
     month: 'short' 
   });
 
+  const extractInitials = (name?: string) => {
+    if (!name) return 'SS';
+    const words = name.split(' ').filter(Boolean);
+    if (words.length >= 2) {
+      return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    if (words.length === 1) {
+      return words[0].substring(0, 2).toUpperCase();
+    }
+    return 'SS';
+  };
+
+  const showOnboarding = user && (!user.firstName || (user.role === 'OWNER' && !user.isSetupComplete));
+
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)] flex text-[var(--color-text-primary)] font-sans">
+      {showOnboarding && <OnboardingModal />}
       
       {/* Sidebar (56px wide, dark) */}
       <div className="w-14 bg-[var(--color-bg-sidebar)] flex flex-col items-center py-4 relative z-20">
-        <div className="h-10 w-10 bg-white/10 rounded flex items-center justify-center mb-6">
-          <span className="text-[var(--color-accent)] font-bold text-sm">HW</span>
+        <div className="h-10 w-10 bg-[var(--color-accent)]/20 rounded flex items-center justify-center mb-6">
+          <span className="text-[var(--color-accent)] font-bold text-sm">
+            {extractInitials(user?.businessName)}
+          </span>
         </div>
 
         <nav className="flex-1 w-full flex flex-col space-y-2">

@@ -4,6 +4,9 @@ import { api } from '../../../lib/api';
 export interface TeamMember {
   id: string;
   email: string;
+  firstName?: string;
+  lastName?: string;
+  mobileNumber?: string;
   role: 'OWNER' | 'CASHIER';
   isActive: boolean;
   createdAt: string;
@@ -23,8 +26,8 @@ export const useAddTeamMember = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (email: string) => {
-      const response = await api.post<{ success: boolean; data: TeamMember }>('/users/cashiers', { email });
+    mutationFn: async (data: { email: string; firstName: string; lastName: string; mobileNumber: string; }) => {
+      const response = await api.post<{ success: boolean; data: TeamMember }>('/users/cashiers', data);
       return response.data.data;
     },
     onSuccess: () => {

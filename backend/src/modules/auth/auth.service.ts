@@ -68,12 +68,19 @@ export class AuthService {
 
     // 4. Find or Create User
     let [user] = await db.select().from(users).where(eq(users.email, email));
+    let businessId: string;
+    let isSetupComplete = false;
     
+    let businessName = 'Smart Store POS';
+
     if (!user) {
       // Auto-create a new Business for first-time owners
       const [newBusiness] = await db.insert(businesses).values({ 
-        name: 'My Hardware Store' 
+        name: 'Smart Store POS' 
       }).returning();
+
+      businessId = newBusiness.id;
+      isSetupComplete = newBusiness.isSetupComplete;
 
       // Create the user as the OWNER of this new business
       const [newUser] = await db.insert(users).values({ 
@@ -83,8 +90,16 @@ export class AuthService {
       }).returning();
       
       user = newUser;
-    } else if (!user.isActive) {
-      throw new Error('User account is deactivated');
+    } else {
+      if (!user.isActive) {
+        throw new Error('User account is deactivated');
+      }
+      businessId = user.businessId;
+      const [business] = await db.select().from(businesses).where(eq(businesses.id, businessId));
+      if (business) {
+        isSetupComplete = business.isSetupComplete;
+        businessName = business.name;
+      }
     }
 
     // 5. Generate Access Token (JWT) - 7 days
@@ -112,10 +127,51 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        mobileNumber: user.mobileNumber,
         role: user.role,
-        businessId: user.businessId
+        businessId: user.businessId,
+        businessName,
+        isSetupComplete
       }
     };
+  }
+
+  static async onboarding(userId: string, data: {
+    firstName: string;
+    lastName: string;
+    mobileNumber: string;
+    organizationName: string;
+    sector: string;
+    businessPhone: string;
+    location: string;
+  }) {
+    // Get user to find businessId
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user) throw new Error('User not found');
+
+    // Update user personal details
+    await db.update(users)
+      .set({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        mobileNumber: data.mobileNumber,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+
+    // Update business details
+    await db.update(businesses)
+      .set({
+        name: data.organizationName,
+        sector: data.sector,
+        phone: data.businessPhone,
+        location: data.location,
+        isSetupComplete: true,
+        updatedAt: new Date()
+      })
+      .where(eq(businesses.id, user.businessId));
   }
 
   static async refreshSession(rawRefreshToken: string) {

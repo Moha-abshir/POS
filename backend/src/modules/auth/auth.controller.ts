@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import { requestOtpSchema, verifyOtpSchema } from './auth.schema';
+import { requestOtpSchema, verifyOtpSchema, onboardingSchema } from './auth.schema';
 
 export class AuthController {
   static async requestOtp(req: Request, res: Response) {
@@ -64,5 +64,30 @@ export class AuthController {
       success: true,
       message: 'Logged out successfully'
     });
+  }
+
+  static async onboarding(req: Request, res: Response) {
+    try {
+      // The user ID is expected to be attached to req.user by an auth middleware.
+      // But wait, the onboarding route should be protected by the requireAuth middleware.
+      const userId = (req as any).user.sub; // Assuming JWT payload sets req.user
+      
+      const onboardingData = onboardingSchema.parse(req.body);
+      
+      await AuthService.onboarding(userId, onboardingData);
+      
+      res.json({
+        success: true,
+        message: 'Onboarding completed successfully',
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: error.message || 'Invalid onboarding data',
+        }
+      });
+    }
   }
 }
