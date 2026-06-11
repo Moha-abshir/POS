@@ -32,7 +32,7 @@ The system uses **passwordless email OTP authentication**. There are no password
         │
         ▼
 5. Backend: issue tokens
-   → Create access token (JWT, 15 min expiry)
+   → Create access token (JWT, 7 day expiry)
    → Create refresh token (random secure bytes, 7 day expiry)
    → Hash refresh token, store in `sessions` table
    → Send access token in response body
@@ -61,7 +61,7 @@ The system uses **passwordless email OTP authentication**. There are no password
 ```
 
 - Signed with `HS256` using a secret from environment variables
-- Expiry: **15 minutes**
+- Expiry: **7 days**
 - Sent in `Authorization: Bearer <token>` header
 - Never stored in localStorage — kept in memory (React state or TanStack Query cache)
 
