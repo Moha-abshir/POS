@@ -40,8 +40,8 @@ export const DashboardLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)] flex text-[var(--color-text-primary)] font-sans">
       
-      {/* Sidebar (64px wide, dark) */}
-      <div className="w-16 bg-[var(--color-bg-sidebar)] flex flex-col items-center py-4 relative z-20">
+      {/* Sidebar (56px wide, dark) */}
+      <div className="w-14 bg-[var(--color-bg-sidebar)] flex flex-col items-center py-4 relative z-20">
         <div className="h-10 w-10 bg-white/10 rounded flex items-center justify-center mb-6">
           <span className="text-[var(--color-accent)] font-bold text-sm">HW</span>
         </div>
