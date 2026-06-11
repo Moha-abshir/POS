@@ -54,7 +54,7 @@ export const SettingsPage: React.FC = () => {
       }
       setSuccessMsg('Settings updated successfully.');
     } catch (err) {
-      setErrorMsg((err as AxiosError<any>).response?.data?.error?.message || 'Failed to update settings');
+      setErrorMsg((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to update settings');
     } finally {
       setIsSubmitting(false);
     }

@@ -244,7 +244,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
                   </td>
                   <td className="px-6 py-0">
                     <span className="text-sm text-gray-500">
-                      {product.categoryName ? product.categoryName.substring(0, 8) + '...' : 'Uncat.'}
+                      {product.categoryName || 'Uncat.'}
                     </span>
                   </td>
                   <td className="px-6 py-0">
@@ -257,10 +257,10 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
                   </td>
                   <td className="px-6 py-0 text-right">
                     <div className="flex items-center justify-end gap-3">
-                      <button className="text-amber-600 font-medium text-sm hover:underline outline-none focus:ring-2 focus:ring-amber-500 rounded px-1">
+                      <button onClick={() => alert('Edit feature coming soon')} className="text-amber-600 font-medium text-sm hover:underline outline-none focus:ring-2 focus:ring-amber-500 rounded px-1">
                         Edit
                       </button>
-                      <button className="text-gray-400 hover:text-gray-600 transition-colors outline-none focus:ring-2 focus:ring-amber-500 rounded p-1">
+                      <button aria-label="More options" onClick={() => alert('More options coming soon')} className="text-gray-400 hover:text-gray-600 transition-colors outline-none focus:ring-2 focus:ring-amber-500 rounded p-1">
                         <MoreHorizontal className="h-4 w-4" />
                       </button>
                     </div>

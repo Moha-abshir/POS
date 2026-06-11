@@ -29,7 +29,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onCl
       await createCategory.mutateAsync(name);
       onClose();
     } catch (err) {
-      setErrorMsg((err as AxiosError<any>).response?.data?.error?.message || 'Failed to create category');
+      setErrorMsg((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to create category');
     }
   };
 

@@ -41,7 +41,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) =
       await addTeamMember.mutateAsync(formData);
       onClose();
     } catch (err) {
-      setErrorMsg((err as AxiosError<any>).response?.data?.error?.message || 'Failed to add cashier');
+      setErrorMsg((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to add cashier');
     }
   };
 

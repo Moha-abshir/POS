@@ -21,7 +21,7 @@ export const LoginForm: React.FC = () => {
       await requestOtpMutation.mutateAsync(email);
       setStep('verify');
     } catch (err) {
-      setErrorMsg((err as AxiosError<any>).response?.data?.error?.message || 'Failed to send OTP');
+      setErrorMsg((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to send OTP');
     }
   };
 
@@ -32,7 +32,7 @@ export const LoginForm: React.FC = () => {
       const res = await verifyOtpMutation.mutateAsync({ email, otp });
       setAuth(res.data.user, res.data.accessToken);
     } catch (err) {
-      setErrorMsg((err as AxiosError<any>).response?.data?.error?.message || 'Invalid OTP');
+      setErrorMsg((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Invalid OTP');
     }
   };
 
@@ -99,6 +99,7 @@ export const LoginForm: React.FC = () => {
               </div>
               <input
                 id="otp"
+                autoFocus
                 type="text"
                 required
                 maxLength={6}
