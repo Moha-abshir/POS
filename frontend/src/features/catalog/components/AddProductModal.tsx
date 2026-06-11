@@ -1,7 +1,7 @@
 import { AxiosError } from 'axios';
 import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import { useCreateProduct, useCategories } from '../api/catalog.api';
+import { useCreateProduct, useCategories, useCreateProductUnit } from '../api/catalog.api';
 
 interface AddProductModalProps {
   isOpen: boolean;
