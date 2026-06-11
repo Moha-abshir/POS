@@ -20,8 +20,6 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onCl
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -35,12 +33,12 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-300 ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
       <div 
         className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" 
         onClick={onClose}
       />
-      <div className="relative bg-[var(--color-bg-surface)] rounded-[var(--radius-lg)] shadow-[var(--shadow-modal)] w-full max-w-[480px] m-4 flex flex-col scale-100 opacity-100 transition-all">
+      <div className={`relative bg-[var(--color-bg-surface)] rounded-[var(--radius-lg)] shadow-[var(--shadow-modal)] w-full max-w-[480px] m-4 flex flex-col transition-all duration-300 ${isOpen ? 'translate-y-0 scale-100' : 'translate-y-8 scale-[0.97]'}`}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
           <h2 className="text-[var(--text-lg)] font-semibold text-[var(--color-text-primary)]">
