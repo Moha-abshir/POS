@@ -33,8 +33,8 @@ export class AuthController {
       // Set HttpOnly Secure cookie for refresh token
       res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: true,
+        sameSite: 'none',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
       
@@ -70,7 +70,7 @@ export class AuthController {
     try {
       // The user ID is expected to be attached to req.user by an auth middleware.
       // But wait, the onboarding route should be protected by the requireAuth middleware.
-      const userId = (req as any).user.sub; // Assuming JWT payload sets req.user
+      const userId = (req as any).user.id; // Assuming JWT payload sets req.user
       
       const onboardingData = onboardingSchema.parse(req.body);
       

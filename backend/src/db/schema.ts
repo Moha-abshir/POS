@@ -1,4 +1,5 @@
-import { pgTable, uuid, varchar, timestamp, integer, boolean, decimal, text } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, integer, boolean, decimal, text, index, unique, check } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 export const businesses = pgTable('businesses', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -8,7 +9,7 @@ export const businesses = pgTable('businesses', {
   location: text('location'),
   isSetupComplete: boolean('is_setup_complete').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
 });
 
 export const users = pgTable('users', {
@@ -21,8 +22,11 @@ export const users = pgTable('users', {
   role: varchar('role', { length: 50 }).notNull().default('OWNER'),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-});
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
+}, (table) => ({
+  businessIdx: index('users_business_idx').on(table.businessId),
+  emailIdx: index('users_email_idx').on(table.email)
+}));
 
 export const otps = pgTable('otps', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -32,7 +36,10 @@ export const otps = pgTable('otps', {
   attempts: integer('attempts').notNull().default(0),
   used: boolean('used').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => ({
+  emailIdx: index('otps_email_idx').on(table.email),
+  expiresAtIdx: index('otps_expires_at_idx').on(table.expiresAt)
+}));
 
 export const sessions = pgTable('sessions', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -42,15 +49,22 @@ export const sessions = pgTable('sessions', {
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   revoked: boolean('revoked').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdx: index('sessions_user_idx').on(table.userId),
+  businessIdx: index('sessions_business_idx').on(table.businessId),
+  expiresAtIdx: index('sessions_expires_at_idx').on(table.expiresAt)
+}));
 
 export const categories = pgTable('categories', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
-  name: varchar('name', { length: 100 }).notNull(), // Removed unique() globally because multiple businesses can have a "Plumbing" category
+  name: varchar('name', { length: 100 }).notNull(), 
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-});
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
+}, (table) => ({
+  businessIdx: index('categories_business_idx').on(table.businessId),
+  uniqueNamePerBusiness: unique('categories_name_business_unique').on(table.businessId, table.name)
+}));
 
 export const products = pgTable('products', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -64,9 +78,13 @@ export const products = pgTable('products', {
   lowStockThreshold: decimal('low_stock_threshold', { precision: 10, scale: 3 }).notNull().default('0'),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
   createdBy: uuid('created_by').references(() => users.id),
-});
+}, (table) => ({
+  businessIdx: index('products_business_idx').on(table.businessId),
+  categoryIdx: index('products_category_idx').on(table.categoryId),
+  costPriceCheck: check('cost_price_check', sql`${table.costPrice} >= 0`)
+}));
 
 export const productUnits = pgTable('product_units', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -78,5 +96,9 @@ export const productUnits = pgTable('product_units', {
   isDefault: boolean('is_default').notNull().default(false),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-});
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
+}, (table) => ({
+  productIdx: index('product_units_product_idx').on(table.productId),
+  uniqueNamePerProduct: unique('product_units_name_product_unique').on(table.productId, table.name),
+  sellingPriceCheck: check('selling_price_check', sql`${table.sellingPrice} >= 0`)
+}));

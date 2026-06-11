@@ -22,6 +22,20 @@
       "when": 1781092674871,
       "tag": "0002_typical_luminals",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781189270185,
+      "tag": "0003_swift_emma_frost",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781189622422,
+      "tag": "0004_classy_whirlwind",
+      "breakpoints": true
     }
   ]
 }

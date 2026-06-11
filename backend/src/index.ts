@@ -1,15 +1,24 @@
+import * as dotenv from "dotenv";
+dotenv.config();
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import * as dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import authRoutes from './modules/auth/auth.routes';
 import catalogRoutes from './modules/catalog/catalog.routes';
 import usersRoutes from './modules/users/users.routes';
 
-dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+app.use(helmet());
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
 
 app.use(cors({
   origin: [
