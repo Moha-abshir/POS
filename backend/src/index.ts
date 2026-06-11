@@ -24,8 +24,7 @@ app.use(limiter);
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'https://abshir-pos.vercel.app',
-    'https://abshir-pos.netlify.app',
+    'https://pos-abshir.vercel.app',
     process.env.FRONTEND_URL || ''
   ].filter(Boolean),
   credentials: true,
