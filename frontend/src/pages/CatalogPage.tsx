@@ -8,7 +8,7 @@ export const CatalogPage: React.FC = () => {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
   return (
-    <div className="p-[var(--space-6)] max-w-[1400px] mx-auto h-full flex flex-col">
+    <div className="p-6 max-w-[1400px] mx-auto h-full flex flex-col">
       <ProductList 
         onAddProduct={() => setIsProductModalOpen(true)}
         onAddCategory={() => setIsCategoryModalOpen(true)}
