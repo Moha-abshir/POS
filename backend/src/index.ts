@@ -8,6 +8,9 @@ import rateLimit from 'express-rate-limit';
 import authRoutes from './modules/auth/auth.routes';
 import catalogRoutes from './modules/catalog/catalog.routes';
 import usersRoutes from './modules/users/users.routes';
+import suppliersRoutes from './modules/suppliers/suppliers.routes';
+import inventoryRoutes from './modules/inventory/inventory.routes';
+import purchasingRoutes from './modules/purchasing/purchasing.routes';
 import { errorHandler } from './core/middleware/errorHandler';
 
 import { z } from 'zod';
@@ -47,6 +50,9 @@ app.use(cookieParser());
 app.use('/auth', authRoutes);
 app.use('/catalog', catalogRoutes);
 app.use('/users', usersRoutes);
+app.use('/suppliers', suppliersRoutes);
+app.use('/inventory', inventoryRoutes);
+app.use('/purchases', purchasingRoutes);
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });

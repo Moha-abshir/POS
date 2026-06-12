@@ -5,6 +5,8 @@ import { DashboardLayout } from './components/DashboardLayout';
 import { CatalogPage } from './pages/CatalogPage';
 import { TeamPage } from './pages/TeamPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { SuppliersPage } from './pages/SuppliersPage';
+import { InventoryPage } from './pages/InventoryPage';
 
 const NotFound = () => (
   <div className="flex flex-col items-center justify-center h-full p-6 text-center">
@@ -51,9 +53,9 @@ function App() {
             <Route path="/settings" element={<SettingsPage />} />
             {/* Missing nav links placeholders */}
             <Route path="/pos" element={<ComingSoon title="Point of Sale" />} />
-            <Route path="/inventory" element={<ComingSoon title="Inventory Management" />} />
+            <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/customers" element={<ComingSoon title="Customer Management" />} />
-            <Route path="/suppliers" element={<ComingSoon title="Supplier Management" />} />
+            <Route path="/suppliers" element={<SuppliersPage />} />
             <Route path="/reports" element={<ComingSoon title="Reports & Analytics" />} />
             
             {/* 404 Catch-all */}
