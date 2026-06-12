@@ -65,7 +65,6 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="grid grid-cols-2 gap-6">
             <div>
-            <div>
               <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Supplier *</label>
               <select
                 required
