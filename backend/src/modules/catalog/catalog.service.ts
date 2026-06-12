@@ -42,19 +42,25 @@ export class CatalogService {
     return product;
   }
 
-  static async getProducts(businessId: string, limit = 50, offset = 0) {
-    // We will join with categories to return a rich object
+  static async getProducts(businessId: string, limit = 50, offset = 0, isActive?: boolean) {
+    const conditions = [eq(products.businessId, businessId)];
+    if (isActive !== undefined) {
+      conditions.push(eq(products.isActive, isActive));
+    }
+
     const result = await db.select({
       id: products.id,
       name: products.name,
+      categoryId: products.categoryId,
       categoryName: categories.name,
       costPrice: products.costPrice,
       baseStockQuantity: products.baseStockQuantity,
+      lowStockThreshold: products.lowStockThreshold,
       isActive: products.isActive,
     })
     .from(products)
     .leftJoin(categories, eq(products.categoryId, categories.id))
-    .where(eq(products.businessId, businessId))
+    .where(and(...conditions))
     .orderBy(products.name)
     .limit(limit)
     .offset(offset);
@@ -77,6 +83,38 @@ export class CatalogService {
       ...product,
       units,
     };
+  }
+
+  static async updateProduct(productId: string, data: any, businessId: string) {
+    if (data.categoryId) {
+      const [category] = await db.select().from(categories).where(and(eq(categories.id, data.categoryId), eq(categories.businessId, businessId)));
+      if (!category) throw new AppError('Category not found or does not belong to this business', 400);
+    }
+
+    const [product] = await db.update(products)
+      .set({
+        ...data,
+        ...(data.costPrice !== undefined && { costPrice: data.costPrice.toString() }),
+        ...(data.baseStockQuantity !== undefined && { baseStockQuantity: data.baseStockQuantity.toString() }),
+        ...(data.lowStockThreshold !== undefined && { lowStockThreshold: data.lowStockThreshold.toString() }),
+      })
+      .where(and(eq(products.id, productId), eq(products.businessId, businessId)))
+      .returning();
+
+    if (!product) throw new AppError('Product not found', 404);
+    return product;
+  }
+
+  static async toggleProductStatus(productId: string, businessId: string) {
+    const [product] = await db.select({ isActive: products.isActive }).from(products).where(and(eq(products.id, productId), eq(products.businessId, businessId)));
+    if (!product) throw new AppError('Product not found', 404);
+
+    const [updatedProduct] = await db.update(products)
+      .set({ isActive: !product.isActive })
+      .where(and(eq(products.id, productId), eq(products.businessId, businessId)))
+      .returning();
+
+    return updatedProduct;
   }
 
   // --- PRODUCT UNITS ---

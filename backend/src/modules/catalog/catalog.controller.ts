@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { CatalogService } from './catalog.service';
-import { createCategorySchema, createProductSchema, createProductUnitSchema } from './catalog.schema';
+import { createCategorySchema, createProductSchema, updateProductSchema, createProductUnitSchema } from './catalog.schema';
 
 export class CatalogController {
   // Categories
@@ -45,7 +45,11 @@ export class CatalogController {
       const businessId = req.user!.businessId;
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = parseInt(req.query.offset as string) || 0;
-      const products = await CatalogService.getProducts(businessId, limit, offset);
+      let isActive: boolean | undefined = undefined;
+      if (req.query.isActive !== undefined) {
+        isActive = req.query.isActive === 'true';
+      }
+      const products = await CatalogService.getProducts(businessId, limit, offset, isActive);
       res.json({ success: true, data: products });
     } catch (error) {
       next(error);
@@ -57,6 +61,29 @@ export class CatalogController {
       const id = req.params.id as string;
       const businessId = req.user!.businessId;
       const product = await CatalogService.getProductDetails(id, businessId);
+      res.json({ success: true, data: product });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateProduct(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const data = updateProductSchema.parse(req.body);
+      const businessId = req.user!.businessId;
+      const product = await CatalogService.updateProduct(id, data, businessId);
+      res.json({ success: true, data: product });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async toggleProductStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const businessId = req.user!.businessId;
+      const product = await CatalogService.toggleProductStatus(id, businessId);
       res.json({ success: true, data: product });
     } catch (error) {
       next(error);

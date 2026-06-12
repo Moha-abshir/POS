@@ -22,6 +22,17 @@ export const createProductUnitSchema = z.object({
   isDefault: z.boolean().default(false),
 });
 
+export const updateProductSchema = z.object({
+  categoryId: z.string().uuid('Invalid Category ID'),
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  description: z.string().optional(),
+  imageUrl: z.string().url('Invalid URL').optional(),
+  costPrice: z.number().positive('Cost price must be positive'),
+  baseStockQuantity: z.number().min(0, 'Initial stock cannot be negative'),
+  lowStockThreshold: z.number().min(0),
+});
+
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
 export type CreateProductInput = z.infer<typeof createProductSchema>;
+export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 export type CreateProductUnitInput = z.infer<typeof createProductUnitSchema>;

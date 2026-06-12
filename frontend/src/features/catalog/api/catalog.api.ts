@@ -93,3 +93,39 @@ export const useCreateProductUnit = () => {
     },
   });
 };
+
+export interface UpdateProductInput {
+  categoryId: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  costPrice: number;
+  baseStockQuantity?: number;
+  lowStockThreshold?: number;
+}
+
+export const useUpdateProduct = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: UpdateProductInput }) => {
+      const response = await api.put(`/catalog/products/${id}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+};
+
+export const useToggleProductStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.patch(`/catalog/products/${id}/status`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+};

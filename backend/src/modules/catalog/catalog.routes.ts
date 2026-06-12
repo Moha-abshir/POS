@@ -13,6 +13,8 @@ router.get('/categories', CatalogController.getCategories);
 router.post('/products', CatalogController.createProduct);
 router.get('/products', CatalogController.getProducts);
 router.get('/products/:id', CatalogController.getProductDetails);
+router.put('/products/:id', CatalogController.updateProduct);
+router.patch('/products/:id/status', CatalogController.toggleProductStatus);
 
 router.post('/product-units', CatalogController.createProductUnit);
 

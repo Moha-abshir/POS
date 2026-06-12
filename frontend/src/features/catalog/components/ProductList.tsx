@@ -5,6 +5,8 @@ import { Package, Plus, Search, Loader2, MoreHorizontal, ChevronDown, Check } fr
 interface ProductListProps {
   onAddProduct: () => void;
   onAddCategory: () => void;
+  onEditProduct: (product: any) => void;
+  onToggleStatus: (productId: string) => void;
 }
 
 // Custom Dropdown Component
@@ -93,9 +95,11 @@ const CustomDropdown = ({
 };
 
 
-export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCategory }) => {
+export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCategory, onEditProduct, onToggleStatus }) => {
   const { data: products, isLoading } = useProducts();
   const { data: categories } = useCategories();
+  
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -256,13 +260,29 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
                     </div>
                   </td>
                   <td className="px-6 py-0 text-right">
-                    <div className="flex items-center justify-end gap-3">
-                      <button onClick={() => alert('Edit feature coming soon')} className="text-amber-600 font-medium text-sm hover:underline outline-none focus:ring-2 focus:ring-amber-500 rounded px-1">
+                    <div className="flex items-center justify-end gap-3 relative">
+                      <button onClick={() => onEditProduct(product)} className="text-amber-600 font-medium text-sm hover:underline outline-none focus:ring-2 focus:ring-amber-500 rounded px-1">
                         Edit
                       </button>
-                      <button aria-label="More options" onClick={() => alert('More options coming soon')} className="text-gray-400 hover:text-gray-600 transition-colors outline-none focus:ring-2 focus:ring-amber-500 rounded p-1">
+                      <button aria-label="More options" onClick={() => setActiveDropdown(activeDropdown === product.id ? null : product.id)} className="text-gray-400 hover:text-gray-600 transition-colors outline-none focus:ring-2 focus:ring-amber-500 rounded p-1">
                         <MoreHorizontal className="h-4 w-4" />
                       </button>
+                      {activeDropdown === product.id && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
+                          <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-lg z-20 py-1">
+                            <button
+                              onClick={() => {
+                                setActiveDropdown(null);
+                                onToggleStatus(product.id);
+                              }}
+                              className="w-full text-left px-4 py-2 text-[var(--text-sm)] text-[var(--color-text-primary)] hover:bg-gray-50 transition-colors"
+                            >
+                              {product.isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

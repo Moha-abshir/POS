@@ -20,6 +20,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
     costPrice: '',
     baseStockQuantity: '',
     lowStockThreshold: '',
+    unitName: '',
+    sellingPrice: '',
   });
   
   const [errorMsg, setErrorMsg] = useState('');
@@ -34,6 +36,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
         costPrice: '',
         baseStockQuantity: '',
         lowStockThreshold: '',
+        unitName: '',
+        sellingPrice: '',
       });
       setErrorMsg('');
     }
@@ -49,12 +53,20 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
     setErrorMsg('');
 
     try {
-      await createProduct.mutateAsync({
+      const newProduct = await createProduct.mutateAsync({
         ...formData,
         costPrice: Number(formData.costPrice),
         baseStockQuantity: Number(formData.baseStockQuantity),
         lowStockThreshold: Number(formData.lowStockThreshold),
       });
+
+      await createProductUnit.mutateAsync({
+        productId: newProduct.data.id,
+        name: formData.unitName,
+        sellingPrice: Number(formData.sellingPrice),
+        isDefault: true,
+      });
+
       onClose();
     } catch (err) {
       setErrorMsg((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to create product');
