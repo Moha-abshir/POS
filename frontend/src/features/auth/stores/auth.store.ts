@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { setupInterceptors, api } from '../../../lib/api';
+import { setupInterceptors, api, API_URL } from '../../../lib/api';
+import axios from 'axios';
 
 interface User {
   id: string;
@@ -46,17 +47,17 @@ export const useAuthStore = create<AuthState>()(
         }),
         
         logout: async () => {
-          try {
-            await api.post('/auth/logout');
-          } catch (error) {
-            console.error('Logout failed:', error);
-          }
           set({
             user: null,
             accessToken: null,
             isAuthenticated: false,
             hasSkippedOnboarding: false
           });
+          try {
+            await axios.post(`${API_URL}/auth/logout`, {}, { withCredentials: true });
+          } catch (error) {
+            console.error('Logout failed:', error);
+          }
         },
         
         skipOnboarding: () => set({ hasSkippedOnboarding: true })
