@@ -8,7 +8,7 @@ export const api = axios.create({
 });
 
 // Add an interceptor to inject the Access Token if we have it in memory
-export const setupInterceptors = (getAccessToken: () => string | null, logout: () => void) => {
+export const setupInterceptors = (getAccessToken: () => string | null, setAccessToken: (token: string) => void, logout: () => void) => {
   api.interceptors.request.use((config) => {
     const token = getAccessToken();
     if (token) {
@@ -27,14 +27,11 @@ export const setupInterceptors = (getAccessToken: () => string | null, logout: (
         
         try {
           // Attempt to refresh token
-          // const res = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
-          // setAccessToken(res.data.data.accessToken);
-          // originalRequest.headers.Authorization = `Bearer ${res.data.data.accessToken}`;
-          // return api(originalRequest);
-          
-          // For now, we just logout because we haven't implemented /refresh yet
-          logout();
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const res = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
+          const newAccessToken = res.data.data.accessToken;
+          setAccessToken(newAccessToken);
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return api(originalRequest);
         } catch (refreshError) {
           logout();
         }

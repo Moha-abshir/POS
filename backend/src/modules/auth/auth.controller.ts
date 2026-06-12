@@ -44,6 +44,26 @@ export class AuthController {
     }
   }
 
+  static async refresh(req: Request, res: Response, next: NextFunction) {
+    try {
+      const refreshToken = req.cookies?.refresh_token;
+      if (!refreshToken) {
+        return res.status(401).json({ success: false, message: 'No refresh token provided' });
+      }
+      
+      const accessToken = await AuthService.refreshSession(refreshToken);
+      
+      res.json({
+        success: true,
+        data: { accessToken }
+      });
+    } catch (error) {
+      // Clear cookie if refresh fails
+      res.clearCookie('refresh_token');
+      next(error);
+    }
+  }
+
   static async logout(req: Request, res: Response, next: NextFunction) {
     try {
       const refreshToken = req.cookies?.refresh_token;

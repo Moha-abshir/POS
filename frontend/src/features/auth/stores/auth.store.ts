@@ -27,9 +27,9 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => {
-      // Initialize interceptors with our store's getters/setters
       setupInterceptors(
         () => get().accessToken,
+        (token) => set({ accessToken: token }),
         () => get().logout()
       );
 
@@ -66,7 +66,6 @@ export const useAuthStore = create<AuthState>()(
       name: 'pos-auth-storage-v2',
       partialize: (state) => ({
         user: state.user,
-        accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated
       }),
     }

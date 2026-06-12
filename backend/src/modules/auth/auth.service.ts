@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken';
 import { EmailService } from '../../core/services/email.service';
 import { AppError } from '../../core/utils/AppError';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
+const JWT_SECRET = process.env.JWT_SECRET!;
 
 export class AuthService {
   static async requestOtp(email: string) {
@@ -115,12 +115,12 @@ export class AuthService {
       const accessToken = jwt.sign(
         { sub: user.id, email: user.email, role: user.role, businessId: user.businessId },
         JWT_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: '15m' }
       );
 
       // 6. Generate Refresh Token - 7 days
       const rawRefreshToken = crypto.randomBytes(64).toString('hex');
-      const refreshTokenHash = await argon2.hash(rawRefreshToken);
+      const refreshTokenHash = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
       const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
       await tx.insert(sessions).values({
@@ -186,17 +186,30 @@ export class AuthService {
 
 
   static async logout(userId: string, rawRefreshToken: string) {
-    const userSessions = await db.select().from(sessions).where(and(eq(sessions.userId, userId), eq(sessions.revoked, false)));
-    for (const session of userSessions) {
-      const isValid = await argon2.verify(session.refreshTokenHash, rawRefreshToken);
-      if (isValid) {
-        await db.update(sessions).set({ revoked: true }).where(eq(sessions.id, session.id));
-        break;
-      }
-    }
+    const refreshTokenHash = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
+    await db.update(sessions).set({ revoked: true }).where(and(eq(sessions.userId, userId), eq(sessions.refreshTokenHash, refreshTokenHash)));
   }
 
   static async refreshSession(rawRefreshToken: string) {
-    throw new Error('Not implemented yet');
+    const refreshTokenHash = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
+
+    const [session] = await db.select().from(sessions).where(eq(sessions.refreshTokenHash, refreshTokenHash));
+
+    if (!session || session.revoked || session.expiresAt < new Date()) {
+      throw new AppError('Invalid or expired refresh token', 401);
+    }
+
+    const [user] = await db.select().from(users).where(eq(users.id, session.userId));
+    if (!user || !user.isActive) {
+      throw new AppError('User inactive or not found', 401);
+    }
+
+    const accessToken = jwt.sign(
+      { sub: user.id, email: user.email, role: user.role, businessId: user.businessId },
+      JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    return accessToken;
   }
 }

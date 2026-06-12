@@ -10,6 +10,18 @@ import catalogRoutes from './modules/catalog/catalog.routes';
 import usersRoutes from './modules/users/users.routes';
 import { errorHandler } from './core/middleware/errorHandler';
 
+import { z } from 'zod';
+
+const envSchema = z.object({
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
+  PORT: z.string().optional(),
+  FRONTEND_URL: z.string().optional(),
+  BREVO_API_KEY: z.string().optional(),
+});
+
+envSchema.parse(process.env);
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
