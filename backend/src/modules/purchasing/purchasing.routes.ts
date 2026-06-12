@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { PurchasingController } from './purchasing.controller';
-import { authenticate } from '../../core/middleware/auth';
+import { authenticate, authorize } from '../../core/middleware/auth';
 
 const router = Router();
 
 router.use(authenticate);
 
-router.post('/', PurchasingController.createPurchase);
-router.get('/', PurchasingController.getPurchases);
+router.post('/', authorize(['OWNER', 'MANAGER']), PurchasingController.createPurchase);
+router.get('/', authorize(['OWNER', 'MANAGER']), PurchasingController.getPurchases);
 
 export default router;

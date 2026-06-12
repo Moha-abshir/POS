@@ -123,7 +123,13 @@ export class CatalogService {
     const [product] = await db.select().from(products).where(and(eq(products.id, data.productId), eq(products.businessId, businessId)));
     if (!product) throw new AppError('Product not found or does not belong to this business', 400);
 
-    // If this is set as default, we should unset other defaults for this product (logic skipped for brevity, but easy to add)
+    // If this is set as default, unset other defaults for this product
+    if (data.isDefault) {
+      await db.update(productUnits)
+        .set({ isDefault: false })
+        .where(and(eq(productUnits.productId, data.productId), eq(productUnits.businessId, businessId)));
+    }
+
     const [unit] = await db.insert(productUnits).values({
       ...data,
       businessId,

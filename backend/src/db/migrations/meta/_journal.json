@@ -43,6 +43,13 @@
       "when": 1781246678005,
       "tag": "0005_dry_golden_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781276929683,
+      "tag": "0006_easy_sunspot",
+      "breakpoints": true
     }
   ]
 }

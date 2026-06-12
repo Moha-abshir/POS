@@ -23,6 +23,20 @@ export const errorHandler = (
     });
   }
 
+  // Handle Postgres Constraint Errors
+  if (err.code && typeof err.code === 'string' && err.code.startsWith('23')) {
+    let message = 'Database constraint error';
+    if (err.code === '23505') message = 'A record with this information already exists.';
+    else if (err.code === '23503') message = 'This operation cannot be completed because related records exist.';
+    else if (err.code === '23514') message = 'Invalid data provided that violates system constraints.';
+    else if (err.code === '23502') message = 'Required information is missing.';
+
+    return res.status(400).json({
+      success: false,
+      message,
+    });
+  }
+
   console.error('Unexpected Error:', err);
   return res.status(500).json({
     success: false,

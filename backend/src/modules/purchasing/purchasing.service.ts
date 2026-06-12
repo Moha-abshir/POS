@@ -1,6 +1,6 @@
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, inArray } from 'drizzle-orm';
 import { db } from '../../db';
-import { purchases, purchaseItems, suppliers, payments } from '../../db/schema';
+import { purchases, purchaseItems, suppliers, payments, products } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 import { InventoryService } from '../inventory/inventory.service';
 
@@ -17,6 +17,16 @@ export class PurchasingService {
     }
   ) {
     return await db.transaction(async (tx) => {
+      // 0. Cross-tenant validation
+      const [supplier] = await tx.select().from(suppliers).where(and(eq(suppliers.id, data.supplierId), eq(suppliers.businessId, businessId)));
+      if (!supplier) throw new AppError('Supplier not found or unauthorized', 404);
+
+      const productIds = Array.from(new Set(data.items.map(item => item.productId)));
+      const foundProducts = await tx.select().from(products).where(and(inArray(products.id, productIds), eq(products.businessId, businessId)));
+      if (foundProducts.length !== productIds.length) {
+        throw new AppError('One or more products not found or unauthorized', 404);
+      }
+
       // 1. Calculate totals
       let totalAmount = 0;
       data.items.forEach(item => {

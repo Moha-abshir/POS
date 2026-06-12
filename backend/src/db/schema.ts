@@ -69,7 +69,7 @@ export const categories = pgTable('categories', {
 export const products = pgTable('products', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
-  categoryId: uuid('category_id').notNull().references(() => categories.id),
+  categoryId: uuid('category_id').notNull().references(() => categories.id, { onDelete: 'restrict' }),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
   imageUrl: varchar('image_url', { length: 500 }),
@@ -83,7 +83,8 @@ export const products = pgTable('products', {
 }, (table) => ({
   businessIdx: index('products_business_idx').on(table.businessId),
   categoryIdx: index('products_category_idx').on(table.categoryId),
-  costPriceCheck: check('cost_price_check', sql`${table.costPrice} >= 0`)
+  costPriceCheck: check('cost_price_check', sql`${table.costPrice} >= 0`),
+  baseStockQuantityCheck: check('base_stock_quantity_check', sql`${table.baseStockQuantity} >= 0`)
 }));
 
 export const productUnits = pgTable('product_units', {
@@ -120,12 +121,14 @@ export const suppliers = pgTable('suppliers', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
   createdBy: uuid('created_by').references(() => users.id),
-});
+}, (table) => ({
+  businessIdx: index('suppliers_business_idx').on(table.businessId)
+}));
 
 export const purchases = pgTable('purchases', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
-  supplierId: uuid('supplier_id').notNull().references(() => suppliers.id),
+  supplierId: uuid('supplier_id').notNull().references(() => suppliers.id, { onDelete: 'restrict' }),
   totalAmount: decimal('total_amount', { precision: 12, scale: 2 }).notNull(),
   amountPaid: decimal('amount_paid', { precision: 12, scale: 2 }).notNull().default('0'),
   paymentStatus: paymentStatusEnum('payment_status').notNull().default('UNPAID'),
@@ -136,6 +139,7 @@ export const purchases = pgTable('purchases', {
 }, (table) => ({
   supplierIdx: index('purchases_supplier_idx').on(table.supplierId),
   purchasedAtIdx: index('purchases_purchased_at_idx').on(table.purchasedAt),
+  businessIdx: index('purchases_business_idx').on(table.businessId),
   totalAmountCheck: check('purchases_total_amount_check', sql`${table.totalAmount} >= 0`),
   amountPaidCheck: check('purchases_amount_paid_check', sql`${table.amountPaid} >= 0`)
 }));
@@ -144,13 +148,14 @@ export const purchaseItems = pgTable('purchase_items', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
   purchaseId: uuid('purchase_id').notNull().references(() => purchases.id, { onDelete: 'restrict' }),
-  productId: uuid('product_id').notNull().references(() => products.id),
+  productId: uuid('product_id').notNull().references(() => products.id, { onDelete: 'restrict' }),
   quantity: decimal('quantity', { precision: 10, scale: 3 }).notNull(),
   costPrice: decimal('cost_price', { precision: 12, scale: 2 }).notNull(),
   subtotal: decimal('subtotal', { precision: 12, scale: 2 }).notNull(),
 }, (table) => ({
   purchaseIdx: index('purchase_items_purchase_idx').on(table.purchaseId),
   productIdx: index('purchase_items_product_idx').on(table.productId),
+  businessIdx: index('purchase_items_business_idx').on(table.businessId),
   quantityCheck: check('purchase_items_quantity_check', sql`${table.quantity} > 0`),
   costPriceCheck: check('purchase_items_cost_price_check', sql`${table.costPrice} >= 0`)
 }));
@@ -168,13 +173,14 @@ export const payments = pgTable('payments', {
 }, (table) => ({
   referenceIdx: index('payments_reference_idx').on(table.referenceType, table.referenceId),
   paidAtIdx: index('payments_paid_at_idx').on(table.paidAt),
+  businessIdx: index('payments_business_idx').on(table.businessId),
   amountCheck: check('payments_amount_check', sql`${table.amount} > 0`)
 }));
 
 export const stockMovements = pgTable('stock_movements', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
-  productId: uuid('product_id').notNull().references(() => products.id),
+  productId: uuid('product_id').notNull().references(() => products.id, { onDelete: 'restrict' }),
   type: movementTypeEnum('type').notNull(),
   quantityChange: decimal('quantity_change', { precision: 10, scale: 3 }).notNull(),
   referenceType: varchar('reference_type', { length: 50 }),
@@ -186,13 +192,14 @@ export const stockMovements = pgTable('stock_movements', {
   productIdx: index('stock_movements_product_idx').on(table.productId),
   typeIdx: index('stock_movements_type_idx').on(table.type),
   createdAtIdx: index('stock_movements_created_at_idx').on(table.createdAt),
-  referenceIdx: index('stock_movements_reference_idx').on(table.referenceType, table.referenceId)
+  referenceIdx: index('stock_movements_reference_idx').on(table.referenceType, table.referenceId),
+  businessIdx: index('stock_movements_business_idx').on(table.businessId)
 }));
 
 export const damagedGoods = pgTable('damaged_goods', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
-  productId: uuid('product_id').notNull().references(() => products.id),
+  productId: uuid('product_id').notNull().references(() => products.id, { onDelete: 'restrict' }),
   quantity: decimal('quantity', { precision: 10, scale: 3 }).notNull(),
   reason: text('reason'),
   damagedAt: timestamp('damaged_at', { withTimezone: true }).defaultNow().notNull(),
@@ -201,6 +208,7 @@ export const damagedGoods = pgTable('damaged_goods', {
 }, (table) => ({
   productIdx: index('damaged_goods_product_idx').on(table.productId),
   damagedAtIdx: index('damaged_goods_damaged_at_idx').on(table.damagedAt),
+  businessIdx: index('damaged_goods_business_idx').on(table.businessId),
   quantityCheck: check('damaged_goods_quantity_check', sql`${table.quantity} > 0`)
 }));
 

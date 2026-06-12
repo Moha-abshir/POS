@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProducts } from '../../catalog/api/catalog.api';
 import { inventoryApi } from '../api/inventory.api';
-import { X } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 
 interface AdjustStockModalProps {
   onClose: () => void;
@@ -14,6 +14,7 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
   const [productId, setProductId] = useState('');
   const [quantity, setQuantity] = useState<number>(0);
   const [notes, setNotes] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const { data: products = [] } = useProducts();
 
@@ -21,8 +22,11 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
     mutationFn: inventoryApi.adjustStock,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       onClose();
+    },
+    onError: (err: any) => {
+      setError(err.message || 'Failed to adjust stock. Please try again.');
     }
   });
 
@@ -30,14 +34,21 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
     mutationFn: inventoryApi.recordDamage,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       onClose();
+    },
+    onError: (err: any) => {
+      setError(err.message || 'Failed to record damage. Please try again.');
     }
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!productId || quantity <= 0 && mode === 'DAMAGE') return;
+    setError(null);
+    if (!productId || (quantity <= 0 && mode === 'DAMAGE')) {
+      setError("Please fill out all required fields properly.");
+      return;
+    }
 
     if (mode === 'ADJUST') {
       adjustMutation.mutate({ productId, newQuantity: quantity, notes });
@@ -57,6 +68,13 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
         </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="p-3 bg-[var(--color-danger-bg)] border border-[var(--color-danger)]/30 rounded-[var(--radius-md)] flex items-start gap-2 text-[var(--color-danger)]">
+              <AlertCircle size={18} className="mt-0.5 shrink-0" />
+              <p className="text-sm font-medium">{error}</p>
+            </div>
+          )}
+
           <div className="flex bg-[var(--color-bg-sunken)] p-1 rounded-[var(--radius-md)] border border-[var(--color-border)]">
             <button
               type="button"

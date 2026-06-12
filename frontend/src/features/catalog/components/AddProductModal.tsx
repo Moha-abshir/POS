@@ -146,7 +146,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
 
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
-                Selling Price ($) *
+                Selling Price (KSH) *
               </label>
               <input
                 name="sellingPrice"
@@ -162,7 +162,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
             </div>
 <div className="col-span-2 sm:col-span-1">
               <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
-                Cost Price ($) *
+                Cost Price (KSH) *
               </label>
               <input
                 name="costPrice"

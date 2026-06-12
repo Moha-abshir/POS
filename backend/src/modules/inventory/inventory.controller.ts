@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { InventoryService } from './inventory.service';
+import { adjustStockSchema, recordDamageSchema } from './inventory.schema';
 
 export class InventoryController {
   static async getMovements(req: Request, res: Response, next: NextFunction) {
@@ -17,7 +18,8 @@ export class InventoryController {
 
   static async adjustStock(req: Request, res: Response, next: NextFunction) {
     try {
-      await InventoryService.manualAdjustment(req.user!.businessId, req.user!.id, req.body);
+      const data = adjustStockSchema.parse(req.body);
+      await InventoryService.manualAdjustment(req.user!.businessId, req.user!.id, data);
       res.json({ success: true, message: 'Stock adjusted successfully' });
     } catch (error) {
       next(error);
@@ -26,7 +28,8 @@ export class InventoryController {
 
   static async recordDamage(req: Request, res: Response, next: NextFunction) {
     try {
-      await InventoryService.recordDamage(req.user!.businessId, req.user!.id, req.body);
+      const data = recordDamageSchema.parse(req.body);
+      await InventoryService.recordDamage(req.user!.businessId, req.user!.id, data);
       res.json({ success: true, message: 'Damage recorded successfully' });
     } catch (error) {
       next(error);

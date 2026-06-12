@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { PurchasingService } from './purchasing.service';
+import { createPurchaseSchema } from './purchasing.schema';
 
 export class PurchasingController {
   static async createPurchase(req: Request, res: Response, next: NextFunction) {
     try {
-      const purchase = await PurchasingService.createPurchase(req.user!.businessId, req.user!.id, req.body);
+      const data = createPurchaseSchema.parse(req.body);
+      const purchase = await PurchasingService.createPurchase(req.user!.businessId, req.user!.id, data);
       res.status(201).json({ success: true, data: purchase });
     } catch (error) {
       next(error);

@@ -18,7 +18,6 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onCl
     categoryId: '',
     description: '',
     costPrice: '',
-    baseStockQuantity: '',
     lowStockThreshold: '',
   });
   
@@ -32,7 +31,6 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onCl
         categoryId: product.categoryId || '',
         description: product.description || '',
         costPrice: product.costPrice ? product.costPrice.toString() : '',
-        baseStockQuantity: product.baseStockQuantity ? product.baseStockQuantity.toString() : '0',
         lowStockThreshold: product.lowStockThreshold ? product.lowStockThreshold.toString() : '0',
       });
       setErrorMsg('');
@@ -55,7 +53,6 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onCl
         data: {
           ...formData,
           costPrice: Number(formData.costPrice),
-          baseStockQuantity: Number(formData.baseStockQuantity),
           lowStockThreshold: Number(formData.lowStockThreshold),
         }
       });
@@ -123,7 +120,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onCl
 
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
-                Cost Price ($) *
+                Cost Price (KSH) *
               </label>
               <input
                 name="costPrice"
@@ -134,22 +131,6 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onCl
                 value={formData.costPrice}
                 onChange={handleChange}
                 placeholder="0.00"
-                className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
-              />
-            </div>
-
-            <div className="col-span-2 sm:col-span-1">
-              <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
-                Stock Quantity *
-              </label>
-              <input
-                name="baseStockQuantity"
-                type="number"
-                min="0"
-                required
-                value={formData.baseStockQuantity}
-                onChange={handleChange}
-                placeholder="0"
                 className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
               />
             </div>

@@ -244,7 +244,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
                   </td>
                   <td className="px-6 py-0">
                     <p className="text-sm font-medium text-[var(--color-text-primary)] leading-tight">{product.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5 leading-tight">KES {parseFloat(product.costPrice).toLocaleString()} cost</p>
+                    <p className="text-xs text-gray-400 mt-0.5 leading-tight">KSH {parseFloat(product.costPrice).toLocaleString()} cost</p>
                   </td>
                   <td className="px-6 py-0">
                     <span className="text-sm text-gray-500">

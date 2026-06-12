@@ -45,6 +45,10 @@ export class InventoryService {
       throw new AppError('Product not found for stock update', 404);
     }
 
+    if (Number(updatedProduct.baseStockQuantity) < 0) {
+      throw new AppError(`Insufficient stock for product ${updatedProduct.name}`, 400);
+    }
+
     // Low stock checking can be done asynchronously or handled via a notification table later
     // For now, we return the updated product stock
     return updatedProduct.baseStockQuantity;
@@ -69,7 +73,7 @@ export class InventoryService {
     .offset(offset);
   }
 
-  static async manualAdjustment(businessId: string, userId: string, data: { productId: string, newQuantity: number, notes: string }) {
+  static async manualAdjustment(businessId: string, userId: string, data: { productId: string, newQuantity: number, notes?: string }) {
     return await db.transaction(async (tx) => {
       const [product] = await tx.select().from(products).where(and(eq(products.id, data.productId), eq(products.businessId, businessId)));
       if (!product) throw new AppError('Product not found', 404);

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { suppliersApi } from '../../suppliers/api/suppliers.api';
 import { useProducts } from '../../catalog/api/catalog.api';
 import { inventoryApi } from '../api/inventory.api';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2, AlertCircle } from 'lucide-react';
 
 interface PurchaseModalProps {
   onClose: () => void;
@@ -18,6 +18,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
   const [amountPaid, setAmountPaid] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>('CASH');
   const [notes, setNotes] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const { data: suppliers = [] } = useQuery({
     queryKey: ['suppliers'],
@@ -31,8 +32,11 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       queryClient.invalidateQueries({ queryKey: ['suppliers'] });
-      queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       onClose();
+    },
+    onError: (err: any) => {
+      setError(err.message || 'Failed to record purchase. Please try again.');
     }
   });
 
@@ -40,8 +44,9 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (!supplierId || items.some(i => !i.productId || i.quantity <= 0)) {
-      alert("Please fill out all required fields properly.");
+      setError("Please fill out all required fields properly.");
       return;
     }
 
@@ -63,6 +68,13 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
         </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {error && (
+            <div className="p-3 bg-[var(--color-danger-bg)] border border-[var(--color-danger)]/30 rounded-[var(--radius-md)] flex items-start gap-2 text-[var(--color-danger)]">
+              <AlertCircle size={18} className="mt-0.5 shrink-0" />
+              <p className="text-sm font-medium">{error}</p>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Supplier *</label>

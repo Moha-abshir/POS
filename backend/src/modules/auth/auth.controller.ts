@@ -98,4 +98,18 @@ export class AuthController {
       next(error);
     }
   }
+
+  static async me(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = (req as any).user.id;
+      const data = await AuthService.me(userId);
+
+      res.json({
+        success: true,
+        data
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

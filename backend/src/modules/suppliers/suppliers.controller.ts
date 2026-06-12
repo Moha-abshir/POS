@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { SuppliersService } from './suppliers.service';
+import { createSupplierSchema, updateSupplierSchema } from './suppliers.schema';
 
 export class SuppliersController {
   static async getSuppliers(req: Request, res: Response, next: NextFunction) {
@@ -28,7 +29,8 @@ export class SuppliersController {
 
   static async createSupplier(req: Request, res: Response, next: NextFunction) {
     try {
-      const supplier = await SuppliersService.createSupplier(req.user!.businessId, req.user!.id, req.body);
+      const data = createSupplierSchema.parse(req.body);
+      const supplier = await SuppliersService.createSupplier(req.user!.businessId, req.user!.id, data);
       res.status(201).json({ success: true, data: supplier });
     } catch (error) {
       next(error);
@@ -37,7 +39,8 @@ export class SuppliersController {
 
   static async updateSupplier(req: Request, res: Response, next: NextFunction) {
     try {
-      const supplier = await SuppliersService.updateSupplier(req.user!.businessId, req.params.id as string, req.body);
+      const data = updateSupplierSchema.parse(req.body);
+      const supplier = await SuppliersService.updateSupplier(req.user!.businessId, req.params.id as string, data);
       
       if (!supplier) {
         return res.status(404).json({ success: false, message: 'Supplier not found' });

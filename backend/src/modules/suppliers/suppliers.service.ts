@@ -42,8 +42,14 @@ export class SuppliersService {
   }
 
   static async updateSupplier(businessId: string, supplierId: string, data: { name?: string; phone?: string; email?: string; isActive?: boolean }) {
+    const updateData: any = { updatedAt: new Date() };
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
     const [supplier] = await db.update(suppliers)
-      .set({ ...data, updatedAt: new Date() })
+      .set(updateData)
       .where(and(eq(suppliers.id, supplierId), eq(suppliers.businessId, businessId)))
       .returning();
 

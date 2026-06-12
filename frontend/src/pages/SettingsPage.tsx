@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '../features/auth/stores/auth.store';
 import { api } from '../lib/api';
+import { useQuery } from '@tanstack/react-query';
 
 export const SettingsPage: React.FC = () => {
   const { user, accessToken, setAuth } = useAuthStore();
@@ -20,6 +21,28 @@ export const SettingsPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { data: meData, isLoading } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: async () => {
+      const res = await api.get('/auth/me');
+      return res.data.data;
+    }
+  });
+
+  React.useEffect(() => {
+    if (meData) {
+      setFormData({
+        firstName: meData.user?.firstName || '',
+        lastName: meData.user?.lastName || '',
+        mobileNumber: meData.user?.mobileNumber || '',
+        organizationName: meData.business?.name || '',
+        sector: meData.business?.sector || '',
+        businessPhone: meData.business?.phone || '',
+        location: meData.business?.location || '',
+      });
+    }
+  }, [meData]);
 
   const sectors = [
     'Retail and Supermarket',
@@ -59,6 +82,14 @@ export const SettingsPage: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 flex justify-center items-center h-full">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-accent)]" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-3xl mx-auto">

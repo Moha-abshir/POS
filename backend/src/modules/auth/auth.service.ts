@@ -212,4 +212,25 @@ export class AuthService {
 
     return accessToken;
   }
+
+  static async me(userId: string) {
+    const [user] = await db.select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      mobileNumber: users.mobileNumber,
+      role: users.role,
+      businessId: users.businessId,
+      isActive: users.isActive,
+    }).from(users).where(eq(users.id, userId));
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    const [business] = await db.select().from(businesses).where(eq(businesses.id, user.businessId));
+
+    return { user, business };
+  }
 }
