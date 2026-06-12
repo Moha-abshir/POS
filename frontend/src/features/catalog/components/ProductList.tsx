@@ -252,9 +252,9 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
                     </span>
                   </td>
                   <td className="px-6 py-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-mono text-[var(--color-text-primary)]">{stock}</p>
-                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded-[var(--radius-sm)] text-[10px] font-bold uppercase tracking-wider ${badgeColor}`}>
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm font-mono text-[var(--color-text-primary)] min-w-[3rem] text-right">{stock}</p>
+                      <span className={`inline-flex items-center justify-center min-w-[48px] px-1.5 py-0.5 rounded-[var(--radius-sm)] text-[10px] font-bold uppercase tracking-wider ${badgeColor}`}>
                         {stockStatus}
                       </span>
                     </div>
