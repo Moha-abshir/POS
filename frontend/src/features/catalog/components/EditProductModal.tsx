@@ -65,8 +65,6 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onCl
     }
   };
 
-  if (!product) return null;
-
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center overflow-y-auto transition-all duration-300 ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
       <div 
