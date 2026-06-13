@@ -8,9 +8,11 @@ import {
   Settings,
   ShoppingCart, Store,
   Users,
-  Briefcase,
+  Boxes,
   FileText,
-  Bell
+  Bell,
+  Truck,
+  Contact
 } from 'lucide-react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 
@@ -22,10 +24,10 @@ export const DashboardLayout: React.FC = () => {
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'POS', path: '/pos', icon: ShoppingCart },
     { name: 'Catalog', path: '/catalog', icon: Package },
-    { name: 'Inventory', path: '/inventory', icon: Briefcase },
+    { name: 'Inventory', path: '/inventory', icon: Boxes },
     { name: 'Customers', path: '/customers', icon: Users },
-    { name: 'Suppliers', path: '/suppliers', icon: Users },
-    { name: 'Team', path: '/team', icon: Users },
+    { name: 'Purchasing', path: '/purchasing', icon: Truck },
+    { name: 'Team', path: '/team', icon: Contact },
     { name: 'Reports', path: '/reports', icon: FileText },
   ];
 

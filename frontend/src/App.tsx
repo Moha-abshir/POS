@@ -5,7 +5,7 @@ import { DashboardLayout } from './components/DashboardLayout';
 import { CatalogPage } from './pages/CatalogPage';
 import { TeamPage } from './pages/TeamPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { SuppliersPage } from './pages/SuppliersPage';
+import { PurchasingPage } from './pages/PurchasingPage';
 import { InventoryPage } from './pages/InventoryPage';
 
 const NotFound = () => (
@@ -55,7 +55,7 @@ function App() {
             <Route path="/pos" element={<ComingSoon title="Point of Sale" />} />
             <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/customers" element={<ComingSoon title="Customer Management" />} />
-            <Route path="/suppliers" element={<SuppliersPage />} />
+            <Route path="/purchasing" element={<PurchasingPage />} />
             <Route path="/reports" element={<ComingSoon title="Reports & Analytics" />} />
             
             {/* 404 Catch-all */}
