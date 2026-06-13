@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '../features/auth/stores/auth.store';
 import { api } from '../lib/api';
 import { useQuery } from '@tanstack/react-query';
+import { CustomSelect } from '../components/ui/CustomSelect';
 
 export const SettingsPage: React.FC = () => {
   const { user, accessToken, setAuth } = useAuthStore();
@@ -152,18 +153,15 @@ export const SettingsPage: React.FC = () => {
                 </div>
                 <div className="col-span-2 sm:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Sector *</label>
-                  <select
+                  <CustomSelect
                     name="sector"
                     required
+                    label="Select a sector"
+                    options={sectors.map(s => ({ id: s, name: s }))}
                     value={formData.sector}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500 bg-white"
-                  >
-                    <option value="" disabled>Select a sector</option>
-                    {sectors.map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
+                    onChange={handleChange as any}
+                    className="bg-white"
+                  />
                 </div>
                 <div className="col-span-2 sm:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Business Phone *</label>

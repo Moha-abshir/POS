@@ -4,6 +4,7 @@ import { suppliersApi } from '../../suppliers/api/suppliers.api';
 import { useProducts } from '../../catalog/api/catalog.api';
 import { inventoryApi } from '../api/inventory.api';
 import { X, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { CustomSelect } from '../../../components/ui/CustomSelect';
 
 interface PurchaseModalProps {
   onClose: () => void;
@@ -88,15 +89,13 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Supplier *</label>
-              <select
+              <CustomSelect
                 required
+                label="Select a supplier..."
+                options={suppliers.map(s => ({ id: s.id, name: s.name }))}
                 value={supplierId}
                 onChange={(e) => setSupplierId(e.target.value)}
-                className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%236b7280%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.5rem_center] bg-[length:1.2em_1.2em] pr-8"
-              >
-                <option value="">Select a supplier...</option>
-                {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              />
               {selectedSupplier && (
                 <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
                   Current balance: <span className="font-medium text-[var(--color-text-primary)]">KSH {(selectedSupplier.balance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} outstanding</span>
@@ -121,8 +120,10 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                 <div key={index} className="flex gap-3 items-end">
                   <div className="w-[45%]">
                     <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Product</label>
-                    <select
+                    <CustomSelect
                       required
+                      label="Select product..."
+                      options={products.map(p => ({ id: p.id, name: p.name }))}
                       value={item.productId}
                       onChange={(e) => {
                         const product = products.find(p => p.id === e.target.value);
@@ -133,11 +134,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                         }
                         setItems(newItems);
                       }}
-                      className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-sm text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%236b7280%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.5rem_center] bg-[length:1.2em_1.2em] pr-8"
-                    >
-                      <option value="">Select product...</option>
-                      {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
+                    />
                   </div>
                   <div className="w-[10%] min-w-[60px]">
                     <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Qty</label>
@@ -215,14 +212,16 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
             </div>
             <div>
               <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Payment Method</label>
-              <select
+              <CustomSelect
+                label="Payment Method"
+                options={[
+                  { id: 'CASH', name: 'Cash' },
+                  { id: 'MPESA', name: 'M-Pesa' }
+                ]}
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value as any)}
-                className="w-full h-10 px-3 bg-white border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%236b7280%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.5rem_center] bg-[length:1.2em_1.2em] pr-8"
-              >
-                <option value="CASH">Cash</option>
-                <option value="MPESA">M-Pesa</option>
-              </select>
+                className="bg-white"
+              />
             </div>
           </div>
 

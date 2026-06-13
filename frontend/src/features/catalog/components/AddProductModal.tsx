@@ -2,6 +2,7 @@ import { AxiosError } from 'axios';
 import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { useCreateProduct, useCategories, useCreateProductUnit } from '../api/catalog.api';
+import { CustomSelect } from '../../../components/ui/CustomSelect';
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -115,18 +116,14 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
               <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
                 Category *
               </label>
-              <select
+              <CustomSelect
                 name="categoryId"
-                required
+                label="Select a category"
+                options={categories?.map(cat => ({ id: cat.id, name: cat.name })) || []}
                 value={formData.categoryId}
-                onChange={handleChange}
-                className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
-              >
-                <option value="" disabled>Select a category</option>
-                {categories?.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
+                onChange={handleChange as any}
+                required
+              />
             </div>
 
                         <div className="col-span-2 sm:col-span-1">

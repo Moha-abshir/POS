@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProducts } from '../../catalog/api/catalog.api';
 import { inventoryApi } from '../api/inventory.api';
 import { X, AlertCircle } from 'lucide-react';
+import { CustomSelect } from '../../../components/ui/CustomSelect';
 
 interface AdjustStockModalProps {
   onClose: () => void;
@@ -94,8 +95,10 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
 
           <div>
             <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Product</label>
-            <select
+            <CustomSelect
               required
+              label="Select product..."
+              options={products.map(p => ({ id: p.id, name: `${p.name} (Current: ${p.baseStockQuantity})` }))}
               value={productId}
               onChange={(e) => {
                 setProductId(e.target.value);
@@ -104,13 +107,8 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
                   setQuantity(p ? Number(p.baseStockQuantity) : 0);
                 }
               }}
-              className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
-            >
-              <option value="">Select product...</option>
-              {products.map(p => (
-                <option key={p.id} value={p.id}>{p.name} (Current: {p.baseStockQuantity})</option>
-              ))}
-            </select>
+              className="bg-white"
+            />
           </div>
 
           <div>

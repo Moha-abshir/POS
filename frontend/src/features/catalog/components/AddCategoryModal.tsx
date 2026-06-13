@@ -12,12 +12,14 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onCl
   const [name, setName] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const createCategory = useCreateCategory();
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
       setName('');
       setErrorMsg('');
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);
 
@@ -60,6 +62,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onCl
               Category Name
             </label>
             <input
+              ref={inputRef}
               id="name"
               type="text"
               required

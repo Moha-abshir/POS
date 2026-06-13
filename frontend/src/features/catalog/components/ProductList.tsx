@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useProducts, useCategories } from '../api/catalog.api';
-import { Package, Plus, Search, Loader2, MoreHorizontal, ChevronDown, Check } from 'lucide-react';
+import { Package, Plus, Search, Loader2, MoreHorizontal} from 'lucide-react';
+import { CustomSelect } from '../../../components/ui/CustomSelect';
 
 interface ProductListProps {
   onAddProduct: () => void;
@@ -8,92 +9,6 @@ interface ProductListProps {
   onEditProduct: (product: any) => void;
   onToggleStatus: (productId: string) => void;
 }
-
-// Custom Dropdown Component
-const CustomDropdown = ({ 
-  label, 
-  options, 
-  value, 
-  onChange,
-  onActionClick,
-  actionLabel
-}: { 
-  label: string, 
-  options: {id: string, name: string}[], 
-  value: string, 
-  onChange: (val: string) => void,
-  onActionClick?: () => void,
-  actionLabel?: string
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const selectedOption = options.find(o => o.id === value);
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button 
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between gap-2 h-10 px-3 min-w-[140px] bg-white border border-[var(--color-border)] rounded-[var(--radius-sm)] text-[var(--text-sm)] text-[var(--color-text-secondary)] font-medium hover:bg-gray-50 outline-none focus:ring-2 focus:ring-[var(--color-accent)] transition-all cursor-pointer select-none"
-      >
-        <span className="truncate max-w-[120px]">{selectedOption ? selectedOption.name : label}</span>
-        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && (
-        <div className="absolute z-30 top-full mt-1 w-full min-w-[160px] bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-lg overflow-hidden py-1">
-          <button
-            className="w-full flex items-center justify-between px-3 py-2 text-left text-[var(--text-sm)] text-[var(--color-text-secondary)] hover:bg-gray-50 transition-colors"
-            onClick={() => { onChange(''); setIsOpen(false); }}
-          >
-            All
-            {value === '' && <Check className="w-4 h-4 text-[var(--color-accent)]" />}
-          </button>
-          
-          <div className="max-h-[200px] overflow-y-auto">
-            {options.map((opt) => (
-              <button
-                key={opt.id}
-                className="w-full flex items-center justify-between px-3 py-2 text-left text-[var(--text-sm)] text-[var(--color-text-primary)] hover:bg-gray-50 transition-colors"
-                onClick={() => { onChange(opt.id); setIsOpen(false); }}
-              >
-                {opt.name}
-                {value === opt.id && <Check className="w-4 h-4 text-[var(--color-accent)]" />}
-              </button>
-            ))}
-          </div>
-
-          {onActionClick && actionLabel && (
-            <div className="border-t border-[var(--color-border)] mt-1 pt-1">
-              <button
-                className="w-full flex items-center gap-2 px-3 py-2 text-left text-[var(--text-sm)] font-medium text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-colors"
-                onClick={() => {
-                  setIsOpen(false);
-                  onActionClick();
-                }}
-              >
-                <Plus className="w-4 h-4" />
-                {actionLabel}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
 
 export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCategory, onEditProduct, onToggleStatus }) => {
   const { data: products, isLoading } = useProducts();
@@ -148,20 +63,22 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
         {/* Filters and Actions */}
         <div className="flex items-center gap-3 shrink-0 flex-wrap sm:flex-nowrap w-full sm:w-auto">
           
-          <CustomDropdown 
+          <CustomSelect 
             label="Category: All" 
-            options={categories || []} 
+            options={categories ? [{ id: '', name: 'All' }, ...categories.map(c => ({ id: c.id, name: c.name }))] : [{ id: '', name: 'All' }]} 
             value={selectedCategory} 
-            onChange={setSelectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
             onActionClick={onAddCategory}
             actionLabel="New Category"
+            className="w-full sm:w-auto bg-white"
           />
 
-          <CustomDropdown 
+          <CustomSelect 
             label="Status: All" 
-            options={statusOptions} 
+            options={[{ id: '', name: 'All' }, ...statusOptions]} 
             value={selectedStatus} 
-            onChange={setSelectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="w-full sm:w-auto bg-white"
           />
 
           <button 

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../stores/auth.store';
+import { CustomSelect } from '../../../components/ui/CustomSelect';
 
 export const OnboardingModal: React.FC = () => {
   const { user, accessToken, setAuth, skipOnboarding } = useAuthStore();
@@ -158,18 +159,14 @@ export const OnboardingModal: React.FC = () => {
                   <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
                     Business Sector *
                   </label>
-                  <select
+                  <CustomSelect
                     name="sector"
                     required
+                    label="Select a sector"
+                    options={sectors.map(s => ({ id: s, name: s }))}
                     value={formData.sector}
-                    onChange={handleChange}
-                    className="block w-full h-11 px-4 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
-                  >
-                    <option value="" disabled>Select a sector</option>
-                    {sectors.map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
+                    onChange={handleChange as any}
+                  />
                 </div>
 
                 <div className="col-span-2 sm:col-span-1">
