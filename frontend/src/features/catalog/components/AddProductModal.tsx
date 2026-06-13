@@ -179,7 +179,10 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
             </div>
 
             {(!isNaN(parseFloat(formData.costPrice)) && !isNaN(parseFloat(formData.sellingPrice))) && (
-              <div className={`col-span-2 text-[var(--text-sm)] -mt-2 ${parseFloat(formData.sellingPrice) < parseFloat(formData.costPrice) ? 'text-[var(--color-danger)]' : 'text-[var(--color-success)]'}`}>
+              <div 
+                className="col-span-2 text-xs -mt-2 font-medium"
+                style={{ color: parseFloat(formData.sellingPrice) < parseFloat(formData.costPrice) ? 'var(--color-danger)' : 'var(--color-success)' }}
+              >
                 Margin: KSH {(parseFloat(formData.sellingPrice) - parseFloat(formData.costPrice)).toFixed(2)} {
                   parseFloat(formData.costPrice) > 0 
                     ? `(${(((parseFloat(formData.sellingPrice) - parseFloat(formData.costPrice)) / parseFloat(formData.costPrice)) * 100).toFixed(0)}%)`
