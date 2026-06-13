@@ -2,11 +2,9 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { inventoryApi } from '../features/inventory/api/inventory.api';
 import { Package, ArrowDownRight, ArrowUpRight, Wrench, AlertTriangle, RefreshCcw } from 'lucide-react';
-import { PurchaseModal } from '../features/inventory/components/PurchaseModal';
 import { AdjustStockModal } from '../features/inventory/components/AdjustStockModal';
 
 export function InventoryPage() {
-  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
 
   const { data: movements = [], isLoading } = useQuery({
@@ -40,13 +38,7 @@ export function InventoryPage() {
             <Wrench size={18} />
             <span>Adjust / Damage</span>
           </button>
-          <button
-            onClick={() => setIsPurchaseModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-2 h-10 bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 select-none cursor-pointer"
-          >
-            <Package size={18} />
-            <span>Record Purchase</span>
-          </button>
+
         </div>
       </div>
 
@@ -111,10 +103,6 @@ export function InventoryPage() {
           </table>
         </div>
       </div>
-
-      {isPurchaseModalOpen && (
-        <PurchaseModal onClose={() => setIsPurchaseModalOpen(false)} />
-      )}
 
       {isAdjustModalOpen && (
         <AdjustStockModal onClose={() => setIsAdjustModalOpen(false)} />
