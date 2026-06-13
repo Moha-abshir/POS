@@ -1,6 +1,6 @@
 import { eq, and, sql, desc } from 'drizzle-orm';
 import { db } from '../../db';
-import { products, stockMovements, damagedGoods } from '../../db/schema';
+import { products, stockMovements, damagedGoods, purchases } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 
 export class InventoryService {
@@ -63,10 +63,13 @@ export class InventoryService {
       quantityChange: stockMovements.quantityChange,
       referenceType: stockMovements.referenceType,
       notes: stockMovements.notes,
+      invoiceRef: purchases.invoiceRef,
+      mpesaRef: purchases.mpesaRef,
       createdAt: stockMovements.createdAt,
     })
     .from(stockMovements)
     .innerJoin(products, eq(stockMovements.productId, products.id))
+    .leftJoin(purchases, and(eq(stockMovements.referenceId, purchases.id), eq(stockMovements.referenceType, 'PURCHASE')))
     .where(eq(stockMovements.businessId, businessId))
     .orderBy(desc(stockMovements.createdAt))
     .limit(limit)

@@ -13,7 +13,8 @@ export class PurchasingService {
       items: { productId: string; quantity: number; costPrice: number }[];
       amountPaid: number;
       paymentMethod: 'CASH' | 'MPESA';
-      notes?: string;
+      invoiceRef?: string;
+      mpesaRef?: string;
     }
   ) {
     return await db.transaction(async (tx) => {
@@ -42,7 +43,8 @@ export class PurchasingService {
         totalAmount: totalAmount.toString(),
         amountPaid: data.amountPaid.toString(),
         paymentStatus,
-        notes: data.notes,
+        invoiceRef: data.invoiceRef,
+        mpesaRef: data.paymentMethod === 'CASH' ? 'CASH' : (data.mpesaRef ? data.mpesaRef.toUpperCase() : null),
         createdBy: userId,
       }).returning();
 
@@ -78,6 +80,7 @@ export class PurchasingService {
           referenceId: purchase.id,
           amount: data.amountPaid.toString(),
           method: data.paymentMethod,
+          mpesaReceiptNumber: data.paymentMethod === 'MPESA' && data.mpesaRef ? data.mpesaRef.toUpperCase() : null,
           createdBy: userId,
         });
       }

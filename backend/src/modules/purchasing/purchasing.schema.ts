@@ -9,5 +9,6 @@ export const createPurchaseSchema = z.object({
   })).min(1, "At least one item is required"),
   amountPaid: z.number().min(0, "Amount paid cannot be negative"),
   paymentMethod: z.enum(['CASH', 'MPESA']),
-  notes: z.string().optional(),
+  invoiceRef: z.string().optional(),
+  mpesaRef: z.string().optional(),
 });
