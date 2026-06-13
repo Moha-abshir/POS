@@ -180,18 +180,19 @@ export function PurchasingPage() {
                   <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Date & Time</th>
                   <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Product</th>
                   <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Type</th>
-                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase text-right">Quantity</th>
-                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Notes</th>
+                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Quantity</th>
+                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Invoice Ref</th>
+                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">M-Pesa Ref</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoadingMovements ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-gray-400">Loading purchases...</td>
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-400">Loading purchases...</td>
                   </tr>
                 ) : purchaseHistory.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-16 text-center">
+                    <td colSpan={6} className="p-16 text-center">
                       <div className="flex flex-col items-center justify-center max-w-sm mx-auto text-center">
                         <Package className="h-12 w-12 text-gray-300 mb-4" />
                         <p className="text-lg font-semibold text-gray-500 mb-1">No purchases found</p>
@@ -214,13 +215,16 @@ export function PurchasingPage() {
                             <span className="text-[var(--color-text-secondary)] font-medium text-xs tracking-wider uppercase">{movement.type}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-0 text-right">
+                        <td className="px-6 py-0">
                           <span className="inline-flex items-center justify-center min-w-[48px] px-1.5 py-0.5 rounded-[var(--radius-sm)] text-[11px] font-bold tracking-wider bg-[var(--color-success-bg)] text-[var(--color-success)]">
                             +{qty}
                           </span>
                         </td>
-                        <td className="px-6 py-0 text-[var(--color-text-muted)] truncate max-w-[200px]" title={movement.notes || ''}>
-                          {movement.notes || '-'}
+                        <td className="px-6 py-0 text-[var(--color-text-muted)] truncate max-w-[150px]" title={movement.invoiceRef || ''}>
+                          {movement.invoiceRef || '-'}
+                        </td>
+                        <td className="px-6 py-0 font-medium text-[var(--color-text-primary)] truncate max-w-[150px]" title={movement.mpesaRef || ''}>
+                          {movement.mpesaRef || '-'}
                         </td>
                       </tr>
                     )

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProducts } from '../../catalog/api/catalog.api';
 import { inventoryApi } from '../api/inventory.api';
 import { X, AlertCircle } from 'lucide-react';
@@ -13,7 +13,7 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<'ADJUST' | 'DAMAGE'>('ADJUST');
   const [productId, setProductId] = useState('');
-  const [quantity, setQuantity] = useState<number>(0);
+  const [quantity, setQuantity] = useState<number | ''>('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +46,7 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!productId || (quantity <= 0 && mode === 'DAMAGE')) {
+    if (!productId || quantity === '' || quantity < 0 || (quantity <= 0 && mode === 'DAMAGE')) {
       setError("Please fill out all required fields properly.");
       return;
     }
@@ -79,14 +79,14 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
           <div className="flex bg-[var(--color-bg-sunken)] p-1 rounded-[var(--radius-md)] border border-[var(--color-border)]">
             <button
               type="button"
-              onClick={() => { setMode('ADJUST'); setQuantity(Number(selectedProduct?.baseStockQuantity || 0)); }}
+              onClick={() => { setMode('ADJUST'); setQuantity(selectedProduct ? Number(selectedProduct.baseStockQuantity) : ''); }}
               className={`flex-1 text-sm font-medium py-1.5 rounded-[var(--radius-sm)] transition-colors cursor-pointer select-none ${mode === 'ADJUST' ? 'bg-white shadow-sm text-[var(--color-text-primary)] border border-[var(--color-border)]' : 'text-[var(--color-text-secondary)] border border-transparent'}`}
             >
               Set Exact Stock
             </button>
             <button
               type="button"
-              onClick={() => { setMode('DAMAGE'); setQuantity(1); }}
+              onClick={() => { setMode('DAMAGE'); setQuantity(''); }}
               className={`flex-1 text-sm font-medium py-1.5 rounded-[var(--radius-sm)] transition-colors cursor-pointer select-none ${mode === 'DAMAGE' ? 'bg-[var(--color-danger-bg)] shadow-sm text-[var(--color-danger)] border border-[var(--color-danger-bg)]' : 'text-[var(--color-text-secondary)] border border-transparent'}`}
             >
               Record Damage
@@ -98,13 +98,13 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
             <CustomSelect
               required
               label="Select product..."
-              options={products.map(p => ({ id: p.id, name: `${p.name} (Current: ${p.baseStockQuantity})` }))}
+              options={products.map(p => ({ id: p.id, name: `${p.name} (Current: ${Number(p.baseStockQuantity)})` }))}
               value={productId}
               onChange={(e) => {
                 setProductId(e.target.value);
                 if (mode === 'ADJUST') {
                   const p = products.find(x => x.id === e.target.value);
-                  setQuantity(p ? Number(p.baseStockQuantity) : 0);
+                  setQuantity(p ? Number(p.baseStockQuantity) : '');
                 }
               }}
               className="bg-white"
@@ -120,8 +120,8 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
               required
               min={mode === 'DAMAGE' ? 0.001 : 0}
               step="any"
-              value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value))}
+              value={quantity === '' ? '' : quantity}
+              onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
               className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
             />
           </div>

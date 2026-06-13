@@ -8,6 +8,8 @@ export interface StockMovement {
   quantityChange: string;
   referenceType?: string;
   notes?: string;
+  invoiceRef?: string;
+  mpesaRef?: string;
   createdAt: string;
 }
 
@@ -17,6 +19,8 @@ export interface Purchase {
   totalAmount: string;
   amountPaid: string;
   paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID';
+  invoiceRef?: string;
+  mpesaRef?: string;
   purchasedAt: string;
 }
 
@@ -41,7 +45,8 @@ export const inventoryApi = {
     items: { productId: string; quantity: number; costPrice: number }[];
     amountPaid: number;
     paymentMethod: 'CASH' | 'MPESA';
-    notes?: string;
+    invoiceRef?: string;
+    mpesaRef?: string;
   }) => {
     const res = await api.post('/purchases', data);
     return res.data.data as Purchase;

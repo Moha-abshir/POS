@@ -18,7 +18,8 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
   ]);
   const [amountPaid, setAmountPaid] = useState<number | ''>('');
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>('CASH');
-  const [notes, setNotes] = useState('');
+  const [invoiceRef, setInvoiceRef] = useState('');
+  const [mpesaRef, setMpesaRef] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const { data: suppliers = [] } = useQuery({
@@ -56,6 +57,10 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
       setError("Please fill out all required fields properly.");
       return;
     }
+    if (paymentMethod === 'MPESA' && !mpesaRef.trim()) {
+      setError("Please provide the M-Pesa reference number.");
+      return;
+    }
 
     purchaseMutation.mutate({
       supplierId,
@@ -66,7 +71,8 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
       })),
       amountPaid: amountPaid === '' ? 0 : amountPaid,
       paymentMethod,
-      notes
+      invoiceRef: invoiceRef.trim() || undefined,
+      mpesaRef: paymentMethod === 'MPESA' ? mpesaRef.trim() : undefined
     });
   };
 
@@ -113,8 +119,8 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
             </div>
           </div>
 
-          <div className="border border-[var(--color-border)] rounded-xl overflow-hidden">
-            <div className="bg-[var(--color-bg-base)] px-4 py-3 border-b border-[var(--color-border)] font-medium text-[var(--color-text-primary)] flex justify-between items-center">
+          <div className="border border-[var(--color-border)] rounded-xl">
+            <div className="bg-[var(--color-bg-base)] px-4 py-3 border-b border-[var(--color-border)] rounded-t-xl font-medium text-[var(--color-text-primary)] flex justify-between items-center">
               <span>Items</span>
               <button 
                 type="button" 
@@ -200,7 +206,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                 </div>
               ))}
             </div>
-            <div className="bg-[var(--color-bg-base)] px-4 py-3 border-t border-[var(--color-border)] flex justify-end items-center">
+            <div className="bg-[var(--color-bg-base)] px-4 py-3 border-t border-[var(--color-border)] rounded-b-xl flex justify-end items-center">
               <span className="text-sm text-[var(--color-text-secondary)] mr-4">Total Amount:</span>
               <span className="text-lg font-bold text-[var(--color-text-primary)]">KSH {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
@@ -234,15 +240,30 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Notes / Invoice Ref</label>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
-              placeholder="e.g. INV-2023-001"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Invoice Ref</label>
+              <input
+                type="text"
+                value={invoiceRef}
+                onChange={(e) => setInvoiceRef(e.target.value)}
+                className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
+                placeholder="e.g. INV-2023-001"
+              />
+            </div>
+            {paymentMethod === 'MPESA' && (
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">M-Pesa Ref *</label>
+                <input
+                  type="text"
+                  required
+                  value={mpesaRef}
+                  onChange={(e) => setMpesaRef(e.target.value.toUpperCase())}
+                  className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all uppercase placeholder:normal-case"
+                  placeholder="e.g. QKT2..."
+                />
+              </div>
+            )}
           </div>
 
           <div className="pt-4 flex gap-3 border-t border-[var(--color-border)]">
