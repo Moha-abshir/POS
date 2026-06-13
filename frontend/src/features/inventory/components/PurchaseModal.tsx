@@ -13,7 +13,7 @@ interface PurchaseModalProps {
 export function PurchaseModal({ onClose }: PurchaseModalProps) {
   const queryClient = useQueryClient();
   const [supplierId, setSupplierId] = useState('');
-  const [items, setItems] = useState<{ productId: string; quantity: number | ''; costPrice: number | '' }>([
+  const [items, setItems] = useState<{ productId: string; quantity: number | ''; costPrice: number | '' }[]>([
     { productId: '', quantity: 1, costPrice: '' }
   ]);
   const [amountPaid, setAmountPaid] = useState<number | ''>('');
@@ -71,11 +71,20 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-[var(--color-bg-surface)] rounded-xl shadow-xl w-full max-w-3xl my-8 border border-[var(--color-border)]">
-        <div className="px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center bg-[var(--color-bg-base)] sticky top-0 z-10">
-          <h3 className="text-xl font-semibold text-[var(--color-text-primary)]">Record Purchase</h3>
-          <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"><X size={24} /></button>
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="relative bg-[var(--color-bg-surface)] rounded-xl shadow-xl w-full max-w-3xl my-8 border border-[var(--color-border)]">
+        <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
+          <h2 className="text-[var(--text-lg)] font-semibold text-[var(--color-text-primary)]">
+            Record Purchase
+          </h2>
+          <button 
+            onClick={onClose}
+            className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer select-none"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -98,7 +107,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
               />
               {selectedSupplier && (
                 <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                  Current balance: <span className="font-medium text-[var(--color-text-primary)]">KSH {(selectedSupplier.balance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} outstanding</span>
+                  Current balance: <span className="font-medium text-[var(--color-text-primary)]">KSH {Number(selectedSupplier.balance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} outstanding</span>
                 </p>
               )}
             </div>
@@ -253,6 +262,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
             </button>
           </div>
         </form>
+      </div>
       </div>
     </div>
   );
