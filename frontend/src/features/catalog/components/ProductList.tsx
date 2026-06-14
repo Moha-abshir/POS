@@ -46,10 +46,10 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
     <div className="bg-white rounded-xl shadow-sm border border-[var(--color-border)] overflow-hidden flex flex-col h-full flex-1">
       
       {/* Toolbar Row */}
-      <div className="p-4 border-b border-[var(--color-border)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+      <div className="p-4 border-b border-[var(--color-border)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         
-        {/* Search - grows to fill */}
-        <div className="relative flex-1 w-full min-w-[200px]">
+        {/* Search - exactly 50% width on desktop */}
+        <div className="relative w-full sm:w-1/2 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input 
             type="text" 
@@ -60,26 +60,36 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
           />
         </div>
 
-        {/* Filters and Actions */}
-        <div className="flex items-center gap-3 shrink-0 flex-wrap sm:flex-nowrap w-full sm:w-auto">
+        {/* Filters and Actions - takes remaining 50% */}
+        <div className="flex items-center gap-3 w-full sm:flex-1 shrink-0 flex-wrap sm:flex-nowrap">
           
-          <CustomSelect 
-            label="Category: All" 
-            options={categories ? [{ id: '', name: 'All' }, ...categories.map(c => ({ id: c.id, name: c.name }))] : [{ id: '', name: 'All' }]} 
-            value={selectedCategory} 
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            onActionClick={onAddCategory}
-            actionLabel="New Category"
-            className="w-full sm:w-auto bg-white"
-          />
+          <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
+            <span className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] whitespace-nowrap">Category:</span>
+            <div className="flex-1 min-w-[120px]">
+              <CustomSelect 
+                label="Category" 
+                options={categories ? [{ id: '', name: 'All' }, ...categories.map(c => ({ id: c.id, name: c.name }))] : [{ id: '', name: 'All' }]} 
+                value={selectedCategory} 
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                onActionClick={onAddCategory}
+                actionLabel="New Category"
+                className="w-full bg-white"
+              />
+            </div>
+          </div>
 
-          <CustomSelect 
-            label="Status: All" 
-            options={[{ id: '', name: 'All' }, ...statusOptions]} 
-            value={selectedStatus} 
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="w-full sm:w-auto bg-white"
-          />
+          <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
+            <span className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] whitespace-nowrap">Status:</span>
+            <div className="flex-1 min-w-[120px]">
+              <CustomSelect 
+                label="Status" 
+                options={[{ id: '', name: 'All' }, ...statusOptions]} 
+                value={selectedStatus} 
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="w-full bg-white"
+              />
+            </div>
+          </div>
 
           <button 
             onClick={onAddProduct}
