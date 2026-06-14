@@ -1,7 +1,6 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
 import * as dotenv from 'dotenv';
+import fs from 'fs';
 import path from 'path';
 
 dotenv.config();
@@ -9,50 +8,68 @@ dotenv.config();
 async function runMigrations() {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : true, // Ensure SSL is always active for Neon DB
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : true,
     max: 1,
     connectionTimeoutMillis: 15000,
     idleTimeoutMillis: 5000,
-    statement_timeout: 30000,
   });
 
-  const db = drizzle(pool);
-
-  console.log('⏳ Running database migrations...');
-
-  // Set a hard timeout so the process can't hang forever
-  const timeout = setTimeout(() => {
-    console.error('❌ Migration timed out after 60 seconds. Skipping migrations.');
-    pool.end();
-    process.exit(1);
-  }, 60000);
+  console.log('⏳ Running database schema updates...');
 
   try {
-    // Migrations live in src/db/migrations, but this script runs from dist/db/
+    const client = await pool.connect();
     const migrationsPath = path.resolve(__dirname, '../../src/db/migrations');
-    console.log(`📂 Migrations folder: ${migrationsPath}`);
-    await migrate(db, {
-      migrationsFolder: migrationsPath,
-    });
-    clearTimeout(timeout);
-    console.log('✅ Migrations completed successfully.');
-  } catch (error: any) {
-    clearTimeout(timeout);
-    // If migrations fail because they're already applied, that's OK
-    if (error.message?.includes('already exists') || error.code === '42701' || error.code === '42710') {
-      console.log('⚠️  Some migrations were already applied. Continuing...');
-    } else {
-      console.error('❌ Migration failed:', error.message);
-      throw error;
+    
+    // Read the journal to get the order
+    const journalPath = path.join(migrationsPath, 'meta/_journal.json');
+    if (!fs.existsSync(journalPath)) {
+      console.log('No migration journal found. Skipping.');
+      process.exit(0);
     }
+
+    const journal = JSON.parse(fs.readFileSync(journalPath, 'utf-8'));
+    
+    for (const entry of journal.entries) {
+      const sqlPath = path.join(migrationsPath, `${entry.tag}.sql`);
+      if (fs.existsSync(sqlPath)) {
+        console.log(`Executing migration: ${entry.tag}.sql`);
+        const sqlContent = fs.readFileSync(sqlPath, 'utf-8');
+        const statements = sqlContent.split('--> statement-breakpoint');
+        
+        for (let stmt of statements) {
+          stmt = stmt.trim();
+          if (!stmt) continue;
+          
+          try {
+            await client.query(stmt);
+          } catch (error: any) {
+            // Ignore errors for things that already exist (since we used 'push' previously)
+            const isAlreadyExists = 
+              error.code === '42P07' || // relation already exists
+              error.code === '42701' || // column already exists
+              error.code === '42710' || // constraint already exists
+              error.code === '42704' || // object does not exist (e.g. dropping a missing constraint)
+              error.message?.includes('already exists') ||
+              error.message?.includes('does not exist');
+              
+            if (!isAlreadyExists) {
+              console.error(`❌ Failed to execute statement: ${stmt}`);
+              console.error(error);
+              throw error;
+            }
+          }
+        }
+      }
+    }
+
+    console.log('✅ Database schema updates completed successfully.');
+    client.release();
+  } catch (error) {
+    console.error('❌ Schema update failed:', error);
+    process.exit(1);
   } finally {
     await pool.end();
   }
 }
 
-runMigrations()
-  .then(() => process.exit(0))
-  .catch((err) => {
-    console.error('Migration process failed:', err);
-    process.exit(1);
-  });
+runMigrations();
