@@ -19,7 +19,7 @@ export class EmailService {
         },
         body: JSON.stringify({
           sender: { 
-            name: "Hardware Store POS", 
+            name: "Smart Store POS", 
             email: process.env.BREVO_SENDER_EMAIL || "onboarding@abshir-pos.com"
           },
           to: [{ email: email }],
