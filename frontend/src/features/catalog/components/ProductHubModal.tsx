@@ -40,11 +40,11 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
     }
   }, [isOpen, product, selectedVariantId]);
 
+  const [lowStockError, setLowStockError] = useState('');
+
   if (!product) return null;
 
   const selectedVariant = product.variants?.find(v => v.id === selectedVariantId) || product.variants?.[0];
-
-  const [lowStockError, setLowStockError] = useState('');
 
   const handleLowStockEdit = () => {
     if (!selectedVariant) return;
