@@ -13,9 +13,9 @@ router.get('/categories', CatalogController.getCategories);
 router.post('/products', CatalogController.createProduct);
 router.get('/products', CatalogController.getProducts);
 router.get('/products/:id', CatalogController.getProductDetails);
-router.put('/products/:id', CatalogController.updateProduct);
-router.patch('/products/:id/status', CatalogController.toggleProductStatus);
+router.patch('/products/:id', CatalogController.updateProduct);
 
-router.post('/product-units', CatalogController.createProductUnit);
+router.post('/products/:id/units', CatalogController.createProductUnit);
+router.patch('/products/:id/units/:unitId', CatalogController.updateProductUnit);
 
 export default router;

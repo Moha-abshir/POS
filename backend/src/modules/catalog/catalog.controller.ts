@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { CatalogService } from './catalog.service';
-import { createCategorySchema, createProductSchema, updateProductSchema, createProductUnitSchema } from './catalog.schema';
+import { createCategorySchema, createProductSchema, updateProductSchema, createProductUnitSchema, updateProductUnitSchema } from './catalog.schema';
 
 export class CatalogController {
   // Categories
@@ -79,12 +79,14 @@ export class CatalogController {
     }
   }
 
-  static async toggleProductStatus(req: Request, res: Response, next: NextFunction) {
+  static async updateProductUnit(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
+      const unitId = req.params.unitId as string;
+      const data = updateProductUnitSchema.parse(req.body);
       const businessId = req.user!.businessId;
-      const product = await CatalogService.toggleProductStatus(id, businessId);
-      res.json({ success: true, data: product });
+      const unit = await CatalogService.updateProductUnit(id, unitId, data, businessId);
+      res.json({ success: true, data: unit });
     } catch (error) {
       next(error);
     }
@@ -93,7 +95,10 @@ export class CatalogController {
   // Product Units
   static async createProductUnit(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = createProductUnitSchema.parse(req.body);
+      const data = createProductUnitSchema.parse({
+        ...req.body,
+        productId: req.params.id,
+      });
       const businessId = req.user!.businessId;
       const unit = await CatalogService.createProductUnit(data, businessId);
       res.status(201).json({ success: true, data: unit });

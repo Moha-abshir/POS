@@ -30,9 +30,15 @@ export const updateProductSchema = z.object({
   costPrice: z.number().positive('Cost price must be positive'),
   baseStockQuantity: z.number().min(0, 'Initial stock cannot be negative'),
   lowStockThreshold: z.number().min(0),
+  isActive: z.boolean(),
 }).partial();
+
+export const updateProductUnitSchema = z.object({
+  sellingPrice: z.number().positive('Selling price must be positive'),
+});
 
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 export type CreateProductUnitInput = z.infer<typeof createProductUnitSchema>;
+export type UpdateProductUnitInput = z.infer<typeof updateProductUnitSchema>;

@@ -105,19 +105,19 @@ export class CatalogService {
     return product;
   }
 
-  static async toggleProductStatus(productId: string, businessId: string) {
-    const [product] = await db.select({ isActive: products.isActive }).from(products).where(and(eq(products.id, productId), eq(products.businessId, businessId)));
-    if (!product) throw new AppError('Product not found', 404);
-
-    const [updatedProduct] = await db.update(products)
-      .set({ isActive: !product.isActive })
-      .where(and(eq(products.id, productId), eq(products.businessId, businessId)))
+  // --- PRODUCT UNITS ---
+  static async updateProductUnit(productId: string, unitId: string, data: any, businessId: string) {
+    const [unit] = await db.update(productUnits)
+      .set({
+        ...data,
+        ...(data.sellingPrice !== undefined && { sellingPrice: data.sellingPrice.toString() }),
+      })
+      .where(and(eq(productUnits.id, unitId), eq(productUnits.productId, productId), eq(productUnits.businessId, businessId)))
       .returning();
 
-    return updatedProduct;
+    if (!unit) throw new AppError('Product unit not found', 404);
+    return unit;
   }
-
-  // --- PRODUCT UNITS ---
   static async createProductUnit(data: CreateProductUnitInput, businessId: string) {
     // Cross-tenant validation: ensure product belongs to business
     const [product] = await db.select().from(products).where(and(eq(products.id, data.productId), eq(products.businessId, businessId)));
