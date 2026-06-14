@@ -44,7 +44,7 @@ export const DashboardLayout: React.FC = () => {
   const showOnboarding = user && !hasSkippedOnboarding && (!user.firstName || (user.role === 'OWNER' && !user.isSetupComplete));
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] flex text-[var(--color-text-primary)] font-sans">
+    <div className="h-screen overflow-hidden bg-[var(--color-bg-base)] flex text-[var(--color-text-primary)] font-sans">
       {showOnboarding && <OnboardingModal />}
       
       {/* Sidebar (56px wide, dark) */}

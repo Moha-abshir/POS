@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Check, Plus } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { ChevronDown, Check, Plus, Search } from 'lucide-react';
 
 interface CustomSelectProps {
   label: string;
@@ -12,6 +12,7 @@ interface CustomSelectProps {
   className?: string;
   disabled?: boolean;
   required?: boolean;
+  searchable?: boolean;
 }
 
 export const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -24,9 +25,11 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   actionLabel,
   className = '',
   disabled = false,
-  required = false
+  required = false,
+  searchable = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,6 +40,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     };
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      setSearchTerm('');
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
@@ -47,6 +51,15 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     onChange({ target: { name, value: optionId } });
     setIsOpen(false);
   };
+
+  const filteredOptions = useMemo(() => {
+    let result = options;
+    if (searchable && searchTerm) {
+      const lower = searchTerm.toLowerCase();
+      result = options.filter(o => o.name.toLowerCase().includes(lower));
+    }
+    return result.slice(0, 100);
+  }, [options, searchTerm, searchable]);
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
@@ -60,7 +73,6 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {/* Hidden native input for required validation if needed, though mostly handled by form state */}
       {required && (
         <input 
           type="text"
@@ -75,10 +87,23 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 
       {isOpen && (
         <div className="absolute z-50 top-full left-0 mt-1 w-full min-w-[160px] bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-lg overflow-hidden py-1">
-          {/* We might want a default "All" or "None" option. For most forms, we just use the options list. If label is not meant to be selected, we don't map it. */}
-          
+          {searchable && (
+            <div className="px-2 pb-2 pt-1 sticky top-0 bg-white border-b border-[var(--color-border)] z-10">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full h-8 pl-8 pr-3 text-sm bg-gray-50 border border-gray-200 rounded outline-none focus:border-[var(--color-accent)]"
+                  autoFocus
+                />
+              </div>
+            </div>
+          )}
           <div className="max-h-[200px] overflow-y-auto">
-            {options.map((opt) => (
+            {filteredOptions.map((opt) => (
               <button
                 key={opt.id}
                 type="button"
@@ -89,7 +114,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                 {value === opt.id && <Check className="w-4 h-4 text-[var(--color-accent)] shrink-0 ml-2" />}
               </button>
             ))}
-            {options.length === 0 && (
+            {filteredOptions.length === 0 && (
               <div className="px-3 py-2 text-sm text-gray-400 text-center">No options available</div>
             )}
           </div>
