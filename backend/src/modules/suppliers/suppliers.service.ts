@@ -5,16 +5,21 @@ import { AppError } from '../../core/utils/AppError';
 
 export class SuppliersService {
   static async getSuppliers(businessId: string, search?: string) {
-    let query = db.select().from(suppliers).where(and(eq(suppliers.businessId, businessId), eq(suppliers.isActive, true)));
-    
-    // We will do filtering in-memory if search is provided for simplicity, or we can use ilike
-    const results = await query.orderBy(asc(suppliers.name));
+    const conditions: any[] = [eq(suppliers.businessId, businessId), eq(suppliers.isActive, true)];
     
     if (search) {
-      const lowerSearch = search.toLowerCase();
-      return results.filter(s => s.name.toLowerCase().includes(lowerSearch) || s.phone?.includes(lowerSearch) || s.email?.toLowerCase().includes(lowerSearch));
+      const searchPattern = `%${search}%`;
+      conditions.push(or(
+        ilike(suppliers.name, searchPattern),
+        ilike(suppliers.phone, searchPattern),
+        ilike(suppliers.email, searchPattern)
+      ));
     }
-    return results;
+    
+    return await db.select()
+      .from(suppliers)
+      .where(and(...conditions))
+      .orderBy(asc(suppliers.name));
   }
 
   static async getSupplierById(businessId: string, supplierId: string) {
