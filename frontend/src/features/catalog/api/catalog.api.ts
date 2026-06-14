@@ -6,17 +6,35 @@ export interface Category {
   name: string;
 }
 
+export interface Unit {
+  id?: string;
+  name: string;
+  sellingPrice: string | number;
+  conversionFactor: string | number;
+  isDefault: boolean;
+}
+
+export interface Variant {
+  id: string;
+  name: string;
+  sku?: string;
+  imageUrl?: string;
+  costPrice: string | number;
+  baseUnitName: string;
+  baseStockQuantity: string | number;
+  lowStockThreshold: string | number;
+  isActive: boolean;
+  units: Unit[];
+}
+
 export interface Product {
   id: string;
   categoryId: string;
   name: string;
   categoryName?: string;
   description?: string;
-  imageUrl?: string;
-  costPrice: string;
-  baseStockQuantity: string;
-  lowStockThreshold: string;
   isActive: boolean;
+  variants: Variant[];
 }
 
 // --- QUERIES ---
@@ -58,10 +76,21 @@ export interface CreateProductInput {
   categoryId: string;
   name: string;
   description?: string;
-  imageUrl?: string;
-  costPrice: number;
-  baseStockQuantity?: number;
-  lowStockThreshold?: number;
+  variants: {
+    name: string;
+    sku?: string;
+    imageUrl?: string;
+    costPrice: number;
+    baseUnitName: string;
+    initialStock: number;
+    lowStockThreshold: number;
+    units: {
+      name: string;
+      sellingPrice: number;
+      conversionFactor: number;
+      isDefault: boolean;
+    }[];
+  }[];
 }
 
 export const useCreateProduct = () => {
@@ -77,18 +106,18 @@ export const useCreateProduct = () => {
   });
 };
 
-export interface CreateProductUnitInput {
+export interface CreateVariantUnitInput {
   name: string;
   sellingPrice: number;
-  conversionFactor?: number;
+  conversionFactor: number;
   isDefault?: boolean;
 }
 
-export const useCreateProductUnit = () => {
+export const useCreateVariantUnit = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: CreateProductUnitInput }) => {
-      const response = await api.post(`/catalog/products/${id}/units`, data);
+    mutationFn: async ({ id, variantId, data }: { id: string; variantId: string; data: CreateVariantUnitInput }) => {
+      const response = await api.post(`/catalog/products/${id}/variants/${variantId}/units`, data);
       return response.data;
     },
     onSuccess: (_, { id }) => {
@@ -98,15 +127,19 @@ export const useCreateProductUnit = () => {
   });
 };
 
-export interface UpdateProductUnitInput {
-  sellingPrice: number;
+export interface UpdateVariantUnitInput {
+  name?: string;
+  sellingPrice?: number;
+  conversionFactor?: number;
+  isDefault?: boolean;
+  isActive?: boolean;
 }
 
-export const useUpdateProductUnit = () => {
+export const useUpdateVariantUnit = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, unitId, data }: { id: string; unitId: string; data: UpdateProductUnitInput }) => {
-      const response = await api.patch(`/catalog/products/${id}/units/${unitId}`, data);
+    mutationFn: async ({ id, variantId, unitId, data }: { id: string; variantId: string; unitId: string; data: UpdateVariantUnitInput }) => {
+      const response = await api.patch(`/catalog/products/${id}/variants/${variantId}/units/${unitId}`, data);
       return response.data;
     },
     onSuccess: (_, { id }) => {
@@ -120,10 +153,6 @@ export interface UpdateProductInput {
   categoryId?: string;
   name?: string;
   description?: string;
-  imageUrl?: string;
-  costPrice?: number;
-  baseStockQuantity?: number;
-  lowStockThreshold?: number;
   isActive?: boolean;
 }
 
@@ -132,6 +161,30 @@ export const useUpdateProduct = () => {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateProductInput }) => {
       const response = await api.patch(`/catalog/products/${id}`, data);
+      return response.data;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['product', id] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+};
+
+export interface UpdateVariantInput {
+  name?: string;
+  sku?: string;
+  imageUrl?: string;
+  costPrice?: number;
+  baseUnitName?: string;
+  lowStockThreshold?: number;
+  isActive?: boolean;
+}
+
+export const useUpdateVariant = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, variantId, data }: { id: string; variantId: string; data: UpdateVariantInput }) => {
+      const response = await api.patch(`/catalog/products/${id}/variants/${variantId}`, data);
       return response.data;
     },
     onSuccess: (_, { id }) => {

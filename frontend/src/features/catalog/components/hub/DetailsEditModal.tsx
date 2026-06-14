@@ -77,10 +77,10 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
           <div>
             <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Category *</label>
             <CustomSelect
-              options={categories?.map(c => ({ value: c.id, label: c.name })) || []}
+              label="Select category..."
+              options={categories?.map(c => ({ id: c.id, name: c.name })) || []}
               value={formData.categoryId}
-              onChange={(val) => setFormData(prev => ({ ...prev, categoryId: val }))}
-              placeholder="Select category..."
+              onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
             />
           </div>
           <div>

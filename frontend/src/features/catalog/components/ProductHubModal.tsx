@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Check } from 'lucide-react';
-import { type Product, useUpdateProduct } from '../api/catalog.api';
+import { type Product, type Variant, useUpdateProduct, useUpdateVariant } from '../api/catalog.api';
 import { DetailsEditModal } from './hub/DetailsEditModal';
 import { CostPriceEditModal } from './hub/CostPriceEditModal';
 import { UnitPriceEditModal } from './hub/UnitPriceEditModal';
 import { AddUnitModal } from './hub/AddUnitModal';
 import { DeactivateConfirmModal } from './hub/DeactivateConfirmModal';
+import { CustomSelect } from '../../../components/ui/CustomSelect';
 import { AxiosError } from 'axios';
 
 interface ProductHubModalProps {
@@ -16,30 +17,59 @@ interface ProductHubModalProps {
 
 export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClose, product }) => {
   const updateProduct = useUpdateProduct();
+  const updateVariant = useUpdateVariant();
   
   const [activeModal, setActiveModal] = useState<'details' | 'cost' | 'unit' | 'addUnit' | 'deactivate' | null>(null);
   const [selectedUnit, setSelectedUnit] = useState<any>(null);
   
-  // Inline edit state for low stock
+  const [selectedVariantId, setSelectedVariantId] = useState<string>('');
   const [isEditingLowStock, setIsEditingLowStock] = useState(false);
   const [lowStockValue, setLowStockValue] = useState('');
 
+  useEffect(() => {
+    if (isOpen && product && product.variants && product.variants.length > 0) {
+      if (!selectedVariantId || !product.variants.find(v => v.id === selectedVariantId)) {
+        setSelectedVariantId(product.variants[0].id);
+      }
+    }
+    if (!isOpen) {
+      setActiveModal(null);
+      setSelectedUnit(null);
+      setIsEditingLowStock(false);
+      setLowStockValue('');
+    }
+  }, [isOpen, product, selectedVariantId]);
+
   if (!product) return null;
 
+  const selectedVariant = product.variants?.find(v => v.id === selectedVariantId) || product.variants?.[0];
+
+  const [lowStockError, setLowStockError] = useState('');
+
   const handleLowStockEdit = () => {
-    setLowStockValue(product.lowStockThreshold?.toString() || '0');
+    if (!selectedVariant) return;
+    setLowStockValue(selectedVariant.lowStockThreshold?.toString() || '0');
+    setLowStockError('');
     setIsEditingLowStock(true);
   };
 
   const handleLowStockSave = async () => {
+    if (!selectedVariant) return;
+    const valueNum = Number(lowStockValue);
+    if (isNaN(valueNum) || valueNum < 0) {
+      setLowStockError('Threshold must be a positive number');
+      return;
+    }
+    setLowStockError('');
     try {
-      await updateProduct.mutateAsync({
+      await updateVariant.mutateAsync({
         id: product.id,
-        data: { lowStockThreshold: Number(lowStockValue) }
+        variantId: selectedVariant.id,
+        data: { lowStockThreshold: valueNum }
       });
       setIsEditingLowStock(false);
     } catch (err) {
-      // Ignore or show toast
+      setLowStockError((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to update threshold');
     }
   };
 
@@ -73,7 +103,7 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
             {/* DETAILS SECTION */}
             <section>
               <div className="flex items-center justify-between mb-4 border-b border-[var(--color-border)] pb-2">
-                <h3 className="text-[var(--text-sm)] font-bold tracking-wider text-[var(--color-text-muted)] uppercase">Details</h3>
+                <h3 className="text-[var(--text-sm)] font-bold tracking-wider text-[var(--color-text-muted)] uppercase">Product Details</h3>
                 <button 
                   onClick={() => setActiveModal('details')}
                   className="text-[var(--text-sm)] font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors"
@@ -93,115 +123,123 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
               </div>
             </section>
 
-            {/* PRICING SECTION */}
-            <section>
-              <div className="flex items-center justify-between mb-4 border-b border-[var(--color-border)] pb-2">
-                <h3 className="text-[var(--text-sm)] font-bold tracking-wider text-[var(--color-text-muted)] uppercase">Pricing</h3>
-              </div>
-              
-              <div className="grid grid-cols-[150px_1fr_auto] gap-3 text-[var(--text-sm)] items-center mb-6">
-                <div className="text-[var(--color-text-muted)]">Cost Price</div>
-                <div className="font-medium text-[var(--color-text-primary)]">KSH {Number(product.costPrice).toFixed(2)}</div>
-                <button 
-                  onClick={() => setActiveModal('cost')}
-                  className="text-[var(--text-sm)] font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors"
-                >
-                  Edit ✎
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                <div className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)]">Units:</div>
-                {/* Fallback to default unit if none provided (backend doesn't include units in list query yet, so we'll mock or assume product has a base unit) */}
-                <div className="flex items-center justify-between bg-[var(--color-bg-inset)] p-3 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-                  <span className="font-medium text-[var(--color-text-primary)]">Base Unit</span>
-                  <div className="flex items-center gap-4">
-                    <span className="font-medium text-[var(--color-text-primary)]">
-                      KSH {/* Selling price is usually in product units. If we don't have it here, we just use costPrice or mock it if units array is missing */}
-                      {product.units ? Number(product.units[0]?.sellingPrice || 0).toFixed(2) : '-'}
-                    </span>
-                    {product.units && product.units[0] && (
-                      <button 
-                        onClick={() => {
-                          setSelectedUnit(product.units![0]);
-                          setActiveModal('unit');
-                        }}
-                        className="text-[13px] font-medium text-[var(--color-primary)] hover:underline"
-                      >
-                        [Change Price]
-                      </button>
-                    )}
+            {/* VARIANT SELECTOR */}
+            {product.variants && product.variants.length > 0 && (
+              <section className="bg-[var(--color-bg-sunken)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]">
+                <div className="flex items-center justify-between">
+                  <span className="text-[var(--text-sm)] font-semibold text-[var(--color-text-secondary)]">Managing Variant:</span>
+                  <div className="w-[200px]">
+                    <CustomSelect 
+                      options={product.variants.map(v => ({ id: v.id, name: v.name }))} 
+                      value={selectedVariantId} 
+                      onChange={(e) => setSelectedVariantId(e.target.value)}
+                    />
                   </div>
                 </div>
+              </section>
+            )}
 
-                {product.units?.slice(1).map(u => (
-                  <div key={u.id} className="flex items-center justify-between bg-[var(--color-bg-inset)] p-3 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-                    <span className="font-medium text-[var(--color-text-primary)]">{u.name}</span>
-                    <div className="flex items-center gap-4">
-                      <span className="font-medium text-[var(--color-text-primary)]">KSH {Number(u.sellingPrice).toFixed(2)}</span>
-                      <button 
-                        onClick={() => {
-                          setSelectedUnit(u);
-                          setActiveModal('unit');
-                        }}
-                        className="text-[13px] font-medium text-[var(--color-primary)] hover:underline"
-                      >
-                        [Change Price]
-                      </button>
+            {selectedVariant && (
+              <>
+                {/* PRICING & UNITS SECTION */}
+                <section>
+                  <div className="flex items-center justify-between mb-4 border-b border-[var(--color-border)] pb-2">
+                    <h3 className="text-[var(--text-sm)] font-bold tracking-wider text-[var(--color-text-muted)] uppercase">Pricing & Units</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-[150px_1fr_auto] gap-3 text-[var(--text-sm)] items-center mb-6">
+                    <div className="text-[var(--color-text-muted)]">Base Cost Price</div>
+                    <div className="font-medium text-[var(--color-text-primary)]">KSH {Number(selectedVariant.costPrice).toFixed(2)} / {selectedVariant.baseUnitName}</div>
+                    <button 
+                      onClick={() => setActiveModal('cost')}
+                      className="text-[var(--text-sm)] font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors"
+                    >
+                      Edit ✎
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)]">Sales Units:</div>
+                    
+                    {selectedVariant.units?.map(u => (
+                      <div key={u.id} className="flex items-center justify-between bg-[var(--color-bg-inset)] p-3 rounded-[var(--radius-md)] border border-[var(--color-border)]">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-[var(--color-text-primary)] flex items-center gap-2">
+                            {u.name} 
+                            {u.isDefault && <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded">Default</span>}
+                          </span>
+                          <span className="text-[12px] text-[var(--color-text-muted)]">{u.conversionFactor} x {selectedVariant.baseUnitName}</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="font-medium text-[var(--color-text-primary)]">KSH {Number(u.sellingPrice).toFixed(2)}</span>
+                          <button 
+                            onClick={() => {
+                              setSelectedUnit(u);
+                              setActiveModal('unit');
+                            }}
+                            className="text-[13px] font-medium text-[var(--color-primary)] hover:underline"
+                          >
+                            [Edit]
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    <button 
+                      onClick={() => setActiveModal('addUnit')}
+                      className="w-full py-2 border border-dashed border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] hover:border-[var(--color-primary)] transition-all"
+                    >
+                      + Add Unit
+                    </button>
+                  </div>
+                </section>
+
+                {/* STOCK SECTION */}
+                <section>
+                  <div className="flex items-center justify-between mb-4 border-b border-[var(--color-border)] pb-2">
+                    <h3 className="text-[var(--text-sm)] font-bold tracking-wider text-[var(--color-text-muted)] uppercase">Stock</h3>
+                  </div>
+                  <div className="grid grid-cols-[150px_1fr_auto] gap-4 text-[var(--text-sm)] items-center">
+                    <div className="text-[var(--color-text-muted)]">Current Stock</div>
+                    <div className="font-medium text-[var(--color-text-primary)]">{selectedVariant.baseStockQuantity} {selectedVariant.baseUnitName}s</div>
+                    <div className="text-[12px] italic text-[var(--color-text-muted)]">(read-only)</div>
+                    
+                    <div className="text-[var(--color-text-muted)]">Low Stock Alert</div>
+                    <div className="font-medium text-[var(--color-text-primary)] flex items-center gap-2">
+                      {isEditingLowStock ? (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="number" 
+                              value={lowStockValue} 
+                              onChange={e => setLowStockValue(e.target.value)}
+                              className="w-20 h-8 px-2 border border-[var(--color-border)] rounded focus:outline-none focus:border-[var(--color-primary)]"
+                            />
+                            <button onClick={handleLowStockSave} disabled={updateVariant.isPending} className="text-green-600 hover:text-green-700">
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => setIsEditingLowStock(false)} className="text-gray-400 hover:text-gray-600">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          {lowStockError && <span className="text-[12px] text-red-500">{lowStockError}</span>}
+                        </div>
+                      ) : (
+                        <>
+                          <span>below {selectedVariant.lowStockThreshold} {selectedVariant.baseUnitName}s</span>
+                          <button 
+                            onClick={handleLowStockEdit}
+                            className="text-[var(--text-sm)] font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors ml-4"
+                          >
+                            Edit ✎
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
-                ))}
-
-                <button 
-                  onClick={() => setActiveModal('addUnit')}
-                  className="w-full py-2 border border-dashed border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] hover:border-[var(--color-primary)] transition-all"
-                >
-                  + Add Unit
-                </button>
-              </div>
-            </section>
-
-            {/* STOCK SECTION */}
-            <section>
-              <div className="flex items-center justify-between mb-4 border-b border-[var(--color-border)] pb-2">
-                <h3 className="text-[var(--text-sm)] font-bold tracking-wider text-[var(--color-text-muted)] uppercase">Stock</h3>
-              </div>
-              <div className="grid grid-cols-[150px_1fr_auto] gap-4 text-[var(--text-sm)] items-center">
-                <div className="text-[var(--color-text-muted)]">Current Stock</div>
-                <div className="font-medium text-[var(--color-text-primary)]">{product.baseStockQuantity}</div>
-                <div className="text-[12px] italic text-[var(--color-text-muted)]">(read-only)</div>
-                
-                <div className="text-[var(--color-text-muted)]">Low Stock Alert</div>
-                <div className="font-medium text-[var(--color-text-primary)] flex items-center gap-2">
-                  {isEditingLowStock ? (
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="number" 
-                        value={lowStockValue} 
-                        onChange={e => setLowStockValue(e.target.value)}
-                        className="w-20 h-8 px-2 border border-[var(--color-border)] rounded focus:outline-none focus:border-[var(--color-primary)]"
-                      />
-                      <button onClick={handleLowStockSave} disabled={updateProduct.isPending} className="text-green-600 hover:text-green-700">
-                        <Check className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => setIsEditingLowStock(false)} className="text-gray-400 hover:text-gray-600">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <span>below {product.lowStockThreshold} units</span>
-                      <button 
-                        onClick={handleLowStockEdit}
-                        className="text-[var(--text-sm)] font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors ml-4"
-                      >
-                        Edit ✎
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </section>
+                </section>
+              </>
+            )}
 
             {/* DANGER SECTION */}
             <section>
@@ -228,26 +266,29 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
           product={product} 
         />
       )}
-      {activeModal === 'cost' && (
+      {activeModal === 'cost' && selectedVariant && (
         <CostPriceEditModal 
           isOpen={true} 
           onClose={() => setActiveModal(null)} 
           product={product} 
+          variant={selectedVariant}
         />
       )}
-      {activeModal === 'unit' && selectedUnit && (
+      {activeModal === 'unit' && selectedVariant && selectedUnit && (
         <UnitPriceEditModal 
           isOpen={true} 
           onClose={() => setActiveModal(null)} 
-          product={product} 
+          product={product}
+          variant={selectedVariant}
           unit={selectedUnit}
         />
       )}
-      {activeModal === 'addUnit' && (
+      {activeModal === 'addUnit' && selectedVariant && (
         <AddUnitModal 
           isOpen={true} 
           onClose={() => setActiveModal(null)} 
           product={product} 
+          variant={selectedVariant}
         />
       )}
       {activeModal === 'deactivate' && (

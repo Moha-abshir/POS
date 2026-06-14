@@ -11,8 +11,8 @@ interface ProductListProps {
 }
 
 export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCategory, onEditProduct, onToggleStatus }) => {
-  const { data: products, isLoading } = useProducts();
-  const { data: categories } = useCategories();
+  const { data: products, isLoading, isError } = useProducts();
+  const { data: categories, isError: isCategoriesError } = useCategories();
   
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   
@@ -32,7 +32,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
     
     let matchesStatus = true;
     if (selectedStatus === 'low_stock') {
-      matchesStatus = parseFloat(p.baseStockQuantity) <= parseFloat(p.lowStockThreshold);
+      matchesStatus = p.variants?.some(v => parseFloat(v.baseStockQuantity as string) <= parseFloat(v.lowStockThreshold as string)) || false;
     } else if (selectedStatus === 'active') {
       matchesStatus = p.isActive === true;
     } else if (selectedStatus === 'inactive') {
@@ -68,7 +68,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
             <div className="flex-1 min-w-[120px]">
               <CustomSelect 
                 label="Category" 
-                options={categories ? [{ id: '', name: 'All' }, ...categories.map(c => ({ id: c.id, name: c.name }))] : [{ id: '', name: 'All' }]} 
+                options={isCategoriesError ? [{ id: '', name: 'Error loading categories' }] : categories ? [{ id: '', name: 'All' }, ...categories.map(c => ({ id: c.id, name: c.name }))] : [{ id: '', name: 'All' }]} 
                 value={selectedCategory} 
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 onActionClick={onAddCategory}
@@ -123,7 +123,23 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
               </tr>
             )}
             
-            {!isLoading && filteredProducts?.length === 0 && (
+            {isError && (
+              <tr>
+                <td colSpan={5} className="p-16 text-center">
+                  <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
+                    <p className="text-red-500 font-semibold mb-2">Failed to load inventory.</p>
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="text-amber-600 hover:underline font-medium text-sm"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            )}
+
+            {!isLoading && !isError && filteredProducts?.length === 0 && (
               <tr>
                 <td colSpan={5} className="p-16">
                   <div className="flex flex-col items-center justify-center max-w-sm mx-auto text-center">
@@ -145,16 +161,21 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
             )}
 
             {filteredProducts?.map((product, index) => {
-              const stock = parseFloat(product.baseStockQuantity);
-              const threshold = parseFloat(product.lowStockThreshold);
+              const primaryVariant = product.variants?.[0];
+              const totalStock = product.variants?.reduce((sum, v) => sum + parseFloat(v.baseStockQuantity as string), 0) || 0;
+              const hasMultipleVariants = (product.variants?.length || 0) > 1;
+              const costPriceLabel = hasMultipleVariants ? 'Multiple Variants' : `KSH ${parseFloat(primaryVariant?.costPrice as string || '0').toLocaleString()}`;
               
               let stockStatus = 'Good';
               let badgeColor = 'bg-[var(--color-success-bg)] text-[var(--color-success)]';
               
-              if (stock <= 0) {
+              const isOut = product.variants?.some(v => parseFloat(v.baseStockQuantity as string) <= 0);
+              const isLow = product.variants?.some(v => parseFloat(v.baseStockQuantity as string) <= parseFloat(v.lowStockThreshold as string));
+
+              if (isOut) {
                 stockStatus = 'Out';
                 badgeColor = 'bg-[var(--color-danger-bg)] text-[var(--color-danger)]';
-              } else if (stock <= threshold) {
+              } else if (isLow) {
                 stockStatus = 'Low';
                 badgeColor = 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]';
               }
@@ -171,7 +192,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
                   </td>
                   <td className="px-6 py-0">
                     <p className="text-sm font-medium text-[var(--color-text-primary)] leading-tight">{product.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5 leading-tight">KSH {parseFloat(product.costPrice).toLocaleString()} cost</p>
+                    <p className="text-xs text-gray-400 mt-0.5 leading-tight">{costPriceLabel}</p>
                   </td>
                   <td className="px-6 py-0">
                     <span className="text-sm text-gray-500">
@@ -180,7 +201,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
                   </td>
                   <td className="px-6 py-0">
                     <div className="flex items-center gap-3">
-                      <p className="text-sm font-mono text-[var(--color-text-primary)] min-w-[3rem] text-right">{stock}</p>
+                      <p className="text-sm font-mono text-[var(--color-text-primary)] min-w-[3rem] text-right">{totalStock}</p>
                       <span className={`inline-flex items-center justify-center min-w-[48px] px-1.5 py-0.5 rounded-[var(--radius-sm)] text-[10px] font-bold uppercase tracking-wider ${badgeColor}`}>
                         {stockStatus}
                       </span>

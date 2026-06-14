@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { CatalogService } from './catalog.service';
-import { createCategorySchema, createProductSchema, updateProductSchema, createProductUnitSchema, updateProductUnitSchema } from './catalog.schema';
+import { createCategorySchema, createProductSchema, updateProductSchema, updateVariantSchema, createVariantUnitSchema, updateVariantUnitSchema } from './catalog.schema';
 
 export class CatalogController {
   // Categories
@@ -20,8 +20,8 @@ export class CatalogController {
       const businessId = req.user!.businessId;
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = parseInt(req.query.offset as string) || 0;
-      const categories = await CatalogService.getCategories(businessId, limit, offset);
-      res.json({ success: true, data: categories });
+      const result = await CatalogService.getCategories(businessId, limit, offset);
+      res.json({ success: true, data: result.data, meta: result.meta });
     } catch (error) {
       next(error);
     }
@@ -49,8 +49,8 @@ export class CatalogController {
       if (req.query.isActive !== undefined) {
         isActive = req.query.isActive === 'true';
       }
-      const products = await CatalogService.getProducts(businessId, limit, offset, isActive);
-      res.json({ success: true, data: products });
+      const result = await CatalogService.getProducts(businessId, limit, offset, isActive);
+      res.json({ success: true, data: result.data, meta: result.meta });
     } catch (error) {
       next(error);
     }
@@ -79,29 +79,40 @@ export class CatalogController {
     }
   }
 
-  static async updateProductUnit(req: Request, res: Response, next: NextFunction) {
+  static async updateVariant(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = req.params.id as string;
-      const unitId = req.params.unitId as string;
-      const data = updateProductUnitSchema.parse(req.body);
+      const variantId = req.params.variantId as string;
+      const data = updateVariantSchema.parse(req.body);
       const businessId = req.user!.businessId;
-      const unit = await CatalogService.updateProductUnit(id, unitId, data, businessId);
-      res.json({ success: true, data: unit });
+      const variant = await CatalogService.updateVariant(variantId, data, businessId);
+      res.json({ success: true, data: variant });
     } catch (error) {
       next(error);
     }
   }
 
-  // Product Units
-  static async createProductUnit(req: Request, res: Response, next: NextFunction) {
+  static async createVariantUnit(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = createProductUnitSchema.parse({
+      const data = createVariantUnitSchema.parse({
         ...req.body,
-        productId: req.params.id,
+        variantId: req.params.variantId,
       });
       const businessId = req.user!.businessId;
-      const unit = await CatalogService.createProductUnit(data, businessId);
+      const unit = await CatalogService.createVariantUnit(data, businessId);
       res.status(201).json({ success: true, data: unit });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateVariantUnit(req: Request, res: Response, next: NextFunction) {
+    try {
+      const variantId = req.params.variantId as string;
+      const unitId = req.params.unitId as string;
+      const data = updateVariantUnitSchema.parse(req.body);
+      const businessId = req.user!.businessId;
+      const unit = await CatalogService.updateVariantUnit(unitId, variantId, data, businessId);
+      res.json({ success: true, data: unit });
     } catch (error) {
       next(error);
     }

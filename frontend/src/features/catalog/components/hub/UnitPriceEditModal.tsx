@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
-import { useUpdateProductUnit, type Product } from '../../api/catalog.api';
+import { useUpdateVariantUnit, type Product, type Variant } from '../../api/catalog.api';
 import { AxiosError } from 'axios';
 
 interface UnitPriceEditModalProps {
   isOpen: boolean;
   onClose: () => void;
   product: Product;
-  unit: { id: string; name: string; sellingPrice: string } | null;
+  variant: Variant;
+  unit: { id: string; name: string; sellingPrice: string; conversionFactor?: string | number } | null;
 }
 
-export const UnitPriceEditModal: React.FC<UnitPriceEditModalProps> = ({ isOpen, onClose, product, unit }) => {
-  const updateUnit = useUpdateProductUnit();
+export const UnitPriceEditModal: React.FC<UnitPriceEditModalProps> = ({ isOpen, onClose, product, variant, unit }) => {
+  const updateUnit = useUpdateVariantUnit();
   const [sellingPrice, setSellingPrice] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -29,6 +30,7 @@ export const UnitPriceEditModal: React.FC<UnitPriceEditModalProps> = ({ isOpen, 
     try {
       await updateUnit.mutateAsync({
         id: product.id,
+        variantId: variant.id,
         unitId: unit.id,
         data: { sellingPrice: Number(sellingPrice) }
       });
@@ -39,9 +41,11 @@ export const UnitPriceEditModal: React.FC<UnitPriceEditModalProps> = ({ isOpen, 
   };
 
   const newPriceNum = Number(sellingPrice);
-  const costPriceNum = Number(product.costPrice);
-  const margin = newPriceNum - costPriceNum;
-  const isBelowCost = newPriceNum < costPriceNum && sellingPrice !== '';
+  const costPriceNum = Number(variant.costPrice);
+  const conversionNum = Number(unit?.conversionFactor) || 1;
+  const expectedCost = costPriceNum * conversionNum;
+  const margin = newPriceNum - expectedCost;
+  const isBelowCost = newPriceNum < expectedCost && sellingPrice !== '';
 
   return (
     <div className={`fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto transition-all duration-300 ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
@@ -57,7 +61,7 @@ export const UnitPriceEditModal: React.FC<UnitPriceEditModalProps> = ({ isOpen, 
         {unit && (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div className="text-[var(--text-sm)] text-[var(--color-text-secondary)] mb-4">
-              Updating price for: <span className="font-semibold text-[var(--color-text-primary)]">{unit.name} — {product.name}</span>
+              Updating price for: <span className="font-semibold text-[var(--color-text-primary)]">{unit.name} — {variant.name} ({product.name})</span>
             </div>
 
             <div className="flex justify-between items-center text-[var(--text-sm)] text-[var(--color-text-secondary)]">
@@ -79,7 +83,10 @@ export const UnitPriceEditModal: React.FC<UnitPriceEditModalProps> = ({ isOpen, 
             </div>
 
             <div className="flex justify-between items-center text-[var(--text-sm)] text-[var(--color-text-secondary)] bg-[var(--color-bg-inset)] p-3 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-              <span>Margin at new price:</span>
+              <div className="flex flex-col">
+                <span>Margin at new price:</span>
+                <span className="text-[12px] text-[var(--color-text-muted)]">Cost: KSH {expectedCost.toFixed(2)}</span>
+              </div>
               <span className={`font-medium ${isBelowCost ? 'text-red-500' : 'text-green-600'}`}>
                 KSH {margin.toFixed(2)}
               </span>
@@ -100,8 +107,8 @@ export const UnitPriceEditModal: React.FC<UnitPriceEditModalProps> = ({ isOpen, 
               </button>
               <button 
                 type="submit" 
-                disabled={updateUnit.isPending || isBelowCost || !sellingPrice} 
-                className="h-10 px-6 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-[var(--text-sm)] font-medium rounded-[var(--radius-md)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={updateUnit.isPending || !sellingPrice} 
+                className="h-10 px-6 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-[var(--text-sm)] font-medium rounded-[var(--radius-md)] transition-colors disabled:opacity-50"
               >
                 {updateUnit.isPending ? 'Updating...' : 'Update Price'}
               </button>
