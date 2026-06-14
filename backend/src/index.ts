@@ -12,6 +12,8 @@ import suppliersRoutes from './modules/suppliers/suppliers.routes';
 import inventoryRoutes from './modules/inventory/inventory.routes';
 import purchasingRoutes from './modules/purchasing/purchasing.routes';
 import { errorHandler } from './core/middleware/errorHandler';
+import { db } from './db';
+import { sql } from 'drizzle-orm';
 
 import { z } from 'zod';
 
@@ -26,6 +28,7 @@ const envSchema = z.object({
 envSchema.parse(process.env);
 
 const app = express();
+app.set('trust proxy', 1); // Trust the first proxy (Railway's load balancer)
 const PORT = process.env.PORT || 5000;
 
 app.use(helmet());
