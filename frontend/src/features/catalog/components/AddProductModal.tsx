@@ -234,7 +234,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                 <h3 className="text-[var(--text-md)] font-semibold text-[var(--color-text-primary)]">Variant Details</h3>
                 <div className="group relative">
                   <Info className="w-4 h-4 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors cursor-help" />
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 bg-[var(--color-bg-inverse)] text-[var(--color-text-inverse)] text-[12px] rounded-[var(--radius-sm)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-10 shadow-lg">
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2.5 bg-gray-900 text-white text-[12px] rounded-[var(--radius-md)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-50 shadow-lg text-center leading-relaxed">
                     This creates the first variant (e.g. "Standard" or "50kg Bag"). You can add more variants later from the product details page.
                   </div>
                 </div>
