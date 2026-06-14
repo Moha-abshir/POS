@@ -12,7 +12,8 @@ interface AdjustStockModalProps {
 export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<'ADJUST' | 'DAMAGE'>('ADJUST');
-  const [productId, setProductId] = useState('');
+  const [variantId, setVariantId] = useState('');
+  const [unitId, setUnitId] = useState('');
   const [quantity, setQuantity] = useState<number | ''>('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -43,22 +44,41 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
     }
   });
 
+  const variantOptions = products.flatMap(p => 
+    (p.variants || []).map(v => ({
+      id: v.id,
+      name: (p.variants || []).length > 1 ? `${p.name} - ${v.name} (Current: ${Number(v.baseStockQuantity)})` : `${p.name} (Current: ${Number(v.baseStockQuantity)})`,
+      baseStockQuantity: v.baseStockQuantity,
+      units: v.units || []
+    }))
+  );
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!productId || quantity === '' || quantity < 0 || (quantity <= 0 && mode === 'DAMAGE')) {
+    if (!variantId || !unitId || quantity === '' || quantity < 0 || (quantity <= 0 && mode === 'DAMAGE')) {
       setError("Please fill out all required fields properly.");
       return;
     }
 
+    let finalQuantity = quantity as number;
+    const selectedVar = variantOptions.find(v => v.id === variantId);
+    if (selectedVar && unitId) {
+      const selectedUnit = selectedVar.units.find((u: any) => u.id === unitId);
+      if (selectedUnit) {
+        finalQuantity = finalQuantity * Number(selectedUnit.conversionFactor || 1);
+      }
+    }
+
     if (mode === 'ADJUST') {
-      adjustMutation.mutate({ productId, newQuantity: quantity, notes });
+      adjustMutation.mutate({ variantId, newQuantity: finalQuantity, notes });
     } else {
-      damageMutation.mutate({ productId, quantity, reason: notes });
+      damageMutation.mutate({ variantId, quantity: finalQuantity, reason: notes });
     }
   };
 
-  const selectedProduct = products.find(p => p.id === productId);
+
+  const selectedVariant = variantOptions.find(v => v.id === variantId);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -79,7 +99,15 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
           <div className="flex bg-[var(--color-bg-sunken)] p-1 rounded-[var(--radius-md)] border border-[var(--color-border)]">
             <button
               type="button"
-              onClick={() => { setMode('ADJUST'); setQuantity(selectedProduct ? Number(selectedProduct.baseStockQuantity) : ''); }}
+              onClick={() => { 
+                setMode('ADJUST'); 
+                if (selectedVariant && unitId) {
+                  const u = selectedVariant.units.find((x: any) => x.id === unitId);
+                  setQuantity(Number(selectedVariant.baseStockQuantity) / Number(u?.conversionFactor || 1));
+                } else {
+                  setQuantity(selectedVariant ? Number(selectedVariant.baseStockQuantity) : '');
+                }
+              }}
               className={`flex-1 text-sm font-medium py-1.5 rounded-[var(--radius-sm)] transition-colors cursor-pointer select-none ${mode === 'ADJUST' ? 'bg-white shadow-sm text-[var(--color-text-primary)] border border-[var(--color-border)]' : 'text-[var(--color-text-secondary)] border border-transparent'}`}
             >
               Set Exact Stock
@@ -94,17 +122,38 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Product</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Product Variant</label>
             <CustomSelect
               required
-              label="Select product..."
-              options={products.map(p => ({ id: p.id, name: `${p.name} (Current: ${Number(p.baseStockQuantity)})` }))}
-              value={productId}
+              searchable
+              label="Select product variant..."
+              options={variantOptions}
+              value={variantId}
               onChange={(e) => {
-                setProductId(e.target.value);
+                setVariantId(e.target.value);
+                const v = variantOptions.find(x => x.id === e.target.value);
+                const defaultUnit = v?.units?.find((u: any) => u.isDefault) || v?.units?.[0];
+                setUnitId(defaultUnit?.id || '');
                 if (mode === 'ADJUST') {
-                  const p = products.find(x => x.id === e.target.value);
-                  setQuantity(p ? Number(p.baseStockQuantity) : '');
+                  setQuantity(v ? Number(v.baseStockQuantity) / Number(defaultUnit?.conversionFactor || 1) : '');
+                }
+              }}
+              className="bg-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Unit</label>
+            <CustomSelect
+              required
+              label="Select unit..."
+              options={selectedVariant?.units?.map((u: any) => ({ id: u.id, name: u.name })) || []}
+              value={unitId}
+              onChange={(e) => {
+                setUnitId(e.target.value);
+                if (mode === 'ADJUST' && selectedVariant) {
+                  const u = selectedVariant.units.find((x: any) => x.id === e.target.value);
+                  setQuantity(Number(selectedVariant.baseStockQuantity) / Number(u?.conversionFactor || 1));
                 }
               }}
               className="bg-white"

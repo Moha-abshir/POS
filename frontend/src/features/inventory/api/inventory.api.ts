@@ -2,7 +2,8 @@ import { api } from '../../../lib/api';
 
 export interface StockMovement {
   id: string;
-  productId: string;
+  variantId: string;
+  variantName: string;
   productName: string;
   type: 'PURCHASE' | 'SALE' | 'REFUND' | 'DAMAGE' | 'ADJUSTMENT';
   quantityChange: string;
@@ -30,19 +31,19 @@ export const inventoryApi = {
     return res.data.data as StockMovement[];
   },
 
-  adjustStock: async (data: { productId: string; newQuantity: number; notes: string }) => {
+  adjustStock: async (data: { variantId: string; newQuantity: number; notes: string }) => {
     const res = await api.post('/inventory/adjust', data);
     return res.data;
   },
 
-  recordDamage: async (data: { productId: string; quantity: number; reason: string }) => {
+  recordDamage: async (data: { variantId: string; quantity: number; reason: string }) => {
     const res = await api.post('/inventory/damage', data);
     return res.data;
   },
 
   createPurchase: async (data: {
     supplierId: string;
-    items: { productId: string; quantity: number; costPrice: number }[];
+    items: { variantId: string; quantity: number; costPrice: number }[];
     amountPaid: number;
     paymentMethod: 'CASH' | 'MPESA';
     invoiceRef?: string;

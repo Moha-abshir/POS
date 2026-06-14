@@ -9,8 +9,8 @@ export class InventoryController {
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = (page - 1) * limit;
 
-      const movements = await InventoryService.getStockMovements(req.user!.businessId, limit, offset);
-      res.json({ success: true, data: movements });
+      const result = await InventoryService.getStockMovements(req.user!.businessId, limit, offset);
+      res.json({ success: true, data: result.data, meta: result.meta });
     } catch (error) {
       next(error);
     }
