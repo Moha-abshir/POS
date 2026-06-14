@@ -13,8 +13,8 @@ interface PurchaseModalProps {
 export function PurchaseModal({ onClose }: PurchaseModalProps) {
   const queryClient = useQueryClient();
   const [supplierId, setSupplierId] = useState('');
-  const [items, setItems] = useState<{ productId: string; quantity: number | ''; costPrice: number | '' }[]>([
-    { productId: '', quantity: 1, costPrice: '' }
+  const [items, setItems] = useState<{ variantId: string; unitId: string; quantity: number | ''; costPrice: number | '' }[]>([
+    { variantId: '', unitId: '', quantity: 1, costPrice: '' }
   ]);
   const [amountPaid, setAmountPaid] = useState<number | ''>('');
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>('CASH');
@@ -28,6 +28,16 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
   });
 
   const { data: products = [] } = useProducts();
+
+  // Create a flat list of variants for the dropdown
+  const variantOptions = products.flatMap(p => 
+    (p.variants || []).map(v => ({
+      id: v.id,
+      name: (p.variants || []).length > 1 ? `${p.name} - ${v.name}` : p.name,
+      costPrice: v.costPrice,
+      units: v.units || []
+    }))
+  );
 
   const purchaseMutation = useMutation({
     mutationFn: inventoryApi.createPurchase,
@@ -53,7 +63,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!supplierId || items.some(i => !i.productId || (typeof i.quantity !== 'number' || i.quantity <= 0))) {
+    if (!supplierId || items.some(i => !i.variantId || !i.unitId || (typeof i.quantity !== 'number' || i.quantity <= 0))) {
       setError("Please fill out all required fields properly.");
       return;
     }
@@ -62,10 +72,18 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
       return;
     }
 
+    // Payment Amount Validation
+    const amountPaidNum = amountPaid === '' ? 0 : amountPaid;
+    if (amountPaidNum < 0 || amountPaidNum > totalAmount) {
+      setError(`Payment amount must be between 0 and ${totalAmount.toFixed(2)}.`);
+      return;
+    }
+
     purchaseMutation.mutate({
       supplierId,
       items: items.map(i => ({
-        productId: i.productId,
+        variantId: i.variantId,
+        unitId: i.unitId,
         quantity: i.quantity as number,
         costPrice: i.costPrice === '' ? 0 : (i.costPrice as number)
       })),
@@ -124,7 +142,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
               <span>Items</span>
               <button 
                 type="button" 
-                onClick={() => setItems([...items, { productId: '', quantity: 1, costPrice: '' }])}
+                onClick={() => setItems([...items, { variantId: '', unitId: '', quantity: 1, costPrice: '' }])}
                 className="text-sm flex items-center gap-1 text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] font-medium"
               >
                 <Plus size={16} /> Add Item
@@ -133,19 +151,46 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
             <div className="p-4 space-y-3">
               {items.map((item, index) => (
                 <div key={index} className="flex gap-3 items-end">
-                  <div className="w-[45%]">
-                    <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Product</label>
+                  <div className="w-[30%]">
+                    <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Product Variant</label>
                     <CustomSelect
                       required
-                      label="Select product..."
-                      options={products.map(p => ({ id: p.id, name: p.name }))}
-                      value={item.productId}
+                      searchable
+                      label="Select product variant..."
+                      options={variantOptions}
+                      value={item.variantId}
                       onChange={(e) => {
-                        const product = products.find(p => p.id === e.target.value);
+                        const selectedVar = variantOptions.find(v => v.id === e.target.value);
                         const newItems = [...items];
-                        newItems[index].productId = e.target.value;
-                        if (product && newItems[index].costPrice === '') {
-                          newItems[index].costPrice = Number(product.costPrice);
+                        newItems[index].variantId = e.target.value;
+                        const defaultUnit = selectedVar?.units?.find((u: any) => u.isDefault) || selectedVar?.units?.[0];
+                        newItems[index].unitId = defaultUnit?.id || '';
+                        if (selectedVar && newItems[index].costPrice === '') {
+                          const factor = defaultUnit?.conversionFactor || 1;
+                          newItems[index].costPrice = Number(selectedVar.costPrice) * factor;
+                        }
+                        setItems(newItems);
+                      }}
+                    />
+                  </div>
+                  <div className="w-[20%]">
+                    <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Unit</label>
+                    <CustomSelect
+                      required
+                      label="Select unit..."
+                      options={
+                        item.variantId 
+                          ? (variantOptions.find(v => v.id === item.variantId)?.units || []).map((u: any) => ({ id: u.id, name: u.name }))
+                          : []
+                      }
+                      value={item.unitId}
+                      onChange={(e) => {
+                        const newItems = [...items];
+                        newItems[index].unitId = e.target.value;
+                        const selectedVar = variantOptions.find(v => v.id === newItems[index].variantId);
+                        const selectedUnit = selectedVar?.units?.find((u: any) => u.id === e.target.value);
+                        if (selectedVar && selectedUnit) {
+                          newItems[index].costPrice = Number(selectedVar.costPrice) * Number(selectedUnit.conversionFactor || 1);
                         }
                         setItems(newItems);
                       }}

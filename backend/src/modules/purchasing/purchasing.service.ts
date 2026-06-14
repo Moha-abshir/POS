@@ -1,6 +1,6 @@
 import { eq, and, sql, inArray } from 'drizzle-orm';
 import { db } from '../../db';
-import { purchases, purchaseItems, suppliers, payments, products } from '../../db/schema';
+import { purchases, purchaseItems, suppliers, payments, productVariants, variantUnits } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 import { InventoryService } from '../inventory/inventory.service';
 
@@ -10,7 +10,7 @@ export class PurchasingService {
     userId: string, 
     data: {
       supplierId: string;
-      items: { productId: string; quantity: number; costPrice: number }[];
+      items: { variantId: string; unitId: string; quantity: number; costPrice: number }[];
       amountPaid: number;
       paymentMethod: 'CASH' | 'MPESA';
       invoiceRef?: string;
@@ -22,11 +22,19 @@ export class PurchasingService {
       const [supplier] = await tx.select().from(suppliers).where(and(eq(suppliers.id, data.supplierId), eq(suppliers.businessId, businessId)));
       if (!supplier) throw new AppError('Supplier not found or unauthorized', 404);
 
-      const productIds = Array.from(new Set(data.items.map(item => item.productId)));
-      const foundProducts = await tx.select().from(products).where(and(inArray(products.id, productIds), eq(products.businessId, businessId)));
-      if (foundProducts.length !== productIds.length) {
-        throw new AppError('One or more products not found or unauthorized', 404);
+      const variantIds = Array.from(new Set(data.items.map(item => item.variantId)));
+      const foundVariants = await tx.select().from(productVariants).where(and(inArray(productVariants.id, variantIds), eq(productVariants.businessId, businessId)));
+      if (foundVariants.length !== variantIds.length) {
+        throw new AppError('One or more variants not found or unauthorized', 404);
       }
+
+      const unitIds = Array.from(new Set(data.items.map(item => item.unitId)));
+      const foundUnits = await tx.select().from(variantUnits).where(and(inArray(variantUnits.id, unitIds), eq(variantUnits.businessId, businessId)));
+      if (foundUnits.length !== unitIds.length) {
+        throw new AppError('One or more units not found or unauthorized', 404);
+      }
+
+      const unitMap = new Map(foundUnits.map(u => [u.id, Number(u.conversionFactor)]));
 
       // 1. Calculate totals
       let totalAmount = 0;
@@ -49,23 +57,31 @@ export class PurchasingService {
       }).returning();
 
       // 3. Create Purchase Items & Update Inventory
-      for (const item of data.items) {
+      const purchaseItemsData = data.items.map(item => {
         const subtotal = item.quantity * item.costPrice;
-        
-        await tx.insert(purchaseItems).values({
+        return {
           businessId,
           purchaseId: purchase.id,
-          productId: item.productId,
+          variantId: item.variantId,
+          unitId: item.unitId,
           quantity: item.quantity.toString(),
           costPrice: item.costPrice.toString(),
           subtotal: subtotal.toString(),
-        });
+        };
+      });
+      if (purchaseItemsData.length > 0) {
+        await tx.insert(purchaseItems).values(purchaseItemsData);
+      }
 
-        // Record stock movement (which updates product baseStockQuantity)
+      for (const item of data.items) {
+        const conversionFactor = unitMap.get(item.unitId) || 1;
+        const baseQuantity = item.quantity * conversionFactor;
+
+        // Record stock movement (which updates variant baseStockQuantity)
         await InventoryService.recordMovement(tx, businessId, {
-          productId: item.productId,
+          variantId: item.variantId,
           type: 'PURCHASE',
-          quantityChange: item.quantity,
+          quantityChange: baseQuantity,
           referenceType: 'PURCHASE',
           referenceId: purchase.id,
           userId
@@ -88,9 +104,14 @@ export class PurchasingService {
       // 5. Update Supplier Balance (if they weren't fully paid, the store owes them)
       const balanceChange = totalAmount - data.amountPaid;
       if (balanceChange !== 0) {
-        await tx.update(suppliers)
+        const updateResult = await tx.update(suppliers)
           .set({ balance: sql`${suppliers.balance} + ${balanceChange}` })
-          .where(and(eq(suppliers.id, data.supplierId), eq(suppliers.businessId, businessId)));
+          .where(and(eq(suppliers.id, data.supplierId), eq(suppliers.businessId, businessId)))
+          .returning();
+
+        if (updateResult.length === 0) {
+          throw new AppError('Supplier not found or deleted', 404);
+        }
       }
 
       return purchase;
@@ -98,10 +119,19 @@ export class PurchasingService {
   }
 
   static async getPurchases(businessId: string, limit = 50, offset = 0) {
-    return await db.select()
+    const data = await db.select()
       .from(purchases)
       .where(eq(purchases.businessId, businessId))
       .limit(limit)
       .offset(offset);
+
+    const [{ count }] = await db.select({ count: sql`count(*)`.mapWith(Number) })
+      .from(purchases)
+      .where(eq(purchases.businessId, businessId));
+
+    return {
+      data,
+      meta: { total: count, limit, offset }
+    };
   }
 }
