@@ -7,7 +7,7 @@ interface ProductListProps {
   onAddProduct: () => void;
   onAddCategory: () => void;
   onEditProduct: (product: any) => void;
-  onToggleStatus: (productId: string) => void;
+  onToggleStatus: (product: any) => void;
 }
 
 export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCategory, onEditProduct, onToggleStatus }) => {
@@ -191,7 +191,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
                             <button
                               onClick={() => {
                                 setActiveDropdown(null);
-                                onToggleStatus(product.id);
+                                onToggleStatus(product);
                               }}
                               className="w-full text-left px-4 py-2 text-[var(--text-sm)] text-[var(--color-text-primary)] hover:bg-gray-50 transition-colors"
                             >

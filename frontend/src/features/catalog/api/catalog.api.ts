@@ -78,7 +78,6 @@ export const useCreateProduct = () => {
 };
 
 export interface CreateProductUnitInput {
-  productId: string;
   name: string;
   sellingPrice: number;
   conversionFactor?: number;
@@ -86,45 +85,57 @@ export interface CreateProductUnitInput {
 }
 
 export const useCreateProductUnit = () => {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: CreateProductUnitInput) => {
-      const response = await api.post('/catalog/product-units', data);
+    mutationFn: async ({ id, data }: { id: string; data: CreateProductUnitInput }) => {
+      const response = await api.post(`/catalog/products/${id}/units`, data);
       return response.data;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['product', id] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+};
+
+export interface UpdateProductUnitInput {
+  sellingPrice: number;
+}
+
+export const useUpdateProductUnit = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, unitId, data }: { id: string; unitId: string; data: UpdateProductUnitInput }) => {
+      const response = await api.patch(`/catalog/products/${id}/units/${unitId}`, data);
+      return response.data;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['product', id] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     },
   });
 };
 
 export interface UpdateProductInput {
-  categoryId: string;
-  name: string;
+  categoryId?: string;
+  name?: string;
   description?: string;
   imageUrl?: string;
-  costPrice: number;
+  costPrice?: number;
   baseStockQuantity?: number;
   lowStockThreshold?: number;
+  isActive?: boolean;
 }
 
 export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateProductInput }) => {
-      const response = await api.put(`/catalog/products/${id}`, data);
+      const response = await api.patch(`/catalog/products/${id}`, data);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-    },
-  });
-};
-
-export const useToggleProductStatus = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await api.patch(`/catalog/products/${id}/status`);
-      return response.data;
-    },
-    onSuccess: () => {
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['product', id] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
   });
