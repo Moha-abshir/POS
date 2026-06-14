@@ -50,6 +50,27 @@
       "when": 1781276929683,
       "tag": "0006_easy_sunspot",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781416564110,
+      "tag": "0007_add_invoice_mpesa_refs",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781416704960,
+      "tag": "0008_add_refs",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1781416781884,
+      "tag": "0009_drop_notes",
+      "breakpoints": true
     }
   ]
 }
