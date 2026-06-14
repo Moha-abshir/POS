@@ -5,71 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1781074661410,
-      "tag": "0000_lean_piledriver",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1781083687683,
-      "tag": "0001_safe_omega_red",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1781092674871,
-      "tag": "0002_typical_luminals",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1781189270185,
-      "tag": "0003_swift_emma_frost",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1781189622422,
-      "tag": "0004_classy_whirlwind",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1781246678005,
-      "tag": "0005_dry_golden_guardian",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1781276929683,
-      "tag": "0006_easy_sunspot",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1781416564110,
-      "tag": "0007_add_invoice_mpesa_refs",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1781416704960,
-      "tag": "0008_add_refs",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1781416781884,
-      "tag": "0009_drop_notes",
+      "when": 1781457521698,
+      "tag": "0000_tired_magik",
       "breakpoints": true
     }
   ]

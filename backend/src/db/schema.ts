@@ -73,9 +73,6 @@ export const products = pgTable('products', {
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
   imageUrl: varchar('image_url', { length: 500 }),
-  costPrice: decimal('cost_price', { precision: 12, scale: 2 }).notNull(),
-  baseStockQuantity: decimal('base_stock_quantity', { precision: 10, scale: 3 }).notNull().default('0'),
-  lowStockThreshold: decimal('low_stock_threshold', { precision: 10, scale: 3 }).notNull().default('0'),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
@@ -83,14 +80,34 @@ export const products = pgTable('products', {
 }, (table) => ({
   businessIdx: index('products_business_idx').on(table.businessId),
   categoryIdx: index('products_category_idx').on(table.categoryId),
-  costPriceCheck: check('cost_price_check', sql`${table.costPrice} >= 0`),
-  baseStockQuantityCheck: check('base_stock_quantity_check', sql`${table.baseStockQuantity} >= 0`)
+  uniqueNamePerBusiness: unique('products_name_business_unique').on(table.businessId, table.name)
 }));
 
-export const productUnits = pgTable('product_units', {
+export const productVariants = pgTable('product_variants', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
   productId: uuid('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  sku: varchar('sku', { length: 100 }),
+  imageUrl: varchar('image_url', { length: 500 }),
+  costPrice: decimal('cost_price', { precision: 12, scale: 2 }).notNull(),
+  baseUnitName: varchar('base_unit_name', { length: 50 }).notNull().default('Piece'),
+  baseStockQuantity: decimal('base_stock_quantity', { precision: 10, scale: 3 }).notNull().default('0'),
+  lowStockThreshold: decimal('low_stock_threshold', { precision: 10, scale: 3 }).notNull().default('0'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
+}, (table) => ({
+  productIdx: index('variants_product_idx').on(table.productId),
+  uniqueNamePerProduct: unique('variants_name_product_unique').on(table.productId, table.name),
+  costPriceCheck: check('variant_cost_price_check', sql`${table.costPrice} >= 0`),
+  stockCheck: check('variant_stock_check', sql`${table.baseStockQuantity} >= 0`)
+}));
+
+export const variantUnits = pgTable('variant_units', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  variantId: uuid('variant_id').notNull().references(() => productVariants.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 100 }).notNull(),
   sellingPrice: decimal('selling_price', { precision: 12, scale: 2 }).notNull(),
   conversionFactor: decimal('conversion_factor', { precision: 10, scale: 4 }).notNull().default('1'),
@@ -99,9 +116,10 @@ export const productUnits = pgTable('product_units', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
 }, (table) => ({
-  productIdx: index('product_units_product_idx').on(table.productId),
-  uniqueNamePerProduct: unique('product_units_name_product_unique').on(table.productId, table.name),
-  sellingPriceCheck: check('selling_price_check', sql`${table.sellingPrice} >= 0`)
+  variantIdx: index('units_variant_idx').on(table.variantId),
+  uniqueNamePerVariant: unique('units_name_variant_unique').on(table.variantId, table.name),
+  sellingPriceCheck: check('units_price_check', sql`${table.sellingPrice} >= 0`),
+  conversionFactorCheck: check('units_factor_check', sql`${table.conversionFactor} > 0`)
 }));
 
 export const movementTypeEnum = pgEnum('movement_type', ['PURCHASE', 'SALE', 'REFUND', 'DAMAGE', 'ADJUSTMENT']);
@@ -149,13 +167,15 @@ export const purchaseItems = pgTable('purchase_items', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
   purchaseId: uuid('purchase_id').notNull().references(() => purchases.id, { onDelete: 'restrict' }),
-  productId: uuid('product_id').notNull().references(() => products.id, { onDelete: 'restrict' }),
+  variantId: uuid('variant_id').notNull().references(() => productVariants.id, { onDelete: 'restrict' }),
+  unitId: uuid('unit_id').notNull().references(() => variantUnits.id, { onDelete: 'restrict' }),
   quantity: decimal('quantity', { precision: 10, scale: 3 }).notNull(),
   costPrice: decimal('cost_price', { precision: 12, scale: 2 }).notNull(),
   subtotal: decimal('subtotal', { precision: 12, scale: 2 }).notNull(),
 }, (table) => ({
   purchaseIdx: index('purchase_items_purchase_idx').on(table.purchaseId),
-  productIdx: index('purchase_items_product_idx').on(table.productId),
+  variantIdx: index('purchase_items_variant_idx').on(table.variantId),
+  unitIdx: index('purchase_items_unit_idx').on(table.unitId),
   businessIdx: index('purchase_items_business_idx').on(table.businessId),
   quantityCheck: check('purchase_items_quantity_check', sql`${table.quantity} > 0`),
   costPriceCheck: check('purchase_items_cost_price_check', sql`${table.costPrice} >= 0`)
@@ -181,7 +201,7 @@ export const payments = pgTable('payments', {
 export const stockMovements = pgTable('stock_movements', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
-  productId: uuid('product_id').notNull().references(() => products.id, { onDelete: 'restrict' }),
+  variantId: uuid('variant_id').notNull().references(() => productVariants.id, { onDelete: 'restrict' }),
   type: movementTypeEnum('type').notNull(),
   quantityChange: decimal('quantity_change', { precision: 10, scale: 3 }).notNull(),
   referenceType: varchar('reference_type', { length: 50 }),
@@ -190,7 +210,7 @@ export const stockMovements = pgTable('stock_movements', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   createdBy: uuid('created_by').references(() => users.id),
 }, (table) => ({
-  productIdx: index('stock_movements_product_idx').on(table.productId),
+  variantIdx: index('stock_movements_variant_idx').on(table.variantId),
   typeIdx: index('stock_movements_type_idx').on(table.type),
   createdAtIdx: index('stock_movements_created_at_idx').on(table.createdAt),
   referenceIdx: index('stock_movements_reference_idx').on(table.referenceType, table.referenceId),
@@ -200,14 +220,14 @@ export const stockMovements = pgTable('stock_movements', {
 export const damagedGoods = pgTable('damaged_goods', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
-  productId: uuid('product_id').notNull().references(() => products.id, { onDelete: 'restrict' }),
+  variantId: uuid('variant_id').notNull().references(() => productVariants.id, { onDelete: 'restrict' }),
   quantity: decimal('quantity', { precision: 10, scale: 3 }).notNull(),
   reason: text('reason'),
   damagedAt: timestamp('damaged_at', { withTimezone: true }).defaultNow().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   createdBy: uuid('created_by').references(() => users.id),
 }, (table) => ({
-  productIdx: index('damaged_goods_product_idx').on(table.productId),
+  variantIdx: index('damaged_goods_variant_idx').on(table.variantId),
   damagedAtIdx: index('damaged_goods_damaged_at_idx').on(table.damagedAt),
   businessIdx: index('damaged_goods_business_idx').on(table.businessId),
   quantityCheck: check('damaged_goods_quantity_check', sql`${table.quantity} > 0`)
