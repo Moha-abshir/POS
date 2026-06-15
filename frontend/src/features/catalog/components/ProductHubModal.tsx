@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check } from 'lucide-react';
+import { X, Check, Edit2, AlertTriangle, Package, DollarSign, Plus } from 'lucide-react';
 import { type Product, type Variant, useUpdateProduct, useUpdateVariant } from '../api/catalog.api';
 import { DetailsEditModal } from './hub/DetailsEditModal';
 import { CostPriceEditModal } from './hub/CostPriceEditModal';
@@ -76,65 +76,71 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
   return (
     <>
       <div className={`fixed inset-0 z-50 flex items-center justify-center overflow-y-auto transition-all duration-300 ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
         
-        <div className={`relative bg-[var(--color-bg-surface)] rounded-[var(--radius-lg)] shadow-[var(--shadow-modal)] w-full max-w-[600px] m-4 flex flex-col transition-all duration-300 ${isOpen ? 'translate-y-0 scale-100' : 'translate-y-8 scale-[0.97]'}`}>
+        <div className={`relative bg-[var(--color-bg-base)] rounded-[var(--radius-lg)] shadow-2xl w-full max-w-[640px] m-4 flex flex-col overflow-hidden transition-all duration-300 ${isOpen ? 'translate-y-0 scale-100' : 'translate-y-8 scale-[0.97]'}`}>
           
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
-            <div className="flex items-center gap-3">
-              <h2 className="text-[var(--text-lg)] font-semibold text-[var(--color-text-primary)]">
-                {product.name}
-              </h2>
-              <span className="text-[var(--text-sm)] text-[var(--color-text-muted)]">—</span>
-              <span className="text-[var(--text-sm)] text-[var(--color-text-secondary)]">{product.categoryName || 'No Category'}</span>
-              <span className="text-[var(--text-sm)] text-[var(--color-text-muted)]">•</span>
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${product.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {product.isActive ? 'Active' : 'Inactive'}
-              </span>
+          <div className="flex items-center justify-between p-6 bg-[var(--color-bg-surface)] border-b border-[var(--color-border)] z-10">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-[var(--color-text-primary)] font-display tracking-tight">
+                  {product.name}
+                </h2>
+                <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${product.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {product.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-[var(--text-sm)] text-[var(--color-text-secondary)] font-medium">
+                <span>{product.categoryName || 'Uncategorized'}</span>
+              </div>
             </div>
-            <button onClick={onClose} className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
+            <button onClick={onClose} className="p-2.5 bg-[var(--color-bg-sunken)] rounded-full text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-border)] transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="p-6 space-y-8 overflow-y-auto max-h-[70vh]">
+          <div className="p-6 space-y-6 overflow-y-auto max-h-[75vh]">
             
             {/* DETAILS SECTION */}
-            <section>
-              <div className="flex items-center justify-between mb-4 border-b border-[var(--color-border)] pb-2">
-                <h3 className="text-[var(--text-sm)] font-bold tracking-wider text-[var(--color-text-muted)] uppercase">Product Details</h3>
+            <section className="bg-[var(--color-bg-surface)] rounded-[var(--radius-lg)] p-5 shadow-sm border border-[var(--color-border)]">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2 text-[var(--color-text-primary)]">
+                  <Package className="w-5 h-5 text-[var(--color-primary)]" />
+                  <h3 className="text-[var(--text-sm)] font-bold uppercase tracking-wider">Product Info</h3>
+                </div>
                 <button 
                   onClick={() => setActiveModal('details')}
-                  className="text-[var(--text-sm)] font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-semibold text-[var(--color-primary)] bg-[var(--color-primary)]/10 hover:bg-[var(--color-primary)]/20 rounded-[var(--radius-md)] transition-colors"
                 >
-                  Edit ✎
+                  <Edit2 className="w-3.5 h-3.5" /> Edit
                 </button>
               </div>
-              <div className="grid grid-cols-[150px_1fr] gap-3 text-[var(--text-sm)]">
-                <div className="text-[var(--color-text-muted)]">Name</div>
-                <div className="font-medium text-[var(--color-text-primary)]">{product.name}</div>
+              <div className="grid grid-cols-[100px_1fr] gap-y-4 gap-x-4 text-[var(--text-sm)]">
+                <div className="text-[var(--color-text-muted)] font-medium pt-2">Name</div>
+                <div className="font-semibold text-[var(--color-text-primary)] bg-[var(--color-bg-sunken)] px-4 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)]/50">{product.name}</div>
                 
-                <div className="text-[var(--color-text-muted)]">Category</div>
-                <div className="font-medium text-[var(--color-text-primary)]">{product.categoryName || '-'}</div>
+                <div className="text-[var(--color-text-muted)] font-medium pt-2">Category</div>
+                <div className="font-semibold text-[var(--color-text-primary)] bg-[var(--color-bg-sunken)] px-4 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)]/50">{product.categoryName || '-'}</div>
 
-                <div className="text-[var(--color-text-muted)]">Description</div>
-                <div className="font-medium text-[var(--color-text-primary)]">{product.description || '-'}</div>
+                <div className="text-[var(--color-text-muted)] font-medium pt-2">Description</div>
+                <div className="font-semibold text-[var(--color-text-primary)] bg-[var(--color-bg-sunken)] px-4 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)]/50 min-h-[40px] leading-relaxed">{product.description || '-'}</div>
               </div>
             </section>
 
             {/* VARIANT SELECTOR */}
             {product.variants && product.variants.length > 0 && (
-              <section className="bg-[var(--color-bg-sunken)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-                <div className="flex items-center justify-between">
-                  <span className="text-[var(--text-sm)] font-semibold text-[var(--color-text-secondary)]">Managing Variant:</span>
-                  <div className="w-[200px]">
-                    <CustomSelect 
-                      options={product.variants.map(v => ({ id: v.id, name: v.name }))} 
-                      value={selectedVariantId} 
-                      onChange={(e) => setSelectedVariantId(e.target.value)}
-                    />
-                  </div>
+              <section className="bg-gradient-to-r from-[var(--color-bg-surface)] to-[var(--color-bg-sunken)] rounded-[var(--radius-lg)] p-5 shadow-sm border border-[var(--color-border)] flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-[var(--text-sm)] font-bold text-[var(--color-text-primary)]">Variant Profile</span>
+                  <span className="text-[12px] text-[var(--color-text-secondary)] font-medium mt-0.5">Select a variant to configure pricing & stock</span>
+                </div>
+                <div className="w-[220px]">
+                  <CustomSelect 
+                    options={product.variants.map(v => ({ id: v.id, name: v.name }))} 
+                    value={selectedVariantId} 
+                    onChange={(e) => setSelectedVariantId(e.target.value)}
+                  />
                 </div>
               </section>
             )}
@@ -142,98 +148,116 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
             {selectedVariant && (
               <>
                 {/* PRICING & UNITS SECTION */}
-                <section>
-                  <div className="flex items-center justify-between mb-4 border-b border-[var(--color-border)] pb-2">
-                    <h3 className="text-[var(--text-sm)] font-bold tracking-wider text-[var(--color-text-muted)] uppercase">Pricing & Units</h3>
+                <section className="bg-[var(--color-bg-surface)] rounded-[var(--radius-lg)] p-5 shadow-sm border border-[var(--color-border)]">
+                  <div className="flex items-center gap-2 text-[var(--color-text-primary)] mb-5">
+                    <DollarSign className="w-5 h-5 text-[var(--color-primary)]" />
+                    <h3 className="text-[var(--text-sm)] font-bold uppercase tracking-wider">Pricing & Units</h3>
                   </div>
                   
-                  <div className="grid grid-cols-[150px_1fr_auto] gap-3 text-[var(--text-sm)] items-center mb-6">
-                    <div className="text-[var(--color-text-muted)]">Base Cost Price</div>
-                    <div className="font-medium text-[var(--color-text-primary)]">KSH {Number(selectedVariant.costPrice).toFixed(2)} / {selectedVariant.baseUnitName}</div>
+                  <div className="flex items-center justify-between p-4 bg-[var(--color-bg-sunken)] rounded-[var(--radius-md)] border border-[var(--color-border)]/50 mb-6">
+                    <div className="flex flex-col">
+                      <span className="text-[13px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Base Cost Price</span>
+                      <span className="text-lg font-bold text-[var(--color-text-primary)] mt-1">KSH {Number(selectedVariant.costPrice).toFixed(2)} <span className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)]">/ {selectedVariant.baseUnitName}</span></span>
+                    </div>
                     <button 
                       onClick={() => setActiveModal('cost')}
-                      className="text-[var(--text-sm)] font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] bg-white border border-[var(--color-border)] hover:border-[var(--color-primary)]/30 rounded-[var(--radius-md)] shadow-sm transition-all"
                     >
-                      Edit ✎
+                      <Edit2 className="w-3.5 h-3.5" /> Edit Cost
                     </button>
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)]">Sales Units:</div>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-[13px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wide">Sales Units</h4>
+                      <button 
+                        onClick={() => setActiveModal('addUnit')}
+                        className="flex items-center gap-1 text-[13px] font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors"
+                      >
+                        <Plus className="w-4 h-4" /> Add Unit
+                      </button>
+                    </div>
                     
-                    {selectedVariant.units?.map(u => (
-                      <div key={u.id} className="flex items-center justify-between bg-[var(--color-bg-inset)] p-3 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-                        <div className="flex flex-col">
-                          <span className="font-medium text-[var(--color-text-primary)] flex items-center gap-2">
-                            {u.name} 
-                            {u.isDefault && <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded">Default</span>}
-                          </span>
-                          <span className="text-[12px] text-[var(--color-text-muted)]">{u.conversionFactor} x {selectedVariant.baseUnitName}</span>
+                    <div className="grid gap-3">
+                      {selectedVariant.units?.map(u => (
+                        <div key={u.id} className="flex items-center justify-between bg-white p-4 rounded-[var(--radius-md)] border border-[var(--color-border)] shadow-sm hover:border-[var(--color-primary)]/30 transition-colors group">
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-[var(--color-text-primary)]">{u.name}</span>
+                              {u.isDefault && <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wider rounded">Default</span>}
+                            </div>
+                            <span className="text-[13px] font-medium text-[var(--color-text-muted)] mt-1">{u.conversionFactor} × {selectedVariant.baseUnitName}</span>
+                          </div>
+                          <div className="flex items-center gap-5">
+                            <div className="flex flex-col items-end">
+                              <span className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Selling Price</span>
+                              <span className="font-bold text-[var(--color-text-primary)]">KSH {Number(u.sellingPrice).toFixed(2)}</span>
+                            </div>
+                            <button 
+                              onClick={() => {
+                                setSelectedUnit(u);
+                                setActiveModal('unit');
+                              }}
+                              className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className="font-medium text-[var(--color-text-primary)]">KSH {Number(u.sellingPrice).toFixed(2)}</span>
-                          <button 
-                            onClick={() => {
-                              setSelectedUnit(u);
-                              setActiveModal('unit');
-                            }}
-                            className="text-[13px] font-medium text-[var(--color-primary)] hover:underline"
-                          >
-                            [Edit]
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-
-                    <button 
-                      onClick={() => setActiveModal('addUnit')}
-                      className="w-full py-2 border border-dashed border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] hover:border-[var(--color-primary)] transition-all"
-                    >
-                      + Add Unit
-                    </button>
+                      ))}
+                    </div>
                   </div>
                 </section>
 
                 {/* STOCK SECTION */}
-                <section>
-                  <div className="flex items-center justify-between mb-4 border-b border-[var(--color-border)] pb-2">
-                    <h3 className="text-[var(--text-sm)] font-bold tracking-wider text-[var(--color-text-muted)] uppercase">Stock</h3>
+                <section className="bg-[var(--color-bg-surface)] rounded-[var(--radius-lg)] p-5 shadow-sm border border-[var(--color-border)]">
+                  <div className="flex items-center gap-2 text-[var(--color-text-primary)] mb-5">
+                    <Package className="w-5 h-5 text-[var(--color-primary)]" />
+                    <h3 className="text-[var(--text-sm)] font-bold uppercase tracking-wider">Inventory</h3>
                   </div>
-                  <div className="grid grid-cols-[150px_1fr_auto] gap-4 text-[var(--text-sm)] items-center">
-                    <div className="text-[var(--color-text-muted)]">Current Stock</div>
-                    <div className="font-medium text-[var(--color-text-primary)]">{selectedVariant.baseStockQuantity} {selectedVariant.baseUnitName}s</div>
-                    <div className="text-[12px] italic text-[var(--color-text-muted)]">(read-only)</div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-[var(--color-bg-sunken)] rounded-[var(--radius-md)] border border-[var(--color-border)]/50">
+                      <span className="block text-[13px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Current Stock</span>
+                      <div className="flex items-end gap-2">
+                        <span className="text-xl font-bold text-[var(--color-text-primary)]">{selectedVariant.baseStockQuantity}</span>
+                        <span className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-0.5">{selectedVariant.baseUnitName}s</span>
+                      </div>
+                    </div>
                     
-                    <div className="text-[var(--color-text-muted)]">Low Stock Alert</div>
-                    <div className="font-medium text-[var(--color-text-primary)] flex items-center gap-2">
+                    <div className="p-4 bg-[var(--color-bg-sunken)] rounded-[var(--radius-md)] border border-[var(--color-border)]/50">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[13px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Low Stock Alert</span>
+                        {!isEditingLowStock && (
+                          <button onClick={handleLowStockEdit} className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors">
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      
                       {isEditingLowStock ? (
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-2 mt-2">
                           <div className="flex items-center gap-2">
                             <input 
                               type="number" 
                               value={lowStockValue} 
                               onChange={e => setLowStockValue(e.target.value)}
-                              className="w-20 h-8 px-2 border border-[var(--color-border)] rounded focus:outline-none focus:border-[var(--color-primary)]"
+                              className="w-full h-8 px-2 text-[14px] font-medium border border-[var(--color-border)] rounded focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
                             />
-                            <button onClick={handleLowStockSave} disabled={updateVariant.isPending} className="text-green-600 hover:text-green-700">
+                            <button onClick={handleLowStockSave} disabled={updateVariant.isPending} className="p-1.5 bg-green-100 text-green-700 hover:bg-green-200 rounded transition-colors">
                               <Check className="w-4 h-4" />
                             </button>
-                            <button onClick={() => setIsEditingLowStock(false)} className="text-gray-400 hover:text-gray-600">
+                            <button onClick={() => setIsEditingLowStock(false)} className="p-1.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded transition-colors">
                               <X className="w-4 h-4" />
                             </button>
                           </div>
-                          {lowStockError && <span className="text-[12px] text-red-500">{lowStockError}</span>}
+                          {lowStockError && <span className="text-[12px] font-medium text-red-500">{lowStockError}</span>}
                         </div>
                       ) : (
-                        <>
-                          <span>below {selectedVariant.lowStockThreshold} {selectedVariant.baseUnitName}s</span>
-                          <button 
-                            onClick={handleLowStockEdit}
-                            className="text-[var(--text-sm)] font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors ml-4"
-                          >
-                            Edit ✎
-                          </button>
-                        </>
+                        <div className="flex items-end gap-2">
+                          <span className="text-xl font-bold text-[var(--color-text-primary)]">{selectedVariant.lowStockThreshold}</span>
+                          <span className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-0.5">{selectedVariant.baseUnitName}s</span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -242,13 +266,14 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
             )}
 
             {/* DANGER SECTION */}
-            <section>
-              <div className="flex items-center justify-between mb-4 border-b border-[var(--color-border)] pb-2">
-                <h3 className="text-[var(--text-sm)] font-bold tracking-wider text-red-500 uppercase">Danger</h3>
+            <section className="bg-red-50/50 rounded-[var(--radius-lg)] p-5 border border-red-100">
+              <div className="flex items-center gap-2 text-red-600 mb-4">
+                <AlertTriangle className="w-5 h-5" />
+                <h3 className="text-[var(--text-sm)] font-bold uppercase tracking-wider">Danger Zone</h3>
               </div>
               <button 
                 onClick={() => setActiveModal('deactivate')}
-                className="w-full py-2.5 border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 rounded-[var(--radius-md)] text-[var(--text-sm)] font-medium transition-colors"
+                className="w-full py-3 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-[var(--radius-md)] text-[14px] font-bold shadow-sm transition-all"
               >
                 {product.isActive ? 'Deactivate Product' : 'Reactivate Product'}
               </button>
@@ -257,7 +282,6 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
           </div>
         </div>
       </div>
-
       {/* Sub Modals */}
       {activeModal === 'details' && (
         <DetailsEditModal 
