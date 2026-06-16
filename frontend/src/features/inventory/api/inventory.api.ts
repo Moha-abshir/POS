@@ -27,7 +27,7 @@ export interface Purchase {
 }
 
 export const inventoryApi = {
-  getMovements: async (filters?: { type?: string; startDate?: string; endDate?: string; product?: string; invoiceRef?: string; mpesaRef?: string }) => {
+  getMovements: async (filters?: { type?: string; startDate?: string; endDate?: string; product?: string; supplier?: string; invoiceRef?: string; mpesaRef?: string }) => {
     const res = await api.get('/inventory/movements', { params: filters });
     return res.data.data as StockMovement[];
   },

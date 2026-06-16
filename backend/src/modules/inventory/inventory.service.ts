@@ -52,7 +52,7 @@ export class InventoryService {
     return updatedVariant.baseStockQuantity;
   }
 
-  static async getStockMovements(businessId: string, filters: { limit?: number; offset?: number; type?: string; startDate?: string; endDate?: string; product?: string; invoiceRef?: string; mpesaRef?: string } = {}) {
+  static async getStockMovements(businessId: string, filters: { limit?: number; offset?: number; type?: string; startDate?: string; endDate?: string; product?: string; supplier?: string; invoiceRef?: string; mpesaRef?: string } = {}) {
     const { limit = 50, offset = 0 } = filters;
     const conditions: any[] = [eq(stockMovements.businessId, businessId)];
 
@@ -67,6 +67,9 @@ export class InventoryService {
     }
     if (filters.product) {
       conditions.push(sql`${products.name} ILIKE ${`%${filters.product}%`}`);
+    }
+    if (filters.supplier) {
+      conditions.push(sql`${suppliers.name} ILIKE ${`%${filters.supplier}%`}`);
     }
     if (filters.invoiceRef) {
       conditions.push(sql`${purchases.invoiceRef} ILIKE ${`%${filters.invoiceRef}%`}`);

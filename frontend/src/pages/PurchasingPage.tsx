@@ -23,6 +23,7 @@ export function PurchasingPage() {
     startDate: '',
     endDate: '',
     product: '',
+    supplier: '',
     invoiceRef: '',
     mpesaRef: '',
   });
@@ -55,7 +56,7 @@ export function PurchasingPage() {
   };
 
   const handleClearFilters = () => {
-    const emptyFilters = { startDate: '', endDate: '', product: '', invoiceRef: '', mpesaRef: '' };
+    const emptyFilters = { startDate: '', endDate: '', product: '', supplier: '', invoiceRef: '', mpesaRef: '' };
     setTempPurchaseFilters(emptyFilters);
     setPurchaseFilters(emptyFilters);
     setIsFilterOpen(false);
@@ -247,6 +248,10 @@ export function PurchasingPage() {
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
                       <input type="text" placeholder="Search product..." value={tempPurchaseFilters.product} onChange={e => setTempPurchaseFilters(p => ({ ...p, product: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
+                      <input type="text" placeholder="Search supplier..." value={tempPurchaseFilters.supplier} onChange={e => setTempPurchaseFilters(p => ({ ...p, supplier: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Ref</label>

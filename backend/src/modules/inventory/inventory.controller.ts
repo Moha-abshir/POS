@@ -9,7 +9,7 @@ export class InventoryController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = (page - 1) * limit;
-      const { type, startDate, endDate, product, invoiceRef, mpesaRef } = req.query;
+      const { type, startDate, endDate, product, supplier, invoiceRef, mpesaRef } = req.query;
 
       const filters = {
         limit,
@@ -18,6 +18,7 @@ export class InventoryController {
         startDate: startDate as string,
         endDate: endDate as string,
         product: product as string,
+        supplier: supplier as string,
         invoiceRef: invoiceRef as string,
         mpesaRef: mpesaRef as string,
       };
