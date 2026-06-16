@@ -61,24 +61,22 @@ export function InventoryPage() {
             </button>
           </div>
           
-          {(view === 'ledger' || view === 'damages') && (
-            <div className="flex gap-2 items-center">
-              <button
-                onClick={() => setIsDamageModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 h-10 bg-red-50 border border-red-100 text-red-600 rounded-[var(--radius-md)] hover:bg-red-100 transition-colors shadow-sm font-semibold select-none cursor-pointer"
-              >
-                <AlertTriangle size={18} />
-                <span>Report Damage</span>
-              </button>
-              <button
-                onClick={() => setIsAdjustModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 h-10 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[var(--radius-md)] hover:bg-[var(--color-bg-surface)] transition-colors shadow-sm font-semibold select-none cursor-pointer"
-              >
-                <Wrench size={18} />
-                <span>Adjust Stock</span>
-              </button>
-            </div>
-          )}
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={() => setIsDamageModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 h-10 bg-red-50 border border-red-100 text-red-600 rounded-[var(--radius-md)] hover:bg-red-100 transition-colors shadow-sm font-semibold select-none cursor-pointer"
+            >
+              <AlertTriangle size={18} />
+              <span>Report Damage</span>
+            </button>
+            <button
+              onClick={() => setIsAdjustModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 h-10 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[var(--radius-md)] hover:bg-[var(--color-bg-surface)] transition-colors shadow-sm font-semibold select-none cursor-pointer"
+            >
+              <Wrench size={18} />
+              <span>Adjust Stock</span>
+            </button>
+          </div>
         </div>
       </div>
 
