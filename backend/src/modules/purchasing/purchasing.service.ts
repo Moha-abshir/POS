@@ -84,6 +84,7 @@ export class PurchasingService {
           quantityChange: baseQuantity,
           referenceType: 'PURCHASE',
           referenceId: purchase.id,
+          notes: 'Added Stock',
           userId
         });
       }
