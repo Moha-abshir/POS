@@ -147,7 +147,7 @@ export class InventoryService {
       quantity: damagedGoods.quantity,
       reason: damagedGoods.reason,
       damagedAt: damagedGoods.damagedAt,
-      createdBy: users.name,
+      createdBy: users.firstName,
     })
     .from(damagedGoods)
     .innerJoin(productVariants, eq(damagedGoods.variantId, productVariants.id))
