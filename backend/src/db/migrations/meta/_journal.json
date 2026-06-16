@@ -15,6 +15,13 @@
       "when": 1781601292442,
       "tag": "0001_worthless_scalphunter",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781610561066,
+      "tag": "0002_round_dust",
+      "breakpoints": true
     }
   ]
 }

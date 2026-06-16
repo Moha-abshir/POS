@@ -11,3 +11,11 @@ export const recordDamageSchema = z.object({
   quantity: z.number().positive("Quantity must be positive"),
   reason: z.string().min(1, "Reason is required"),
 });
+
+export const addToRestockSchema = z.object({
+  variantId: z.string().uuid("Invalid variant ID"),
+});
+
+export const updateRestockSchema = z.object({
+  isOrdered: z.boolean(),
+});

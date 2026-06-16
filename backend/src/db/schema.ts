@@ -233,3 +233,15 @@ export const damagedGoods = pgTable('damaged_goods', {
   quantityCheck: check('damaged_goods_quantity_check', sql`${table.quantity} > 0`)
 }));
 
+export const restockItems = pgTable('restock_items', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  variantId: uuid('variant_id').notNull().references(() => productVariants.id, { onDelete: 'cascade' }),
+  isOrdered: boolean('is_ordered').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  createdBy: uuid('created_by').references(() => users.id),
+}, (table) => ({
+  businessIdx: index('restock_items_business_idx').on(table.businessId),
+  variantIdx: index('restock_items_variant_idx').on(table.variantId),
+  uniqueVariantPerBusiness: unique('restock_items_variant_business_unique').on(table.businessId, table.variantId)
+}));

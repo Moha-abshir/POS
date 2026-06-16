@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useProducts, useCategories } from '../api/catalog.api';
-import { Package, Plus, Search, Loader2, MoreHorizontal} from 'lucide-react';
+import { Package, Plus, Search, Loader2, MoreHorizontal, ListPlus } from 'lucide-react';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
+import { useAddToRestockList } from '../../inventory/api/restock.api';
 
 interface ProductListProps {
   onAddProduct: () => void;
@@ -13,6 +14,7 @@ interface ProductListProps {
 export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCategory, onEditProduct, onToggleStatus }) => {
   const { data: products, isLoading, isError } = useProducts();
   const { data: categories, isError: isCategoriesError } = useCategories();
+  const addToRestock = useAddToRestockList();
   
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   
@@ -209,6 +211,16 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
                   </td>
                   <td className="px-6 py-0 text-right">
                     <div className="flex items-center justify-end gap-3 relative">
+                      {(isLow || isOut) && primaryVariant && (
+                        <button 
+                          onClick={() => addToRestock.mutate(primaryVariant.id)} 
+                          disabled={addToRestock.isPending}
+                          title="Add to Restock List"
+                          className="text-amber-500 hover:text-amber-600 transition-colors outline-none focus:ring-2 focus:ring-amber-500 rounded p-1"
+                        >
+                          <ListPlus className="h-4 w-4" />
+                        </button>
+                      )}
                       <button onClick={() => onEditProduct(product)} className="text-amber-600 font-medium text-sm hover:underline outline-none focus:ring-2 focus:ring-amber-500 rounded px-1">
                         Edit
                       </button>

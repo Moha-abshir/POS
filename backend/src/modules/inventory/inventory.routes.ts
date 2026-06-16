@@ -10,4 +10,10 @@ router.get('/movements', authorize(['OWNER', 'MANAGER']), InventoryController.ge
 router.post('/adjust', authorize(['OWNER', 'MANAGER']), InventoryController.adjustStock);
 router.post('/damage', authorize(['OWNER', 'MANAGER']), InventoryController.recordDamage);
 
+// Restock List routes
+router.get('/restock-list', authorize(['OWNER', 'MANAGER', 'CASHIER']), InventoryController.getRestockList);
+router.post('/restock-list', authorize(['OWNER', 'MANAGER', 'CASHIER']), InventoryController.addToRestockList);
+router.post('/restock-list/clear', authorize(['OWNER', 'MANAGER']), InventoryController.clearOrderedRestockItems);
+router.patch('/restock-list/:id', authorize(['OWNER', 'MANAGER', 'CASHIER']), InventoryController.updateRestockItem);
+
 export default router;
