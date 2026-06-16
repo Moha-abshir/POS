@@ -9,8 +9,20 @@ export class InventoryController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = (page - 1) * limit;
+      const { type, startDate, endDate, product, invoiceRef, mpesaRef } = req.query;
 
-      const result = await InventoryService.getStockMovements(req.user!.businessId, limit, offset);
+      const filters = {
+        limit,
+        offset,
+        type: type as string,
+        startDate: startDate as string,
+        endDate: endDate as string,
+        product: product as string,
+        invoiceRef: invoiceRef as string,
+        mpesaRef: mpesaRef as string,
+      };
+
+      const result = await InventoryService.getStockMovements(req.user!.businessId, filters);
       res.json({ success: true, data: result.data, meta: result.meta });
     } catch (error) {
       next(error);

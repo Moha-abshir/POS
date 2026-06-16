@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { suppliersApi, type Supplier } from '../features/suppliers/api/suppliers.api';
 import { inventoryApi } from '../features/inventory/api/inventory.api';
-import { Plus, Search, Truck, Edit, Package, ArrowDownRight, DollarSign } from 'lucide-react';
+import { Plus, Search, Truck, Edit, Package, ArrowDownRight, DollarSign, Filter } from 'lucide-react';
 import { SupplierModal } from '../features/suppliers/components/SupplierModal';
 import { PurchaseModal } from '../features/inventory/components/PurchaseModal';
 import { RecordPaymentModal } from '../features/suppliers/components/RecordPaymentModal';
@@ -19,10 +19,25 @@ export function PurchasingPage() {
   
   const queryClient = useQueryClient();
 
+  const [purchaseFilters, setPurchaseFilters] = useState({
+    startDate: '',
+    endDate: '',
+    product: '',
+    invoiceRef: '',
+    mpesaRef: '',
+  });
+  const [debouncedPurchaseFilters, setDebouncedPurchaseFilters] = useState(purchaseFilters);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(timer);
   }, [search]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedPurchaseFilters(purchaseFilters), 300);
+    return () => clearTimeout(timer);
+  }, [purchaseFilters]);
 
   const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery({
     queryKey: ['suppliers', debouncedSearch],
@@ -30,11 +45,9 @@ export function PurchasingPage() {
   });
 
   const { data: movements = [], isLoading: isLoadingMovements } = useQuery({
-    queryKey: ['inventory', 'movements'],
-    queryFn: inventoryApi.getMovements,
+    queryKey: ['inventory', 'movements', debouncedPurchaseFilters],
+    queryFn: () => inventoryApi.getMovements({ type: 'PURCHASE', ...debouncedPurchaseFilters }),
   });
-
-  const purchaseHistory = movements.filter((m: any) => m.type === 'PURCHASE');
 
   const handleAddSupplier = () => {
     setSelectedSupplier(null);
@@ -189,35 +202,70 @@ export function PurchasingPage() {
         )}
 
         {activeTab === 'purchases' && (
-          <div className="overflow-x-auto flex-1">
-            <table className="w-full text-left border-collapse min-w-[800px]">
-              <thead>
-                <tr className="bg-white border-b border-[var(--color-border)]">
-                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Date & Time</th>
-                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Product</th>
-                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Type</th>
-                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Quantity</th>
-                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Invoice Ref</th>
-                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">M-Pesa Ref</th>
-                </tr>
-              </thead>
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <div className="p-4 border-b border-[var(--color-border)] bg-white flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Purchase History</h2>
+              <button 
+                onClick={() => setIsFilterOpen(!isFilterOpen)} 
+                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium border rounded-md transition-colors ${isFilterOpen ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+              >
+                <Filter size={16} /> Filters
+              </button>
+            </div>
+            {isFilterOpen && (
+              <div className="p-4 bg-gray-50 border-b border-[var(--color-border)] grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Start Date</label>
+                  <input type="date" value={purchaseFilters.startDate} onChange={e => setPurchaseFilters(p => ({ ...p, startDate: e.target.value }))} className="w-full text-sm border-gray-300 rounded-md shadow-sm h-8 px-2" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">End Date</label>
+                  <input type="date" value={purchaseFilters.endDate} onChange={e => setPurchaseFilters(p => ({ ...p, endDate: e.target.value }))} className="w-full text-sm border-gray-300 rounded-md shadow-sm h-8 px-2" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Product</label>
+                  <input type="text" placeholder="Search product..." value={purchaseFilters.product} onChange={e => setPurchaseFilters(p => ({ ...p, product: e.target.value }))} className="w-full text-sm border-gray-300 rounded-md shadow-sm h-8 px-2" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Invoice Ref</label>
+                  <input type="text" placeholder="Search invoice..." value={purchaseFilters.invoiceRef} onChange={e => setPurchaseFilters(p => ({ ...p, invoiceRef: e.target.value }))} className="w-full text-sm border-gray-300 rounded-md shadow-sm h-8 px-2" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">M-Pesa Ref</label>
+                  <input type="text" placeholder="Search ref..." value={purchaseFilters.mpesaRef} onChange={e => setPurchaseFilters(p => ({ ...p, mpesaRef: e.target.value }))} className="w-full text-sm border-gray-300 rounded-md shadow-sm h-8 px-2" />
+                </div>
+              </div>
+            )}
+            <div className="overflow-x-auto flex-1">
+              <table className="w-full text-left border-collapse min-w-[900px]">
+                <thead>
+                  <tr className="bg-white border-b border-[var(--color-border)]">
+                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Date & Time</th>
+                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Product</th>
+                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Supplier</th>
+                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Type</th>
+                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Quantity</th>
+                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Invoice Ref</th>
+                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">M-Pesa Ref</th>
+                  </tr>
+                </thead>
               <tbody>
                 {isLoadingMovements ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-8 text-center text-gray-400">Loading purchases...</td>
                   </tr>
-                ) : purchaseHistory.length === 0 ? (
+                ) : movements.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-16 text-center">
+                    <td colSpan={7} className="p-16 text-center">
                       <div className="flex flex-col items-center justify-center max-w-sm mx-auto text-center">
                         <Package className="h-12 w-12 text-gray-300 mb-4" />
                         <p className="text-lg font-semibold text-gray-500 mb-1">No purchases found</p>
-                        <p className="text-sm text-gray-400">Record a purchase to view history here.</p>
+                        <p className="text-sm text-gray-400">Record a purchase or change filters to view history here.</p>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  purchaseHistory.map((movement: any, index: number) => {
+                  movements.map((movement: any, index: number) => {
                     const qty = Number(movement.quantityChange);
                     return (
                       <tr key={movement.id} className={`border-b border-[var(--color-border)] h-12 transition-colors duration-150 hover:bg-[var(--color-bg-sunken)] ${index % 2 === 0 ? 'bg-white' : 'bg-[var(--color-bg-base)]'}`}>
@@ -225,6 +273,7 @@ export function PurchasingPage() {
                           {new Date(movement.createdAt).toLocaleString()}
                         </td>
                         <td className="px-6 py-0 font-medium text-[var(--color-text-primary)]">{movement.productName}</td>
+                        <td className="px-6 py-0 text-[var(--color-text-secondary)]">{movement.supplierName || '-'}</td>
                         <td className="px-6 py-0">
                           <div className="flex items-center gap-2">
                             <ArrowDownRight className="text-emerald-500" size={18} />
@@ -248,6 +297,7 @@ export function PurchasingPage() {
                 )}
               </tbody>
             </table>
+          </div>
           </div>
         )}
       </div>

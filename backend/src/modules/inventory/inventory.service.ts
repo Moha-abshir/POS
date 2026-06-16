@@ -1,6 +1,6 @@
 import { eq, and, sql, desc } from 'drizzle-orm';
 import { db } from '../../db';
-import { productVariants, stockMovements, damagedGoods, purchases, products, users } from '../../db/schema';
+import { productVariants, stockMovements, damagedGoods, purchases, products, users, suppliers } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 
 export class InventoryService {
@@ -52,7 +52,29 @@ export class InventoryService {
     return updatedVariant.baseStockQuantity;
   }
 
-  static async getStockMovements(businessId: string, limit = 50, offset = 0) {
+  static async getStockMovements(businessId: string, filters: { limit?: number; offset?: number; type?: string; startDate?: string; endDate?: string; product?: string; invoiceRef?: string; mpesaRef?: string } = {}) {
+    const { limit = 50, offset = 0 } = filters;
+    const conditions: any[] = [eq(stockMovements.businessId, businessId)];
+
+    if (filters.type) {
+      conditions.push(eq(stockMovements.type, filters.type as any));
+    }
+    if (filters.startDate) {
+      conditions.push(sql`${stockMovements.createdAt} >= ${new Date(filters.startDate).toISOString()}`);
+    }
+    if (filters.endDate) {
+      conditions.push(sql`${stockMovements.createdAt} <= ${new Date(filters.endDate).toISOString()}`);
+    }
+    if (filters.product) {
+      conditions.push(sql`${products.name} ILIKE ${`%${filters.product}%`}`);
+    }
+    if (filters.invoiceRef) {
+      conditions.push(sql`${purchases.invoiceRef} ILIKE ${`%${filters.invoiceRef}%`}`);
+    }
+    if (filters.mpesaRef) {
+      conditions.push(sql`${purchases.mpesaRef} ILIKE ${`%${filters.mpesaRef}%`}`);
+    }
+
     const data = await db.select({
       id: stockMovements.id,
       variantId: stockMovements.variantId,
@@ -64,20 +86,25 @@ export class InventoryService {
       notes: stockMovements.notes,
       invoiceRef: purchases.invoiceRef,
       mpesaRef: purchases.mpesaRef,
+      supplierName: suppliers.name,
       createdAt: stockMovements.createdAt,
     })
     .from(stockMovements)
     .innerJoin(productVariants, eq(stockMovements.variantId, productVariants.id))
     .innerJoin(products, eq(productVariants.productId, products.id))
     .leftJoin(purchases, and(eq(stockMovements.referenceId, purchases.id), eq(stockMovements.referenceType, 'PURCHASE')))
-    .where(eq(stockMovements.businessId, businessId))
+    .leftJoin(suppliers, eq(purchases.supplierId, suppliers.id))
+    .where(and(...conditions))
     .orderBy(desc(stockMovements.createdAt))
     .limit(limit)
     .offset(offset);
 
     const [{ count }] = await db.select({ count: sql`count(*)`.mapWith(Number) })
       .from(stockMovements)
-      .where(eq(stockMovements.businessId, businessId));
+      .innerJoin(productVariants, eq(stockMovements.variantId, productVariants.id))
+      .innerJoin(products, eq(productVariants.productId, products.id))
+      .leftJoin(purchases, and(eq(stockMovements.referenceId, purchases.id), eq(stockMovements.referenceType, 'PURCHASE')))
+      .where(and(...conditions));
 
     return {
       data,

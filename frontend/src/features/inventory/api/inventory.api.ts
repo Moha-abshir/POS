@@ -11,6 +11,7 @@ export interface StockMovement {
   notes?: string;
   invoiceRef?: string;
   mpesaRef?: string;
+  supplierName?: string;
   createdAt: string;
 }
 
@@ -26,8 +27,8 @@ export interface Purchase {
 }
 
 export const inventoryApi = {
-  getMovements: async () => {
-    const res = await api.get('/inventory/movements');
+  getMovements: async (filters?: { type?: string; startDate?: string; endDate?: string; product?: string; invoiceRef?: string; mpesaRef?: string }) => {
+    const res = await api.get('/inventory/movements', { params: filters });
     return res.data.data as StockMovement[];
   },
 
