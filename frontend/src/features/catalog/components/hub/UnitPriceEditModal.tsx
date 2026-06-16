@@ -83,10 +83,10 @@ export const UnitPriceEditModal: React.FC<UnitPriceEditModalProps> = ({ isOpen, 
             </div>
 
             {sellingPrice !== '' && (
-              <div className="flex justify-between items-center text-[var(--text-sm)] text-[var(--color-text-secondary)] bg-[var(--color-bg-inset)] p-3 rounded-[var(--radius-md)] border border-[var(--color-border)]">
+              <div className="flex justify-between items-center text-[12px] text-[var(--color-text-secondary)] bg-[var(--color-bg-inset)] p-3 rounded-[var(--radius-md)] border border-[var(--color-border)]">
                 <div className="flex flex-col">
                   <span>Margin at new price:</span>
-                  <span className="text-[12px] text-[var(--color-text-muted)]">Cost: KSH {expectedCost.toFixed(2)}</span>
+                  <span className="text-[11px] text-[var(--color-text-muted)]">Cost: KSH {expectedCost.toFixed(2)}</span>
                 </div>
                 <span className={`font-medium ${isBelowCost ? 'text-red-500' : 'text-green-600'}`}>
                   KSH {margin.toFixed(2)}

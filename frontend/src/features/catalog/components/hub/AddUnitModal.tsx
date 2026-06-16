@@ -119,7 +119,7 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({ isOpen, onClose, pro
           </div>
 
           {formData.sellingPrice !== '' && formData.conversionFactor !== '' && (
-            <div className="flex justify-between items-center text-[var(--text-sm)] text-[var(--color-text-secondary)] bg-[var(--color-bg-inset)] p-3 rounded-[var(--radius-md)] border border-[var(--color-border)]">
+            <div className="flex justify-between items-center text-[12px] text-[var(--color-text-secondary)] bg-[var(--color-bg-inset)] p-3 rounded-[var(--radius-md)] border border-[var(--color-border)]">
               <span>Expected Cost: KSH {expectedCost.toFixed(2)}</span>
               <span className={`font-medium ${isBelowCost ? 'text-red-500' : 'text-green-600'}`}>
                 Margin: KSH {margin.toFixed(2)}
