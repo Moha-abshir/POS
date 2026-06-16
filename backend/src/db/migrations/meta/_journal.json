@@ -8,6 +8,13 @@
       "when": 1781457521698,
       "tag": "0000_tired_magik",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781601292442,
+      "tag": "0001_worthless_scalphunter",
+      "breakpoints": true
     }
   ]
 }
