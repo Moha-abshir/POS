@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { suppliersApi, type Supplier } from '../features/suppliers/api/suppliers.api';
 import { inventoryApi } from '../features/inventory/api/inventory.api';
-import { Plus, Search, Truck, Edit, Package, ArrowDownRight } from 'lucide-react';
+import { Plus, Search, Truck, Edit, Package, ArrowDownRight, DollarSign } from 'lucide-react';
 import { SupplierModal } from '../features/suppliers/components/SupplierModal';
 import { PurchaseModal } from '../features/inventory/components/PurchaseModal';
+import { RecordPaymentModal } from '../features/suppliers/components/RecordPaymentModal';
 
 export function PurchasingPage() {
   const [activeTab, setActiveTab] = useState<'suppliers' | 'purchases'>('suppliers');
@@ -13,6 +14,8 @@ export function PurchasingPage() {
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedPaymentSupplier, setSelectedPaymentSupplier] = useState<Supplier | null>(null);
   
   const queryClient = useQueryClient();
 
@@ -155,10 +158,23 @@ export function PurchasingPage() {
                             {supplier.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td className="px-6 py-0 text-right">
+                        <td className="px-6 py-0 text-right space-x-2">
+                          {Number(supplier.balance) > 0 && (
+                            <button
+                              onClick={() => {
+                                setSelectedPaymentSupplier(supplier);
+                                setIsPaymentModalOpen(true);
+                              }}
+                              className="p-2 text-gray-400 hover:text-green-600 transition-colors inline-flex items-center justify-center cursor-pointer"
+                              title="Record Payment"
+                            >
+                              <DollarSign size={16} />
+                            </button>
+                          )}
                           <button
                             onClick={() => handleEditSupplier(supplier)}
                             className="p-2 text-gray-400 hover:text-[var(--color-accent)] transition-colors inline-flex items-center justify-center cursor-pointer"
+                            title="Edit Supplier"
                           >
                             <Edit size={16} />
                           </button>
@@ -244,6 +260,16 @@ export function PurchasingPage() {
       
       {isPurchaseModalOpen && (
         <PurchaseModal onClose={() => setIsPurchaseModalOpen(false)} />
+      )}
+
+      {isPaymentModalOpen && selectedPaymentSupplier && (
+        <RecordPaymentModal
+          supplier={selectedPaymentSupplier}
+          onClose={() => {
+            setIsPaymentModalOpen(false);
+            setSelectedPaymentSupplier(null);
+          }}
+        />
       )}
     </div>
   );

@@ -50,4 +50,22 @@ export class SuppliersController {
       next(error);
     }
   }
+
+  static async recordPayment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const supplierId = req.params.id as string;
+      const { amount, method, mpesaReceiptNumber } = req.body;
+      
+      const result = await SuppliersService.recordPayment(
+        req.user!.businessId, 
+        req.user!.id, 
+        supplierId, 
+        { amount: Number(amount), method, mpesaReceiptNumber }
+      );
+      
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

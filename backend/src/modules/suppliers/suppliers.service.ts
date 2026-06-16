@@ -1,6 +1,6 @@
-import { eq, and, asc, desc, ilike, or } from 'drizzle-orm';
+import { eq, and, asc, desc, ilike, or, sql } from 'drizzle-orm';
 import { db } from '../../db';
-import { suppliers } from '../../db/schema';
+import { suppliers, payments } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 
 export class SuppliersService {
@@ -63,5 +63,51 @@ export class SuppliersService {
     }
 
     return supplier;
+  }
+
+  static async recordPayment(
+    businessId: string, 
+    userId: string, 
+    supplierId: string, 
+    data: { amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string }
+  ) {
+    if (data.amount <= 0) throw new AppError('Payment amount must be greater than zero', 400);
+
+    return await db.transaction(async (tx) => {
+      // 1. Verify supplier exists and has balance
+      const [supplier] = await tx.select()
+        .from(suppliers)
+        .where(and(eq(suppliers.id, supplierId), eq(suppliers.businessId, businessId)));
+
+      if (!supplier) {
+        throw new AppError('Supplier not found', 404);
+      }
+
+      if (Number(supplier.balance) < data.amount) {
+        throw new AppError(`Payment amount (${data.amount}) exceeds outstanding balance (${supplier.balance})`, 400);
+      }
+
+      // 2. Decrease balance
+      const [updatedSupplier] = await tx.update(suppliers)
+        .set({ 
+          balance: sql`${suppliers.balance} - ${data.amount}`,
+          updatedAt: new Date()
+        })
+        .where(eq(suppliers.id, supplierId))
+        .returning();
+
+      // 3. Create payment record
+      const [payment] = await tx.insert(payments).values({
+        businessId,
+        referenceType: 'SUPPLIER_DEBT',
+        referenceId: supplierId,
+        amount: data.amount.toString(),
+        method: data.method,
+        mpesaReceiptNumber: data.method === 'MPESA' && data.mpesaReceiptNumber ? data.mpesaReceiptNumber.toUpperCase() : null,
+        createdBy: userId,
+      }).returning();
+
+      return { payment, supplier: updatedSupplier };
+    });
   }
 }

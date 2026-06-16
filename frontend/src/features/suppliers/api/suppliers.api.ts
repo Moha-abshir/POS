@@ -23,5 +23,10 @@ export const suppliersApi = {
   updateSupplier: async (id: string, data: Partial<Supplier>) => {
     const res = await api.put(`/suppliers/${id}`, data);
     return res.data.data as Supplier;
+  },
+
+  recordPayment: async (supplierId: string, data: { amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string }) => {
+    const res = await api.post(`/suppliers/${supplierId}/payments`, data);
+    return res.data.data;
   }
 };
