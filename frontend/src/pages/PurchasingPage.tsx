@@ -26,6 +26,7 @@ export function PurchasingPage() {
     supplier: '',
     invoiceRef: '',
     mpesaRef: '',
+    paymentMethod: '',
   });
   const [tempPurchaseFilters, setTempPurchaseFilters] = useState(purchaseFilters);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -61,7 +62,7 @@ export function PurchasingPage() {
   };
 
   const handleClearFilters = () => {
-    const emptyFilters = { startDate: '', endDate: '', product: '', supplier: '', invoiceRef: '', mpesaRef: '' };
+    const emptyFilters = { startDate: '', endDate: '', product: '', supplier: '', invoiceRef: '', mpesaRef: '', paymentMethod: '' };
     setTempPurchaseFilters(emptyFilters);
     setPurchaseFilters(emptyFilters);
     setIsFilterOpen(false);
@@ -254,7 +255,7 @@ export function PurchasingPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
                       <input type="text" placeholder="Search product..." value={tempPurchaseFilters.product} onChange={e => setTempPurchaseFilters(p => ({ ...p, product: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
                     </div>
-                    <div className="md:col-span-2">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
                       <select 
                         value={tempPurchaseFilters.supplier} 
@@ -268,13 +269,30 @@ export function PurchasingPage() {
                       </select>
                     </div>
                     <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                      <select 
+                        value={tempPurchaseFilters.paymentMethod} 
+                        onChange={e => {
+                          const val = e.target.value;
+                          setTempPurchaseFilters(p => ({ ...p, paymentMethod: val, ...(val !== 'MPESA' && { mpesaRef: '' }) }));
+                        }} 
+                        className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none bg-white"
+                      >
+                        <option value="">All</option>
+                        <option value="CASH">Cash</option>
+                        <option value="MPESA">M-Pesa</option>
+                      </select>
+                    </div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Ref</label>
                       <input type="text" placeholder="Search invoice..." value={tempPurchaseFilters.invoiceRef} onChange={e => setTempPurchaseFilters(p => ({ ...p, invoiceRef: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">M-Pesa Ref</label>
-                      <input type="text" placeholder="Search ref..." value={tempPurchaseFilters.mpesaRef} onChange={e => setTempPurchaseFilters(p => ({ ...p, mpesaRef: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
-                    </div>
+                    {tempPurchaseFilters.paymentMethod === 'MPESA' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">M-Pesa Ref</label>
+                        <input type="text" placeholder="Search ref..." value={tempPurchaseFilters.mpesaRef} onChange={e => setTempPurchaseFilters(p => ({ ...p, mpesaRef: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
+                      </div>
+                    )}
                   </div>
                   
                   <div className="p-4 border-t border-[var(--color-border)] flex justify-end gap-3 bg-gray-50 rounded-b-xl">

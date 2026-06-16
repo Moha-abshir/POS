@@ -52,7 +52,7 @@ export class InventoryService {
     return updatedVariant.baseStockQuantity;
   }
 
-  static async getStockMovements(businessId: string, filters: { limit?: number; offset?: number; type?: string; startDate?: string; endDate?: string; product?: string; supplier?: string; invoiceRef?: string; mpesaRef?: string } = {}) {
+  static async getStockMovements(businessId: string, filters: { limit?: number; offset?: number; type?: string; startDate?: string; endDate?: string; product?: string; supplier?: string; invoiceRef?: string; mpesaRef?: string; paymentMethod?: string } = {}) {
     const { limit = 50, offset = 0 } = filters;
     const conditions: any[] = [eq(stockMovements.businessId, businessId)];
 
@@ -76,6 +76,9 @@ export class InventoryService {
     }
     if (filters.mpesaRef) {
       conditions.push(sql`${purchases.mpesaRef} ILIKE ${`%${filters.mpesaRef}%`}`);
+    }
+    if (filters.paymentMethod) {
+      conditions.push(sql`EXISTS (SELECT 1 FROM payments p WHERE p.reference_id = purchases.id AND p.reference_type = 'PURCHASE' AND p.method = ${filters.paymentMethod})`);
     }
 
     const data = await db.select({
@@ -107,6 +110,7 @@ export class InventoryService {
       .innerJoin(productVariants, eq(stockMovements.variantId, productVariants.id))
       .innerJoin(products, eq(productVariants.productId, products.id))
       .leftJoin(purchases, and(eq(stockMovements.referenceId, purchases.id), eq(stockMovements.referenceType, 'PURCHASE')))
+      .leftJoin(suppliers, eq(purchases.supplierId, suppliers.id))
       .where(and(...conditions));
 
     return {
