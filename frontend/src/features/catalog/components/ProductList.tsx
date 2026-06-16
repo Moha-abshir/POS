@@ -216,9 +216,9 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
                           onClick={() => addToRestock.mutate(primaryVariant.id)} 
                           disabled={addToRestock.isPending}
                           title="Add to Restock List"
-                          className="text-amber-500 hover:text-amber-600 transition-colors outline-none focus:ring-2 focus:ring-amber-500 rounded p-1"
+                          className="text-amber-500 hover:text-amber-600 hover:bg-amber-50 transition-colors outline-none focus:ring-2 focus:ring-amber-500 rounded p-1.5 cursor-pointer disabled:opacity-50"
                         >
-                          <ListPlus className="h-4 w-4" />
+                          <ListPlus className="h-5 w-5" />
                         </button>
                       )}
                       <button onClick={() => onEditProduct(product)} className="text-amber-600 font-medium text-sm hover:underline outline-none focus:ring-2 focus:ring-amber-500 rounded px-1">

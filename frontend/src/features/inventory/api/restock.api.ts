@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
+import toast from 'react-hot-toast';
 
 export interface RestockItem {
   id: string;
@@ -7,6 +8,7 @@ export interface RestockItem {
   variantName: string;
   productName: string;
   isOrdered: boolean;
+  currentStock: string;
   createdAt: string;
 }
 
@@ -29,6 +31,7 @@ export const useAddToRestockList = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['restock-list'] });
+      toast.success('Added to Restock List');
     },
   });
 };
@@ -40,7 +43,22 @@ export const useUpdateRestockItem = () => {
       const { data } = await api.patch<{ data: RestockItem }>(`/inventory/restock-list/${id}`, { isOrdered });
       return data.data;
     },
-    onSuccess: () => {
+    onMutate: async ({ id, isOrdered }) => {
+      await queryClient.cancelQueries({ queryKey: ['restock-list'] });
+      const previousItems = queryClient.getQueryData<RestockItem[]>(['restock-list']);
+      if (previousItems) {
+        queryClient.setQueryData<RestockItem[]>(['restock-list'], old => 
+          old?.map(item => item.id === id ? { ...item, isOrdered } : item)
+        );
+      }
+      return { previousItems };
+    },
+    onError: (err, newTodo, context) => {
+      if (context?.previousItems) {
+        queryClient.setQueryData(['restock-list'], context.previousItems);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['restock-list'] });
     },
   });
@@ -54,6 +72,7 @@ export const useClearOrderedItems = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['restock-list'] });
+      toast.success('Ordered items cleared');
     },
   });
 };

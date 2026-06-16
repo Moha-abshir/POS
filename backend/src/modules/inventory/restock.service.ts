@@ -11,6 +11,7 @@ export class RestockService {
       variantName: productVariants.name,
       productName: products.name,
       isOrdered: restockItems.isOrdered,
+      currentStock: productVariants.baseStockQuantity,
       createdAt: restockItems.createdAt,
     })
     .from(restockItems)

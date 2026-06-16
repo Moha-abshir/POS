@@ -25,12 +25,15 @@ const ComingSoon = ({ title }: { title: string }) => (
   </div>
 );
 
+import { Toaster } from 'react-hot-toast';
+
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+        <Toaster position="top-right" />
         <Routes>
           {/* Public Routes */}
           <Route 
