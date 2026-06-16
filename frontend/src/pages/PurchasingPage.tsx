@@ -40,6 +40,11 @@ export function PurchasingPage() {
     queryFn: () => suppliersApi.getSuppliers(debouncedSearch),
   });
 
+  const { data: allSuppliers = [] } = useQuery({
+    queryKey: ['suppliers', 'all'],
+    queryFn: () => suppliersApi.getSuppliers(),
+  });
+
   const { data: movements = [], isLoading: isLoadingMovements } = useQuery({
     queryKey: ['inventory', 'movements', purchaseFilters],
     queryFn: () => inventoryApi.getMovements({ type: 'PURCHASE', ...purchaseFilters }),
@@ -251,7 +256,16 @@ export function PurchasingPage() {
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
-                      <input type="text" placeholder="Search supplier..." value={tempPurchaseFilters.supplier} onChange={e => setTempPurchaseFilters(p => ({ ...p, supplier: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
+                      <select 
+                        value={tempPurchaseFilters.supplier} 
+                        onChange={e => setTempPurchaseFilters(p => ({ ...p, supplier: e.target.value }))} 
+                        className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none bg-white"
+                      >
+                        <option value="">All Suppliers</option>
+                        {allSuppliers.map((s: Supplier) => (
+                          <option key={s.id} value={s.name}>{s.name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Ref</label>
