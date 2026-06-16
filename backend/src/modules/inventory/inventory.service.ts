@@ -110,6 +110,15 @@ export class InventoryService {
   static async recordDamage(businessId: string, userId: string, data: { variantId: string, quantity: number, reason?: string }) {
     if (data.quantity <= 0) throw new AppError('Damage quantity must be positive', 400);
 
+    const [variant] = await db.select({ stock: productVariants.baseStockQuantity })
+      .from(productVariants)
+      .where(and(eq(productVariants.id, data.variantId), eq(productVariants.businessId, businessId)));
+      
+    if (!variant) throw new AppError('Product variant not found', 404);
+    if (Number(variant.stock) < data.quantity) {
+      throw new AppError(`Insufficient stock. Current stock is ${Number(variant.stock)}, but you tried to deduct ${data.quantity}.`, 400);
+    }
+
     return await db.transaction(async (tx) => {
       await this.recordMovement(tx, businessId, {
         variantId: data.variantId,
