@@ -82,15 +82,17 @@ export const UnitPriceEditModal: React.FC<UnitPriceEditModalProps> = ({ isOpen, 
               />
             </div>
 
-            <div className="flex justify-between items-center text-[var(--text-sm)] text-[var(--color-text-secondary)] bg-[var(--color-bg-inset)] p-3 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-              <div className="flex flex-col">
-                <span>Margin at new price:</span>
-                <span className="text-[12px] text-[var(--color-text-muted)]">Cost: KSH {expectedCost.toFixed(2)}</span>
+            {sellingPrice !== '' && (
+              <div className="flex justify-between items-center text-[var(--text-sm)] text-[var(--color-text-secondary)] bg-[var(--color-bg-inset)] p-3 rounded-[var(--radius-md)] border border-[var(--color-border)]">
+                <div className="flex flex-col">
+                  <span>Margin at new price:</span>
+                  <span className="text-[12px] text-[var(--color-text-muted)]">Cost: KSH {expectedCost.toFixed(2)}</span>
+                </div>
+                <span className={`font-medium ${isBelowCost ? 'text-red-500' : 'text-green-600'}`}>
+                  KSH {margin.toFixed(2)}
+                </span>
               </div>
-              <span className={`font-medium ${isBelowCost ? 'text-red-500' : 'text-green-600'}`}>
-                KSH {margin.toFixed(2)}
-              </span>
-            </div>
+            )}
 
             <div className="flex gap-3 text-[13px] text-[var(--color-text-muted)] leading-relaxed bg-[var(--color-bg-inset)] p-3 rounded-[var(--radius-md)]">
               <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500 mt-0.5" />
