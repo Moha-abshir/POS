@@ -16,6 +16,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
   const [items, setItems] = useState<{ productId?: string; variantId: string; unitId: string; quantity: number | ''; costPrice: number | '' }[]>([
     { productId: '', variantId: '', unitId: '', quantity: 1, costPrice: '' }
   ]);
+  const [paymentStatus, setPaymentStatus] = useState<'FULL' | 'PARTIAL' | 'UNPAID'>('FULL');
   const [amountPaid, setAmountPaid] = useState<number | ''>('');
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>('CASH');
   const [invoiceRef, setInvoiceRef] = useState('');
@@ -77,7 +78,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
         quantity: i.quantity as number,
         costPrice: i.costPrice === '' ? 0 : (i.costPrice as number)
       })),
-      amountPaid: amountPaid === '' ? 0 : amountPaid,
+      amountPaid: paymentStatus === 'FULL' ? totalAmount : (paymentStatus === 'UNPAID' ? 0 : (amountPaid === '' ? 0 : amountPaid)),
       paymentMethod,
       invoiceRef: invoiceRef.trim() || undefined,
       mpesaRef: paymentMethod === 'MPESA' ? mpesaRef.trim() : undefined
@@ -269,59 +270,80 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 bg-[var(--color-bg-sunken)] p-4 rounded-xl border border-[var(--color-border)]">
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Amount Paid Now</label>
-              <input
-                type="number"
-                min="0"
-                step="any"
-                placeholder="0.00"
-                value={amountPaid === '' ? '' : amountPaid}
-                onChange={(e) => setAmountPaid(e.target.value === '' ? '' : Number(e.target.value))}
-                className="w-full h-10 px-3 bg-white border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Payment Method</label>
-              <CustomSelect
-                label="Payment Method"
-                options={[
-                  { id: 'CASH', name: 'Cash' },
-                  { id: 'MPESA', name: 'M-Pesa' }
-                ]}
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as any)}
-                className="bg-white"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Invoice Ref</label>
-              <input
-                type="text"
-                value={invoiceRef}
-                onChange={(e) => setInvoiceRef(e.target.value)}
-                className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
-                placeholder="e.g. INV-2023-001"
-              />
-            </div>
-            {paymentMethod === 'MPESA' && (
+          <div className="bg-[var(--color-bg-sunken)] p-5 rounded-xl border border-[var(--color-border)] space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">M-Pesa Ref *</label>
-                <input
-                  type="text"
-                  required
-                  value={mpesaRef}
-                  onChange={(e) => setMpesaRef(e.target.value.toUpperCase())}
-                  className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all uppercase placeholder:normal-case"
-                  placeholder="e.g. QKT2..."
+                <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Payment Status</label>
+                <CustomSelect
+                  label="Select Status"
+                  options={[
+                    { id: 'FULL', name: 'Fully Paid' },
+                    { id: 'PARTIAL', name: 'Partially Paid' },
+                    { id: 'UNPAID', name: 'Unpaid' }
+                  ]}
+                  value={paymentStatus}
+                  onChange={(e) => setPaymentStatus(e.target.value as any)}
+                  className="bg-white"
                 />
+              </div>
+
+              {paymentStatus === 'PARTIAL' && (
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Amount Paid Now</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    placeholder="0.00"
+                    value={amountPaid === '' ? '' : amountPaid}
+                    onChange={(e) => setAmountPaid(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-full h-10 px-3 bg-white border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
+                  />
+                </div>
+              )}
+            </div>
+
+            {paymentStatus !== 'UNPAID' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Payment Method</label>
+                  <CustomSelect
+                    label="Payment Method"
+                    options={[
+                      { id: 'CASH', name: 'Cash' },
+                      { id: 'MPESA', name: 'M-Pesa' }
+                    ]}
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value as any)}
+                    className="bg-white"
+                  />
+                </div>
+                {paymentMethod === 'MPESA' && (
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">M-Pesa Ref</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. QWE123RTY"
+                      value={mpesaRef}
+                      onChange={(e) => setMpesaRef(e.target.value)}
+                      className="w-full h-10 px-3 bg-white border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all uppercase"
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Invoice Ref (Optional)</label>
+              <input
+                type="text"
+                placeholder="e.g. INV-2023-001"
+                value={invoiceRef}
+                onChange={(e) => setInvoiceRef(e.target.value)}
+                className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-sm text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
+              />
+            </div>
 
           <div className="pt-4 flex gap-3 border-t border-[var(--color-border)]">
             <button
