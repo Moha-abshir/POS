@@ -13,8 +13,8 @@ interface PurchaseModalProps {
 export function PurchaseModal({ onClose }: PurchaseModalProps) {
   const queryClient = useQueryClient();
   const [supplierId, setSupplierId] = useState('');
-  const [items, setItems] = useState<{ variantId: string; unitId: string; quantity: number | ''; costPrice: number | '' }[]>([
-    { variantId: '', unitId: '', quantity: 1, costPrice: '' }
+  const [items, setItems] = useState<{ productId?: string; variantId: string; unitId: string; quantity: number | ''; costPrice: number | '' }[]>([
+    { productId: '', variantId: '', unitId: '', quantity: 1, costPrice: '' }
   ]);
   const [amountPaid, setAmountPaid] = useState<number | ''>('');
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>('CASH');
@@ -28,16 +28,6 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
   });
 
   const { data: products = [] } = useProducts();
-
-  // Create a flat list of variants for the dropdown
-  const variantOptions = products.flatMap(p => 
-    (p.variants || []).map(v => ({
-      id: v.id,
-      name: (p.variants || []).length > 1 ? `${p.name} - ${v.name}` : p.name,
-      costPrice: v.costPrice,
-      units: v.units || []
-    }))
-  );
 
   const purchaseMutation = useMutation({
     mutationFn: inventoryApi.createPurchase,
@@ -98,7 +88,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-[var(--color-bg-surface)] rounded-xl shadow-xl w-full max-w-3xl my-8 border border-[var(--color-border)]">
+        <div className="relative bg-[var(--color-bg-surface)] rounded-xl shadow-xl w-full max-w-5xl my-8 border border-[var(--color-border)]">
         <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
           <h2 className="text-[var(--text-lg)] font-semibold text-[var(--color-text-primary)]">
             Record Purchase
@@ -142,7 +132,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
               <span>Items</span>
               <button 
                 type="button" 
-                onClick={() => setItems([...items, { variantId: '', unitId: '', quantity: 1, costPrice: '' }])}
+                onClick={() => setItems([...items, { productId: '', variantId: '', unitId: '', quantity: 1, costPrice: '' }])}
                 className="text-sm flex items-center gap-1 text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] font-medium"
               >
                 <Plus size={16} /> Add Item
@@ -151,16 +141,37 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
             <div className="p-4 space-y-3">
               {items.map((item, index) => (
                 <div key={index} className="flex gap-3 items-end">
-                  <div className="w-[30%]">
-                    <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Product Variant</label>
+                  <div className="w-[20%]">
+                    <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Product</label>
                     <CustomSelect
                       required
                       searchable
-                      label="Select product variant..."
-                      options={variantOptions}
+                      label="Select product..."
+                      options={products.map(p => ({ id: p.id, name: p.name }))}
+                      value={item.productId}
+                      onChange={(e) => {
+                        const newItems = [...items];
+                        newItems[index].productId = e.target.value;
+                        newItems[index].variantId = '';
+                        newItems[index].unitId = '';
+                        setItems(newItems);
+                      }}
+                    />
+                  </div>
+                  <div className="w-[20%]">
+                    <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Variant</label>
+                    <CustomSelect
+                      required
+                      label="Select variant..."
+                      options={
+                        item.productId 
+                          ? (products.find(p => p.id === item.productId)?.variants || []).map(v => ({ id: v.id, name: v.name }))
+                          : []
+                      }
                       value={item.variantId}
                       onChange={(e) => {
-                        const selectedVar = variantOptions.find(v => v.id === e.target.value);
+                        const selectedProduct = products.find(p => p.id === item.productId);
+                        const selectedVar = selectedProduct?.variants?.find(v => v.id === e.target.value);
                         const newItems = [...items];
                         newItems[index].variantId = e.target.value;
                         const defaultUnit = selectedVar?.units?.find((u: any) => u.isDefault) || selectedVar?.units?.[0];
