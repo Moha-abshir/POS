@@ -184,21 +184,22 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                       }}
                     />
                   </div>
-                  <div className="w-[20%]">
+                  <div className="w-[15%]">
                     <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Unit</label>
                     <CustomSelect
                       required
                       label="Select unit..."
                       options={
-                        item.variantId 
-                          ? (variantOptions.find(v => v.id === item.variantId)?.units || []).map((u: any) => ({ id: u.id, name: u.name }))
+                        item.productId && item.variantId 
+                          ? (products.find(p => p.id === item.productId)?.variants?.find(v => v.id === item.variantId)?.units || []).map((u: any) => ({ id: u.id, name: u.name }))
                           : []
                       }
                       value={item.unitId}
                       onChange={(e) => {
                         const newItems = [...items];
                         newItems[index].unitId = e.target.value;
-                        const selectedVar = variantOptions.find(v => v.id === newItems[index].variantId);
+                        const selectedProduct = products.find(p => p.id === item.productId);
+                        const selectedVar = selectedProduct?.variants?.find(v => v.id === newItems[index].variantId);
                         const selectedUnit = selectedVar?.units?.find((u: any) => u.id === e.target.value);
                         if (selectedVar && selectedUnit) {
                           newItems[index].costPrice = Number(selectedVar.costPrice) * Number(selectedUnit.conversionFactor || 1);
