@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { suppliersApi, type Supplier } from '../features/suppliers/api/suppliers.api';
 import { inventoryApi } from '../features/inventory/api/inventory.api';
-import { Plus, Search, Truck, Edit, Package, ArrowDownRight, DollarSign, Filter } from 'lucide-react';
+import { Plus, Search, Truck, Edit, Package, ArrowDownRight, DollarSign, Filter, X } from 'lucide-react';
 import { SupplierModal } from '../features/suppliers/components/SupplierModal';
 import { PurchaseModal } from '../features/inventory/components/PurchaseModal';
 import { RecordPaymentModal } from '../features/suppliers/components/RecordPaymentModal';
@@ -26,7 +26,7 @@ export function PurchasingPage() {
     invoiceRef: '',
     mpesaRef: '',
   });
-  const [debouncedPurchaseFilters, setDebouncedPurchaseFilters] = useState(purchaseFilters);
+  const [tempPurchaseFilters, setTempPurchaseFilters] = useState(purchaseFilters);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
@@ -34,20 +34,32 @@ export function PurchasingPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedPurchaseFilters(purchaseFilters), 300);
-    return () => clearTimeout(timer);
-  }, [purchaseFilters]);
-
   const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery({
     queryKey: ['suppliers', debouncedSearch],
     queryFn: () => suppliersApi.getSuppliers(debouncedSearch),
   });
 
   const { data: movements = [], isLoading: isLoadingMovements } = useQuery({
-    queryKey: ['inventory', 'movements', debouncedPurchaseFilters],
-    queryFn: () => inventoryApi.getMovements({ type: 'PURCHASE', ...debouncedPurchaseFilters }),
+    queryKey: ['inventory', 'movements', purchaseFilters],
+    queryFn: () => inventoryApi.getMovements({ type: 'PURCHASE', ...purchaseFilters }),
   });
+
+  const handleOpenFilters = () => {
+    setTempPurchaseFilters(purchaseFilters);
+    setIsFilterOpen(true);
+  };
+
+  const handleApplyFilters = () => {
+    setPurchaseFilters(tempPurchaseFilters);
+    setIsFilterOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    const emptyFilters = { startDate: '', endDate: '', product: '', invoiceRef: '', mpesaRef: '' };
+    setTempPurchaseFilters(emptyFilters);
+    setPurchaseFilters(emptyFilters);
+    setIsFilterOpen(false);
+  };
 
   const handleAddSupplier = () => {
     setSelectedSupplier(null);
@@ -206,33 +218,54 @@ export function PurchasingPage() {
             <div className="p-4 border-b border-[var(--color-border)] bg-white flex justify-between items-center">
               <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Purchase History</h2>
               <button 
-                onClick={() => setIsFilterOpen(!isFilterOpen)} 
-                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium border rounded-md transition-colors ${isFilterOpen ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                onClick={handleOpenFilters} 
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium border rounded-md transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
               >
                 <Filter size={16} /> Filters
               </button>
             </div>
+            
             {isFilterOpen && (
-              <div className="p-4 bg-gray-50 border-b border-[var(--color-border)] grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Start Date</label>
-                  <input type="date" value={purchaseFilters.startDate} onChange={e => setPurchaseFilters(p => ({ ...p, startDate: e.target.value }))} className="w-full text-sm border-gray-300 rounded-md shadow-sm h-8 px-2" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">End Date</label>
-                  <input type="date" value={purchaseFilters.endDate} onChange={e => setPurchaseFilters(p => ({ ...p, endDate: e.target.value }))} className="w-full text-sm border-gray-300 rounded-md shadow-sm h-8 px-2" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Product</label>
-                  <input type="text" placeholder="Search product..." value={purchaseFilters.product} onChange={e => setPurchaseFilters(p => ({ ...p, product: e.target.value }))} className="w-full text-sm border-gray-300 rounded-md shadow-sm h-8 px-2" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Invoice Ref</label>
-                  <input type="text" placeholder="Search invoice..." value={purchaseFilters.invoiceRef} onChange={e => setPurchaseFilters(p => ({ ...p, invoiceRef: e.target.value }))} className="w-full text-sm border-gray-300 rounded-md shadow-sm h-8 px-2" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">M-Pesa Ref</label>
-                  <input type="text" placeholder="Search ref..." value={purchaseFilters.mpesaRef} onChange={e => setPurchaseFilters(p => ({ ...p, mpesaRef: e.target.value }))} className="w-full text-sm border-gray-300 rounded-md shadow-sm h-8 px-2" />
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                <div className="bg-white rounded-xl shadow-xl w-full max-w-lg border border-[var(--color-border)] flex flex-col">
+                  <div className="px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center bg-gray-50 rounded-t-xl">
+                    <h3 className="text-lg font-bold">Filter Purchases</h3>
+                    <button type="button" onClick={() => setIsFilterOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                      <X size={20} />
+                    </button>
+                  </div>
+                  
+                  <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                      <input type="date" value={tempPurchaseFilters.startDate} onChange={e => setTempPurchaseFilters(p => ({ ...p, startDate: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                      <input type="date" value={tempPurchaseFilters.endDate} onChange={e => setTempPurchaseFilters(p => ({ ...p, endDate: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                      <input type="text" placeholder="Search product..." value={tempPurchaseFilters.product} onChange={e => setTempPurchaseFilters(p => ({ ...p, product: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Ref</label>
+                      <input type="text" placeholder="Search invoice..." value={tempPurchaseFilters.invoiceRef} onChange={e => setTempPurchaseFilters(p => ({ ...p, invoiceRef: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">M-Pesa Ref</label>
+                      <input type="text" placeholder="Search ref..." value={tempPurchaseFilters.mpesaRef} onChange={e => setTempPurchaseFilters(p => ({ ...p, mpesaRef: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 border-t border-[var(--color-border)] flex justify-end gap-3 bg-gray-50 rounded-b-xl">
+                    <button onClick={handleClearFilters} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm">
+                      Clear
+                    </button>
+                    <button onClick={handleApplyFilters} className="px-4 py-2 bg-[var(--color-accent)] text-white font-semibold rounded-lg hover:bg-[var(--color-accent-hover)] transition-colors shadow-sm">
+                      Apply Filters
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
