@@ -4,10 +4,13 @@ import { inventoryApi } from '../features/inventory/api/inventory.api';
 import { Package, ArrowDownRight, ArrowUpRight, Wrench, AlertTriangle, RefreshCcw } from 'lucide-react';
 import { AdjustStockModal } from '../features/inventory/components/AdjustStockModal';
 import { RestockListTable } from '../features/inventory/components/RestockListTable';
+import { ReportDamageModal } from '../features/inventory/components/ReportDamageModal';
+import { DamagesLogTable } from '../features/inventory/components/DamagesLogTable';
 
 export function InventoryPage() {
-  const [view, setView] = useState<'ledger' | 'restock'>('ledger');
+  const [view, setView] = useState<'ledger' | 'restock' | 'damages'>('ledger');
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+  const [isDamageModalOpen, setIsDamageModalOpen] = useState(false);
 
   const { data: movements = [], isLoading } = useQuery({
     queryKey: ['inventory', 'movements'],
@@ -30,10 +33,10 @@ export function InventoryPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">
-            {view === 'ledger' ? 'Inventory Ledger' : 'Restock List'}
+            {view === 'ledger' ? 'Inventory Ledger' : view === 'restock' ? 'Restock List' : 'Damages Log'}
           </h1>
           <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-            {view === 'ledger' ? 'Track every stock movement across your business' : 'Manage items that need to be reordered'}
+            {view === 'ledger' ? 'Track every stock movement across your business' : view === 'restock' ? 'Manage items that need to be reordered' : 'Track lost, damaged, or expired items'}
           </p>
         </div>
         <div className="flex gap-4 items-center">
@@ -50,16 +53,31 @@ export function InventoryPage() {
             >
               Restock List
             </button>
+            <button 
+              onClick={() => setView('damages')} 
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${view === 'damages' ? 'bg-white shadow-sm text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
+            >
+              Damages Log
+            </button>
           </div>
           
-          {view === 'ledger' && (
-            <button
-              onClick={() => setIsAdjustModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 h-10 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[var(--radius-md)] hover:bg-[var(--color-bg-surface)] transition-colors shadow-sm font-semibold select-none cursor-pointer"
-            >
-              <Wrench size={18} />
-              <span>Adjust / Damage</span>
-            </button>
+          {(view === 'ledger' || view === 'damages') && (
+            <div className="flex gap-2 items-center">
+              <button
+                onClick={() => setIsDamageModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 h-10 bg-red-50 border border-red-100 text-red-600 rounded-[var(--radius-md)] hover:bg-red-100 transition-colors shadow-sm font-semibold select-none cursor-pointer"
+              >
+                <AlertTriangle size={18} />
+                <span>Report Damage</span>
+              </button>
+              <button
+                onClick={() => setIsAdjustModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 h-10 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[var(--radius-md)] hover:bg-[var(--color-bg-surface)] transition-colors shadow-sm font-semibold select-none cursor-pointer"
+              >
+                <Wrench size={18} />
+                <span>Adjust Stock</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -126,12 +144,17 @@ export function InventoryPage() {
             </table>
           </div>
         </div>
-      ) : (
+      ) : view === 'restock' ? (
         <RestockListTable />
+      ) : (
+        <DamagesLogTable />
       )}
 
       {isAdjustModalOpen && (
         <AdjustStockModal onClose={() => setIsAdjustModalOpen(false)} />
+      )}
+      {isDamageModalOpen && (
+        <ReportDamageModal onClose={() => setIsDamageModalOpen(false)} />
       )}
     </div>
   );

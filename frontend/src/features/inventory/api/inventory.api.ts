@@ -56,5 +56,30 @@ export const inventoryApi = {
   getPurchases: async () => {
     const res = await api.get('/purchases');
     return res.data.data as Purchase[];
+  },
+
+  getDamages: async () => {
+    const res = await api.get('/inventory/damage');
+    return res.data.data as DamageRecord[];
   }
+};
+
+export interface DamageRecord {
+  id: string;
+  variantId: string;
+  variantName: string;
+  productName: string;
+  quantity: string;
+  reason: string | null;
+  damagedAt: string;
+  createdBy: string;
+}
+
+import { useQuery } from '@tanstack/react-query';
+
+export const useDamagesLog = () => {
+  return useQuery({
+    queryKey: ['damages'],
+    queryFn: inventoryApi.getDamages,
+  });
 };

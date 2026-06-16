@@ -11,7 +11,6 @@ interface AdjustStockModalProps {
 
 export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
   const queryClient = useQueryClient();
-  const [mode, setMode] = useState<'ADJUST' | 'DAMAGE'>('ADJUST');
   const [variantId, setVariantId] = useState('');
   const [unitId, setUnitId] = useState('');
   const [quantity, setQuantity] = useState<number | ''>('');
@@ -32,17 +31,7 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
     }
   });
 
-  const damageMutation = useMutation({
-    mutationFn: inventoryApi.recordDamage,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      onClose();
-    },
-    onError: (err: any) => {
-      setError(err.message || 'Failed to record damage. Please try again.');
-    }
-  });
+
 
   const variantOptions = products.flatMap(p => 
     (p.variants || []).map(v => ({
@@ -56,7 +45,7 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!variantId || !unitId || quantity === '' || quantity < 0 || (quantity <= 0 && mode === 'DAMAGE')) {
+    if (!variantId || !unitId || quantity === '' || quantity < 0) {
       setError("Please fill out all required fields properly.");
       return;
     }
@@ -70,11 +59,7 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
       }
     }
 
-    if (mode === 'ADJUST') {
-      adjustMutation.mutate({ variantId, newQuantity: finalQuantity, notes });
-    } else {
-      damageMutation.mutate({ variantId, quantity: finalQuantity, reason: notes });
-    }
+    adjustMutation.mutate({ variantId, newQuantity: finalQuantity, notes });
   };
 
 
@@ -96,30 +81,7 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
             </div>
           )}
 
-          <div className="flex bg-[var(--color-bg-sunken)] p-1 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-            <button
-              type="button"
-              onClick={() => { 
-                setMode('ADJUST'); 
-                if (selectedVariant && unitId) {
-                  const u = selectedVariant.units.find((x: any) => x.id === unitId);
-                  setQuantity(Number(selectedVariant.baseStockQuantity) / Number(u?.conversionFactor || 1));
-                } else {
-                  setQuantity(selectedVariant ? Number(selectedVariant.baseStockQuantity) : '');
-                }
-              }}
-              className={`flex-1 text-sm font-medium py-1.5 rounded-[var(--radius-sm)] transition-colors cursor-pointer select-none ${mode === 'ADJUST' ? 'bg-white shadow-sm text-[var(--color-text-primary)] border border-[var(--color-border)]' : 'text-[var(--color-text-secondary)] border border-transparent'}`}
-            >
-              Set Exact Stock
-            </button>
-            <button
-              type="button"
-              onClick={() => { setMode('DAMAGE'); setQuantity(''); }}
-              className={`flex-1 text-sm font-medium py-1.5 rounded-[var(--radius-sm)] transition-colors cursor-pointer select-none ${mode === 'DAMAGE' ? 'bg-[var(--color-danger-bg)] shadow-sm text-[var(--color-danger)] border border-[var(--color-danger-bg)]' : 'text-[var(--color-text-secondary)] border border-transparent'}`}
-            >
-              Record Damage
-            </button>
-          </div>
+
 
           <div>
             <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Product Variant</label>
@@ -134,8 +96,10 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
                 const v = variantOptions.find(x => x.id === e.target.value);
                 const defaultUnit = v?.units?.find((u: any) => u.isDefault) || v?.units?.[0];
                 setUnitId(defaultUnit?.id || '');
-                if (mode === 'ADJUST') {
-                  setQuantity(v ? Number(v.baseStockQuantity) / Number(defaultUnit?.conversionFactor || 1) : '');
+                if (v) {
+                  setQuantity(Number(v.baseStockQuantity) / Number(defaultUnit?.conversionFactor || 1));
+                } else {
+                  setQuantity('');
                 }
               }}
               className="bg-white"
@@ -151,8 +115,8 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
               value={unitId}
               onChange={(e) => {
                 setUnitId(e.target.value);
-                if (mode === 'ADJUST' && selectedVariant) {
-                  const u = selectedVariant.units.find((x: any) => x.id === e.target.value);
+                const u = selectedVariant?.units?.find((x: any) => x.id === e.target.value);
+                if (selectedVariant) {
                   setQuantity(Number(selectedVariant.baseStockQuantity) / Number(u?.conversionFactor || 1));
                 }
               }}
@@ -162,12 +126,12 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
 
           <div>
             <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
-              {mode === 'ADJUST' ? 'New Total Quantity' : 'Quantity Damaged/Lost'}
+              New Total Quantity
             </label>
             <input
               type="number"
               required
-              min={mode === 'DAMAGE' ? 0.001 : 0}
+              min={0}
               step="any"
               value={quantity === '' ? '' : quantity}
               onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
@@ -183,7 +147,7 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
-              placeholder={mode === 'DAMAGE' ? "e.g. Broken in transit" : "e.g. Physical count"}
+              placeholder="e.g. Physical count"
             />
           </div>
 
@@ -197,10 +161,10 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
             </button>
             <button
               type="submit"
-              disabled={adjustMutation.isPending || damageMutation.isPending}
-              className={`flex-1 px-4 py-2 h-10 text-white rounded-[var(--radius-md)] font-medium disabled:opacity-50 cursor-pointer ${mode === 'ADJUST' ? 'bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)]' : 'bg-[var(--color-danger)] hover:opacity-90'}`}
+              disabled={adjustMutation.isPending}
+              className="flex-1 px-4 py-2 bg-[var(--color-accent)] text-white text-sm font-medium rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-50 cursor-pointer"
             >
-              {mode === 'ADJUST' ? 'Save Adjustment' : 'Confirm Damage'}
+              {adjustMutation.isPending ? 'Saving...' : 'Set Stock Level'}
             </button>
           </div>
         </form>

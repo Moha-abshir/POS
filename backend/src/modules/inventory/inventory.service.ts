@@ -1,6 +1,6 @@
 import { eq, and, sql, desc } from 'drizzle-orm';
 import { db } from '../../db';
-import { productVariants, stockMovements, damagedGoods, purchases, products } from '../../db/schema';
+import { productVariants, stockMovements, damagedGoods, purchases, products, users } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 
 export class InventoryService {
@@ -127,5 +127,35 @@ export class InventoryService {
         createdBy: userId,
       }).returning();
     });
+  }
+
+  static async getDamages(businessId: string, limit = 50, offset = 0) {
+    const data = await db.select({
+      id: damagedGoods.id,
+      variantId: damagedGoods.variantId,
+      variantName: productVariants.name,
+      productName: products.name,
+      quantity: damagedGoods.quantity,
+      reason: damagedGoods.reason,
+      damagedAt: damagedGoods.damagedAt,
+      createdBy: users.name,
+    })
+    .from(damagedGoods)
+    .innerJoin(productVariants, eq(damagedGoods.variantId, productVariants.id))
+    .innerJoin(products, eq(productVariants.productId, products.id))
+    .leftJoin(users, eq(damagedGoods.createdBy, users.id))
+    .where(eq(damagedGoods.businessId, businessId))
+    .orderBy(desc(damagedGoods.damagedAt))
+    .limit(limit)
+    .offset(offset);
+
+    const [{ count }] = await db.select({ count: sql`count(*)`.mapWith(Number) })
+      .from(damagedGoods)
+      .where(eq(damagedGoods.businessId, businessId));
+
+    return {
+      data,
+      meta: { total: count, limit, offset }
+    };
   }
 }

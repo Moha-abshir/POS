@@ -17,6 +17,19 @@ export class InventoryController {
     }
   }
 
+  static async getDamages(req: Request, res: Response, next: NextFunction) {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = (page - 1) * limit;
+
+      const result = await InventoryService.getDamages(req.user!.businessId, limit, offset);
+      res.json({ success: true, data: result.data, meta: result.meta });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async adjustStock(req: Request, res: Response, next: NextFunction) {
     try {
       const data = adjustStockSchema.parse(req.body);

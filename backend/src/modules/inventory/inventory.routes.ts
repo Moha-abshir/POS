@@ -8,6 +8,7 @@ router.use(authenticate);
 
 router.get('/movements', authorize(['OWNER', 'MANAGER']), InventoryController.getMovements);
 router.post('/adjust', authorize(['OWNER', 'MANAGER']), InventoryController.adjustStock);
+router.get('/damage', authorize(['OWNER', 'MANAGER', 'CASHIER']), InventoryController.getDamages);
 router.post('/damage', authorize(['OWNER', 'MANAGER']), InventoryController.recordDamage);
 
 // Restock List routes
