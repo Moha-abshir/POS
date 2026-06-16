@@ -111,6 +111,7 @@ export class CatalogService {
     const result = await db.select({
       id: products.id,
       name: products.name,
+      description: products.description,
       categoryId: products.categoryId,
       categoryName: categories.name,
       isActive: products.isActive,

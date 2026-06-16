@@ -11,6 +11,9 @@
   --color-accent-hover: #B45309;
   --color-accent-subtle: #FEF3C7;
   
+  --color-primary: var(--color-accent);
+  --color-primary-hover: var(--color-accent-hover);
+  
   --color-text-primary: #111827;
   --color-text-secondary: #4B5563;
   --color-text-muted: #9CA3AF;
