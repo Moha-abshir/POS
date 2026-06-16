@@ -173,7 +173,7 @@ export function ReportDamageModal({ onClose }: ReportDamageModalProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Quantity Damaged / Lost
+              Quantity Affected
             </label>
             <input
               type="number"
@@ -185,6 +185,20 @@ export function ReportDamageModal({ onClose }: ReportDamageModalProps) {
               className="w-full h-10 px-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all shadow-sm"
               placeholder="e.g., 5"
             />
+            {typeof quantity === 'number' && selectedVariant && (
+              (() => {
+                const selectedUnit = selectedVariant.units?.find((u: any) => u.id === unitId) || selectedVariant.units?.[0];
+                const availableQuantity = Number(selectedVariant.baseStockQuantity) / Number(selectedUnit?.conversionFactor || 1);
+                if (quantity > availableQuantity) {
+                  return (
+                    <p className="text-xs text-red-600 mt-1.5 font-medium">
+                      Note: You entered {quantity}, but only {availableQuantity} {selectedUnit?.name || ''}(s) are currently in stock. This action will be rejected.
+                    </p>
+                  );
+                }
+                return null;
+              })()
+            )}
           </div>
 
           <div>
