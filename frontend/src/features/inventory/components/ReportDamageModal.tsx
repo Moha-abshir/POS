@@ -25,6 +25,7 @@ export function ReportDamageModal({ onClose }: ReportDamageModalProps) {
   const [quantity, setQuantity] = useState<number | ''>('');
   const [reasonCategory, setReasonCategory] = useState('');
   const [customReason, setCustomReason] = useState('');
+  const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const { data: products = [] } = useProducts();
@@ -82,6 +83,9 @@ export function ReportDamageModal({ onClose }: ReportDamageModalProps) {
       }
       finalReason = customReason.trim();
     }
+    if (notes.trim()) {
+      finalReason += ` - Notes: ${notes.trim()}`;
+    }
 
     damageMutation.mutate({ variantId, quantity: finalQuantity, reason: finalReason });
   };
@@ -94,7 +98,7 @@ export function ReportDamageModal({ onClose }: ReportDamageModalProps) {
         <div className="px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center bg-red-50 rounded-t-xl">
           <div className="flex items-center gap-2 text-red-600">
             <AlertTriangle size={20} />
-            <h3 className="text-lg font-bold">Report Damaged Goods</h3>
+            <h3 className="text-lg font-bold">Report Inventory Loss</h3>
           </div>
           <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={20} /></button>
         </div>
@@ -126,34 +130,6 @@ export function ReportDamageModal({ onClose }: ReportDamageModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
-            <CustomSelect
-              required
-              label="Select unit..."
-              options={selectedVariant?.units?.map((u: any) => ({ id: u.id, name: u.name })) || []}
-              value={unitId}
-              onChange={(e) => setUnitId(e.target.value)}
-              className="bg-white"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Quantity Damaged / Lost
-            </label>
-            <input
-              type="number"
-              required
-              min={0.001}
-              step="any"
-              value={quantity === '' ? '' : quantity}
-              onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
-              className="w-full h-10 px-3 border border-gray-200 rounded-lg text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
-              placeholder="e.g. 5"
-            />
-          </div>
-
-          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Reason
             </label>
@@ -177,26 +153,67 @@ export function ReportDamageModal({ onClose }: ReportDamageModalProps) {
                 required
                 value={customReason}
                 onChange={(e) => setCustomReason(e.target.value)}
-                className="w-full h-10 px-3 border border-gray-200 rounded-lg text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
+                className="w-full h-10 px-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all shadow-sm"
                 placeholder="Type specific reason here"
               />
             </div>
           )}
 
-          <div className="flex gap-3 pt-4 border-t border-gray-100 mt-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+            <CustomSelect
+              required
+              label="Select unit..."
+              options={selectedVariant?.units?.map((u: any) => ({ id: u.id, name: u.name })) || []}
+              value={unitId}
+              onChange={(e) => setUnitId(e.target.value)}
+              className="bg-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Quantity Damaged / Lost
+            </label>
+            <input
+              type="number"
+              required
+              min={0.001}
+              step="any"
+              value={quantity === '' ? '' : quantity}
+              onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
+              className="w-full h-10 px-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all shadow-sm"
+              placeholder="e.g., 5"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Notes (Optional)
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all resize-none shadow-sm"
+              placeholder="Provide specific context or audit trails..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6 bg-gray-50 -mx-6 -mb-6 px-6 pb-6 pt-4 rounded-b-xl">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 text-gray-600 bg-gray-50 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={damageMutation.isPending}
-              className="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 cursor-pointer"
+              className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
             >
-              {damageMutation.isPending ? 'Saving...' : 'Confirm Damage'}
+              {damageMutation.isPending ? 'Saving...' : 'Report Loss'}
             </button>
           </div>
         </form>

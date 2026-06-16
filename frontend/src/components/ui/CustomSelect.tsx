@@ -86,7 +86,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       )}
 
       {isOpen && (
-        <div className="absolute z-50 top-full left-0 mt-1 w-full min-w-[160px] bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-lg overflow-hidden py-1">
+        <div className="absolute z-50 top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-hidden py-1">
           {searchable && (
             <div className="px-2 pb-2 pt-1 sticky top-0 bg-white border-b border-[var(--color-border)] z-10">
               <div className="relative">
