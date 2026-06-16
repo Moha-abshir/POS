@@ -67,8 +67,8 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-[var(--color-bg-surface)] rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-[var(--color-border)]">
-        <div className="px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center bg-[var(--color-bg-base)]">
+      <div className="bg-[var(--color-bg-surface)] rounded-xl shadow-xl w-full max-w-md border border-[var(--color-border)]">
+        <div className="px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center bg-[var(--color-bg-base)] rounded-t-xl">
           <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Stock Adjustment</h3>
           <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"><X size={20} /></button>
         </div>

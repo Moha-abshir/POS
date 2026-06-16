@@ -90,8 +90,8 @@ export function ReportDamageModal({ onClose }: ReportDamageModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-[var(--color-border)]">
-        <div className="px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center bg-red-50">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md border border-[var(--color-border)]">
+        <div className="px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center bg-red-50 rounded-t-xl">
           <div className="flex items-center gap-2 text-red-600">
             <AlertTriangle size={20} />
             <h3 className="text-lg font-bold">Report Damaged Goods</h3>
