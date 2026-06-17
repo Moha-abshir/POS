@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useProducts, useCategories } from '../api/catalog.api';
-import { Package, Plus, Search, Loader2, MoreHorizontal, ListPlus } from 'lucide-react';
+import { Package, Plus, Search, Loader2, MoreHorizontal } from 'lucide-react';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
-import { useAddToRestockList } from '../../inventory/api/restock.api';
+import { ProductRestockModal } from './ProductRestockModal';
 
 interface ProductListProps {
   onAddProduct: () => void;
@@ -14,9 +14,9 @@ interface ProductListProps {
 export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCategory, onEditProduct, onToggleStatus }) => {
   const { data: products, isLoading, isError } = useProducts();
   const { data: categories, isError: isCategoriesError } = useCategories();
-  const addToRestock = useAddToRestockList();
   
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [restockProduct, setRestockProduct] = useState<any | null>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -185,15 +185,23 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
               return (
                 <tr 
                   key={product.id} 
-                  className={`border-b border-[var(--color-border)] h-12 transition-colors duration-150 hover:bg-[var(--color-bg-sunken)] ${index % 2 === 0 ? 'bg-white' : 'bg-[var(--color-bg-base)]'}`}
+                  onClick={() => setRestockProduct(product)}
+                  className={`border-b border-[var(--color-border)] h-12 transition-colors duration-150 hover:bg-[var(--color-bg-sunken)] cursor-pointer ${index % 2 === 0 ? 'bg-white' : 'bg-[var(--color-bg-base)]'}`}
                 >
                   <td className="px-6 py-0 w-16">
-                    <div className="h-8 w-8 bg-gray-200 rounded-[var(--radius-sm)] flex items-center justify-center text-gray-400 text-[10px] font-medium uppercase">
+                    <div className="h-8 w-8 bg-gray-200 rounded-[var(--radius-sm)] flex items-center justify-center text-gray-400 text-[10px] font-medium uppercase relative">
                       Img
+                      {(isLow || isOut) && (
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-white">
+                          <div className="absolute inset-0 bg-amber-500 rounded-full animate-ping opacity-75"></div>
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-0">
-                    <p className="text-sm font-medium text-[var(--color-text-primary)] leading-tight">{product.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-[var(--color-text-primary)] leading-tight">{product.name}</p>
+                    </div>
                     <p className="text-xs text-gray-400 mt-0.5 leading-tight">{costPriceLabel}</p>
                   </td>
                   <td className="px-6 py-0">
@@ -211,25 +219,22 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
                   </td>
                   <td className="px-6 py-0 text-right">
                     <div className="flex items-center justify-end gap-3 relative">
-                      {(isLow || isOut) && primaryVariant && (
-                        <button 
-                          onClick={() => addToRestock.mutate(primaryVariant.id)} 
-                          disabled={addToRestock.isPending}
-                          title="Add to Restock List"
-                          className="text-amber-500 hover:text-amber-600 hover:bg-amber-50 transition-colors outline-none focus:ring-2 focus:ring-amber-500 rounded p-1.5 cursor-pointer disabled:opacity-50"
-                        >
-                          <ListPlus className="h-5 w-5" />
-                        </button>
-                      )}
-                      <button onClick={() => onEditProduct(product)} className="text-amber-600 font-medium text-sm hover:underline outline-none focus:ring-2 focus:ring-amber-500 rounded px-1">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onEditProduct(product); }} 
+                        className="text-amber-600 font-medium text-sm hover:underline outline-none focus:ring-2 focus:ring-amber-500 rounded px-1"
+                      >
                         Edit
                       </button>
-                      <button aria-label="More options" onClick={() => setActiveDropdown(activeDropdown === product.id ? null : product.id)} className="text-gray-400 hover:text-gray-600 transition-colors outline-none focus:ring-2 focus:ring-amber-500 rounded p-1">
+                      <button 
+                        aria-label="More options" 
+                        onClick={(e) => { e.stopPropagation(); setActiveDropdown(activeDropdown === product.id ? null : product.id); }} 
+                        className="text-gray-400 hover:text-gray-600 transition-colors outline-none focus:ring-2 focus:ring-amber-500 rounded p-1"
+                      >
                         <MoreHorizontal className="h-4 w-4" />
                       </button>
                       {activeDropdown === product.id && (
                         <>
-                          <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
+                          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setActiveDropdown(null); }} />
                           <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-lg z-20 py-1">
                             <button
                               onClick={() => {
@@ -251,6 +256,14 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
           </tbody>
         </table>
       </div>
+
+      {restockProduct && (
+        <ProductRestockModal
+          product={restockProduct}
+          isOpen={true}
+          onClose={() => setRestockProduct(null)}
+        />
+      )}
     </div>
   );
 };
