@@ -75,20 +75,16 @@ export const ProductRestockModal: React.FC<ProductRestockModalProps> = ({ produc
                       <div className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-emerald-600 bg-emerald-50 rounded-xl border border-emerald-200">
                         <Check className="w-4 h-4" /> Added
                       </div>
-                    ) : (
+                    ) : status.isLow ? (
                       <button
                         onClick={() => addToRestock.mutate(variant.id)}
                         disabled={addToRestock.isPending}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl transition-all ${
-                          status.isLow 
-                            ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm hover:shadow' 
-                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                        }`}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl transition-all bg-amber-500 hover:bg-amber-600 text-white shadow-sm hover:shadow"
                       >
                         <ListPlus className="w-4 h-4" />
                         Restock
                       </button>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               );
