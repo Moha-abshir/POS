@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ShoppingCart, Search, CreditCard, Banknote, Plus, Minus, X } from 'lucide-react';
-import api from '../lib/api';
+import { api } from '../lib/api';
 import { CheckoutModal } from '../features/sales/components/CheckoutModal';
 
 // TODO: Replace with proper catalog API hook if available
