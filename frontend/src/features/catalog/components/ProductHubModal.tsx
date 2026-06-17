@@ -230,7 +230,7 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
                     <div className="p-4 bg-[var(--color-bg-sunken)] rounded-[var(--radius-md)] border border-[var(--color-border)]/50">
                       <span className="block text-[13px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Current Stock</span>
                       <div className="flex items-end gap-2">
-                        <span className="text-xl font-bold text-[var(--color-text-primary)]">{selectedVariant.baseStockQuantity}</span>
+                        <span className="text-xl font-bold text-[var(--color-text-primary)]">{Number(selectedVariant.baseStockQuantity)}</span>
                         <span className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-0.5">{selectedVariant.baseUnitName}s</span>
                       </div>
                     </div>
@@ -265,7 +265,7 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
                         </div>
                       ) : (
                         <div className="flex items-end gap-2">
-                          <span className="text-xl font-bold text-[var(--color-text-primary)]">{selectedVariant.lowStockThreshold}</span>
+                          <span className="text-xl font-bold text-[var(--color-text-primary)]">{Number(selectedVariant.lowStockThreshold)}</span>
                           <span className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-0.5">{selectedVariant.baseUnitName}s</span>
                         </div>
                       )}
