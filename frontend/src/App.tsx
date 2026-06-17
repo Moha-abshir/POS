@@ -7,6 +7,7 @@ import { TeamPage } from './pages/TeamPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { PurchasingPage } from './pages/PurchasingPage';
 import { InventoryPage } from './pages/InventoryPage';
+import { CustomersPage } from './pages/CustomersPage';
 
 const NotFound = () => (
   <div className="flex flex-col items-center justify-center h-full p-6 text-center">
@@ -57,7 +58,7 @@ function App() {
             {/* Missing nav links placeholders */}
             <Route path="/pos" element={<ComingSoon title="Point of Sale" />} />
             <Route path="/inventory" element={<InventoryPage />} />
-            <Route path="/customers" element={<ComingSoon title="Customer Management" />} />
+            <Route path="/customers" element={<CustomersPage />} />
             <Route path="/purchasing" element={<PurchasingPage />} />
             <Route path="/reports" element={<ComingSoon title="Reports & Analytics" />} />
             

@@ -11,6 +11,8 @@ import usersRoutes from './modules/users/users.routes';
 import suppliersRoutes from './modules/suppliers/suppliers.routes';
 import inventoryRoutes from './modules/inventory/inventory.routes';
 import purchasingRoutes from './modules/purchasing/purchasing.routes';
+import customersRoutes from './modules/customers/customers.routes';
+import salesRoutes from './modules/sales/sales.routes';
 import { errorHandler } from './core/middleware/errorHandler';
 
 import { z } from 'zod';
@@ -54,6 +56,8 @@ app.use('/users', usersRoutes);
 app.use('/suppliers', suppliersRoutes);
 app.use('/inventory', inventoryRoutes);
 app.use('/purchases', purchasingRoutes);
+app.use('/customers', customersRoutes);
+app.use('/sales', salesRoutes);
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });

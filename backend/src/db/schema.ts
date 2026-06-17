@@ -245,3 +245,59 @@ export const restockItems = pgTable('restock_items', {
   variantIdx: index('restock_items_variant_idx').on(table.variantId),
   uniqueVariantPerBusiness: unique('restock_items_variant_business_unique').on(table.businessId, table.variantId)
 }));
+
+export const customers = pgTable('customers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  phone: varchar('phone', { length: 50 }),
+  nationalId: varchar('national_id', { length: 50 }),
+  address: text('address'),
+  notes: text('notes'),
+  balance: decimal('balance', { precision: 12, scale: 2 }).notNull().default('0'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
+  createdBy: uuid('created_by').references(() => users.id),
+}, (table) => ({
+  businessIdx: index('customers_business_idx').on(table.businessId)
+}));
+
+export const sales = pgTable('sales', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  customerId: uuid('customer_id').references(() => customers.id, { onDelete: 'restrict' }),
+  totalAmount: decimal('total_amount', { precision: 12, scale: 2 }).notNull(),
+  amountPaid: decimal('amount_paid', { precision: 12, scale: 2 }).notNull().default('0'),
+  paymentStatus: paymentStatusEnum('payment_status').notNull().default('UNPAID'),
+  paymentMethod: paymentMethodEnum('payment_method').notNull(),
+  mpesaRef: varchar('mpesa_ref', { length: 50 }),
+  mpesaPhoneNumber: varchar('mpesa_phone_number', { length: 50 }),
+  soldAt: timestamp('sold_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  createdBy: uuid('created_by').references(() => users.id),
+}, (table) => ({
+  customerIdx: index('sales_customer_idx').on(table.customerId),
+  soldAtIdx: index('sales_sold_at_idx').on(table.soldAt),
+  businessIdx: index('sales_business_idx').on(table.businessId),
+  totalAmountCheck: check('sales_total_amount_check', sql`${table.totalAmount} >= 0`),
+  amountPaidCheck: check('sales_amount_paid_check', sql`${table.amountPaid} >= 0`)
+}));
+
+export const saleItems = pgTable('sale_items', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  saleId: uuid('sale_id').notNull().references(() => sales.id, { onDelete: 'restrict' }),
+  variantId: uuid('variant_id').notNull().references(() => productVariants.id, { onDelete: 'restrict' }),
+  unitId: uuid('unit_id').notNull().references(() => variantUnits.id, { onDelete: 'restrict' }),
+  quantity: decimal('quantity', { precision: 10, scale: 3 }).notNull(),
+  sellingPrice: decimal('selling_price', { precision: 12, scale: 2 }).notNull(),
+  subtotal: decimal('subtotal', { precision: 12, scale: 2 }).notNull(),
+}, (table) => ({
+  saleIdx: index('sale_items_sale_idx').on(table.saleId),
+  variantIdx: index('sale_items_variant_idx').on(table.variantId),
+  unitIdx: index('sale_items_unit_idx').on(table.unitId),
+  businessIdx: index('sale_items_business_idx').on(table.businessId),
+  quantityCheck: check('sale_items_quantity_check', sql`${table.quantity} > 0`),
+  sellingPriceCheck: check('sale_items_selling_price_check', sql`${table.sellingPrice} >= 0`)
+}));
