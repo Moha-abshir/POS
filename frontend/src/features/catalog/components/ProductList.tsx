@@ -48,10 +48,10 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
     <div className="bg-white rounded-xl shadow-sm border border-[var(--color-border)] overflow-hidden flex flex-col h-full flex-1">
       
       {/* Toolbar Row */}
-      <div className="p-4 border-b border-[var(--color-border)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="p-4 border-b border-[var(--color-border)] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
         
-        {/* Search - exactly 50% width on desktop */}
-        <div className="relative w-full sm:w-1/2 min-w-[200px]">
+        {/* Search */}
+        <div className="relative w-full xl:max-w-[320px] min-w-[200px] flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input 
             type="text" 
@@ -62,8 +62,8 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
           />
         </div>
 
-        {/* Filters and Actions - takes remaining 50% */}
-        <div className="flex items-center gap-3 w-full sm:flex-1 shrink-0 flex-wrap sm:flex-nowrap">
+        {/* Filters and Actions */}
+        <div className="flex items-center gap-3 w-full xl:w-auto shrink-0 flex-wrap sm:flex-nowrap">
           
           <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
             <span className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] whitespace-nowrap">Category:</span>
