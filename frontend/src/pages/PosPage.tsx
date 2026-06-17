@@ -72,9 +72,10 @@ export const PosPage = () => {
   });
 
   return (
-    <div className="h-full w-full flex overflow-x-hidden bg-[#F7F6F4]">
-      {/* Left Panel: Product Catalog (65%) */}
-      <div className="flex-[6.5] flex flex-col relative h-full">
+    <div className="h-full w-full p-4 lg:p-6 overflow-hidden">
+      <div className="h-full w-full flex flex-row rounded-2xl shadow-sm border border-[#E5E1DA] overflow-hidden">
+        {/* Left Panel: Product Catalog (65%) */}
+        <div className="flex-[6.5] flex flex-col relative h-full bg-[#F7F6F4]">
         {/* Sticky Header: Search and Categories */}
         <div className="sticky top-0 z-10 bg-[#F7F6F4] px-6 pt-6 pb-2">
           <div className="relative w-full h-[44px]">
@@ -280,6 +281,8 @@ export const PosPage = () => {
             <CreditCard className="w-5 h-5 opacity-70" /> Charge Customer
           </button>
         </div>
+      </div>
+
       </div>
 
       <CheckoutModal
