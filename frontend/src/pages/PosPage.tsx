@@ -156,19 +156,19 @@ export const PosPage = () => {
       </div>
 
       {/* Right Panel: Shopping Cart (35%, fixed, min-w-320px) */}
-      <div className="flex-[3.5] min-w-[320px] bg-white border-l border-[#E5E1DA] flex flex-col h-full shrink-0">
+      <div className="flex-[3.5] min-w-[320px] bg-[#2A2926] border-l border-zinc-800 flex flex-col h-full shrink-0">
         
         {/* Header */}
-        <div className="p-4 border-b border-[#E5E1DA] shrink-0">
+        <div className="p-4 border-b border-zinc-800 shrink-0">
           <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2 text-gray-900 font-semibold text-base">
+            <div className="flex items-center gap-2 text-white font-semibold text-base">
               <ShoppingCart className="w-5 h-5 text-[#D97706]" />
               Current Order
             </div>
             {cart.length > 0 && (
               <button 
                 onClick={() => setCart([])}
-                className="text-sm font-medium text-red-500 hover:text-red-600 transition-colors"
+                className="text-sm font-medium text-red-500 hover:text-red-400 transition-colors"
               >
                 Clear
               </button>
@@ -176,7 +176,7 @@ export const PosPage = () => {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold tracking-wider text-gray-400 uppercase">Customer</label>
+            <label className="text-xs font-semibold tracking-wider text-zinc-500 uppercase">Customer</label>
             <select 
               className="w-full bg-[#F7F6F4] border border-[#E5E1DA] text-gray-900 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[#D97706] focus:border-transparent"
               value={selectedCustomer}
@@ -189,25 +189,25 @@ export const PosPage = () => {
         </div>
 
         {/* Item List (Scrollable) */}
-        <div className="flex-1 overflow-y-auto bg-white p-4">
+        <div className="flex-1 overflow-y-auto p-4">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 bg-[#EEECE8] rounded-full flex items-center justify-center mb-4">
-                <ShoppingCart className="w-7 h-7 text-gray-300" />
+              <div className="w-16 h-16 bg-[#F7F6F4] rounded-full flex items-center justify-center mb-4">
+                <ShoppingCart className="w-7 h-7 text-gray-400" />
               </div>
-              <p className="font-semibold text-gray-900 mb-1">No items added yet</p>
-              <p className="text-sm text-gray-400 mb-8 max-w-[220px]">Click a product from the left to add it to this order</p>
+              <p className="font-semibold text-white mb-1">No items added yet</p>
+              <p className="text-sm text-zinc-400 mb-8 max-w-[220px]">Click a product from the left to add it to this order</p>
 
               <div className="w-full space-y-3">
                 <div className="flex items-center gap-3 bg-[#F7F6F4] border border-[#E5E1DA] rounded-lg p-3 text-left">
                   <Search className="w-5 h-5 text-[#D97706] shrink-0" />
-                  <p className="text-xs text-gray-500">Search by name or use category filters to find products faster</p>
+                  <p className="text-xs text-gray-600">Search by name or use category filters to find products faster</p>
                 </div>
                 <div className="flex items-center gap-3 bg-[#F7F6F4] border border-[#E5E1DA] rounded-lg p-3 text-left">
                   <div className="w-5 h-5 flex items-center justify-center text-[#D97706] shrink-0 border border-[#D97706] rounded-full">
                     <span className="text-[10px] font-bold">8</span>
                   </div>
-                  <p className="text-xs text-gray-500">Select a customer above to attach this sale to their account</p>
+                  <p className="text-xs text-gray-600">Select a customer above to attach this sale to their account</p>
                 </div>
               </div>
             </div>
@@ -217,10 +217,10 @@ export const PosPage = () => {
                 <div key={item.unitId} className="flex flex-col group">
                   <div className="flex justify-between items-start">
                     <div className="pr-2 flex-1">
-                      <div className="font-medium text-gray-900 text-sm">{item.productName}</div>
-                      <div className="text-xs text-gray-400 mt-0.5">{variantNameText(item)}</div>
+                      <div className="font-medium text-white text-sm">{item.productName}</div>
+                      <div className="text-xs text-zinc-400 mt-0.5">{variantNameText(item)}</div>
                     </div>
-                    <div className="font-semibold text-gray-900 text-sm">
+                    <div className="font-semibold text-white text-sm">
                       KSH {(item.quantity * item.sellingPrice).toLocaleString()}
                     </div>
                   </div>
@@ -229,14 +229,14 @@ export const PosPage = () => {
                     <div className="flex items-center gap-1">
                       <button 
                         onClick={() => updateQuantity(item.unitId, -1)}
-                        className="w-7 h-7 flex items-center justify-center rounded-md bg-[#EEECE8] text-gray-600 hover:bg-[#E5E1DA] transition-colors"
+                        className="w-7 h-7 flex items-center justify-center rounded-md bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="font-mono text-sm w-8 text-center">{item.quantity}</span>
+                      <span className="font-mono text-sm w-8 text-center text-white">{item.quantity}</span>
                       <button 
                         onClick={() => updateQuantity(item.unitId, 1)}
-                        className="w-7 h-7 flex items-center justify-center rounded-md bg-[#EEECE8] text-gray-600 hover:bg-[#E5E1DA] transition-colors"
+                        className="w-7 h-7 flex items-center justify-center rounded-md bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -255,19 +255,19 @@ export const PosPage = () => {
         </div>
 
         {/* Footer (Sticky) */}
-        <div className="p-4 border-t border-[#E5E1DA] bg-white shrink-0">
+        <div className="p-4 border-t border-zinc-800 shrink-0">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-gray-500">Subtotal</span>
-            <span className="text-sm text-gray-500">KSH {cartTotal.toLocaleString()}</span>
+            <span className="text-sm text-zinc-400">Subtotal</span>
+            <span className="text-sm text-zinc-400">KSH {cartTotal.toLocaleString()}</span>
           </div>
           <div className="flex justify-between items-center mb-4">
-            <span className="text-sm text-gray-500">Discount</span>
-            <span className="text-sm text-gray-500">—</span>
+            <span className="text-sm text-zinc-400">Discount</span>
+            <span className="text-sm text-zinc-400">—</span>
           </div>
           
           <div className="flex justify-between items-end mb-6">
-            <span className="text-sm font-medium text-gray-900 mb-1">Total</span>
-            <span className="text-2xl font-bold text-gray-900" style={{ fontFamily: '"DM Serif Display", serif' }}>
+            <span className="text-sm font-medium text-zinc-400 mb-1">Total</span>
+            <span className="text-2xl font-bold text-white" style={{ fontFamily: '"DM Serif Display", serif' }}>
               KSH {cartTotal.toLocaleString()}
             </span>
           </div>
@@ -275,9 +275,9 @@ export const PosPage = () => {
           <button 
             disabled={cart.length === 0}
             onClick={() => setIsCheckoutOpen(true)}
-            className="w-full h-12 bg-[#D97706] hover:bg-[#B45309] disabled:bg-[#EEECE8] disabled:text-gray-400 text-white font-semibold rounded-xl transition-colors flex justify-center items-center gap-2"
+            className="w-full h-12 bg-transparent border border-zinc-700 hover:bg-zinc-800 hover:border-zinc-500 disabled:border-zinc-800 disabled:text-zinc-600 disabled:hover:bg-transparent text-white font-semibold rounded-xl transition-all flex justify-center items-center gap-2"
           >
-            Charge Customer
+            <CreditCard className="w-5 h-5 opacity-70" /> Charge Customer
           </button>
         </div>
       </div>
