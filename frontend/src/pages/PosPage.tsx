@@ -58,65 +58,93 @@ export const PosPage = () => {
     setCart((prev) => prev.filter(item => item.unitId !== unitId));
   };
 
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCustomer, setSelectedCustomer] = useState('');
+
   const cartTotal = cart.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
 
+  // Extract unique categories (mocking if category not populated)
+  const categories = ['All', ...Array.from(new Set<string>(products.map((p: any) => p.category?.name || 'Uncategorized')))];
+
+  const filteredProducts = products.filter((p: any) => {
+    if (selectedCategory !== 'All' && p.category?.name !== selectedCategory && (p.category?.name || 'Uncategorized') !== selectedCategory) return false;
+    return true;
+  });
+
   return (
-    <div className="h-full w-full p-6 max-w-[1600px] mx-auto flex gap-6 flex-col lg:flex-row overflow-hidden">
-      {/* Left Side: Product Catalog */}
-      <div className="flex-1 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-2xl flex flex-col shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-[var(--color-border)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[var(--color-bg-surface)]">
-          <div>
-            <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Point of Sale</h1>
-            <p className="text-sm text-[var(--color-text-secondary)] mt-1">Select products to add to current order</p>
-          </div>
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-text-muted)] w-5 h-5" />
+    <div className="h-full w-full flex overflow-x-hidden bg-[#F7F6F4]">
+      {/* Left Panel: Product Catalog (65%) */}
+      <div className="flex-[6.5] flex flex-col relative h-full">
+        {/* Sticky Header: Search and Categories */}
+        <div className="sticky top-0 z-10 bg-[#F7F6F4] px-6 pt-6 pb-2">
+          <div className="relative w-full h-[44px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-xl focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none text-[var(--color-text-primary)] transition-all placeholder:text-[var(--color-text-muted)]"
+              className="w-full h-full pl-10 pr-4 bg-white border border-[#E5E1DA] rounded-xl focus:ring-2 focus:ring-[#D97706] focus:border-transparent outline-none text-gray-900 transition-all placeholder:text-gray-400"
             />
           </div>
+
+          <div className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-2 mt-4 pb-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  selectedCategory === cat
+                    ? 'bg-[#D97706] text-white'
+                    : 'bg-[#EEECE8] text-gray-600 hover:bg-[#E5E1DA]'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+          <div className="text-xs font-semibold tracking-wider text-gray-400 mt-2 mb-1 uppercase">Products</div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-[var(--color-bg-sunken)]">
+        {/* Product Grid */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
           {isLoading ? (
-            <div className="h-full flex items-center justify-center text-[var(--color-text-muted)]">
+            <div className="flex items-center justify-center h-40 text-gray-500">
               <div className="animate-pulse flex flex-col items-center">
-                <div className="w-12 h-12 border-4 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin mb-4"></div>
+                <div className="w-8 h-8 border-4 border-[#D97706] border-t-transparent rounded-full animate-spin mb-3"></div>
                 <p>Loading catalog...</p>
               </div>
             </div>
-          ) : products.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-[var(--color-text-muted)]">
-               <p>No products found in catalog.</p>
+          ) : filteredProducts.length === 0 ? (
+            <div className="flex items-center justify-center h-40 text-gray-500">
+               <p>No products found.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-              {products.map((product: any) => (
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredProducts.map((product: any) => (
                 product.variants.map((variant: any) => (
                   variant.units.map((unit: any) => (
                     <div 
                       key={unit.id}
                       onClick={() => addToCart(product, variant, unit)}
-                      className="group bg-[var(--color-bg-surface)] p-5 rounded-xl border border-[var(--color-border)] cursor-pointer hover:border-[var(--color-accent)] hover:shadow-md transition-all flex flex-col h-full relative overflow-hidden"
+                      className="group bg-white p-3 rounded-xl border border-[#E5E1DA] shadow-sm cursor-pointer hover:shadow-md hover:border-[#D97706] transition duration-150 flex flex-col h-full relative"
                     >
-                      <div className="absolute top-0 left-0 w-1 h-full bg-transparent group-hover:bg-[var(--color-accent)] transition-colors"></div>
-                      <div className="flex-1 mb-3">
-                        <div className="font-semibold text-[var(--color-text-primary)] leading-tight mb-1">{product.name}</div>
-                        <div className="text-xs text-[var(--color-text-secondary)] bg-[var(--color-bg-sunken)] inline-block px-2 py-1 rounded-md border border-[var(--color-border)]">
-                          {variant.name} &middot; {unit.name}
+                      <div className="w-full aspect-[4/3] bg-[#EEECE8] rounded-lg mb-2 flex items-center justify-center overflow-hidden">
+                        {/* Placeholder for image */}
+                        <div className="text-gray-300">
+                           <ShoppingCart className="w-8 h-8 opacity-50" />
                         </div>
                       </div>
-                      <div className="flex items-center justify-between mt-auto">
-                        <div className="font-bold text-[var(--color-accent)] text-lg">
-                          KSh {Number(unit.sellingPrice).toLocaleString()}
+                      <div className="flex-1">
+                        <div className="font-semibold text-sm text-gray-900 truncate" title={product.name}>{product.name}</div>
+                        <div className="text-xs text-gray-400 mt-0.5">{variant.name === 'Default' ? '' : variant.name + ' • '} {unit.name}</div>
+                      </div>
+                      <div className="flex items-end justify-between mt-2">
+                        <div className="text-sm font-semibold text-[#D97706]">
+                          KSH {Number(unit.sellingPrice).toLocaleString()}
                         </div>
-                        <div className="w-8 h-8 rounded-full bg-[var(--color-bg-sunken)] flex items-center justify-center group-hover:bg-[var(--color-accent)] group-hover:text-white transition-colors text-[var(--color-text-muted)]">
-                          <Plus className="w-4 h-4" />
-                        </div>
+                        {/* Fake stock indicator dot */}
+                        <div className="w-2 h-2 rounded-full bg-green-500 mb-1.5" title="In stock"></div>
                       </div>
                     </div>
                   ))
@@ -127,70 +155,98 @@ export const PosPage = () => {
         </div>
       </div>
 
-      {/* Right Side: Shopping Cart */}
-      <div className="w-full lg:w-[420px] shrink-0 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-2xl flex flex-col shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-[var(--color-border)] flex justify-between items-center bg-[var(--color-bg-surface)]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[var(--color-accent)]/10 rounded-xl flex items-center justify-center text-[var(--color-accent)]">
-              <ShoppingCart className="w-5 h-5" />
+      {/* Right Panel: Shopping Cart (35%, fixed, min-w-320px) */}
+      <div className="flex-[3.5] min-w-[320px] bg-white border-l border-[#E5E1DA] flex flex-col h-full shrink-0">
+        
+        {/* Header */}
+        <div className="p-4 border-b border-[#E5E1DA] shrink-0">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-2 text-gray-900 font-semibold text-base">
+              <ShoppingCart className="w-5 h-5 text-[#D97706]" />
+              Current Order
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-[var(--color-text-primary)]">Current Order</h2>
-              <p className="text-xs text-[var(--color-text-secondary)]">{cart.length} item{cart.length !== 1 ? 's' : ''}</p>
-            </div>
+            {cart.length > 0 && (
+              <button 
+                onClick={() => setCart([])}
+                className="text-sm font-medium text-red-500 hover:text-red-600 transition-colors"
+              >
+                Clear
+              </button>
+            )}
           </div>
-          {cart.length > 0 && (
-            <button 
-              onClick={() => setCart([])}
-              className="text-xs text-[var(--color-text-secondary)] hover:text-red-500 font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors"
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold tracking-wider text-gray-400 uppercase">Customer</label>
+            <select 
+              className="w-full bg-[#F7F6F4] border border-[#E5E1DA] text-gray-900 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[#D97706] focus:border-transparent"
+              value={selectedCustomer}
+              onChange={(e) => setSelectedCustomer(e.target.value)}
             >
-              Clear all
-            </button>
-          )}
+              <option value="">Walk-in customer</option>
+              <option value="new">+ Add new customer</option>
+            </select>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-[var(--color-bg-base)]">
+        {/* Item List (Scrollable) */}
+        <div className="flex-1 overflow-y-auto bg-white p-4">
           {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-[var(--color-text-muted)]">
-              <div className="w-20 h-20 bg-[var(--color-bg-sunken)] rounded-full flex items-center justify-center mb-4 border border-[var(--color-border-subtle)]">
-                <ShoppingCart className="w-8 h-8 text-[var(--color-text-muted)] opacity-50" />
+            <div className="h-full flex flex-col items-center justify-center text-center">
+              <div className="w-16 h-16 bg-[#EEECE8] rounded-full flex items-center justify-center mb-4">
+                <ShoppingCart className="w-7 h-7 text-gray-300" />
               </div>
-              <p className="font-medium">Your cart is empty</p>
-              <p className="text-sm text-[var(--color-text-secondary)] mt-1 text-center max-w-[200px]">Select products from the catalog to start an order.</p>
+              <p className="font-semibold text-gray-900 mb-1">No items added yet</p>
+              <p className="text-sm text-gray-400 mb-8 max-w-[220px]">Click a product from the left to add it to this order</p>
+
+              <div className="w-full space-y-3">
+                <div className="flex items-center gap-3 bg-[#F7F6F4] border border-[#E5E1DA] rounded-lg p-3 text-left">
+                  <Search className="w-5 h-5 text-[#D97706] shrink-0" />
+                  <p className="text-xs text-gray-500">Search by name or use category filters to find products faster</p>
+                </div>
+                <div className="flex items-center gap-3 bg-[#F7F6F4] border border-[#E5E1DA] rounded-lg p-3 text-left">
+                  <div className="w-5 h-5 flex items-center justify-center text-[#D97706] shrink-0 border border-[#D97706] rounded-full">
+                    <span className="text-[10px] font-bold">8</span>
+                  </div>
+                  <p className="text-xs text-gray-500">Select a customer above to attach this sale to their account</p>
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {cart.map((item) => (
-                <div key={item.unitId} className="flex flex-col p-4 bg-[var(--color-bg-surface)] rounded-xl border border-[var(--color-border)] shadow-sm">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="pr-2">
-                      <div className="font-semibold text-[var(--color-text-primary)] text-sm leading-tight">{item.productName}</div>
-                      <div className="text-xs text-[var(--color-text-secondary)] mt-1">{item.variantName} ({item.unitName})</div>
+                <div key={item.unitId} className="flex flex-col group">
+                  <div className="flex justify-between items-start">
+                    <div className="pr-2 flex-1">
+                      <div className="font-medium text-gray-900 text-sm">{item.productName}</div>
+                      <div className="text-xs text-gray-400 mt-0.5">{variantNameText(item)}</div>
                     </div>
-                    <button onClick={() => removeFromCart(item.unitId)} className="text-[var(--color-text-muted)] hover:text-red-500 transition-colors p-1">
-                      <X className="w-4 h-4" />
-                    </button>
+                    <div className="font-semibold text-gray-900 text-sm">
+                      KSH {(item.quantity * item.sellingPrice).toLocaleString()}
+                    </div>
                   </div>
                   
-                  <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border-subtle)]">
-                    <div className="font-bold text-[var(--color-text-primary)]">
-                      KSh {(item.quantity * item.sellingPrice).toLocaleString()}
-                    </div>
-                    <div className="flex items-center gap-1 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-lg p-1">
+                  <div className="flex items-center justify-between mt-3">
+                    <div className="flex items-center gap-1">
                       <button 
                         onClick={() => updateQuantity(item.unitId, -1)}
-                        className="w-7 h-7 flex items-center justify-center hover:bg-white hover:shadow-sm rounded-md text-[var(--color-text-secondary)] transition-all"
+                        className="w-7 h-7 flex items-center justify-center rounded-md bg-[#EEECE8] text-gray-600 hover:bg-[#E5E1DA] transition-colors"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="text-sm font-medium w-8 text-center text-[var(--color-text-primary)]">{item.quantity}</span>
+                      <span className="font-mono text-sm w-8 text-center">{item.quantity}</span>
                       <button 
                         onClick={() => updateQuantity(item.unitId, 1)}
-                        className="w-7 h-7 flex items-center justify-center hover:bg-white hover:shadow-sm rounded-md text-[var(--color-text-secondary)] transition-all"
+                        className="w-7 h-7 flex items-center justify-center rounded-md bg-[#EEECE8] text-gray-600 hover:bg-[#E5E1DA] transition-colors"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
                     </div>
+                    <button 
+                      onClick={() => removeFromCart(item.unitId)} 
+                      className="text-red-400 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -198,21 +254,30 @@ export const PosPage = () => {
           )}
         </div>
 
-        <div className="p-6 border-t border-[var(--color-border)] bg-[var(--color-bg-surface)] shrink-0">
-          <div className="flex justify-between items-center mb-6">
-            <span className="text-[var(--color-text-secondary)] font-medium">Total Amount</span>
-            <span className="text-3xl font-bold tracking-tight text-[var(--color-text-primary)]">
-              <span className="text-xl text-[var(--color-text-muted)] mr-1">KSh</span>
-              {cartTotal.toLocaleString()}
+        {/* Footer (Sticky) */}
+        <div className="p-4 border-t border-[#E5E1DA] bg-white shrink-0">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm text-gray-500">Subtotal</span>
+            <span className="text-sm text-gray-500">KSH {cartTotal.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-sm text-gray-500">Discount</span>
+            <span className="text-sm text-gray-500">—</span>
+          </div>
+          
+          <div className="flex justify-between items-end mb-6">
+            <span className="text-sm font-medium text-gray-900 mb-1">Total</span>
+            <span className="text-2xl font-bold text-gray-900" style={{ fontFamily: '"DM Serif Display", serif' }}>
+              KSH {cartTotal.toLocaleString()}
             </span>
           </div>
           
           <button 
             disabled={cart.length === 0}
             onClick={() => setIsCheckoutOpen(true)}
-            className="w-full bg-[var(--color-accent)] text-white py-4 rounded-xl font-bold text-lg hover:brightness-110 disabled:opacity-50 disabled:hover:brightness-100 disabled:cursor-not-allowed transition-all shadow-lg shadow-[var(--color-accent)]/20 flex justify-center items-center gap-2"
+            className="w-full h-12 bg-[#D97706] hover:bg-[#B45309] disabled:bg-[#EEECE8] disabled:text-gray-400 text-white font-semibold rounded-xl transition-colors flex justify-center items-center gap-2"
           >
-            Checkout <CreditCard className="w-5 h-5" />
+            Charge Customer
           </button>
         </div>
       </div>
@@ -227,3 +292,9 @@ export const PosPage = () => {
     </div>
   );
 };
+
+// Helper for displaying variant name if it's not default
+function variantNameText(item: any) {
+  if (item.variantName === 'Default') return item.unitName;
+  return `${item.variantName} • ${item.unitName}`;
+}
