@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCustomers } from '../features/customers/api/customers.api';
-import { Search, Plus, UserCircle, Phone, MapPin, ReceiptText } from 'lucide-react';
+import { Search, Plus, UserCircle, Phone, MapPin, MoreHorizontal, Pencil } from 'lucide-react';
 // import { CustomerModal } from '../features/customers/components/CustomerModal';
 
 export const CustomersPage = () => {
@@ -22,108 +22,124 @@ export const CustomersPage = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="h-full flex flex-col space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
-          <p className="text-sm text-gray-500">Manage your customers and their credit balances</p>
+          <h1 className="text-[var(--text-2xl)] font-bold text-[var(--color-text-primary)] tracking-tight">Customers</h1>
+          <p className="text-[var(--text-sm)] text-[var(--color-text-secondary)] mt-1">Manage your customers and their credit balances</p>
         </div>
         <button
           onClick={handleAddNew}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-indigo-700 transition-colors"
+          className="flex items-center justify-center gap-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-5 h-10 rounded-[var(--radius-md)] font-semibold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1 shrink-0 select-none cursor-pointer"
         >
-          <Plus className="w-5 h-5 mr-2" />
+          <Plus className="h-4 w-4" />
           Add Customer
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm">
-        <div className="p-6 border-b border-gray-100">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+      {/* Main Content */}
+      <div className="bg-white rounded-[var(--radius-lg)] shadow-sm border border-[var(--color-border)] overflow-hidden flex flex-col flex-1">
+        
+        {/* Toolbar */}
+        <div className="p-4 border-b border-[var(--color-border)] flex items-center gap-4 shrink-0">
+          <div className="relative w-full max-w-md min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name, phone..."
+              placeholder="Search by name, phone or ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+              className="w-full h-10 pl-9 pr-4 bg-[var(--color-bg-sunken)] border-transparent rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-accent)] transition-all placeholder:text-gray-400"
             />
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Table Container */}
+        <div className="overflow-x-auto flex-1">
           {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Loading customers...</div>
+            <div className="flex items-center justify-center h-full min-h-[200px] text-[var(--color-text-secondary)]">Loading customers...</div>
           ) : error ? (
-            <div className="p-8 text-center text-red-500">Failed to load customers</div>
+            <div className="flex items-center justify-center h-full min-h-[200px] text-[var(--color-danger)]">Failed to load customers</div>
           ) : customers.length === 0 ? (
-            <div className="p-12 text-center text-gray-500 flex flex-col items-center">
-              <UserCircle className="w-12 h-12 mb-3 text-gray-300" />
-              <p className="text-lg font-medium text-gray-900 mb-1">No customers found</p>
-              <p>Add your first customer to start tracking debt.</p>
+            <div className="flex flex-col items-center justify-center h-full min-h-[300px] p-8 text-center">
+              <div className="w-16 h-16 bg-[var(--color-bg-sunken)] rounded-full flex items-center justify-center mb-4">
+                <UserCircle className="w-8 h-8 text-[var(--color-text-muted)]" />
+              </div>
+              <p className="text-[var(--text-lg)] font-bold text-[var(--color-text-primary)] mb-2">No customers found</p>
+              <p className="text-[var(--text-sm)] text-[var(--color-text-secondary)] max-w-md">Add your first customer to start tracking debt and purchase history.</p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
-                <tr className="bg-gray-50 text-gray-600 text-sm">
-                  <th className="p-4 font-medium">Customer</th>
-                  <th className="p-4 font-medium">Contact</th>
-                  <th className="p-4 font-medium text-right">Balance</th>
-                  <th className="p-4 font-medium text-right">Actions</th>
+                <tr className="bg-white border-b border-[var(--color-border)]">
+                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase">Customer</th>
+                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase">Contact Details</th>
+                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase text-right">Balance</th>
+                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {customers.map((customer: any) => (
-                  <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
-                          {customer.name.charAt(0).toUpperCase()}
+              <tbody>
+                {customers.map((customer: any, index: number) => {
+                  const balance = Number(customer.balance);
+                  const hasDebt = balance > 0;
+                  
+                  return (
+                    <tr key={customer.id} className={`border-b border-[var(--color-border)] h-[72px] transition-colors duration-150 hover:bg-[var(--color-bg-sunken)] ${index % 2 === 0 ? 'bg-white' : 'bg-[var(--color-bg-base)]'}`}>
+                      <td className="px-6 py-0">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-[var(--radius-md)] bg-[var(--color-bg-sunken)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-primary)] font-bold shadow-sm">
+                            {customer.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-[var(--color-text-primary)] leading-tight">{customer.name}</span>
+                            {customer.nationalId && (
+                              <span className="text-[var(--text-xs)] text-[var(--color-text-secondary)] mt-0.5">ID: {customer.nationalId}</span>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-medium text-gray-900">{customer.name}</div>
-                          {customer.nationalId && (
-                            <div className="text-xs text-gray-500">ID: {customer.nationalId}</div>
+                      </td>
+                      <td className="px-6 py-0">
+                        <div className="flex flex-col gap-1 text-[var(--text-sm)] text-[var(--color-text-secondary)]">
+                          {customer.phone && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+                              <span className="font-medium">{customer.phone}</span>
+                            </div>
+                          )}
+                          {customer.address && (
+                            <div className="flex items-center gap-2">
+                              <MapPin className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+                              <span className="truncate max-w-[200px]" title={customer.address}>{customer.address}</span>
+                            </div>
+                          )}
+                          {!customer.phone && !customer.address && (
+                            <span className="text-[var(--color-text-muted)] italic">No contact details</span>
                           )}
                         </div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="text-sm text-gray-600 space-y-1">
-                        {customer.phone && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4 text-gray-400" />
-                            {customer.phone}
-                          </div>
-                        )}
-                        {customer.address && (
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-gray-400" />
-                            {customer.address}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className={`font-medium ${customer.balance > 0 ? 'text-red-600' : 'text-gray-900'}`}>
-                        KSh {Number(customer.balance).toLocaleString()}
-                      </div>
-                      {customer.balance > 0 && (
-                        <div className="text-xs text-gray-500">Outstanding Debt</div>
-                      )}
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex justify-end gap-2">
+                      </td>
+                      <td className="px-6 py-0 text-right">
+                        <div className="flex flex-col items-end">
+                          <span className={`font-bold text-[var(--text-base)] ${hasDebt ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-primary)]'}`}>
+                            KSh {balance.toLocaleString()}
+                          </span>
+                          {hasDebt && (
+                            <span className="text-[var(--text-xs)] font-medium text-[var(--color-danger)]/70 uppercase tracking-wider mt-0.5">Outstanding</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-0 text-right">
                         <button 
                           onClick={() => handleEdit(customer)}
-                          className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-[var(--radius-sm)] text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-colors"
+                          title="Edit Customer"
                         >
-                          Edit
+                          <Pencil className="w-4 h-4" />
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
