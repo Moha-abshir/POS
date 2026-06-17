@@ -61,113 +61,156 @@ export const PosPage = () => {
   const cartTotal = cart.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex -m-6"> {/* Negative margin to fill dashboard layout padding */}
+    <div className="h-full w-full p-6 max-w-[1600px] mx-auto flex gap-6 flex-col lg:flex-row overflow-hidden">
       {/* Left Side: Product Catalog */}
-      <div className="flex-1 bg-gray-50 p-6 overflow-y-auto flex flex-col">
-        <div className="mb-6 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Point of Sale</h1>
-          <div className="relative w-72">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+      <div className="flex-1 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-2xl flex flex-col shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-[var(--color-border)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[var(--color-bg-surface)]">
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Point of Sale</h1>
+            <p className="text-sm text-[var(--color-text-secondary)] mt-1">Select products to add to current order</p>
+          </div>
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-text-muted)] w-5 h-5" />
             <input
               type="text"
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+              className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-xl focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none text-[var(--color-text-primary)] transition-all placeholder:text-[var(--color-text-muted)]"
             />
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="flex-1 flex items-center justify-center text-gray-500">Loading catalog...</div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products.map((product: any) => (
-              product.variants.map((variant: any) => (
-                variant.units.map((unit: any) => (
-                  <div 
-                    key={unit.id}
-                    onClick={() => addToCart(product, variant, unit)}
-                    className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all flex flex-col h-full"
-                  >
-                    <div className="flex-1">
-                      <div className="font-semibold text-gray-900">{product.name}</div>
-                      <div className="text-sm text-gray-500 mb-2">{variant.name} - {unit.name}</div>
+        <div className="flex-1 overflow-y-auto p-6 bg-[var(--color-bg-sunken)]">
+          {isLoading ? (
+            <div className="h-full flex items-center justify-center text-[var(--color-text-muted)]">
+              <div className="animate-pulse flex flex-col items-center">
+                <div className="w-12 h-12 border-4 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p>Loading catalog...</p>
+              </div>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-[var(--color-text-muted)]">
+               <p>No products found in catalog.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+              {products.map((product: any) => (
+                product.variants.map((variant: any) => (
+                  variant.units.map((unit: any) => (
+                    <div 
+                      key={unit.id}
+                      onClick={() => addToCart(product, variant, unit)}
+                      className="group bg-[var(--color-bg-surface)] p-5 rounded-xl border border-[var(--color-border)] cursor-pointer hover:border-[var(--color-accent)] hover:shadow-md transition-all flex flex-col h-full relative overflow-hidden"
+                    >
+                      <div className="absolute top-0 left-0 w-1 h-full bg-transparent group-hover:bg-[var(--color-accent)] transition-colors"></div>
+                      <div className="flex-1 mb-3">
+                        <div className="font-semibold text-[var(--color-text-primary)] leading-tight mb-1">{product.name}</div>
+                        <div className="text-xs text-[var(--color-text-secondary)] bg-[var(--color-bg-sunken)] inline-block px-2 py-1 rounded-md border border-[var(--color-border)]">
+                          {variant.name} &middot; {unit.name}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between mt-auto">
+                        <div className="font-bold text-[var(--color-accent)] text-lg">
+                          KSh {Number(unit.sellingPrice).toLocaleString()}
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-[var(--color-bg-sunken)] flex items-center justify-center group-hover:bg-[var(--color-accent)] group-hover:text-white transition-colors text-[var(--color-text-muted)]">
+                          <Plus className="w-4 h-4" />
+                        </div>
+                      </div>
                     </div>
-                    <div className="font-bold text-indigo-600">
-                      KSh {Number(unit.sellingPrice).toLocaleString()}
-                    </div>
-                  </div>
+                  ))
                 ))
-              ))
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Right Side: Shopping Cart */}
-      <div className="w-96 bg-white border-l border-gray-200 flex flex-col shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)]">
-        <div className="p-6 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
-          <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
-            <ShoppingCart className="w-5 h-5" />
-          </div>
-          <h2 className="text-lg font-bold text-gray-900">Current Order</h2>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-400">
-              <ShoppingCart className="w-12 h-12 mb-3 text-gray-200" />
-              <p>Cart is empty</p>
+      <div className="w-full lg:w-[420px] shrink-0 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-2xl flex flex-col shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-[var(--color-border)] flex justify-between items-center bg-[var(--color-bg-surface)]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[var(--color-accent)]/10 rounded-xl flex items-center justify-center text-[var(--color-accent)]">
+              <ShoppingCart className="w-5 h-5" />
             </div>
-          ) : (
-            cart.map((item) => (
-              <div key={item.unitId} className="flex flex-col p-3 bg-gray-50 rounded-lg border border-gray-100">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <div className="font-medium text-gray-900 text-sm leading-tight">{item.productName}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">{item.variantName} ({item.unitName})</div>
-                  </div>
-                  <button onClick={() => removeFromCart(item.unitId)} className="text-gray-400 hover:text-red-500">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-                
-                <div className="flex items-center justify-between mt-2">
-                  <div className="font-bold text-gray-900">
-                    KSh {(item.quantity * item.sellingPrice).toLocaleString()}
-                  </div>
-                  <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-md p-1">
-                    <button 
-                      onClick={() => updateQuantity(item.unitId, -1)}
-                      className="p-1 hover:bg-gray-100 rounded text-gray-600"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
-                    <button 
-                      onClick={() => updateQuantity(item.unitId, 1)}
-                      className="p-1 hover:bg-gray-100 rounded text-gray-600"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
+            <div>
+              <h2 className="text-lg font-bold text-[var(--color-text-primary)]">Current Order</h2>
+              <p className="text-xs text-[var(--color-text-secondary)]">{cart.length} item{cart.length !== 1 ? 's' : ''}</p>
+            </div>
+          </div>
+          {cart.length > 0 && (
+            <button 
+              onClick={() => setCart([])}
+              className="text-xs text-[var(--color-text-secondary)] hover:text-red-500 font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors"
+            >
+              Clear all
+            </button>
           )}
         </div>
 
-        <div className="p-6 border-t border-gray-100 bg-gray-50/50">
+        <div className="flex-1 overflow-y-auto p-6 bg-[var(--color-bg-base)]">
+          {cart.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-[var(--color-text-muted)]">
+              <div className="w-20 h-20 bg-[var(--color-bg-sunken)] rounded-full flex items-center justify-center mb-4 border border-[var(--color-border-subtle)]">
+                <ShoppingCart className="w-8 h-8 text-[var(--color-text-muted)] opacity-50" />
+              </div>
+              <p className="font-medium">Your cart is empty</p>
+              <p className="text-sm text-[var(--color-text-secondary)] mt-1 text-center max-w-[200px]">Select products from the catalog to start an order.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {cart.map((item) => (
+                <div key={item.unitId} className="flex flex-col p-4 bg-[var(--color-bg-surface)] rounded-xl border border-[var(--color-border)] shadow-sm">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="pr-2">
+                      <div className="font-semibold text-[var(--color-text-primary)] text-sm leading-tight">{item.productName}</div>
+                      <div className="text-xs text-[var(--color-text-secondary)] mt-1">{item.variantName} ({item.unitName})</div>
+                    </div>
+                    <button onClick={() => removeFromCart(item.unitId)} className="text-[var(--color-text-muted)] hover:text-red-500 transition-colors p-1">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border-subtle)]">
+                    <div className="font-bold text-[var(--color-text-primary)]">
+                      KSh {(item.quantity * item.sellingPrice).toLocaleString()}
+                    </div>
+                    <div className="flex items-center gap-1 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-lg p-1">
+                      <button 
+                        onClick={() => updateQuantity(item.unitId, -1)}
+                        className="w-7 h-7 flex items-center justify-center hover:bg-white hover:shadow-sm rounded-md text-[var(--color-text-secondary)] transition-all"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="text-sm font-medium w-8 text-center text-[var(--color-text-primary)]">{item.quantity}</span>
+                      <button 
+                        onClick={() => updateQuantity(item.unitId, 1)}
+                        className="w-7 h-7 flex items-center justify-center hover:bg-white hover:shadow-sm rounded-md text-[var(--color-text-secondary)] transition-all"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 border-t border-[var(--color-border)] bg-[var(--color-bg-surface)] shrink-0">
           <div className="flex justify-between items-center mb-6">
-            <span className="text-gray-500 font-medium">Total Amount</span>
-            <span className="text-2xl font-bold text-gray-900">KSh {cartTotal.toLocaleString()}</span>
+            <span className="text-[var(--color-text-secondary)] font-medium">Total Amount</span>
+            <span className="text-3xl font-bold tracking-tight text-[var(--color-text-primary)]">
+              <span className="text-xl text-[var(--color-text-muted)] mr-1">KSh</span>
+              {cartTotal.toLocaleString()}
+            </span>
           </div>
           
           <button 
             disabled={cart.length === 0}
             onClick={() => setIsCheckoutOpen(true)}
-            className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors shadow-lg shadow-indigo-200 flex justify-center items-center gap-2"
+            className="w-full bg-[var(--color-accent)] text-white py-4 rounded-xl font-bold text-lg hover:brightness-110 disabled:opacity-50 disabled:hover:brightness-100 disabled:cursor-not-allowed transition-all shadow-lg shadow-[var(--color-accent)]/20 flex justify-center items-center gap-2"
           >
             Checkout <CreditCard className="w-5 h-5" />
           </button>
