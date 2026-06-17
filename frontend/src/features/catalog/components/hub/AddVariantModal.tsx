@@ -160,8 +160,8 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                 <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs">1</span>
                 Variant Profile
               </h3>
-              <div className="grid grid-cols-2 gap-5 pl-8">
-                <div className="col-span-2">
+              <div className="grid grid-cols-3 gap-5 pl-8">
+                <div className="col-span-3">
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Variant Name *</label>
                   <input
                     type="text"
@@ -190,12 +190,25 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Initial Stock (Base Unit)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Initial Stock</label>
                   <input
                     type="number"
                     name="initialStock"
                     min="0"
                     value={formData.initialStock}
+                    onChange={handleChange}
+                    className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm font-mono"
+                    placeholder="0"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Low Stock Alert</label>
+                  <input
+                    type="number"
+                    name="lowStockThreshold"
+                    min="0"
+                    value={formData.lowStockThreshold}
                     onChange={handleChange}
                     className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm font-mono"
                     placeholder="0"
