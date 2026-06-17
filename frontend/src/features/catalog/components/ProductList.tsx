@@ -67,7 +67,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
           
           <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
             <span className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] whitespace-nowrap">Category:</span>
-            <div className="flex-1 min-w-[120px]">
+            <div className="flex-1 min-w-[160px]">
               <CustomSelect 
                 label="Category" 
                 options={isCategoriesError ? [{ id: '', name: 'Error loading categories' }] : categories ? [{ id: '', name: 'All' }, ...categories.map(c => ({ id: c.id, name: c.name }))] : [{ id: '', name: 'All' }]} 
@@ -82,7 +82,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
 
           <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
             <span className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] whitespace-nowrap">Status:</span>
-            <div className="flex-1 min-w-[120px]">
+            <div className="flex-1 min-w-[140px]">
               <CustomSelect 
                 label="Status" 
                 options={[{ id: '', name: 'All' }, ...statusOptions]} 
