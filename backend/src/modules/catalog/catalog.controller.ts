@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { CatalogService } from './catalog.service';
-import { createCategorySchema, createProductSchema, updateProductSchema, updateVariantSchema, createVariantUnitSchema, updateVariantUnitSchema } from './catalog.schema';
+import { createCategorySchema, createProductSchema, updateProductSchema, createVariantSchema, updateVariantSchema, createVariantUnitSchema, updateVariantUnitSchema } from './catalog.schema';
 
 export class CatalogController {
   // Categories
@@ -74,6 +74,22 @@ export class CatalogController {
       const businessId = req.user!.businessId;
       const product = await CatalogService.updateProduct(id, data, businessId);
       res.json({ success: true, data: product });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async createVariant(req: Request, res: Response, next: NextFunction) {
+    try {
+      const productId = req.params.id as string;
+      const data = createVariantSchema.parse({
+        ...req.body,
+        productId,
+      });
+      const userId = req.user!.id;
+      const businessId = req.user!.businessId;
+      const variant = await CatalogService.createVariant(productId, data, businessId, userId);
+      res.status(201).json({ success: true, data: variant });
     } catch (error) {
       next(error);
     }

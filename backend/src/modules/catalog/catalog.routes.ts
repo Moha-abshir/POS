@@ -15,6 +15,7 @@ router.get('/products', CatalogController.getProducts);
 router.get('/products/:id', CatalogController.getProductDetails);
 router.patch('/products/:id', CatalogController.updateProduct);
 
+router.post('/products/:id/variants', CatalogController.createVariant);
 router.patch('/products/:id/variants/:variantId', CatalogController.updateVariant);
 router.post('/products/:id/variants/:variantId/units', CatalogController.createVariantUnit);
 router.patch('/products/:id/variants/:variantId/units/:unitId', CatalogController.updateVariantUnit);

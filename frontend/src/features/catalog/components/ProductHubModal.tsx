@@ -5,6 +5,7 @@ import { DetailsEditModal } from './hub/DetailsEditModal';
 import { CostPriceEditModal } from './hub/CostPriceEditModal';
 import { UnitPriceEditModal } from './hub/UnitPriceEditModal';
 import { AddUnitModal } from './hub/AddUnitModal';
+import { AddVariantModal } from './hub/AddVariantModal';
 import { DeactivateConfirmModal } from './hub/DeactivateConfirmModal';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
 import { AxiosError } from 'axios';
@@ -19,7 +20,7 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
   const updateProduct = useUpdateProduct();
   const updateVariant = useUpdateVariant();
   
-  const [activeModal, setActiveModal] = useState<'details' | 'cost' | 'unit' | 'addUnit' | 'deactivate' | null>(null);
+  const [activeModal, setActiveModal] = useState<'details' | 'cost' | 'unit' | 'addUnit' | 'addVariant' | 'deactivate' | null>(null);
   const [selectedUnit, setSelectedUnit] = useState<any>(null);
   
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
@@ -129,18 +130,27 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
             </section>
 
             {/* VARIANT SELECTOR */}
-            {product.variants && product.variants.length > 0 && (
+            {product.variants && (
               <section className="bg-gradient-to-r from-[var(--color-bg-surface)] to-[var(--color-bg-sunken)] rounded-[var(--radius-lg)] p-5 shadow-sm border border-[var(--color-border)] flex items-center justify-between">
                 <div className="flex flex-col">
                   <span className="text-[var(--text-sm)] font-bold text-[var(--color-text-primary)]">Variant Profile</span>
                   <span className="text-[12px] text-[var(--color-text-secondary)] font-medium mt-0.5">Select a variant to configure pricing & stock</span>
                 </div>
-                <div className="w-[220px]">
-                  <CustomSelect 
-                    options={product.variants.map(v => ({ id: v.id, name: v.name }))} 
-                    value={selectedVariantId} 
-                    onChange={(e) => setSelectedVariantId(e.target.value)}
-                  />
+                <div className="flex items-center gap-3">
+                  <div className="w-[220px]">
+                    <CustomSelect 
+                      options={product.variants.map(v => ({ id: v.id, name: v.name }))} 
+                      value={selectedVariantId} 
+                      onChange={(e) => setSelectedVariantId(e.target.value)}
+                    />
+                  </div>
+                  <button 
+                    onClick={() => setActiveModal('addVariant')}
+                    className="flex items-center justify-center p-2.5 text-[var(--color-primary)] bg-[var(--color-primary)]/10 hover:bg-[var(--color-primary)]/20 rounded-[var(--radius-md)] transition-colors border border-transparent hover:border-[var(--color-primary)]/30"
+                    title="Add new variant"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
                 </div>
               </section>
             )}
@@ -315,6 +325,14 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
           variant={selectedVariant}
         />
       )}
+      {activeModal === 'addVariant' && (
+        <AddVariantModal
+          isOpen={true}
+          onClose={() => setActiveModal(null)}
+          productId={product.id}
+        />
+      )}
+
       {activeModal === 'deactivate' && (
         <DeactivateConfirmModal 
           isOpen={true} 

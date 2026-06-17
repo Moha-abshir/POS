@@ -106,6 +106,36 @@ export const useCreateProduct = () => {
   });
 };
 
+export interface CreateVariantInput {
+  name: string;
+  sku?: string;
+  imageUrl?: string;
+  costPrice: number;
+  baseUnitName: string;
+  initialStock: number;
+  lowStockThreshold: number;
+  units: {
+    name: string;
+    sellingPrice: number;
+    conversionFactor: number;
+    isDefault: boolean;
+  }[];
+}
+
+export const useCreateVariant = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ productId, data }: { productId: string; data: CreateVariantInput }) => {
+      const response = await api.post(`/catalog/products/${productId}/variants`, data);
+      return response.data;
+    },
+    onSuccess: (_, { productId }) => {
+      queryClient.invalidateQueries({ queryKey: ['product', productId] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+};
+
 export interface CreateVariantUnitInput {
   name: string;
   sellingPrice: number;

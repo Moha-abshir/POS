@@ -2,7 +2,7 @@ import { eq, and, inArray, sql } from 'drizzle-orm';
 import { db } from '../../db';
 import { AppError } from '../../core/utils/AppError';
 import { categories, products, productVariants, variantUnits } from '../../db/schema';
-import { CreateCategoryInput, CreateProductInput, CreateVariantUnitInput, UpdateProductInput, UpdateVariantInput, UpdateVariantUnitInput } from './catalog.schema';
+import { CreateCategoryInput, CreateProductInput, CreateVariantInput, CreateVariantUnitInput, UpdateProductInput, UpdateVariantInput, UpdateVariantUnitInput } from './catalog.schema';
 import { InventoryService } from '../inventory/inventory.service';
 
 export class CatalogService {
@@ -202,6 +202,55 @@ export class CatalogService {
       ...product,
       variants: variantsWithUnits,
     };
+  }
+
+  static async createVariant(productId: string, data: CreateVariantInput, businessId: string, userId: string) {
+    return await db.transaction(async (tx) => {
+      // 1. Check if product exists
+      const [product] = await tx.select().from(products).where(and(eq(products.id, productId), eq(products.businessId, businessId)));
+      if (!product) throw new AppError('Product not found', 404);
+
+      // 2. Insert variant
+      const [variant] = await tx.insert(productVariants).values({
+        businessId,
+        productId,
+        name: data.name,
+        sku: data.sku,
+        imageUrl: data.imageUrl,
+        costPrice: data.costPrice.toString(),
+        baseUnitName: data.baseUnitName,
+        baseStockQuantity: '0', 
+        lowStockThreshold: data.lowStockThreshold.toString(),
+      }).returning();
+
+      // 3. Insert units
+      const unitsToInsert = data.units.map(u => ({
+        businessId,
+        variantId: variant.id,
+        name: u.name,
+        sellingPrice: u.sellingPrice.toString(),
+        conversionFactor: u.conversionFactor.toString(),
+        isDefault: u.isDefault,
+      }));
+      const createdUnits = await tx.insert(variantUnits).values(unitsToInsert).returning();
+
+      // 4. Record opening stock
+      if (data.initialStock > 0) {
+        await InventoryService.recordMovement(tx, businessId, {
+          variantId: variant.id,
+          type: 'ADJUSTMENT',
+          quantityChange: data.initialStock,
+          notes: 'Opening stock',
+          userId,
+        });
+        variant.baseStockQuantity = data.initialStock.toString();
+      }
+
+      return {
+        ...variant,
+        units: createdUnits
+      };
+    });
   }
 
   static async updateProduct(productId: string, data: UpdateProductInput, businessId: string) {
