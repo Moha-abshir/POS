@@ -117,7 +117,10 @@ export function InventoryPage() {
                         <td className="px-6 py-0 text-[var(--color-text-secondary)]">
                           {new Date(movement.createdAt).toLocaleString()}
                         </td>
-                        <td className="px-6 py-0 font-medium text-[var(--color-text-primary)]">{movement.productName}</td>
+                        <td className="px-6 py-0 font-medium text-[var(--color-text-primary)]">
+                          {movement.productName}
+                          {movement.variantName && <span className="text-gray-400 font-normal text-sm ml-1.5">({movement.variantName})</span>}
+                        </td>
                         <td className="px-6 py-0">
                           <div className="flex items-center gap-2">
                             {getMovementIcon(movement.type)}
