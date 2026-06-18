@@ -62,3 +62,11 @@ export const useUpdateCustomer = () => {
     },
   });
 };
+
+export const useCustomerPurchases = (id?: string) => {
+  return useQuery({
+    queryKey: ['customers', id, 'purchases'],
+    queryFn: () => id ? customersApi.getCustomerPurchases(id) : Promise.resolve([]),
+    enabled: !!id,
+  });
+};

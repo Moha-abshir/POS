@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Info, ShieldAlert } from 'lucide-react';
-import { useCreateCustomer } from '../api/customers.api';
+import { useCreateCustomer, useUpdateCustomer, type Customer } from '../api/customers.api';
 import toast from 'react-hot-toast';
 
 interface CustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
+  customerToEdit?: Customer | null;
 }
 
-export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose }) => {
-  const { mutate: createCustomer, isPending } = useCreateCustomer();
+export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, customerToEdit }) => {
+  const { mutate: createCustomer, isPending: isCreating } = useCreateCustomer();
+  const { mutate: updateCustomer, isPending: isUpdating } = useUpdateCustomer();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -19,27 +21,61 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose })
     notes: ''
   });
 
+  // Populate form when editing
+  useEffect(() => {
+    if (customerToEdit && isOpen) {
+      setFormData({
+        name: customerToEdit.name || '',
+        phone: customerToEdit.phone || '',
+        nationalId: customerToEdit.nationalId || '',
+        address: customerToEdit.address || '',
+        notes: customerToEdit.notes || ''
+      });
+    } else if (!isOpen) {
+      // Reset when closed
+      setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '' });
+    }
+  }, [customerToEdit, isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = () => {
     if (!formData.name.trim() || !formData.phone.trim()) return;
 
-    createCustomer(
-      { ...formData },
-      {
-        onSuccess: () => {
-          toast.success('Customer saved');
-          onClose();
-          setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '' });
-        },
-        onError: (error: any) => {
-          toast.error(error.response?.data?.message || 'Failed to save customer');
+    if (customerToEdit) {
+      // Update existing customer
+      updateCustomer(
+        { id: customerToEdit.id, ...formData },
+        {
+          onSuccess: () => {
+            toast.success('Customer updated');
+            onClose();
+          },
+          onError: (error: any) => {
+            toast.error(error.response?.data?.message || 'Failed to update customer');
+          }
         }
-      }
-    );
+      );
+    } else {
+      // Create new customer
+      createCustomer(
+        { ...formData },
+        {
+          onSuccess: () => {
+            toast.success('Customer saved');
+            onClose();
+            setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '' });
+          },
+          onError: (error: any) => {
+            toast.error(error.response?.data?.message || 'Failed to save customer');
+          }
+        }
+      );
+    }
   };
 
   const isFormValid = formData.name.trim() && formData.phone.trim();
+  const isPending = isCreating || isUpdating;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -53,7 +89,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose })
       <div className="relative bg-white rounded-xl shadow-xl w-full max-w-[440px] flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 shrink-0">
-          <h2 className="text-base font-medium text-gray-900">Add Customer</h2>
+          <h2 className="text-base font-medium text-gray-900">
+            {customerToEdit ? 'Edit Customer' : 'Add Customer'}
+          </h2>
           <button 
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -158,23 +196,23 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose })
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-100 flex justify-end gap-3 shrink-0">
+        <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl flex justify-end gap-3 shrink-0">
           <button
             onClick={onClose}
-            className="h-9 px-4 rounded-md text-sm font-medium border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={!isFormValid || isPending}
-            className={`h-9 px-4 rounded-md text-sm font-medium transition-colors ${
+            className={`px-6 py-2 text-sm font-medium text-white rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
               isFormValid && !isPending
-                ? 'bg-[#D97706] text-white hover:bg-[#B45F06]'
-                : 'bg-[#D97706]/50 text-white/80 cursor-not-allowed'
+                ? 'bg-[#D97706] hover:bg-[#B45F06] shadow-sm'
+                : 'bg-amber-300 cursor-not-allowed'
             }`}
           >
-            {isPending ? 'Saving...' : 'Save Customer'}
+            {isPending ? 'Saving...' : customerToEdit ? 'Save Changes' : 'Save Customer'}
           </button>
         </div>
       </div>

@@ -3,57 +3,51 @@ import { useState, useMemo } from 'react';
 import { useCustomers, type Customer } from '../features/customers/api/customers.api';
 import { Search, Plus, UserCircle, Eye, Pencil } from 'lucide-react';
 import { CustomerModal } from '../features/customers/components/CustomerModal';
+import { CustomerDetailsModal } from '../features/customers/components/CustomerDetailsModal';
+import { formatDistanceToNow } from 'date-fns';
 
 export const CustomersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [owingOnly, setOwingOnly] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
+  const [customerToView, setCustomerToView] = useState<Customer | null>(null);
 
   const { data: customersResponse, isLoading, error } = useCustomers();
-  const allCustomers: Customer[] = customersResponse?.data || [];
+  const customers: Customer[] = customersResponse?.data || [];
 
   const filteredCustomers = useMemo(() => {
-    return allCustomers.filter(c => {
-      const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            (c.phone && c.phone.includes(searchTerm));
-      const matchesOwing = owingOnly ? Number(c.balance) > 0 : true;
+    return customers.filter(customer => {
+      const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            (customer.phone && customer.phone.includes(searchTerm));
+      const matchesOwing = owingOnly ? Number(customer.balance) > 0 : true;
+      
       return matchesSearch && matchesOwing;
     });
-  }, [allCustomers, searchTerm, owingOnly]);
+  }, [customers, searchTerm, owingOnly]);
 
-  const totalCustomers = allCustomers.length;
+  const totalCustomers = customers.length;
+  const outstandingDebt = customers.reduce((sum, c) => sum + (Number(c.balance) > 0 ? Number(c.balance) : 0), 0);
   
-  const outstandingDebt = allCustomers.reduce((sum, c) => sum + (Number(c.balance) > 0 ? Number(c.balance) : 0), 0);
-  
-  const overdueDebt = allCustomers.reduce((sum, c) => {
+  const overdueDebt = customers.reduce((sum, c) => {
     if (Number(c.balance) > 0 && c.lastPurchaseDate) {
-      const diffDays = Math.floor((new Date().getTime() - new Date(c.lastPurchaseDate).getTime()) / (1000 * 60 * 60 * 24));
-      if (diffDays > 30) return sum + Number(c.balance);
+      const daysSincePurchase = (new Date().getTime() - new Date(c.lastPurchaseDate).getTime()) / (1000 * 3600 * 24);
+      if (daysSincePurchase > 30) {
+        return sum + Number(c.balance);
+      }
     }
     return sum;
   }, 0);
 
-  const getRelativeTime = (dateString?: string) => {
-    if (!dateString) return 'No purchases yet';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 14) return '1 week ago';
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    if (diffDays < 60) return '1 month ago';
-    return `${Math.floor(diffDays / 30)} months ago`;
-  };
-
   const getAvatarStyle = (name: string) => {
     const colors = [
-      { bg: 'bg-amber-100', text: 'text-amber-700' },
+      { bg: 'bg-emerald-100', text: 'text-emerald-700' },
       { bg: 'bg-blue-100', text: 'text-blue-700' },
-      { bg: 'bg-green-100', text: 'text-green-700' },
-      { bg: 'bg-pink-100', text: 'text-pink-700' },
+      { bg: 'bg-purple-100', text: 'text-purple-700' },
+      { bg: 'bg-rose-100', text: 'text-rose-700' },
+      { bg: 'bg-amber-100', text: 'text-amber-700' },
+      { bg: 'bg-indigo-100', text: 'text-indigo-700' },
+      { bg: 'bg-teal-100', text: 'text-teal-700' }
     ];
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
@@ -64,16 +58,29 @@ export const CustomersPage = () => {
   };
 
   const getStatus = (balance: number, lastPurchaseDate?: string) => {
-    let isOverdue = false;
-    if (lastPurchaseDate) {
-      const diffDays = Math.floor((new Date().getTime() - new Date(lastPurchaseDate).getTime()) / (1000 * 60 * 60 * 24));
-      isOverdue = diffDays > 30;
+    if (balance > 0) {
+      if (lastPurchaseDate) {
+        const daysSincePurchase = (new Date().getTime() - new Date(lastPurchaseDate).getTime()) / (1000 * 3600 * 24);
+        if (daysSincePurchase > 30) {
+          return { label: 'Overdue', className: 'bg-red-100 text-red-700' };
+        }
+      }
+      return { label: 'Owing', className: 'bg-amber-100 text-amber-700' };
     }
-    
-    if (balance > 0 && isOverdue) return { label: 'Overdue', className: 'bg-red-100 text-red-800' };
-    if (balance > 0) return { label: 'Owing', className: 'bg-amber-100 text-amber-800' };
-    if (balance === 0 && lastPurchaseDate) return { label: 'Clear', className: 'bg-green-100 text-green-800' };
-    return { label: 'Registered', className: 'bg-gray-100 text-gray-500' };
+    if (lastPurchaseDate) {
+      return { label: 'Clear', className: 'bg-green-100 text-green-700' };
+    }
+    return { label: 'Registered', className: 'bg-gray-100 text-gray-600' };
+  };
+
+  const getRelativeTime = (dateString?: string) => {
+    if (!dateString) return 'No purchases yet';
+    return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+  };
+
+  const handleOpenAddModal = () => {
+    setCustomerToEdit(null);
+    setIsModalOpen(true);
   };
 
   return (
@@ -105,7 +112,7 @@ export const CustomersPage = () => {
           </button>
 
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleOpenAddModal}
             className="flex items-center justify-center gap-2 bg-[#D97706] hover:bg-[#B45F06] text-white px-4 h-9 rounded-[var(--radius-md)] font-medium text-sm transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 shrink-0 select-none cursor-pointer w-full sm:w-auto"
           >
             <Plus className="h-4 w-4" />
@@ -162,7 +169,7 @@ export const CustomersPage = () => {
                       <h4 className="text-base font-medium text-gray-500 mb-1">No customers yet</h4>
                       <p className="text-sm text-gray-400 mb-4">Add a customer to track credit sales and purchase history.</p>
                       <button 
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={handleOpenAddModal}
                         className="bg-[#D97706] hover:bg-[#B45F06] text-white px-4 h-9 rounded-[var(--radius-md)] font-medium text-sm transition-colors"
                       >
                         + Add Customer
@@ -209,14 +216,18 @@ export const CustomersPage = () => {
                       </td>
                       <td className="px-4 py-0 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <button className="p-1.5 text-gray-400 hover:text-[#D97706] rounded-md transition-colors" title="View details">
+                          <button 
+                            className="p-1.5 text-gray-400 hover:text-[#D97706] rounded-md transition-colors cursor-pointer" 
+                            title="View details"
+                            onClick={() => setCustomerToView(customer)}
+                          >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button 
-                            className="p-1.5 text-gray-400 hover:text-[#D97706] rounded-md transition-colors" 
+                            className="p-1.5 text-gray-400 hover:text-[#D97706] rounded-md transition-colors cursor-pointer" 
                             title="Edit customer"
                             onClick={() => {
-                              // We will implement edit later as per spec
+                              setCustomerToEdit(customer);
                               setIsModalOpen(true);
                             }}
                           >
@@ -236,6 +247,13 @@ export const CustomersPage = () => {
       <CustomerModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
+        customerToEdit={customerToEdit}
+      />
+      
+      <CustomerDetailsModal
+        isOpen={!!customerToView}
+        onClose={() => setCustomerToView(null)}
+        customer={customerToView}
       />
     </div>
   );
