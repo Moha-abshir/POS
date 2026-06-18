@@ -75,7 +75,6 @@ export const PosPage = () => {
   };
 
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedCustomer, setSelectedCustomer] = useState('');
 
   const cartSubtotal = cart.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
   const cartTotal = Math.max(0, cartSubtotal - discount);
@@ -206,18 +205,6 @@ export const PosPage = () => {
                 Clear
               </button>
             )}
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-zinc-500">Customer (Optional)</label>
-            <select 
-              className="w-full bg-white text-gray-900 text-sm rounded-lg h-9 px-3 outline-none focus:ring-2 focus:ring-[#D97706]"
-              value={selectedCustomer}
-              onChange={(e) => setSelectedCustomer(e.target.value)}
-            >
-              <option value="">Walk-in Customer</option>
-              <option value="new">+ Add new customer</option>
-            </select>
           </div>
         </div>
 

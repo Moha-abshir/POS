@@ -246,15 +246,19 @@ export const restockItems = pgTable('restock_items', {
   uniqueVariantPerBusiness: unique('restock_items_variant_business_unique').on(table.businessId, table.variantId)
 }));
 
+export const customerTypeEnum = pgEnum('customer_type', ['INDIVIDUAL', 'BUSINESS']);
+
 export const customers = pgTable('customers', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  type: customerTypeEnum('type').notNull().default('INDIVIDUAL'),
   name: varchar('name', { length: 255 }).notNull(),
   phone: varchar('phone', { length: 50 }),
   nationalId: varchar('national_id', { length: 50 }),
   address: text('address'),
   notes: text('notes'),
   balance: decimal('balance', { precision: 12, scale: 2 }).notNull().default('0'),
+  hasActiveCredit: boolean('has_active_credit').notNull().default(false),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),

@@ -12,7 +12,8 @@ export interface Customer {
   isActive: boolean;
   createdAt: string;
   lastPurchaseDate?: string;
-  accountType?: 'INDIVIDUAL' | 'BUSINESS';
+  type?: 'INDIVIDUAL' | 'BUSINESS';
+  hasActiveCredit?: boolean;
   purchaseCount?: number;
 }
 

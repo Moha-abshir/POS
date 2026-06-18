@@ -133,6 +133,7 @@ export class SalesService {
         await tx.update(customers)
           .set({
             balance: sql`${customers.balance} + ${debtAmount}`,
+            hasActiveCredit: true,
             updatedAt: new Date()
           })
           .where(and(eq(customers.id, data.customerId), eq(customers.businessId, businessId)));
