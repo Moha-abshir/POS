@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ShoppingCart, Search, CreditCard, Banknote, Plus, Minus, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { CheckoutModal } from '../features/sales/components/CheckoutModal';
+import { UnitSelectionModal } from '../features/sales/components/UnitSelectionModal';
 
 // TODO: Replace with proper catalog API hook if available
 const usePosCatalog = (search?: string) => {
@@ -22,6 +23,17 @@ export const PosPage = () => {
   const products = catalogData?.data || [];
 
   const [cart, setCart] = useState<any[]>([]);
+  const [selectingUnitFor, setSelectingUnitFor] = useState<{product: any, variant: any} | null>(null);
+
+  const handleVariantClick = (product: any, variant: any) => {
+    if (!variant.units || variant.units.length === 0) return;
+    
+    if (variant.units.length === 1) {
+      addToCart(product, variant, variant.units[0]);
+    } else {
+      setSelectingUnitFor({ product, variant });
+    }
+  };
 
   const addToCart = (product: any, variant: any, unit: any) => {
     setCart((prev) => {
@@ -123,11 +135,15 @@ export const PosPage = () => {
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {filteredProducts.map((product: any) => (
-                product.variants.map((variant: any) => (
-                  variant.units.map((unit: any) => (
+                product.variants.map((variant: any) => {
+                  const basePriceUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
+                  const priceToDisplay = basePriceUnit ? Number(basePriceUnit.sellingPrice) : 0;
+                  const stock = Number(variant.baseStockQuantity) || 0;
+                  
+                  return (
                     <div 
-                      key={unit.id}
-                      onClick={() => addToCart(product, variant, unit)}
+                      key={variant.id}
+                      onClick={() => handleVariantClick(product, variant)}
                       className="group bg-white p-3 rounded-xl border border-[#E5E1DA] shadow-sm cursor-pointer hover:shadow-md hover:border-[#D97706] transition duration-150 flex flex-col h-full relative"
                     >
                       <div className="w-full aspect-[4/3] bg-[#EEECE8] rounded-lg mb-2 flex items-center justify-center overflow-hidden">
@@ -138,18 +154,21 @@ export const PosPage = () => {
                       </div>
                       <div className="flex-1">
                         <div className="font-semibold text-sm text-gray-900 truncate" title={product.name}>{product.name}</div>
-                        <div className="text-xs text-gray-400 mt-0.5">{variant.name === 'Default' ? '' : variant.name + ' • '} {unit.name}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{variant.name === 'Default' ? 'Standard' : variant.name}</div>
                       </div>
-                      <div className="flex items-end justify-between mt-2">
-                        <div className="text-sm font-semibold text-[#D97706]">
-                          KSH {Number(unit.sellingPrice).toLocaleString()}
+                      <div className="flex items-end justify-between mt-2 pt-1 border-t border-gray-50">
+                        <div>
+                          <div className="text-xs text-gray-400 mb-0.5">Stock: {stock}</div>
+                          <div className="text-sm font-semibold text-[#D97706]">
+                            KSH {priceToDisplay.toLocaleString()}
+                          </div>
                         </div>
-                        {/* Fake stock indicator dot */}
-                        <div className="w-2 h-2 rounded-full bg-green-500 mb-1.5" title="In stock"></div>
+                        {/* Stock indicator dot */}
+                        <div className={`w-2.5 h-2.5 rounded-full mb-1.5 ${stock > 0 ? 'bg-green-500' : 'bg-red-400'}`} title={stock > 0 ? 'In stock' : 'Out of stock'}></div>
                       </div>
                     </div>
-                  ))
-                ))
+                  );
+                })
               ))}
             </div>
           )}
@@ -290,8 +309,23 @@ export const PosPage = () => {
         onClose={() => setIsCheckoutOpen(false)}
         cart={cart}
         totalAmount={cartTotal}
-        onSuccess={() => setCart([])}
+        onSuccess={() => {
+          setCart([]);
+          setIsCheckoutOpen(false);
+        }}
       />
+
+      {selectingUnitFor && (
+        <UnitSelectionModal
+          isOpen={true}
+          onClose={() => setSelectingUnitFor(null)}
+          product={selectingUnitFor.product}
+          variant={selectingUnitFor.variant}
+          onAddToCart={(p, v, u) => {
+            addToCart(p, v, u);
+          }}
+        />
+      )}
     </div>
   );
 };

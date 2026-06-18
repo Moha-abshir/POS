@@ -1,6 +1,7 @@
 import { eq, and, sql, desc } from 'drizzle-orm';
 import { db } from '../../db';
-import { sales, saleItems, stockMovements, productVariants, customers, payments } from '../../db/schema';
+import { sales, saleItems, stockMovements, productVariants, customers, payments, variantUnits } from '../../db/schema';
+
 
 export class SalesService {
   static async getSales(businessId: string, filters: { limit?: number; offset?: number; customerId?: string } = {}) {
@@ -78,6 +79,19 @@ export class SalesService {
 
       // 2. Create Sale Items & Deduct Inventory
       for (const item of data.items) {
+        
+        // Fetch the unit to get the conversion factor
+        const [unit] = await tx.select({ conversionFactor: variantUnits.conversionFactor })
+          .from(variantUnits)
+          .where(eq(variantUnits.id, item.unitId));
+          
+        if (!unit) {
+          throw new Error(`Unit not found for id ${item.unitId}`);
+        }
+
+        const conversionFactor = Number(unit.conversionFactor);
+        const deductionAmount = item.quantity * conversionFactor;
+
         // Insert sale item
         await tx.insert(saleItems).values({
           businessId,
@@ -94,7 +108,7 @@ export class SalesService {
           businessId,
           variantId: item.variantId,
           type: 'SALE',
-          quantityChange: (-item.quantity).toString(), // Negative for sale
+          quantityChange: (-deductionAmount).toString(), // Negative for sale
           referenceType: 'SALE',
           referenceId: newSale.id,
           createdBy: userId,
@@ -103,7 +117,7 @@ export class SalesService {
         // Update variant base stock
         await tx.update(productVariants)
           .set({
-            baseStockQuantity: sql`${productVariants.baseStockQuantity} - ${item.quantity}`,
+            baseStockQuantity: sql`${productVariants.baseStockQuantity} - ${deductionAmount}`,
             updatedAt: new Date()
           })
           .where(and(eq(productVariants.id, item.variantId), eq(productVariants.businessId, businessId)));
