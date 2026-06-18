@@ -11,6 +11,7 @@ export interface Customer {
   balance: number;
   isActive: boolean;
   createdAt: string;
+  lastPurchaseDate?: string;
 }
 
 export const customersApi = {
