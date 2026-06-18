@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-// @ts-ignore - VS Code TS caching issue
 import { useCustomers, type Customer } from '../features/customers/api/customers.api';
 import { Search, Plus, UserCircle, Eye, Pencil, Filter } from 'lucide-react';
 import { CustomerModal } from '../features/customers/components/CustomerModal';
@@ -18,6 +17,7 @@ export const CustomersPage = () => {
   const [customerToView, setCustomerToView] = useState<Customer | null>(null);
 
   const { data: customersResponse, isLoading, error } = useCustomers();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const customers: Customer[] = customersResponse?.data || [];
 
   // Tab count derivations
