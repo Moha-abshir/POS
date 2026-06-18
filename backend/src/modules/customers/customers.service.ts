@@ -12,9 +12,28 @@ export class CustomersService {
       conditions.push(sql`${customers.name} ILIKE ${`%${search}%`} OR ${customers.phone} ILIKE ${`%${search}%`}`);
     }
 
-    const data = await db.select()
+    const data = await db.select({
+      id: customers.id,
+      businessId: customers.businessId,
+      name: customers.name,
+      phone: customers.phone,
+      nationalId: customers.nationalId,
+      address: customers.address,
+      notes: customers.notes,
+      type: customers.type,
+      balance: customers.balance,
+      hasActiveCredit: customers.hasActiveCredit,
+      isActive: customers.isActive,
+      createdAt: customers.createdAt,
+      updatedAt: customers.updatedAt,
+      createdBy: customers.createdBy,
+      purchaseCount: sql<number>`count(${sales.id})`.mapWith(Number),
+      lastPurchaseDate: sql<Date | null>`max(${sales.soldAt})`
+    })
       .from(customers)
+      .leftJoin(sales, eq(customers.id, sales.customerId))
       .where(and(...conditions))
+      .groupBy(customers.id)
       .orderBy(desc(customers.createdAt))
       .limit(limit)
       .offset(offset);

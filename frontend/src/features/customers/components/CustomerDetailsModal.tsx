@@ -105,10 +105,20 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                         {format(new Date(purchase.createdAt), 'MMM d, yyyy - h:mm a')}
                       </span>
                       <span className="text-sm font-semibold text-gray-900">
-                        KSH {Number(purchase.totalAmount).toLocaleString()}
+                        Total: KSH {Number(purchase.totalAmount).toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex justify-between text-xs text-gray-500">
+                    <div className="flex justify-between items-start mb-1 text-xs">
+                      <span className="text-green-600 font-medium">
+                        Paid: KSH {Number(purchase.amountPaid).toLocaleString()}
+                      </span>
+                      {Number(purchase.totalAmount) > Number(purchase.amountPaid) && (
+                        <span className="text-amber-600 font-medium">
+                          Debt: KSH {(Number(purchase.totalAmount) - Number(purchase.amountPaid)).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500 mt-1 pt-1 border-t border-gray-100">
                       <span>Receipt #{purchase.receiptNumber || purchase.id.slice(0, 8)}</span>
                       <span className={purchase.paymentMethod === 'CREDIT' ? 'text-amber-600 font-medium' : ''}>
                         {purchase.paymentMethod}
