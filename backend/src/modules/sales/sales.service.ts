@@ -115,6 +115,7 @@ export class SalesService {
           quantityChange: (-deductionAmount).toString(), // Negative for sale
           referenceType: 'SALE',
           referenceId: newSale.id,
+          notes: 'Product sale',
           createdBy: userId,
         });
 
