@@ -112,7 +112,7 @@ export const CustomersPage = () => {
           </button>
 
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenAddModal}
           className="flex items-center justify-center gap-2 bg-[#D97706] hover:bg-[#B45F06] text-white px-4 h-9 rounded-[var(--radius-md)] font-medium text-sm transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 shrink-0 select-none cursor-pointer w-full sm:w-auto"
         >
           <Plus className="h-4 w-4" />
@@ -169,7 +169,7 @@ export const CustomersPage = () => {
                     <h4 className="text-base font-medium text-gray-500 mb-1">No customers yet</h4>
                     <p className="text-sm text-gray-400 mb-4">Add a customer to track credit sales and purchase history.</p>
                     <button 
-                      onClick={() => setIsModalOpen(true)}
+                      onClick={handleOpenAddModal}
                       className="bg-[#D97706] hover:bg-[#B45F06] text-white px-4 h-9 rounded-[var(--radius-md)] font-medium text-sm transition-colors"
                     >
                       + Add Customer
@@ -216,14 +216,14 @@ export const CustomersPage = () => {
                     </td>
                     <td className="px-4 py-0 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button className="p-1.5 text-gray-400 hover:text-[#D97706] rounded-md transition-colors" title="View details">
+                        <button className="p-1.5 text-gray-400 hover:text-[#D97706] rounded-md transition-colors" title="View details" onClick={() => setCustomerToView(customer)}>
                           <Eye className="w-4 h-4" />
                         </button>
                         <button 
                           className="p-1.5 text-gray-400 hover:text-[#D97706] rounded-md transition-colors" 
                           title="Edit customer"
                           onClick={() => {
-                            // We will implement edit later as per spec
+                            setCustomerToEdit(customer);
                             setIsModalOpen(true);
                           }}
                         >
@@ -237,6 +237,7 @@ export const CustomersPage = () => {
             )}
           </tbody>
         </table>
+      </div>
       </div>
 
       <CustomerModal 
