@@ -19,7 +19,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
     nationalId: '',
     address: '',
     notes: '',
-    accountType: 'INDIVIDUAL' as 'INDIVIDUAL' | 'BUSINESS'
+    type: 'INDIVIDUAL' as 'INDIVIDUAL' | 'BUSINESS'
   });
 
   useEffect(() => {
@@ -30,10 +30,10 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
         nationalId: customerToEdit.nationalId || '',
         address: customerToEdit.address || '',
         notes: customerToEdit.notes || '',
-        accountType: customerToEdit.accountType || 'INDIVIDUAL'
+        type: customerToEdit.type || 'INDIVIDUAL'
       });
     } else if (!isOpen) {
-      setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '', accountType: 'INDIVIDUAL' });
+      setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '', type: 'INDIVIDUAL' });
     }
   }, [customerToEdit, isOpen]);
 
@@ -62,7 +62,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
           onSuccess: () => {
             toast.success('Customer added successfully');
             onClose();
-            setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '', accountType: 'INDIVIDUAL' });
+            setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '', type: 'INDIVIDUAL' });
           },
           onError: (error: any) => {
             toast.error(error.response?.data?.message || 'Failed to save customer');
@@ -112,9 +112,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
           {/* Account Type Toggle */}
           <div className="flex bg-[#F7F6F4] p-1 rounded-lg border border-[#E5E1DA]">
             <button
-              onClick={() => setFormData({ ...formData, accountType: 'INDIVIDUAL' })}
+              onClick={() => setFormData({ ...formData, type: 'INDIVIDUAL' })}
               className={`flex-1 py-1.5 text-sm rounded-md transition-all ${
-                formData.accountType === 'INDIVIDUAL'
+                formData.type === 'INDIVIDUAL'
                   ? 'bg-white border border-[#E5E1DA] text-gray-900 font-medium shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
@@ -122,9 +122,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
               Individual
             </button>
             <button
-              onClick={() => setFormData({ ...formData, accountType: 'BUSINESS' })}
+              onClick={() => setFormData({ ...formData, type: 'BUSINESS' })}
               className={`flex-1 py-1.5 text-sm rounded-md transition-all ${
-                formData.accountType === 'BUSINESS'
+                formData.type === 'BUSINESS'
                   ? 'bg-white border border-[#E5E1DA] text-gray-900 font-medium shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
@@ -143,7 +143,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
                 <label className="block text-xs font-medium text-gray-600 mb-1">Full Name</label>
                 <input
                   type="text"
-                  placeholder={formData.accountType === 'BUSINESS' ? "e.g., Acme Hardware Ltd" : "e.g., John Kamau"}
+                  placeholder={formData.type === 'BUSINESS' ? "e.g., Acme Hardware Ltd" : "e.g., John Kamau"}
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400"

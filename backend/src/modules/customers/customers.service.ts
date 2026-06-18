@@ -29,7 +29,7 @@ export class CustomersService {
     };
   }
 
-  static async createCustomer(businessId: string, userId: string, data: { name: string; phone?: string; nationalId?: string; address?: string; notes?: string }) {
+  static async createCustomer(businessId: string, userId: string, data: { name: string; phone?: string; nationalId?: string; address?: string; notes?: string; type?: 'INDIVIDUAL' | 'BUSINESS' }) {
     const [newCustomer] = await db.insert(customers).values({
       businessId,
       name: data.name,
@@ -37,12 +37,13 @@ export class CustomersService {
       nationalId: data.nationalId,
       address: data.address,
       notes: data.notes,
+      type: data.type || 'INDIVIDUAL',
       createdBy: userId,
     }).returning();
     return newCustomer;
   }
 
-  static async updateCustomer(businessId: string, customerId: string, data: { name?: string; phone?: string; nationalId?: string; address?: string; notes?: string; isActive?: boolean }) {
+  static async updateCustomer(businessId: string, customerId: string, data: { name?: string; phone?: string; nationalId?: string; address?: string; notes?: string; isActive?: boolean; type?: 'INDIVIDUAL' | 'BUSINESS' }) {
     const [updatedCustomer] = await db.update(customers)
       .set(data)
       .where(and(eq(customers.id, customerId), eq(customers.businessId, businessId)))

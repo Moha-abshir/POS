@@ -23,7 +23,7 @@ export const customersApi = {
     return data;
   },
   
-  createCustomer: async (customerData: { name: string; phone?: string; nationalId?: string; address?: string; notes?: string; accountType?: 'INDIVIDUAL' | 'BUSINESS' }) => {
+  createCustomer: async (customerData: { name: string; phone?: string; nationalId?: string; address?: string; notes?: string; type?: 'INDIVIDUAL' | 'BUSINESS' }) => {
     const { data } = await api.post('/customers', customerData);
     return data.data;
   },
