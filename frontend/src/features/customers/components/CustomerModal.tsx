@@ -18,10 +18,10 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
     phone: '',
     nationalId: '',
     address: '',
-    notes: ''
+    notes: '',
+    accountType: 'INDIVIDUAL' as 'INDIVIDUAL' | 'BUSINESS'
   });
 
-  // Populate form when editing
   useEffect(() => {
     if (customerToEdit && isOpen) {
       setFormData({
@@ -29,11 +29,11 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
         phone: customerToEdit.phone || '',
         nationalId: customerToEdit.nationalId || '',
         address: customerToEdit.address || '',
-        notes: customerToEdit.notes || ''
+        notes: customerToEdit.notes || '',
+        accountType: customerToEdit.accountType || 'INDIVIDUAL'
       });
     } else if (!isOpen) {
-      // Reset when closed
-      setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '' });
+      setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '', accountType: 'INDIVIDUAL' });
     }
   }, [customerToEdit, isOpen]);
 
@@ -43,12 +43,11 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
     if (!formData.name.trim() || !formData.phone.trim()) return;
 
     if (customerToEdit) {
-      // Update existing customer
       updateCustomer(
         { id: customerToEdit.id, ...formData },
         {
           onSuccess: () => {
-            toast.success('Customer updated');
+            toast.success('Customer updated successfully');
             onClose();
           },
           onError: (error: any) => {
@@ -57,14 +56,13 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
         }
       );
     } else {
-      // Create new customer
       createCustomer(
         { ...formData },
         {
           onSuccess: () => {
-            toast.success('Customer saved');
+            toast.success('Customer added successfully');
             onClose();
-            setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '' });
+            setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '', accountType: 'INDIVIDUAL' });
           },
           onError: (error: any) => {
             toast.error(error.response?.data?.message || 'Failed to save customer');
@@ -88,8 +86,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
       {/* Modal Card */}
       <div className="relative bg-white rounded-xl shadow-xl w-full max-w-[440px] flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 shrink-0">
-          <h2 className="text-base font-medium text-gray-900">
+        <div className="flex items-center justify-between p-4 border-b border-[#E5E1DA] shrink-0">
+          <h2 className="text-base font-semibold text-gray-900">
             {customerToEdit ? 'Edit Customer' : 'Add Customer'}
           </h2>
           <button 
@@ -111,17 +109,41 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
             </p>
           </div>
 
+          {/* Account Type Toggle */}
+          <div className="flex bg-[#F7F6F4] p-1 rounded-lg border border-[#E5E1DA]">
+            <button
+              onClick={() => setFormData({ ...formData, accountType: 'INDIVIDUAL' })}
+              className={`flex-1 py-1.5 text-sm rounded-md transition-all ${
+                formData.accountType === 'INDIVIDUAL'
+                  ? 'bg-white border border-[#E5E1DA] text-gray-900 font-medium shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Individual
+            </button>
+            <button
+              onClick={() => setFormData({ ...formData, accountType: 'BUSINESS' })}
+              className={`flex-1 py-1.5 text-sm rounded-md transition-all ${
+                formData.accountType === 'BUSINESS'
+                  ? 'bg-white border border-[#E5E1DA] text-gray-900 font-medium shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Business
+            </button>
+          </div>
+
           {/* Required Details */}
           <div>
-            <h3 className="text-xs font-medium uppercase tracking-wide text-gray-400 border-b border-[#E5E1DA] pb-2 mb-3">
-              Required Details
+            <h3 className="text-xs font-medium uppercase tracking-wide text-gray-400 pb-2 border-b border-[#E5E1DA] mb-3">
+              Required Fields
             </h3>
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Full Name</label>
                 <input
                   type="text"
-                  placeholder="e.g., John Kamau"
+                  placeholder={formData.accountType === 'BUSINESS' ? "e.g., Acme Hardware Ltd" : "e.g., John Kamau"}
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400"
@@ -142,8 +164,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
 
           {/* Optional Details */}
           <div>
-            <h3 className="text-xs font-medium uppercase tracking-wide text-gray-400 border-b border-[#E5E1DA] pb-2 mb-3">
-              Optional Details
+            <h3 className="text-xs font-medium uppercase tracking-wide text-gray-400 pb-2 border-b border-[#E5E1DA] mb-3">
+              Optional Fields
             </h3>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -189,27 +211,27 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
           <div className="flex items-start gap-2.5 bg-[#F7F6F4] border border-[#E5E1DA] rounded-md p-3 text-gray-500">
             <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-gray-400" />
             <p className="text-xs leading-relaxed">
-              This customer's credit balance starts at KSH 0. You can extend credit during checkout when completing a credit sale.
+              This customer's credit balance starts at KSH 0. Credit is extended during checkout when completing a credit sale.
             </p>
           </div>
 
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl flex justify-end gap-3 shrink-0">
+        <div className="p-4 border-t border-[#E5E1DA] bg-white rounded-b-xl flex justify-end gap-3 shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
+            className="px-4 h-9 text-sm font-medium text-gray-600 bg-white border border-[#E5E1DA] rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={!isFormValid || isPending}
-            className={`px-6 py-2 text-sm font-medium text-white rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
+            className={`px-4 h-9 text-sm font-medium text-white rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
               isFormValid && !isPending
-                ? 'bg-[#D97706] hover:bg-[#B45F06] shadow-sm'
-                : 'bg-amber-300 cursor-not-allowed'
+                ? 'bg-[#D97706] hover:bg-[#B45309] shadow-sm'
+                : 'bg-[#D97706]/50 cursor-not-allowed'
             }`}
           >
             {isPending ? 'Saving...' : customerToEdit ? 'Save Changes' : 'Save Customer'}
