@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, UserCircle, Phone, MapPin, Receipt, Calendar } from 'lucide-react';
+import { X, UserCircle, Phone, MapPin, Receipt, Calendar, Download } from 'lucide-react';
 import { type Customer, useCustomerPurchases } from '../api/customers.api';
 import { format } from 'date-fns';
 
@@ -15,6 +15,37 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
   if (!isOpen || !customer) return null;
 
   const initials = customer.name.substring(0, 2).toUpperCase();
+
+  const handleExportCSV = () => {
+    if (!purchases || purchases.length === 0) return;
+
+    const headers = ['Date', 'Receipt #', 'Total Amount', 'Amount Paid', 'Debt', 'Payment Method'];
+    const rows = purchases.map((p: any) => {
+      const date = format(new Date(p.createdAt), 'yyyy-MM-dd HH:mm');
+      const receipt = p.receiptNumber || p.id.slice(0, 8);
+      const total = Number(p.totalAmount);
+      const paid = Number(p.amountPaid);
+      const debt = total > paid ? total - paid : 0;
+      return [
+        `"${date}"`,
+        `"${receipt}"`,
+        total,
+        paid,
+        debt,
+        `"${p.paymentMethod}"`
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${customer?.name.replace(/\\s+/g, '_')}_purchases.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -89,10 +120,22 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
 
           {/* Right Column: Purchases */}
           <div className="w-full md:w-2/3 border-t md:border-t-0 md:border-l border-gray-100 md:pl-6 pt-6 md:pt-0">
-            <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-4">
-              <Receipt className="w-4 h-4 text-gray-400" />
-              Recent Purchases
-            </h4>
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-gray-400" />
+                Recent Purchases
+              </h4>
+              {purchases && purchases.length > 0 && (
+                <button
+                  onClick={handleExportCSV}
+                  className="flex items-center gap-1.5 text-xs font-medium text-[#D97706] bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-md transition-colors border border-amber-200 shadow-sm"
+                  title="Export purchases to spreadsheet"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export CSV
+                </button>
+              )}
+            </div>
 
             {isLoading ? (
               <div className="text-sm text-gray-500 text-center py-8">Loading purchases...</div>
