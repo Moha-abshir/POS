@@ -69,8 +69,9 @@ export const UnitSelectionModal: React.FC<UnitSelectionModalProps> = ({
           <h3 className="text-xs font-medium uppercase tracking-wide text-gray-400 mb-3">Select Unit</h3>
           <div className="space-y-3">
             {variant.units.map((unit: any) => (
-              <label 
+              <div 
                 key={unit.id}
+                onClick={() => setSelectedUnitId(unit.id)}
                 className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-all ${
                   selectedUnitId === unit.id 
                     ? 'border-[#D97706] bg-amber-50 shadow-sm' 
@@ -92,7 +93,7 @@ export const UnitSelectionModal: React.FC<UnitSelectionModalProps> = ({
                 <span className="font-semibold text-gray-900">
                   KSH {Number(unit.sellingPrice).toLocaleString()}
                 </span>
-              </label>
+              </div>
             ))}
           </div>
         </div>
