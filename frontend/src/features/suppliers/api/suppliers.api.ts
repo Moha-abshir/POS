@@ -1,4 +1,5 @@
 import { api } from '../../../lib/api';
+import { useQuery } from '@tanstack/react-query';
 
 export interface Supplier {
   id: string;
@@ -28,5 +29,31 @@ export const suppliersApi = {
   recordPayment: async (supplierId: string, data: { amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string }) => {
     const res = await api.post(`/suppliers/${supplierId}/payments`, data);
     return res.data.data;
+  },
+
+  getSupplierPayments: async (supplierId: string) => {
+    const res = await api.get(`/suppliers/${supplierId}/payments`);
+    return res.data.data;
+  },
+
+  getSupplierPurchases: async (supplierId: string) => {
+    const res = await api.get(`/suppliers/${supplierId}/purchases`);
+    return res.data.data;
   }
+};
+
+export const useSupplierPayments = (supplierId?: string) => {
+  return useQuery({
+    queryKey: ['supplier-payments', supplierId],
+    queryFn: () => suppliersApi.getSupplierPayments(supplierId!),
+    enabled: !!supplierId,
+  });
+};
+
+export const useSupplierPurchases = (supplierId?: string) => {
+  return useQuery({
+    queryKey: ['supplier-purchases', supplierId],
+    queryFn: () => suppliersApi.getSupplierPurchases(supplierId!),
+    enabled: !!supplierId,
+  });
 };

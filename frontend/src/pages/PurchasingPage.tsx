@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { suppliersApi, type Supplier } from '../features/suppliers/api/suppliers.api';
 import { inventoryApi } from '../features/inventory/api/inventory.api';
-import { Plus, Search, Truck, Edit, Package, ArrowDownRight, DollarSign, Filter, X } from 'lucide-react';
+import { Plus, Search, Truck, Edit, Package, ArrowDownRight, DollarSign, Filter, X, Eye } from 'lucide-react';
 import { SupplierModal } from '../features/suppliers/components/SupplierModal';
+import { SupplierDetailsModal } from '../features/suppliers/components/SupplierDetailsModal';
 import { PurchaseModal } from '../features/inventory/components/PurchaseModal';
 import { RecordPaymentModal } from '../features/suppliers/components/RecordPaymentModal';
 
@@ -16,6 +17,8 @@ export function PurchasingPage() {
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPaymentSupplier, setSelectedPaymentSupplier] = useState<Supplier | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedDetailsSupplier, setSelectedDetailsSupplier] = useState<Supplier | null>(null);
   
   const queryClient = useQueryClient();
 
@@ -204,6 +207,16 @@ export function PurchasingPage() {
                             </button>
                           )}
                           <button
+                            onClick={() => {
+                              setSelectedDetailsSupplier(supplier);
+                              setIsDetailsModalOpen(true);
+                            }}
+                            className="p-2 text-gray-400 hover:text-blue-600 transition-colors inline-flex items-center justify-center cursor-pointer"
+                            title="View Ledger"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button
                             onClick={() => handleEditSupplier(supplier)}
                             className="p-2 text-gray-400 hover:text-[var(--color-accent)] transition-colors inline-flex items-center justify-center cursor-pointer"
                             title="Edit Supplier"
@@ -391,6 +404,14 @@ export function PurchasingPage() {
           }}
         />
       )}
+      <SupplierDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setSelectedDetailsSupplier(null);
+        }}
+        supplier={selectedDetailsSupplier}
+      />
     </div>
   );
 }

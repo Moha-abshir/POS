@@ -1,6 +1,6 @@
 import { eq, and, asc, desc, ilike, or, sql } from 'drizzle-orm';
 import { db } from '../../db';
-import { suppliers, payments } from '../../db/schema';
+import { suppliers, payments, purchases } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 
 export class SuppliersService {
@@ -109,5 +109,26 @@ export class SuppliersService {
 
       return { payment, supplier: updatedSupplier };
     });
+  }
+
+  static async getSupplierPayments(businessId: string, supplierId: string) {
+    return await db.select()
+      .from(payments)
+      .where(and(
+        eq(payments.businessId, businessId),
+        eq(payments.referenceType, 'SUPPLIER_DEBT'),
+        eq(payments.referenceId, supplierId)
+      ))
+      .orderBy(desc(payments.paidAt));
+  }
+
+  static async getSupplierPurchases(businessId: string, supplierId: string) {
+    return await db.select()
+      .from(purchases)
+      .where(and(
+        eq(purchases.businessId, businessId),
+        eq(purchases.supplierId, supplierId)
+      ))
+      .orderBy(desc(purchases.purchasedAt));
   }
 }

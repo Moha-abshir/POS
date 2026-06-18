@@ -11,5 +11,7 @@ router.post('/', authorize(['OWNER', 'MANAGER']), SuppliersController.createSupp
 router.get('/:id', authorize(['OWNER', 'MANAGER']), SuppliersController.getSupplierById);
 router.put('/:id', authorize(['OWNER', 'MANAGER']), SuppliersController.updateSupplier);
 router.post('/:id/payments', authorize(['OWNER', 'MANAGER']), SuppliersController.recordPayment);
+router.get('/:id/payments', authorize(['OWNER', 'MANAGER']), SuppliersController.getSupplierPayments);
+router.get('/:id/purchases', authorize(['OWNER', 'MANAGER']), SuppliersController.getSupplierPurchases);
 
 export default router;

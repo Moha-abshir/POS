@@ -68,4 +68,22 @@ export class SuppliersController {
       next(error);
     }
   }
+
+  static async getSupplierPayments(req: Request, res: Response, next: NextFunction) {
+    try {
+      const payments = await SuppliersService.getSupplierPayments(req.user!.businessId, req.params.id as string);
+      res.json({ success: true, data: payments });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getSupplierPurchases(req: Request, res: Response, next: NextFunction) {
+    try {
+      const purchases = await SuppliersService.getSupplierPurchases(req.user!.businessId, req.params.id as string);
+      res.json({ success: true, data: purchases });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
