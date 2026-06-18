@@ -10,10 +10,11 @@ interface CheckoutModalProps {
   onClose: () => void;
   cart: any[];
   totalAmount: number;
+  discountAmount?: number;
   onSuccess: () => void;
 }
 
-export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, totalAmount, onSuccess }) => {
+export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, totalAmount, discountAmount = 0, onSuccess }) => {
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>('CASH');
   const [amountPaid, setAmountPaid] = useState<number | ''>(totalAmount);
   const [customerId, setCustomerId] = useState<string>('');
@@ -67,6 +68,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
         sellingPrice: item.sellingPrice,
       })),
       amountPaid: paidVal,
+      discountAmount,
       paymentMethod,
       mpesaRef: paymentMethod === 'MPESA' ? mpesaRef : undefined,
       mpesaPhoneNumber: paymentMethod === 'MPESA' ? mpesaPhoneNumber : undefined,

@@ -43,12 +43,15 @@ export class SalesService {
     customerId?: string;
     items: { variantId: string; unitId: string; quantity: number; sellingPrice: number }[];
     amountPaid: number;
+    discountAmount?: number;
     paymentMethod: 'CASH' | 'MPESA';
     mpesaRef?: string;
     mpesaPhoneNumber?: string;
   }) {
-    // Calculate total amount
-    const totalAmount = data.items.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
+    // Calculate totals
+    const subtotal = data.items.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
+    const discountAmount = data.discountAmount || 0;
+    const totalAmount = Math.max(0, subtotal - discountAmount);
     
     // Determine payment status
     let paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID' = 'UNPAID';
@@ -69,6 +72,7 @@ export class SalesService {
         businessId,
         customerId: data.customerId || null,
         totalAmount: totalAmount.toString(),
+        discountAmount: discountAmount.toString(),
         amountPaid: data.amountPaid.toString(),
         paymentStatus,
         paymentMethod: data.paymentMethod,

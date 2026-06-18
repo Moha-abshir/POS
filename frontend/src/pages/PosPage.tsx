@@ -24,6 +24,10 @@ export const PosPage = () => {
 
   const [cart, setCart] = useState<any[]>([]);
   const [selectingUnitFor, setSelectingUnitFor] = useState<{product: any, variant: any} | null>(null);
+  
+  const [discount, setDiscount] = useState<number>(0);
+  const [isEditingDiscount, setIsEditingDiscount] = useState(false);
+  const [discountInput, setDiscountInput] = useState('');
 
   const handleVariantClick = (product: any, variant: any) => {
     if (!variant.units || variant.units.length === 0) return;
@@ -73,7 +77,16 @@ export const PosPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedCustomer, setSelectedCustomer] = useState('');
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
+  const cartSubtotal = cart.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
+  const cartTotal = Math.max(0, cartSubtotal - discount);
+
+  const handleApplyDiscount = () => {
+    const val = Number(discountInput);
+    if (!isNaN(val) && val >= 0 && val <= cartSubtotal) {
+      setDiscount(val);
+    }
+    setIsEditingDiscount(false);
+  };
 
   // Extract unique categories (mocking if category not populated)
   const categories = ['All', ...Array.from(new Set<string>(products.map((p: any) => p.category?.name || 'Uncategorized')))];
@@ -267,12 +280,39 @@ export const PosPage = () => {
           <div className="flex flex-col gap-2 mb-4">
             <div className="flex justify-between items-center text-sm text-zinc-400">
               <span>Subtotal</span>
-              <span>KSH {cartTotal.toLocaleString()}</span>
+              <span>KSH {cartSubtotal.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between items-center text-sm text-zinc-400">
-              <span>Discount</span>
-              <span>—</span>
-            </div>
+            
+            {isEditingDiscount ? (
+              <div className="flex justify-between items-center text-sm text-zinc-400">
+                <span>Discount</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs">KSH</span>
+                  <input
+                    type="number"
+                    autoFocus
+                    value={discountInput}
+                    onChange={(e) => setDiscountInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleApplyDiscount()}
+                    onBlur={handleApplyDiscount}
+                    className="w-20 bg-zinc-800 text-white border border-zinc-700 rounded px-2 py-1 outline-none text-right focus:border-[#D97706]"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div 
+                className="flex justify-between items-center text-sm text-zinc-400 cursor-pointer hover:text-white transition-colors group"
+                onClick={() => {
+                  setDiscountInput(discount > 0 ? discount.toString() : '');
+                  setIsEditingDiscount(true);
+                }}
+              >
+                <span>Discount <span className="opacity-0 group-hover:opacity-100 text-[10px] ml-1 text-[#D97706]">(Click to edit)</span></span>
+                <span className={discount > 0 ? "text-[#D97706]" : ""}>
+                  {discount > 0 ? `- KSH ${discount.toLocaleString()}` : '—'}
+                </span>
+              </div>
+            )}
             
             <div className="flex justify-between items-end border-t border-[#D97706]/30 pt-3 mt-1">
               <span className="text-sm font-bold text-white tracking-wider uppercase">Total</span>
@@ -299,8 +339,10 @@ export const PosPage = () => {
         onClose={() => setIsCheckoutOpen(false)}
         cart={cart}
         totalAmount={cartTotal}
+        discountAmount={discount}
         onSuccess={() => {
           setCart([]);
+          setDiscount(0);
           setIsCheckoutOpen(false);
         }}
       />

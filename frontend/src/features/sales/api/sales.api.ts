@@ -28,6 +28,7 @@ export const salesApi = {
     customerId?: string;
     items: SaleItemData[];
     amountPaid: number;
+    discountAmount?: number;
     paymentMethod: 'CASH' | 'MPESA';
     mpesaRef?: string;
     mpesaPhoneNumber?: string;

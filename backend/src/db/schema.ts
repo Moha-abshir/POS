@@ -268,6 +268,7 @@ export const sales = pgTable('sales', {
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
   customerId: uuid('customer_id').references(() => customers.id, { onDelete: 'restrict' }),
   totalAmount: decimal('total_amount', { precision: 12, scale: 2 }).notNull(),
+  discountAmount: decimal('discount_amount', { precision: 12, scale: 2 }).notNull().default('0'),
   amountPaid: decimal('amount_paid', { precision: 12, scale: 2 }).notNull().default('0'),
   paymentStatus: paymentStatusEnum('payment_status').notNull().default('UNPAID'),
   paymentMethod: paymentMethodEnum('payment_method').notNull(),
