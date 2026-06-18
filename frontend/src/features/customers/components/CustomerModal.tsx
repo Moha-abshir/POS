@@ -109,29 +109,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
             </p>
           </div>
 
-          {/* Account Type Toggle */}
-          <div className="flex bg-[#F7F6F4] p-1 rounded-lg border border-[#E5E1DA]">
-            <button
-              onClick={() => setFormData({ ...formData, type: 'INDIVIDUAL' })}
-              className={`flex-1 py-1.5 text-sm rounded-md transition-all ${
-                formData.type === 'INDIVIDUAL'
-                  ? 'bg-white border border-[#E5E1DA] text-gray-900 font-medium shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Individual
-            </button>
-            <button
-              onClick={() => setFormData({ ...formData, type: 'BUSINESS' })}
-              className={`flex-1 py-1.5 text-sm rounded-md transition-all ${
-                formData.type === 'BUSINESS'
-                  ? 'bg-white border border-[#E5E1DA] text-gray-900 font-medium shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Business
-            </button>
-          </div>
+
 
           {/* Required Details */}
           <div>
@@ -158,6 +136,17 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                   className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400"
                 />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Customer Type</label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as 'INDIVIDUAL' | 'BUSINESS' }))}
+                  className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400"
+                >
+                  <option value="INDIVIDUAL">Individual</option>
+                  <option value="BUSINESS">Business</option>
+                </select>
               </div>
             </div>
           </div>
