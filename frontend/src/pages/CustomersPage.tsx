@@ -23,7 +23,7 @@ export const CustomersPage = () => {
   // Tab count derivations
   const counts = useMemo(() => {
     const owing = customers.filter(c => Number(c.balance) > 0).length;
-    const business = customers.filter(c => c.accountType === 'BUSINESS').length;
+    const business = customers.filter(c => c.type === 'BUSINESS').length;
     const frequent = customers.filter(c => (c.purchaseCount || 0) > 10).length;
     const inactive = customers.filter(c => {
       if (c.lastPurchaseDate) {
@@ -53,7 +53,7 @@ export const CustomersPage = () => {
       if (activeTab === 'owing') {
         matchesTab = Number(customer.balance) > 0;
       } else if (activeTab === 'business') {
-        matchesTab = customer.accountType === 'BUSINESS';
+        matchesTab = customer.type === 'BUSINESS';
       } else if (activeTab === 'frequent') {
         matchesTab = (customer.purchaseCount || 0) > 10;
       } else if (activeTab === 'inactive') {
@@ -297,11 +297,11 @@ export const CustomersPage = () => {
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          customer.accountType === 'BUSINESS' 
+                          customer.type === 'BUSINESS' 
                             ? 'bg-blue-100 text-blue-700' 
                             : 'bg-gray-100 text-gray-500'
                         }`}>
-                          {customer.accountType === 'BUSINESS' ? 'Business' : 'Individual'}
+                          {customer.type === 'BUSINESS' ? 'Business' : 'Individual'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
