@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useCategories } from '../features/catalog/api/catalog.api';
 import { ShoppingCart, Search, CreditCard, Banknote, Plus, Minus, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { CheckoutModal } from '../features/sales/components/CheckoutModal';
@@ -20,6 +21,7 @@ export const PosPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const { data: catalogData, isLoading } = usePosCatalog(searchTerm);
+  const { data: fetchedCategories } = useCategories();
   const products = catalogData?.data || [];
 
   const [cart, setCart] = useState<any[]>([]);
@@ -87,11 +89,11 @@ export const PosPage = () => {
     setIsEditingDiscount(false);
   };
 
-  // Extract unique categories (mocking if category not populated)
-  const categories = ['All', ...Array.from(new Set<string>(products.map((p: any) => p.category?.name || 'Uncategorized')))];
+  // Extract categories from API or fallback
+  const categories = ['All', ...(fetchedCategories?.map(c => c.name) || Array.from(new Set<string>(products.map((p: any) => p.categoryName || 'Uncategorized'))))];
 
   const filteredProducts = products.filter((p: any) => {
-    if (selectedCategory !== 'All' && p.category?.name !== selectedCategory && (p.category?.name || 'Uncategorized') !== selectedCategory) return false;
+    if (selectedCategory !== 'All' && p.categoryName !== selectedCategory && (p.categoryName || 'Uncategorized') !== selectedCategory) return false;
     return true;
   });
 
