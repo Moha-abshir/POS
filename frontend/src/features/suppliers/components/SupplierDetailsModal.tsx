@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Phone, Mail, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { X, Phone, Mail, ArrowUpRight, ArrowDownRight, Download } from 'lucide-react';
 import { type Supplier, useSupplierPayments, useSupplierPurchases } from '../api/suppliers.api';
 import { format } from 'date-fns';
 
@@ -18,6 +18,62 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ isOp
   if (!isOpen || !supplier) return null;
 
   const initials = supplier.name.substring(0, 2).toUpperCase();
+
+  const handleExportPaymentsCSV = () => {
+    if (!payments || payments.length === 0) return;
+
+    const headers = ['Date', 'Amount', 'Method', 'M-PESA Reference'];
+    const rows = payments.map((p: any) => {
+      const date = format(new Date(p.paidAt), 'yyyy-MM-dd HH:mm');
+      return [
+        `"${date}"`,
+        p.amount,
+        `"${p.method}"`,
+        `"${p.mpesaReceiptNumber || ''}"`
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${supplier?.name.replace(/\\s+/g, '_')}_payments.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportPurchasesCSV = () => {
+    if (!purchases || purchases.length === 0) return;
+
+    const headers = ['Date', 'Invoice #', 'Total Amount', 'Amount Paid', 'Debt', 'Payment Method'];
+    const rows = purchases.map((p: any) => {
+      const date = format(new Date(p.purchasedAt), 'yyyy-MM-dd HH:mm');
+      const invoice = p.referenceNumber || p.id.slice(0, 8);
+      const total = Number(p.totalAmount);
+      const paid = Number(p.amountPaid);
+      const debt = total > paid ? total - paid : 0;
+      return [
+        `"${date}"`,
+        `"${invoice}"`,
+        total,
+        paid,
+        debt,
+        `"${p.paymentMethod || ''}"`
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${supplier?.name.replace(/\\s+/g, '_')}_purchases.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -75,27 +131,51 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ isOp
           <div className="w-full md:w-2/3 border-t md:border-t-0 md:border-l border-gray-100 md:pl-6 pt-6 md:pt-0 flex flex-col">
             
             {/* Tabs */}
-            <div className="flex space-x-1 border-b border-gray-200 mb-4 shrink-0">
-              <button
-                onClick={() => setActiveTab('payments')}
-                className={`px-4 py-2 font-semibold text-sm transition-colors border-b-2 ${
-                  activeTab === 'payments' 
-                  ? 'border-blue-600 text-blue-600' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Payment History
-              </button>
-              <button
-                onClick={() => setActiveTab('purchases')}
-                className={`px-4 py-2 font-semibold text-sm transition-colors border-b-2 ${
-                  activeTab === 'purchases' 
-                  ? 'border-blue-600 text-blue-600' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Recent Purchases
-              </button>
+            <div className="flex items-center justify-between border-b border-gray-200 mb-4 shrink-0">
+              <div className="flex space-x-1">
+                <button
+                  onClick={() => setActiveTab('payments')}
+                  className={`px-4 py-2 font-semibold text-sm transition-colors border-b-2 ${
+                    activeTab === 'payments' 
+                    ? 'border-blue-600 text-blue-600' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Payment History
+                </button>
+                <button
+                  onClick={() => setActiveTab('purchases')}
+                  className={`px-4 py-2 font-semibold text-sm transition-colors border-b-2 ${
+                    activeTab === 'purchases' 
+                    ? 'border-blue-600 text-blue-600' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Recent Purchases
+                </button>
+              </div>
+
+              {/* Export Button based on active tab */}
+              {activeTab === 'payments' && payments && payments.length > 0 && (
+                <button
+                  onClick={handleExportPaymentsCSV}
+                  className="flex items-center gap-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-md transition-colors border border-blue-200 shadow-sm"
+                  title="Export payments to CSV"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export CSV
+                </button>
+              )}
+              {activeTab === 'purchases' && purchases && purchases.length > 0 && (
+                <button
+                  onClick={handleExportPurchasesCSV}
+                  className="flex items-center gap-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-md transition-colors border border-blue-200 shadow-sm"
+                  title="Export purchases to CSV"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export CSV
+                </button>
+              )}
             </div>
 
             {/* Tab Content */}
