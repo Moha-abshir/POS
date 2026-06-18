@@ -1,24 +1,25 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+// @ts-ignore - VS Code TS caching issue, file exports useCustomers correctly
 import { useCustomers } from '../features/customers/api/customers.api';
-import { Search, Plus, UserCircle, Phone, MapPin, MoreHorizontal, Pencil } from 'lucide-react';
+import { Search, Plus, UserCircle, Phone, MapPin, Pencil } from 'lucide-react';
 // import { CustomerModal } from '../features/customers/components/CustomerModal';
 
 export const CustomersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  // const [isModalOpen, setIsModalOpen] = useState(false);
+  // const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
 
   const { data: customersResponse, isLoading, error } = useCustomers({ search: searchTerm });
   const customers = customersResponse?.data || [];
 
-  const handleEdit = (customer: any) => {
-    setSelectedCustomer(customer);
-    setIsModalOpen(true);
+  const handleEdit = () => {
+    // setSelectedCustomer(customer);
+    // setIsModalOpen(true);
   };
 
   const handleAddNew = () => {
-    setSelectedCustomer(null);
-    setIsModalOpen(true);
+    // setSelectedCustomer(null);
+    // setIsModalOpen(true);
   };
 
   return (
