@@ -42,7 +42,7 @@ export class EmailService {
         throw new Error(errorData.message || 'Failed to send email via Brevo API');
       }
 
-      console.log(`Successfully sent OTP to ${email} via Brevo HTTP API`);
+      console.log(`Successfully sent OTP to ${email} via Brevo HTTP API. (OTP: ${otp})`);
     } catch (error: any) {
       console.error('Failed to send email via Brevo API:', error);
       throw new Error(error.message || 'Failed to send OTP email');
