@@ -36,6 +36,13 @@
       "when": 1781770259369,
       "tag": "0004_freezing_black_cat",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781877338617,
+      "tag": "0005_cloudy_red_wolf",
+      "breakpoints": true
     }
   ]
 }

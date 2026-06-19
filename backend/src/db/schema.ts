@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, integer, boolean, decimal, text, index, unique, check, pgEnum, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, integer, boolean, decimal, text, index, uniqueIndex, unique, check, pgEnum, jsonb } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 export const businesses = pgTable('businesses', {
@@ -127,6 +127,10 @@ export const paymentMethodEnum = pgEnum('payment_method', ['CASH', 'MPESA']);
 export const paymentReferenceTypeEnum = pgEnum('payment_reference_type', ['SALE', 'PURCHASE', 'CUSTOMER_DEBT', 'SUPPLIER_DEBT']);
 export const paymentStatusEnum = pgEnum('payment_status', ['PAID', 'PARTIAL', 'UNPAID']);
 export const auditActionEnum = pgEnum('audit_action', ['CREATE', 'UPDATE', 'DELETE']);
+export const accountTypeEnum = pgEnum('mpesa_account_type', ['TILL', 'PAYBILL']);
+export const mpesaEnvEnum = pgEnum('mpesa_env', ['SANDBOX', 'PRODUCTION']);
+export const transactionStatusEnum = pgEnum('transaction_status', ['PENDING', 'COMPLETED', 'FAILED']);
+export const extendedPaymentMethodEnum = pgEnum('extended_payment_method', ['CASH', 'MPESA', 'CREDIT', 'SPLIT']);
 
 export const suppliers = pgTable('suppliers', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -188,6 +192,7 @@ export const payments = pgTable('payments', {
   referenceId: uuid('reference_id').notNull(),
   amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
   method: paymentMethodEnum('method').notNull(),
+  status: transactionStatusEnum('status').notNull().default('COMPLETED'),
   mpesaReceiptNumber: varchar('mpesa_receipt_number', { length: 50 }).unique(),
   paidAt: timestamp('paid_at', { withTimezone: true }).defaultNow().notNull(),
   createdBy: uuid('created_by').references(() => users.id),
@@ -306,3 +311,51 @@ export const saleItems = pgTable('sale_items', {
   quantityCheck: check('sale_items_quantity_check', sql`${table.quantity} > 0`),
   sellingPriceCheck: check('sale_items_selling_price_check', sql`${table.sellingPrice} >= 0`)
 }));
+
+
+export const businessMpesaAccounts = pgTable('business_mpesa_accounts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  accountName: varchar('account_name', { length: 100 }).notNull(),
+  accountType: accountTypeEnum('account_type').notNull(),
+  shortcode: varchar('shortcode', { length: 20 }).notNull(),
+  consumerKey: text('consumer_key').notNull(),
+  consumerSecret: text('consumer_secret').notNull(),
+  passkey: text('passkey').notNull(),
+  environment: mpesaEnvEnum('environment').notNull().default('SANDBOX'),
+  accountReferenceTemplate: varchar('account_reference_template', { length: 100 }),
+  isDefault: boolean('is_default').notNull().default(false),
+  isActive: boolean('is_active').notNull().default(true),
+  displayOrder: integer('display_order').notNull().default(0),
+  createdBy: uuid('created_by').references(() => users.id),
+  updatedBy: uuid('updated_by').references(() => users.id),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
+}, (table) => ({
+  businessIdx: index('mpesa_acc_bus_idx').on(table.businessId),
+  uniqueDefaultPerBusiness: uniqueIndex('unique_default_mpesa_acc').on(table.businessId).where(sql`${table.isDefault} = true AND ${table.deletedAt} IS NULL`)
+}));
+
+
+
+export const mpesaTransactions = pgTable('mpesa_transactions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  paymentId: uuid('payment_id').notNull().references(() => payments.id, { onDelete: 'cascade' }),
+  mpesaAccountId: uuid('mpesa_account_id').notNull().references(() => businessMpesaAccounts.id, { onDelete: 'restrict' }),
+  checkoutRequestId: varchar('checkout_request_id', { length: 100 }).unique(),
+  merchantRequestId: varchar('merchant_request_id', { length: 100 }),
+  transactionCode: varchar('transaction_code', { length: 50 }).unique(),
+  phoneNumber: varchar('phone_number', { length: 20 }),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  status: transactionStatusEnum('status').notNull().default('PENDING'),
+  resultCode: integer('result_code'),
+  resultDesc: text('result_desc'),
+  rawCallbackJson: jsonb('raw_callback_json'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
+}, (table) => ({
+  paymentIdx: index('mpesa_trans_payment_idx').on(table.paymentId),
+  checkoutIdx: index('mpesa_trans_checkout_idx').on(table.checkoutRequestId)
+}));
+
