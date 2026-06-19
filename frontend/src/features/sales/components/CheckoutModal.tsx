@@ -22,6 +22,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
   const [customerId, setCustomerId] = useState<string>('');
   const [mpesaRef, setMpesaRef] = useState('');
   const [mpesaPhoneNumber, setMpesaPhoneNumber] = useState('');
+  const [isStkPush, setIsStkPush] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
+  const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
 
   const { data: customersData } = useCustomers({ limit: 1000 });
   const customers = customersData?.data || [];
@@ -52,13 +55,39 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
       setPaymentMethod('CASH');
       setMpesaRef('');
       setMpesaPhoneNumber('');
+      setIsStkPush(false);
+      setIsPolling(false);
+      setCheckoutRequestId(null);
       onSuccess();
       onClose();
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to complete sale');
+      setIsPolling(false);
     }
   });
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPolling && checkoutRequestId) {
+      interval = setInterval(async () => {
+        try {
+          const res = await api.get(`/mpesa/checkout/status/${checkoutRequestId}`);
+          if (res.data.status === 'COMPLETED') {
+            clearInterval(interval);
+            toast.success('M-Pesa Payment Received!');
+            onSuccess();
+            onClose();
+          } else if (res.data.status === 'FAILED') {
+            clearInterval(interval);
+            toast.error(`Payment Failed: ${res.data.resultDesc}`);
+            setIsPolling(false);
+          }
+        } catch (e) {}
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [isPolling, checkoutRequestId, onSuccess, onClose]);
 
   if (!isOpen) return null;
 
@@ -77,8 +106,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
       return;
     }
 
-    if (paymentMethod === 'MPESA' && !mpesaRef && !mpesaPhoneNumber) {
+    if (paymentMethod === 'MPESA' && !isStkPush && !mpesaRef && !mpesaPhoneNumber) {
       toast.error('Please provide M-Pesa reference and phone number');
+      return;
+    }
+    
+    if (paymentMethod === 'MPESA' && isStkPush && !mpesaPhoneNumber) {
+      toast.error('Phone number is required for STK Push');
       return;
     }
 
@@ -90,11 +124,35 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
         quantity: item.quantity,
         sellingPrice: item.sellingPrice,
       })),
-      amountPaid: paidVal,
+      amountPaid: (paymentMethod === 'MPESA' && isStkPush) ? 0 : paidVal,
       discountAmount,
       paymentMethod,
-      mpesaRef: paymentMethod === 'MPESA' ? mpesaRef : undefined,
+      mpesaRef: paymentMethod === 'MPESA' && !isStkPush ? mpesaRef : undefined,
       mpesaPhoneNumber: paymentMethod === 'MPESA' ? mpesaPhoneNumber : undefined,
+    }, {
+      onSuccess: async (data: any) => {
+        if (paymentMethod === 'MPESA' && isStkPush) {
+          try {
+            // After sale is created (UNPAID), trigger STK Push
+            const res = await api.post('/mpesa/checkout/push', {
+              saleId: data.data.id,
+              phoneNumber: mpesaPhoneNumber,
+              amount: paidVal
+            });
+            setCheckoutRequestId(res.data.checkoutRequestId);
+            setIsPolling(true);
+            toast.success('STK Push sent to customer phone. Waiting for PIN...');
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || 'Failed to send STK push');
+          }
+        } else {
+          toast.success('Sale completed successfully!');
+          queryClient.invalidateQueries({ queryKey: ['pos-catalog'] });
+          queryClient.invalidateQueries({ queryKey: ['sales'] });
+          onSuccess();
+          onClose();
+        }
+      }
     });
   };
 
@@ -184,26 +242,42 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
 
             {/* M-Pesa Details */}
             {paymentMethod === 'MPESA' && (
-              <div className="grid grid-cols-2 gap-4 p-4 bg-green-50/50 rounded-xl border border-green-100">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">M-Pesa Ref (Optional)</label>
-                  <input
-                    type="text"
-                    value={mpesaRef}
-                    onChange={(e) => setMpesaRef(e.target.value.toUpperCase())}
-                    placeholder="e.g. SGT8WQ12A"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-                  />
+              <div className="p-4 bg-green-50/50 rounded-xl border border-green-100 space-y-4">
+                <div className="flex gap-4 mb-2 border-b border-green-200 pb-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" checked={!isStkPush} onChange={() => setIsStkPush(false)} className="text-green-600 focus:ring-green-500" />
+                    <span className="text-sm font-medium text-green-800">Manual Entry</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" checked={isStkPush} onChange={() => setIsStkPush(true)} className="text-green-600 focus:ring-green-500" />
+                    <span className="text-sm font-medium text-green-800">Send STK Push (Phone Prompt)</span>
+                  </label>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
-                  <input
-                    type="text"
-                    value={mpesaPhoneNumber}
-                    onChange={(e) => setMpesaPhoneNumber(e.target.value)}
-                    placeholder="e.g. 07..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  {!isStkPush && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">M-Pesa Ref (Optional)</label>
+                      <input
+                        type="text"
+                        value={mpesaRef}
+                        onChange={(e) => setMpesaRef(e.target.value.toUpperCase())}
+                        placeholder="e.g. SGT8WQ12A"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                  )}
+                  <div className={isStkPush ? "col-span-2" : ""}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number {isStkPush ? '*' : '(Optional)'}</label>
+                    <input
+                      type="text"
+                      value={mpesaPhoneNumber}
+                      onChange={(e) => setMpesaPhoneNumber(e.target.value)}
+                      placeholder="e.g. 254712345678"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                      required={isStkPush}
+                    />
+                    {isStkPush && <p className="text-xs text-green-600 mt-1">Format: 2547XXXXXXXX or 07XXXXXXXX</p>}
+                  </div>
                 </div>
               </div>
             )}
@@ -271,10 +345,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
           <button
             form="checkout-form"
             type="submit"
-            disabled={createSaleMutation.isPending || (isCustomerRequired && !customerId)}
+            disabled={createSaleMutation.isPending || isPolling || (isCustomerRequired && !customerId)}
             className="flex-1 px-6 py-3 bg-[#D97706] text-white rounded-xl hover:bg-amber-700 font-medium transition-colors shadow-lg shadow-amber-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {createSaleMutation.isPending ? 'Processing...' : 'Complete Sale'}
+            {isPolling ? 'Waiting for PIN...' : createSaleMutation.isPending ? 'Processing...' : 'Complete Sale'}
           </button>
         </div>
       </div>
