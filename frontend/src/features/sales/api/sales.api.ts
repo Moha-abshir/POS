@@ -1,4 +1,5 @@
 import { api } from '../../../lib/api';
+import { useQuery } from '@tanstack/react-query';
 
 export interface Sale {
   id: string;
@@ -36,4 +37,11 @@ export const salesApi = {
     const { data } = await api.post('/sales', saleData);
     return data.data;
   }
+};
+
+export const useSales = (filters: { page?: number; limit?: number; customerId?: string } = {}) => {
+  return useQuery({
+    queryKey: ['sales', filters],
+    queryFn: () => salesApi.getSales(filters),
+  });
 };

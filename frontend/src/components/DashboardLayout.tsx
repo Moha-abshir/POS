@@ -12,7 +12,8 @@ import {
   FileText,
   Bell,
   Truck,
-  Contact
+  Contact,
+  Receipt
 } from 'lucide-react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 
@@ -23,6 +24,7 @@ export const DashboardLayout: React.FC = () => {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'POS', path: '/pos', icon: ShoppingCart },
+    { name: 'Sales', path: '/sales', icon: Receipt },
     { name: 'Catalog', path: '/catalog', icon: Package },
     { name: 'Inventory', path: '/inventory', icon: Boxes },
     { name: 'Customers', path: '/customers', icon: Users },
