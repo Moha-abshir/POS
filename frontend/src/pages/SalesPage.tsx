@@ -103,7 +103,7 @@ export function SalesPage() {
         </div>
         <button
           onClick={handleExportCSV}
-          className="flex items-center gap-2 px-4 py-2 h-10 bg-white border border-gray-200 text-gray-700 rounded-md hover:bg-gray-50 transition-colors shadow-sm font-medium cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 h-10 bg-[var(--color-accent)] text-white rounded-md hover:bg-[var(--color-accent-hover)] transition-all shadow-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1"
         >
           <Download size={18} />
           <span>Export All</span>
@@ -121,7 +121,7 @@ export function SalesPage() {
               placeholder="Search receipts or customers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-10 pr-4 bg-white border border-gray-200 rounded-md text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+              className="w-full h-10 pl-10 pr-4 bg-white border border-gray-200 rounded-md text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
             />
           </div>
           <div className="relative">
@@ -129,14 +129,14 @@ export function SalesPage() {
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer border ${
                 isFilterOpen || Object.values(filters).some(v => v !== '') 
-                  ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                  ? 'bg-amber-50 border-amber-200 text-amber-700' 
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
               <Filter size={16} />
               Filter
               {Object.values(filters).filter(v => v !== '').length > 0 && (
-                <span className="ml-1 flex items-center justify-center w-5 h-5 bg-blue-600 text-white rounded-full text-[10px] font-bold">
+                <span className="ml-1 flex items-center justify-center w-5 h-5 bg-[var(--color-accent)] text-white rounded-full text-[10px] font-bold">
                   {Object.values(filters).filter(v => v !== '').length}
                 </span>
               )}
@@ -160,7 +160,7 @@ export function SalesPage() {
                         type="date" 
                         value={tempFilters.startDate}
                         onChange={(e) => setTempFilters({...tempFilters, startDate: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                       />
                     </div>
                     <div>
@@ -169,7 +169,7 @@ export function SalesPage() {
                         type="date" 
                         value={tempFilters.endDate}
                         onChange={(e) => setTempFilters({...tempFilters, endDate: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                       />
                     </div>
                   </div>
@@ -179,7 +179,7 @@ export function SalesPage() {
                     <select 
                       value={tempFilters.paymentStatus}
                       onChange={(e) => setTempFilters({...tempFilters, paymentStatus: e.target.value as any})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                     >
                       <option value="">All Statuses</option>
                       <option value="PAID">Paid</option>
@@ -193,7 +193,7 @@ export function SalesPage() {
                     <select 
                       value={tempFilters.paymentMethod}
                       onChange={(e) => setTempFilters({...tempFilters, paymentMethod: e.target.value as any})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                     >
                       <option value="">All Methods</option>
                       <option value="CASH">Cash</option>
@@ -218,7 +218,7 @@ export function SalesPage() {
                         setFilters(tempFilters);
                         setIsFilterOpen(false);
                       }}
-                      className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                      className="flex-1 px-4 py-2 text-sm font-medium text-white bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] rounded-md transition-colors"
                     >
                       Apply
                     </button>
@@ -262,7 +262,7 @@ export function SalesPage() {
                 </tr>
               ) : (
                 sales.map((sale: any, index: number) => (
-                  <tr key={sale.id} className={`border-b border-gray-100 h-14 transition-colors hover:bg-blue-50/50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
+                  <tr key={sale.id} className={`border-b border-gray-100 h-14 transition-colors hover:bg-amber-50/30 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
                     <td className="px-6 py-2 text-sm text-gray-900 font-medium">
                       {format(new Date(sale.soldAt), 'MMM d, yyyy h:mm a')}
                     </td>
@@ -293,7 +293,7 @@ export function SalesPage() {
                     <td className="px-6 py-2 text-right">
                       <button 
                         onClick={() => setSelectedSaleId(sale.id)}
-                        className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors cursor-pointer" 
+                        className="p-2 text-gray-400 hover:text-[var(--color-accent)] hover:bg-amber-50 rounded-md transition-colors cursor-pointer" 
                         title="View Receipt Details"
                       >
                         <ArrowUpRight size={18} />

@@ -31,7 +31,7 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center">
               <Receipt size={20} />
             </div>
             <div>
@@ -64,7 +64,7 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
         <div className="flex-1 overflow-y-auto p-6">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
               <p className="mt-4 text-sm text-gray-500">Loading receipt details...</p>
             </div>
           ) : !sale ? (
@@ -151,16 +151,16 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
               </div>
 
               {/* Payment Details Footer */}
-              <div className="bg-blue-50/50 rounded-lg p-4 mt-6 flex items-center justify-between border border-blue-100">
+              <div className="bg-amber-50/50 rounded-lg p-4 mt-6 flex items-center justify-between border border-amber-100">
                 <div>
-                  <p className="text-xs font-semibold text-blue-800 uppercase tracking-wider mb-1">Payment Method</p>
-                  <p className="text-sm font-medium text-blue-900">
+                  <p className="text-xs font-semibold text-amber-800 uppercase tracking-wider mb-1">Payment Method</p>
+                  <p className="text-sm font-medium text-amber-900">
                     {sale.paymentMethod}
-                    {sale.mpesaRef && <span className="ml-2 font-mono text-blue-700">({sale.mpesaRef})</span>}
+                    {sale.mpesaRef && <span className="ml-2 font-mono text-amber-700">({sale.mpesaRef})</span>}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-semibold text-blue-800 uppercase tracking-wider mb-1">Status</p>
+                  <p className="text-xs font-semibold text-amber-800 uppercase tracking-wider mb-1">Status</p>
                   <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-xs font-bold uppercase tracking-wider ${
                     sale.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' :
                     sale.paymentStatus === 'PARTIAL' ? 'bg-amber-100 text-amber-700' :
