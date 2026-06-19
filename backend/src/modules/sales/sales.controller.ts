@@ -31,7 +31,7 @@ export class SalesController {
 
   static async getSaleDetails(req: Request, res: Response, next: NextFunction) {
     try {
-      const saleId = req.params.id;
+      const saleId = req.params.id as string;
       const sale = await SalesService.getSaleDetails(req.user!.businessId, saleId);
       
       if (!sale) {
