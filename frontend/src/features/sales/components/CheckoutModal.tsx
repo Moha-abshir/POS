@@ -78,7 +78,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
     }
 
     if (paymentMethod === 'MPESA' && !mpesaRef && !mpesaPhoneNumber) {
-      toast.error('Please provide M-Pesa reference or phone number');
+      toast.error('Please provide M-Pesa reference and phone number');
       return;
     }
 
