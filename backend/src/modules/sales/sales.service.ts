@@ -102,6 +102,7 @@ export class SalesService {
     paymentMethod: 'CASH' | 'MPESA';
     mpesaRef?: string;
     mpesaPhoneNumber?: string;
+    isStkPush?: boolean;
   }) {
     // Calculate totals
     const subtotal = data.items.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
@@ -117,7 +118,7 @@ export class SalesService {
     }
 
     // Validation
-    if (paymentStatus !== 'PAID' && !data.customerId) {
+    if (paymentStatus !== 'PAID' && !data.customerId && !data.isStkPush) {
       throw new Error('Customer must be provided for credit or partial sales');
     }
 

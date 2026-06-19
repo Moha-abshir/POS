@@ -129,6 +129,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
       paymentMethod,
       mpesaRef: paymentMethod === 'MPESA' && !isStkPush ? mpesaRef : undefined,
       mpesaPhoneNumber: paymentMethod === 'MPESA' ? mpesaPhoneNumber : undefined,
+      isStkPush: paymentMethod === 'MPESA' && isStkPush,
     }, {
       onSuccess: async (data: any) => {
         if (paymentMethod === 'MPESA' && isStkPush) {
