@@ -1,4 +1,5 @@
 import { eq, and, isNull } from 'drizzle-orm';
+import { SalesService } from '../sales/sales.service';
 import { db } from '../../db';
 import { businessMpesaAccounts, payments, mpesaTransactions, sales } from '../../db/schema';
 import { decrypt } from '../../core/utils/crypto.util';
@@ -178,6 +179,14 @@ export class MpesaCheckoutService {
       await db.update(payments)
         .set({ status: 'FAILED' })
         .where(eq(payments.id, transaction.paymentId));
+
+      // Revert the sale since the STK push failed
+      const payment = await db.query.payments.findFirst({
+        where: eq(payments.id, transaction.paymentId)
+      });
+      if (payment && payment.referenceType === 'SALE') {
+        await SalesService.deleteFailedSale(payment.referenceId);
+      }
     }
   }
 }

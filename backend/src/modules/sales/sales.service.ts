@@ -211,4 +211,62 @@ export class SalesService {
       return newSale;
     });
   }
+
+  static async deleteFailedSale(saleId: string) {
+    return await db.transaction(async (tx) => {
+      // Get the sale
+      const [sale] = await tx.select().from(sales).where(eq(sales.id, saleId));
+      if (!sale) return;
+
+      // Get sale items
+      const items = await tx.select().from(saleItems).where(eq(saleItems.saleId, saleId));
+
+      // Revert product variants inventory
+      for (const item of items) {
+        const [unit] = await tx.select({ conversionFactor: variantUnits.conversionFactor })
+          .from(variantUnits)
+          .where(eq(variantUnits.id, item.unitId));
+
+        if (unit) {
+          const conversionFactor = Number(unit.conversionFactor);
+          const deductionAmount = Number(item.quantity) * conversionFactor;
+
+          // Revert base stock
+          await tx.update(productVariants)
+            .set({
+              baseStockQuantity: sql`${productVariants.baseStockQuantity} + ${deductionAmount}`,
+              updatedAt: new Date()
+            })
+            .where(eq(productVariants.id, item.variantId));
+        }
+      }
+
+      // Delete stock movements
+      await tx.delete(stockMovements)
+        .where(and(
+          eq(stockMovements.referenceType, 'SALE'),
+          eq(stockMovements.referenceId, saleId)
+        ));
+
+      // Revert customer balance if it was a credit sale (unpaid)
+      if (sale.customerId && sale.paymentStatus === 'UNPAID') {
+        const debtAmount = Number(sale.totalAmount) - Number(sale.amountPaid);
+        await tx.update(customers)
+          .set({
+            balance: sql`${customers.balance} - ${debtAmount}`,
+            updatedAt: new Date()
+          })
+          .where(eq(customers.id, sale.customerId));
+      }
+
+      // Delete sale items
+      await tx.delete(saleItems).where(eq(saleItems.saleId, saleId));
+
+      // Delete the payment records linked to this sale
+      await tx.delete(payments).where(and(eq(payments.referenceType, 'SALE'), eq(payments.referenceId, saleId)));
+
+      // Delete the sale record itself
+      await tx.delete(sales).where(eq(sales.id, saleId));
+    });
+  }
 }
