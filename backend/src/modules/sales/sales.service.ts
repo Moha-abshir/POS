@@ -1,15 +1,35 @@
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { eq, and, sql, desc, gte, lte } from 'drizzle-orm';
 import { db } from '../../db';
 import { sales, saleItems, stockMovements, productVariants, customers, payments, variantUnits } from '../../db/schema';
 
 
 export class SalesService {
-  static async getSales(businessId: string, filters: { limit?: number; offset?: number; customerId?: string } = {}) {
-    const { limit = 50, offset = 0, customerId } = filters;
+  static async getSales(businessId: string, filters: { 
+    limit?: number; 
+    offset?: number; 
+    customerId?: string;
+    startDate?: string;
+    endDate?: string;
+    paymentStatus?: 'PAID' | 'PARTIAL' | 'UNPAID';
+    paymentMethod?: 'CASH' | 'MPESA';
+  } = {}) {
+    const { limit = 50, offset = 0, customerId, startDate, endDate, paymentStatus, paymentMethod } = filters;
     
     const conditions: any[] = [eq(sales.businessId, businessId)];
     if (customerId) {
       conditions.push(eq(sales.customerId, customerId));
+    }
+    if (startDate) {
+      conditions.push(gte(sales.soldAt, new Date(startDate)));
+    }
+    if (endDate) {
+      conditions.push(lte(sales.soldAt, new Date(endDate)));
+    }
+    if (paymentStatus) {
+      conditions.push(eq(sales.paymentStatus, paymentStatus));
+    }
+    if (paymentMethod) {
+      conditions.push(eq(sales.paymentMethod, paymentMethod));
     }
 
     const data = await db.select({
@@ -37,6 +57,41 @@ export class SalesService {
       data,
       meta: { total: count, limit, offset }
     };
+  }
+
+  static async getSaleDetails(businessId: string, saleId: string) {
+    const [sale] = await db.select({
+      id: sales.id,
+      totalAmount: sales.totalAmount,
+      amountPaid: sales.amountPaid,
+      discountAmount: sales.discountAmount,
+      paymentStatus: sales.paymentStatus,
+      paymentMethod: sales.paymentMethod,
+      mpesaRef: sales.mpesaRef,
+      soldAt: sales.soldAt,
+      customerName: customers.name,
+      customerPhone: customers.phone,
+    })
+      .from(sales)
+      .leftJoin(customers, eq(sales.customerId, customers.id))
+      .where(and(eq(sales.id, saleId), eq(sales.businessId, businessId)));
+
+    if (!sale) return null;
+
+    const items = await db.select({
+      id: saleItems.id,
+      quantity: saleItems.quantity,
+      sellingPrice: saleItems.sellingPrice,
+      subtotal: saleItems.subtotal,
+      variantName: productVariants.name,
+      unitName: variantUnits.name,
+    })
+      .from(saleItems)
+      .innerJoin(productVariants, eq(saleItems.variantId, productVariants.id))
+      .innerJoin(variantUnits, eq(saleItems.unitId, variantUnits.id))
+      .where(eq(saleItems.saleId, saleId));
+
+    return { ...sale, items };
   }
 
   static async createSale(businessId: string, userId: string, data: {

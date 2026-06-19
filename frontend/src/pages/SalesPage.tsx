@@ -2,13 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { salesApi } from '../features/sales/api/sales.api';
 import { format } from 'date-fns';
-import { Search, Receipt, ArrowUpRight, Filter, Download } from 'lucide-react';
+import { Search, Receipt, ArrowUpRight, Filter, Download, X } from 'lucide-react';
+import { ReceiptModal } from '../features/sales/components/ReceiptModal';
 
 export function SalesPage() {
   const [page, setPage] = useState(1);
   const [limit] = useState(50);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
+
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState<{
+    startDate: string;
+    endDate: string;
+    paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID' | '';
+    paymentMethod: 'CASH' | 'MPESA' | '';
+  }>({
+    startDate: '',
+    endDate: '',
+    paymentStatus: '',
+    paymentMethod: '',
+  });
+
+  const [tempFilters, setTempFilters] = useState(filters);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
@@ -16,13 +33,65 @@ export function SalesPage() {
   }, [searchQuery]);
 
   const { data: salesData, isLoading } = useQuery({
-    queryKey: ['sales', { page, limit, customerId: debouncedSearch }],
-    queryFn: () => salesApi.getSales({ page, limit, customerId: debouncedSearch ? debouncedSearch : undefined }), // We can refine customer search later, for now we just pass it to the API
+    queryKey: ['sales', { page, limit, customerId: debouncedSearch, ...filters }],
+    queryFn: () => salesApi.getSales({ 
+      page, 
+      limit, 
+      customerId: debouncedSearch ? debouncedSearch : undefined,
+      startDate: filters.startDate || undefined,
+      endDate: filters.endDate || undefined,
+      paymentStatus: filters.paymentStatus || undefined,
+      paymentMethod: filters.paymentMethod || undefined,
+    }),
   });
 
   const sales = salesData?.data || [];
   const meta = salesData?.meta || { total: 0 };
   const totalPages = Math.ceil(meta.total / limit);
+
+  const handleExportCSV = async () => {
+    try {
+      // Fetch up to 1000 recent sales matching current filter for export
+      const exportData = await salesApi.getSales({
+        limit: 1000,
+        customerId: debouncedSearch ? debouncedSearch : undefined,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+        paymentStatus: filters.paymentStatus || undefined,
+        paymentMethod: filters.paymentMethod || undefined,
+      });
+
+      if (!exportData.data || exportData.data.length === 0) return;
+
+      const headers = ['Date', 'Receipt No.', 'Customer', 'Total Amount', 'Paid Amount', 'Status', 'Payment Method', 'M-PESA Ref'];
+      const rows = exportData.data.map((sale: any) => {
+        const date = format(new Date(sale.soldAt), 'yyyy-MM-dd HH:mm');
+        const receipt = sale.id.slice(0, 8).toUpperCase();
+        return [
+          `"${date}"`,
+          `"${receipt}"`,
+          `"${sale.customerName || 'Walk-in'}"`,
+          sale.totalAmount,
+          sale.amountPaid,
+          `"${sale.paymentStatus}"`,
+          `"${sale.paymentMethod}"`,
+          `"${sale.mpesaRef || ''}"`
+        ].join(',');
+      });
+
+      const csvContent = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `sales_export_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Failed to export sales:', error);
+    }
+  };
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto h-full flex flex-col space-y-6">
@@ -33,6 +102,7 @@ export function SalesPage() {
           <p className="text-sm text-[var(--color-text-secondary)] mt-1">Audit and review all past transactions</p>
         </div>
         <button
+          onClick={handleExportCSV}
           className="flex items-center gap-2 px-4 py-2 h-10 bg-white border border-gray-200 text-gray-700 rounded-md hover:bg-gray-50 transition-colors shadow-sm font-medium cursor-pointer"
         >
           <Download size={18} />
@@ -54,10 +124,109 @@ export function SalesPage() {
               className="w-full h-10 pl-10 pr-4 bg-white border border-gray-200 rounded-md text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors cursor-pointer">
-            <Filter size={16} />
-            Filter
-          </button>
+          <div className="relative">
+            <button 
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer border ${
+                isFilterOpen || Object.values(filters).some(v => v !== '') 
+                  ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Filter size={16} />
+              Filter
+              {Object.values(filters).filter(v => v !== '').length > 0 && (
+                <span className="ml-1 flex items-center justify-center w-5 h-5 bg-blue-600 text-white rounded-full text-[10px] font-bold">
+                  {Object.values(filters).filter(v => v !== '').length}
+                </span>
+              )}
+            </button>
+
+            {/* Filter Dropdown */}
+            {isFilterOpen && (
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-semibold text-gray-900">Filter Sales</h3>
+                  <button onClick={() => setIsFilterOpen(false)} className="text-gray-400 hover:text-gray-600">
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
+                      <input 
+                        type="date" 
+                        value={tempFilters.startDate}
+                        onChange={(e) => setTempFilters({...tempFilters, startDate: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">End Date</label>
+                      <input 
+                        type="date" 
+                        value={tempFilters.endDate}
+                        onChange={(e) => setTempFilters({...tempFilters, endDate: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Payment Status</label>
+                    <select 
+                      value={tempFilters.paymentStatus}
+                      onChange={(e) => setTempFilters({...tempFilters, paymentStatus: e.target.value as any})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500"
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="PAID">Paid</option>
+                      <option value="PARTIAL">Partial</option>
+                      <option value="UNPAID">Unpaid</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Payment Method</label>
+                    <select 
+                      value={tempFilters.paymentMethod}
+                      onChange={(e) => setTempFilters({...tempFilters, paymentMethod: e.target.value as any})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500"
+                    >
+                      <option value="">All Methods</option>
+                      <option value="CASH">Cash</option>
+                      <option value="MPESA">M-Pesa</option>
+                    </select>
+                  </div>
+
+                  <div className="flex gap-2 pt-2 border-t border-gray-100">
+                    <button 
+                      onClick={() => {
+                        const empty = { startDate: '', endDate: '', paymentStatus: '', paymentMethod: '' as any };
+                        setTempFilters(empty);
+                        setFilters(empty);
+                        setIsFilterOpen(false);
+                      }}
+                      className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                    >
+                      Clear
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setFilters(tempFilters);
+                        setIsFilterOpen(false);
+                      }}
+                      className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Table */}
@@ -122,7 +291,11 @@ export function SalesPage() {
                       </span>
                     </td>
                     <td className="px-6 py-2 text-right">
-                      <button className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors cursor-pointer" title="View Receipt Details">
+                      <button 
+                        onClick={() => setSelectedSaleId(sale.id)}
+                        className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors cursor-pointer" 
+                        title="View Receipt Details"
+                      >
                         <ArrowUpRight size={18} />
                       </button>
                     </td>
@@ -158,6 +331,14 @@ export function SalesPage() {
           </div>
         )}
       </div>
+
+      {/* Receipt Modal */}
+      {selectedSaleId && (
+        <ReceiptModal 
+          saleId={selectedSaleId} 
+          onClose={() => setSelectedSaleId(null)} 
+        />
+      )}
     </div>
   );
 }

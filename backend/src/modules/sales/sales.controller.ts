@@ -8,8 +8,12 @@ export class SalesController {
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = (page - 1) * limit;
       const customerId = req.query.customerId as string;
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      const paymentStatus = req.query.paymentStatus as 'PAID' | 'PARTIAL' | 'UNPAID';
+      const paymentMethod = req.query.paymentMethod as 'CASH' | 'MPESA';
 
-      const result = await SalesService.getSales(req.user!.businessId, { limit, offset, customerId });
+      const result = await SalesService.getSales(req.user!.businessId, { limit, offset, customerId, startDate, endDate, paymentStatus, paymentMethod });
       res.status(200).json({ status: 'success', message: 'Sales retrieved successfully', ...result });
     } catch (error) {
       next(error);
@@ -20,6 +24,21 @@ export class SalesController {
     try {
       const sale = await SalesService.createSale(req.user!.businessId, req.user!.id, req.body);
       res.status(201).json({ status: 'success', message: 'Sale recorded successfully', data: sale });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getSaleDetails(req: Request, res: Response, next: NextFunction) {
+    try {
+      const saleId = req.params.id;
+      const sale = await SalesService.getSaleDetails(req.user!.businessId, saleId);
+      
+      if (!sale) {
+        return res.status(404).json({ status: 'error', message: 'Sale not found' });
+      }
+
+      res.status(200).json({ status: 'success', message: 'Sale details retrieved successfully', data: sale });
     } catch (error) {
       next(error);
     }

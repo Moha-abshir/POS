@@ -19,8 +19,18 @@ export interface SaleItemData {
   sellingPrice: number;
 }
 
+export interface SalesFilters {
+  page?: number;
+  limit?: number;
+  customerId?: string;
+  startDate?: string;
+  endDate?: string;
+  paymentStatus?: 'PAID' | 'PARTIAL' | 'UNPAID' | '';
+  paymentMethod?: 'CASH' | 'MPESA' | '';
+}
+
 export const salesApi = {
-  getSales: async (filters?: { page?: number; limit?: number; customerId?: string }) => {
+  getSales: async (filters?: SalesFilters) => {
     const { data } = await api.get('/sales', { params: filters });
     return data;
   },
@@ -36,12 +46,25 @@ export const salesApi = {
   }) => {
     const { data } = await api.post('/sales', saleData);
     return data.data;
+  },
+
+  getSaleDetails: async (id: string) => {
+    const { data } = await api.get(`/sales/${id}`);
+    return data.data;
   }
 };
 
-export const useSales = (filters: { page?: number; limit?: number; customerId?: string } = {}) => {
+export const useSales = (filters: SalesFilters = {}) => {
   return useQuery({
     queryKey: ['sales', filters],
     queryFn: () => salesApi.getSales(filters),
+  });
+};
+
+export const useSaleDetails = (id: string | null) => {
+  return useQuery({
+    queryKey: ['sales', 'detail', id],
+    queryFn: () => id ? salesApi.getSaleDetails(id) : null,
+    enabled: !!id,
   });
 };
