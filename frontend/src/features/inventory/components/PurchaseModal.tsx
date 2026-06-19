@@ -149,7 +149,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                       searchable
                       label="Select product..."
                       options={products.map(p => ({ id: p.id, name: p.name }))}
-                      value={item.productId}
+                      value={item.productId || ''}
                       onChange={(e) => {
                         const newItems = [...items];
                         newItems[index].productId = e.target.value;
@@ -178,7 +178,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                         const defaultUnit = selectedVar?.units?.find((u: any) => u.isDefault) || selectedVar?.units?.[0];
                         newItems[index].unitId = defaultUnit?.id || '';
                         if (selectedVar && newItems[index].costPrice === '') {
-                          const factor = defaultUnit?.conversionFactor || 1;
+                          const factor = Number(defaultUnit?.conversionFactor || 1);
                           newItems[index].costPrice = Number(selectedVar.costPrice) * factor;
                         }
                         setItems(newItems);
