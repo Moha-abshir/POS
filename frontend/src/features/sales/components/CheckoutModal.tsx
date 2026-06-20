@@ -58,6 +58,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
           toast.success('STK Push sent to customer phone. Waiting for PIN...');
         } catch (e: any) {
           toast.error(e.response?.data?.message || 'Failed to send STK push');
+          // Backend already rolled back the sale — refresh the UI to reflect it
+          queryClient.invalidateQueries({ queryKey: ['pos-catalog'] });
+          queryClient.invalidateQueries({ queryKey: ['sales'] });
         }
       } else {
         toast.success('Sale completed successfully!');
