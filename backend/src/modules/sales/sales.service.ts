@@ -1,6 +1,6 @@
 import { eq, and, sql, desc, gte, lte, ilike } from 'drizzle-orm';
 import { db } from '../../db';
-import { sales, saleItems, stockMovements, productVariants, customers, payments, variantUnits } from '../../db/schema';
+import { sales, saleItems, stockMovements, productVariants, customers, payments, variantUnits, products } from '../../db/schema';
 
 
 export class SalesService {
@@ -88,10 +88,12 @@ export class SalesService {
       sellingPrice: saleItems.sellingPrice,
       subtotal: saleItems.subtotal,
       variantName: productVariants.name,
+      productName: products.name,
       unitName: variantUnits.name,
     })
       .from(saleItems)
       .innerJoin(productVariants, eq(saleItems.variantId, productVariants.id))
+      .innerJoin(products, eq(productVariants.productId, products.id))
       .innerJoin(variantUnits, eq(saleItems.unitId, variantUnits.id))
       .where(eq(saleItems.saleId, saleId));
 

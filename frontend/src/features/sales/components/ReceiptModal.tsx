@@ -1,7 +1,9 @@
 import React from 'react';
-import { X, Printer, Phone, User, Calendar, Receipt } from 'lucide-react';
+import { X, Printer, Receipt } from 'lucide-react';
 import { useSaleDetails } from '../api/sales.api';
 import { format } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../../../lib/api';
 
 interface ReceiptModalProps {
   saleId: string | null;
@@ -11,33 +13,73 @@ interface ReceiptModalProps {
 export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
   const { data: sale, isLoading } = useSaleDetails(saleId);
 
+  // Fetch business and cashier details to display on the receipt
+  const { data: meData } = useQuery({
+    queryKey: ['me'],
+    queryFn: async () => {
+      const res = await api.get('/auth/me');
+      return res.data.data;
+    },
+    enabled: !!saleId,
+  });
+
   if (!saleId) return null;
 
   const handlePrint = () => {
-    // In a real app, this would trigger a print-friendly view or use a POS printer library
     window.print();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Print styles stylesheet */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          /* Hide everything except the receipt wrapper */
+          body > * {
+            display: none !important;
+          }
+          #print-root-wrapper {
+            display: block !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            background: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+          #printable-receipt {
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 auto !important;
+            width: 100% !important;
+            max-width: 380px !important;
+            padding: 10px !important;
+          }
+        }
+      `}} />
+
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      {/* Modal Container */}
+      <div className="relative w-full max-w-lg bg-[var(--color-bg-base)] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-[var(--color-border)]">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+        <div className="px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center bg-white z-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-amber-100 text-amber-700 rounded-lg flex items-center justify-center">
               <Receipt size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Receipt Details</h2>
+              <h2 className="text-base font-bold text-[var(--color-text-primary)]">Receipt Preview</h2>
               {sale && (
-                <p className="text-sm text-gray-500 font-mono">#{sale.id.slice(0, 8).toUpperCase()}</p>
+                <p className="text-xs text-[var(--color-text-muted)] font-mono">#{sale.id.slice(0, 8).toUpperCase()}</p>
               )}
             </div>
           </div>
@@ -45,7 +87,7 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
             <button 
               onClick={handlePrint}
               disabled={isLoading || !sale}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50"
+              className="p-2 text-gray-500 hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] rounded-md transition-colors disabled:opacity-50 cursor-pointer"
               title="Print Receipt"
             >
               <Printer size={20} />
@@ -53,121 +95,220 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
             <div className="w-px h-6 bg-gray-200 mx-1"></div>
             <button 
               onClick={onClose}
-              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
             >
               <X size={20} />
             </button>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto p-6 bg-gray-100/50 flex justify-center items-start">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
-              <p className="mt-4 text-sm text-gray-500">Loading receipt details...</p>
+            <div className="flex flex-col items-center justify-center py-20 w-full">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-accent)]"></div>
+              <p className="mt-4 text-sm text-[var(--color-text-secondary)]">Loading receipt...</p>
             </div>
           ) : !sale ? (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-20 text-[var(--color-text-muted)] w-full">
               Receipt not found.
             </div>
           ) : (
-            <div className="space-y-8" id="printable-receipt">
-              {/* Meta Info Grid */}
-              <div className="grid grid-cols-2 gap-6 bg-gray-50 rounded-lg p-5 border border-gray-100">
-                <div>
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-                    <User size={14} /> Customer
-                  </div>
-                  <p className="font-medium text-gray-900">{sale.customerName || 'Walk-in Customer'}</p>
-                  {sale.customerPhone && (
-                    <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
-                      <Phone size={12} /> {sale.customerPhone}
-                    </div>
-                  )}
+            <div id="print-root-wrapper" className="w-full">
+              {/* Receipt Roll Container */}
+              <div 
+                id="printable-receipt" 
+                className="relative w-full max-w-[380px] mx-auto bg-white text-gray-900 shadow-lg border border-gray-200/60 flex flex-col"
+              >
+                {/* Sawtooth Top Edge */}
+                <div className="w-full h-2.5 select-none overflow-hidden relative bg-transparent no-print">
+                  <svg className="absolute bottom-0 left-0 w-full h-2.5 fill-white" viewBox="0 0 24 3" preserveAspectRatio="none">
+                    <path d="M0,3 L1,0 L2,3 L3,0 L4,3 L5,0 L6,3 L7,0 L8,3 L9,0 L10,3 L11,0 L12,3 L13,0 L14,3 L15,0 L16,3 L17,0 L18,3 L19,0 L20,3 L21,0 L22,3 L23,0 L24,3 Z" />
+                  </svg>
                 </div>
-                <div>
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-                    <Calendar size={14} /> Date & Time
-                  </div>
-                  <p className="font-medium text-gray-900">
-                    {format(new Date(sale.soldAt), 'MMMM d, yyyy')}
-                  </p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {format(new Date(sale.soldAt), 'h:mm a')}
-                  </p>
-                </div>
-              </div>
 
-              {/* Items List */}
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">Purchased Items</h3>
-                <div className="space-y-3">
-                  {sale.items?.map((item: any) => (
-                    <div key={item.id} className="flex justify-between items-start py-2 border-b border-gray-50 last:border-0">
-                      <div>
-                        <p className="font-medium text-gray-900">{item.variantName}</p>
-                        <p className="text-sm text-gray-500 mt-0.5">
-                          {Number(item.quantity)} {item.unitName} @ KSH {Number(item.sellingPrice).toLocaleString()}
-                        </p>
-                      </div>
-                      <p className="font-medium text-gray-900">KSH {Number(item.subtotal).toLocaleString()}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                {/* Receipt Inner Paper */}
+                <div className="px-6 py-8 font-mono text-xs leading-relaxed">
+                  {/* Shop Details */}
+                  <div className="text-center space-y-1 mb-5">
+                    <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-900">
+                      {meData?.business?.name || 'SMART STORE POS'}
+                    </h3>
+                    {meData?.business?.sector && (
+                      <p className="text-[10px] text-gray-500 uppercase tracking-widest font-sans">
+                        {meData.business.sector}
+                      </p>
+                    )}
+                    {meData?.business?.location && (
+                      <p className="text-[11px] text-gray-600 font-sans">
+                        {meData.business.location}
+                      </p>
+                    )}
+                    {meData?.business?.phone && (
+                      <p className="text-[11px] text-gray-600">
+                        TEL: {meData.business.phone}
+                      </p>
+                    )}
+                    <div className="text-gray-400 py-1 text-[11px]">--------------------------------</div>
+                    <h4 className="text-[13px] font-bold tracking-widest text-gray-800">SALES RECEIPT</h4>
+                    <div className="text-gray-400 py-1 text-[11px]">--------------------------------</div>
+                  </div>
 
-              {/* Totals & Payment */}
-              <div className="border-t-2 border-dashed border-gray-200 pt-4 mt-6">
-                <div className="space-y-2 max-w-sm ml-auto">
-                  <div className="flex justify-between text-gray-600">
-                    <span>Subtotal</span>
-                    <span>KSH {(Number(sale.totalAmount) + Number(sale.discountAmount)).toLocaleString()}</span>
-                  </div>
-                  {Number(sale.discountAmount) > 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span>Discount</span>
-                      <span>- KSH {Number(sale.discountAmount).toLocaleString()}</span>
+                  {/* Metadata */}
+                  <div className="space-y-1.5 text-[11px] mb-5 text-gray-700">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400 uppercase">Receipt No:</span>
+                      <span className="font-bold text-gray-950">#{sale.id.slice(0, 8).toUpperCase()}</span>
                     </div>
-                  )}
-                  <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-100">
-                    <span>Total Amount</span>
-                    <span>KSH {Number(sale.totalAmount).toLocaleString()}</span>
-                  </div>
-                  
-                  <div className="pt-4 space-y-2">
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>Amount Paid</span>
-                      <span className="font-medium text-gray-900">KSH {Number(sale.amountPaid).toLocaleString()}</span>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400 uppercase">Date/Time:</span>
+                      <span>{format(new Date(sale.soldAt), 'dd/MM/yyyy h:mm a')}</span>
                     </div>
-                    {Number(sale.totalAmount) > Number(sale.amountPaid) && (
-                      <div className="flex justify-between text-sm text-red-600 font-medium">
-                        <span>Balance Due</span>
-                        <span>KSH {(Number(sale.totalAmount) - Number(sale.amountPaid)).toLocaleString()}</span>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400 uppercase">Cashier:</span>
+                      <span>
+                        {((meData?.user?.firstName || '') + ' ' + (meData?.user?.lastName || '')).trim() || 'System Cashier'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400 uppercase">Customer:</span>
+                      <span className="font-semibold text-gray-950">{sale.customerName || 'Walk-in Customer'}</span>
+                    </div>
+                    {sale.customerPhone && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400 uppercase">Phone:</span>
+                        <span>{sale.customerPhone}</span>
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
 
-              {/* Payment Details Footer */}
-              <div className="bg-amber-50/50 rounded-lg p-4 mt-6 flex items-center justify-between border border-amber-100">
-                <div>
-                  <p className="text-xs font-semibold text-amber-800 uppercase tracking-wider mb-1">Payment Method</p>
-                  <p className="text-sm font-medium text-amber-900">
-                    {sale.paymentMethod}
-                    {sale.mpesaRef && <span className="ml-2 font-mono text-amber-700">({sale.mpesaRef})</span>}
-                  </p>
+                  {/* Line Items Table */}
+                  <div className="mb-5">
+                    <div className="text-gray-400 text-[11px] pb-1">--------------------------------</div>
+                    <div className="flex justify-between text-[10px] font-extrabold text-gray-500 tracking-wider pb-1">
+                      <span>ITEMS & QTY</span>
+                      <span className="text-right">TOTAL</span>
+                    </div>
+                    <div className="text-gray-400 text-[11px] pb-2">--------------------------------</div>
+
+                    <div className="space-y-3.5">
+                      {sale.items?.map((item: any) => {
+                        // Display product name and variant name elegantly. Avoid showing "Default" or "Standard" variant names.
+                        const isGenericVariant = !item.variantName || item.variantName === 'Default' || item.variantName === 'Standard';
+                        const displayName = item.productName 
+                          ? `${item.productName}${isGenericVariant ? '' : ` - ${item.variantName}`}`
+                          : item.variantName;
+
+                        return (
+                          <div key={item.id} className="text-[11px] text-gray-800">
+                            {/* Product Name */}
+                            <div className="font-bold text-gray-950 uppercase tracking-wide">{displayName}</div>
+                            {/* Quantity, Unit, Price, Total */}
+                            <div className="flex justify-between items-center text-gray-600 mt-1">
+                              <span>
+                                {Number(item.quantity)} {item.unitName || 'Piece'}(s) @ KSH {Number(item.sellingPrice).toLocaleString()}
+                              </span>
+                              <span className="font-bold text-gray-900">
+                                KSH {Number(item.subtotal).toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Totals Section */}
+                  <div className="space-y-1.5 text-[11px] pt-2 border-t border-dashed border-gray-300 mb-5">
+                    <div className="flex justify-between text-gray-600">
+                      <span>SUBTOTAL</span>
+                      <span>KSH {(Number(sale.totalAmount) + Number(sale.discountAmount)).toLocaleString()}</span>
+                    </div>
+                    {Number(sale.discountAmount) > 0 && (
+                      <div className="flex justify-between text-green-700 font-medium">
+                        <span>DISCOUNT</span>
+                        <span>- KSH {Number(sale.discountAmount).toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div className="text-gray-300 py-0.5">................................</div>
+                    <div className="flex justify-between text-xs font-extrabold text-gray-950 py-0.5">
+                      <span>TOTAL AMOUNT</span>
+                      <span>KSH {Number(sale.totalAmount).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600">
+                      <span>AMOUNT PAID</span>
+                      <span>KSH {Number(sale.amountPaid).toLocaleString()}</span>
+                    </div>
+                    
+                    {Number(sale.amountPaid) > Number(sale.totalAmount) ? (
+                      <div className="flex justify-between text-green-700 font-bold border-t border-dotted border-gray-200 pt-1">
+                        <span>CHANGE</span>
+                        <span>KSH {(Number(sale.amountPaid) - Number(sale.totalAmount)).toLocaleString()}</span>
+                      </div>
+                    ) : Number(sale.totalAmount) > Number(sale.amountPaid) ? (
+                      <div className="flex justify-between text-red-600 font-bold border-t border-dotted border-gray-200 pt-1">
+                        <span>BALANCE DUE</span>
+                        <span>KSH {(Number(sale.totalAmount) - Number(sale.amountPaid)).toLocaleString()}</span>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {/* Payment Info */}
+                  <div className="space-y-1.5 text-[11px] pt-3 border-t border-dashed border-gray-300 mb-6">
+                    <div className="flex justify-between text-gray-700">
+                      <span className="text-gray-400">PAYMENT METHOD:</span>
+                      <span className="font-bold uppercase">{sale.paymentMethod}</span>
+                    </div>
+                    {sale.mpesaRef && (
+                      <div className="flex justify-between text-gray-700">
+                        <span className="text-gray-400">MPESA REF NO:</span>
+                        <span className="font-bold text-amber-800 tracking-wide font-mono">{sale.mpesaRef}</span>
+                      </div>
+                    )}
+                    {sale.mpesaPhoneNumber && (
+                      <div className="flex justify-between text-gray-700">
+                        <span className="text-gray-400">MPESA PHONE:</span>
+                        <span>{sale.mpesaPhoneNumber}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">STATUS:</span>
+                      <span className={`inline-flex items-center font-extrabold px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider ${
+                        sale.paymentStatus === 'PAID' ? 'bg-green-50 text-green-800 border border-green-200' :
+                        sale.paymentStatus === 'PARTIAL' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
+                        'bg-red-50 text-red-800 border border-red-200'
+                      }`}>
+                        {sale.paymentStatus}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Footer message */}
+                  <div className="text-gray-400 text-[11px] text-center mb-4">--------------------------------</div>
+                  <div className="text-center space-y-1.5 text-[10px] text-gray-500 font-sans tracking-wide mb-6">
+                    <p className="font-extrabold uppercase text-gray-800">THANK YOU FOR SHOPPING WITH US!</p>
+                    <p className="text-[9px]">GOODS ONCE SOLD ARE NOT RETURNABLE</p>
+                    <p className="text-[9px]">PLEASE VISIT US AGAIN!</p>
+                  </div>
+
+                  {/* Barcode */}
+                  <div className="flex flex-col items-center justify-center pt-2 opacity-80 select-none">
+                    <div className="flex items-center h-8 gap-[1px]">
+                      {[2,1,3,1,2,4,1,2,1,3,2,1,4,1,2,1,3,1,2,1,4,2,1,3,1,2].map((w, idx) => (
+                        <div key={idx} className="bg-black h-full" style={{ width: `${w}px` }} />
+                      ))}
+                    </div>
+                    <p className="text-[8px] tracking-[3px] mt-1 text-gray-500 font-mono">
+                      #{sale.id.slice(0, 8).toUpperCase()}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs font-semibold text-amber-800 uppercase tracking-wider mb-1">Status</p>
-                  <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-xs font-bold uppercase tracking-wider ${
-                    sale.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' :
-                    sale.paymentStatus === 'PARTIAL' ? 'bg-amber-100 text-amber-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    {sale.paymentStatus}
-                  </span>
+
+                {/* Sawtooth Bottom Edge */}
+                <div className="w-full h-2.5 select-none overflow-hidden relative bg-transparent no-print">
+                  <svg className="absolute top-0 left-0 w-full h-2.5 fill-white" viewBox="0 0 24 3" preserveAspectRatio="none">
+                    <path d="M0,0 L1,3 L2,0 L3,3 L4,0 L5,3 L6,0 L7,3 L8,0 L9,3 L10,0 L11,3 L12,0 L13,3 L14,0 L15,3 L16,0 L17,3 L18,0 L19,3 L20,0 L21,3 L22,0 L23,3 L24,0 Z" />
+                  </svg>
                 </div>
               </div>
             </div>
