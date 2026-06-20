@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { MpesaService } from './mpesa.service';
 import { createMpesaAccountSchema, updateMpesaAccountSchema } from './mpesa.schema';
+import { ZodError } from 'zod';
 
 export class MpesaSettingsController {
   static async getAccounts(req: Request, res: Response) {
@@ -18,7 +19,10 @@ export class MpesaSettingsController {
       const account = await MpesaService.createAccount(req.user!.businessId, req.user!.id, validatedData);
       res.status(201).json(account);
     } catch (error: any) {
-      res.status(400).json({ message: error.errors || error.message });
+      const message = error instanceof ZodError 
+        ? error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+        : error.message;
+      res.status(400).json({ message });
     }
   }
 
@@ -29,7 +33,10 @@ export class MpesaSettingsController {
       if (!account) return res.status(404).json({ message: 'Account not found' });
       res.json(account);
     } catch (error: any) {
-      res.status(400).json({ message: error.errors || error.message });
+      const message = error instanceof ZodError 
+        ? error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+        : error.message;
+      res.status(400).json({ message });
     }
   }
 
