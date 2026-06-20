@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useCategories } from '../features/catalog/api/catalog.api';
-import { ShoppingCart, Search, CreditCard, Banknote, Plus, Minus, X } from 'lucide-react';
+import { ShoppingCart, Search, Plus, Minus, Trash2, Tag, ArrowRight, Package, ShoppingBag } from 'lucide-react';
 import { api } from '../lib/api';
 import { CheckoutModal } from '../features/sales/components/CheckoutModal';
 import { UnitSelectionModal } from '../features/sales/components/UnitSelectionModal';
 
-// TODO: Replace with proper catalog API hook if available
+// POS Catalog API hook
 const usePosCatalog = (search?: string) => {
   return useQuery({
     queryKey: ['pos-catalog', search],
@@ -98,228 +98,264 @@ export const PosPage = () => {
   });
 
   return (
-    <div className="h-full w-full p-4 lg:p-6 overflow-hidden">
-      <div className="h-full w-full flex flex-row rounded-2xl shadow-sm border border-[#E5E1DA] overflow-hidden">
+    <div className="h-full w-full p-4 lg:p-6 overflow-hidden bg-[var(--color-bg-base)]">
+      <div className="h-full w-full flex flex-col lg:flex-row rounded-3xl shadow-lg border border-[var(--color-border)] overflow-hidden bg-white">
+        
         {/* Left Panel: Product Catalog (65%) */}
-        <div className="flex-[6.5] flex flex-col relative h-full bg-[#F7F6F4]">
-        {/* Sticky Header: Search and Categories */}
-        <div className="sticky top-0 z-10 bg-[#F7F6F4] px-6 pt-6 pb-2">
-          <div className="relative w-full h-[44px]">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-full pl-10 pr-4 bg-white border border-[#E5E1DA] rounded-xl focus:ring-2 focus:ring-[#D97706] focus:border-transparent outline-none text-gray-900 transition-all placeholder:text-gray-400"
-            />
-          </div>
-
-          <div className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-2 mt-4 pb-2">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  selectedCategory === cat
-                    ? 'bg-[#D97706] text-white'
-                    : 'bg-[#EEECE8] text-gray-600 hover:bg-[#E5E1DA]'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-          <div className="text-xs font-semibold tracking-wider text-gray-400 mt-2 mb-1 uppercase">Products</div>
-        </div>
-
-        {/* Product Grid */}
-        <div className="flex-1 overflow-y-auto px-6 pb-6">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-40 text-gray-500">
-              <div className="animate-pulse flex flex-col items-center">
-                <div className="w-8 h-8 border-4 border-[#D97706] border-t-transparent rounded-full animate-spin mb-3"></div>
-                <p>Loading catalog...</p>
-              </div>
+        <div className="flex-[6.5] flex flex-col relative h-full bg-[#F7F6F4]/50 border-r border-[var(--color-border)]">
+          {/* Sticky Header: Search and Categories */}
+          <div className="sticky top-0 z-10 bg-[#F7F6F4]/80 backdrop-blur-md px-6 pt-6 pb-4 border-b border-[var(--color-border)]/55">
+            <div className="relative w-full h-[46px]">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search products by name or SKU..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full h-full pl-11 pr-4 bg-white border border-[var(--color-border)] rounded-xl focus:ring-2 focus:ring-[#D97706] focus:border-transparent outline-none text-gray-900 transition-all placeholder:text-gray-400 text-sm shadow-sm"
+              />
             </div>
-          ) : filteredProducts.length === 0 ? (
-            <div className="flex items-center justify-center h-40 text-gray-500">
-               <p>No products found.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredProducts.map((product: any) => (
-                product.variants.map((variant: any) => {
-                  const basePriceUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
-                  const priceToDisplay = basePriceUnit ? Number(basePriceUnit.sellingPrice) : 0;
-                  const stock = Number(variant.baseStockQuantity) || 0;
-                  
-                  return (
-                    <div 
-                      key={variant.id}
-                      onClick={() => handleVariantClick(product, variant)}
-                      className="group bg-white p-3 rounded-xl border border-[#E5E1DA] shadow-sm cursor-pointer hover:shadow-md hover:border-[#D97706] transition duration-150 flex flex-col h-full relative"
-                    >
-                      <div className="w-full aspect-[4/3] bg-[#EEECE8] rounded-lg mb-2 flex items-center justify-center overflow-hidden">
-                        {/* Placeholder for image */}
-                        <div className="text-gray-300">
-                           <ShoppingCart className="w-8 h-8 opacity-50" />
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-semibold text-sm text-gray-900 truncate" title={product.name}>{product.name}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">{variant.name === 'Default' ? 'Standard' : variant.name}</div>
-                      </div>
-                      <div className="flex items-end justify-between mt-2 pt-1 border-t border-gray-50">
-                        <div>
-                          <div className="text-xs text-gray-400 mb-0.5">Stock: {stock}</div>
-                          <div className="text-sm font-semibold text-[#D97706]">
-                            KSH {priceToDisplay.toLocaleString()}
-                          </div>
-                        </div>
-                        {/* Stock indicator dot */}
-                        <div className={`w-2.5 h-2.5 rounded-full mb-1.5 ${stock > 0 ? 'bg-green-500' : 'bg-red-400'}`} title={stock > 0 ? 'In stock' : 'Out of stock'}></div>
-                      </div>
-                    </div>
-                  );
-                })
+
+            <div className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-2 mt-4 pb-1">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-4.5 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-150 cursor-pointer ${
+                    selectedCategory === cat
+                      ? 'bg-[#D97706] text-white shadow-sm'
+                      : 'bg-white text-gray-600 border border-[var(--color-border)] hover:bg-gray-50'
+                  }`}
+                >
+                  {cat}
+                </button>
               ))}
             </div>
-          )}
-        </div>
-      </div>
+          </div>
 
-      {/* Right Panel: Checkout / Current Order (35%, fixed, min-w-320px) */}
-      <div className="flex-[3.5] min-w-[320px] bg-[#2A2926] border-l border-zinc-800 flex flex-col h-full shrink-0">
-        
-        {/* Fixed Top Section */}
-        <div className="p-4 shrink-0 flex flex-col gap-4 border-b border-zinc-800">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2 text-white font-semibold text-base">
-              <ShoppingCart className="w-5 h-5 text-[#D97706]" />
-              Current Order
-            </div>
-            {cart.length > 0 && (
-              <button 
-                onClick={() => setCart([])}
-                className="text-sm font-medium text-red-500 hover:text-red-400 transition-colors"
-              >
-                Clear
-              </button>
+          {/* Product Grid */}
+          <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-hide">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-48 text-gray-500">
+                <div className="flex flex-col items-center">
+                  <div className="w-9 h-9 border-4 border-[#D97706] border-t-transparent rounded-full animate-spin mb-3"></div>
+                  <p className="text-xs font-semibold text-gray-500">Loading catalog...</p>
+                </div>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
+                <ShoppingBag className="w-10 h-10 opacity-30" />
+                <p className="text-sm font-semibold">No products found</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                {filteredProducts.map((product: any) => (
+                  product.variants.map((variant: any) => {
+                    const basePriceUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
+                    const priceToDisplay = basePriceUnit ? Number(basePriceUnit.sellingPrice) : 0;
+                    const stock = Number(variant.baseStockQuantity) || 0;
+                    const hasStock = stock > 0;
+                    
+                    return (
+                      <div 
+                        key={variant.id}
+                        onClick={() => handleVariantClick(product, variant)}
+                        className="group bg-white p-3 rounded-2xl border border-[var(--color-border)] shadow-sm cursor-pointer hover:shadow-md hover:border-[#D97706] transition-all duration-200 flex flex-col h-full relative overflow-hidden"
+                      >
+                        {/* Image / Icon container */}
+                        <div className="w-full aspect-[4/3] bg-[#F7F6F4] rounded-xl mb-3 flex items-center justify-center overflow-hidden transition-colors group-hover:bg-amber-50/40 relative">
+                          <Package className="w-9 h-9 text-gray-400/80 transition-transform group-hover:scale-105" />
+                          <div className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-bold border ${
+                            hasStock 
+                              ? 'bg-green-50 text-green-700 border-green-200/50' 
+                              : 'bg-rose-50 text-rose-700 border-rose-200/50'
+                          }`}>
+                            {hasStock ? `${stock} left` : 'Out of stock'}
+                          </div>
+                        </div>
+
+                        {/* Name and description */}
+                        <div className="flex-1 min-h-[46px]">
+                          <div className="font-bold text-sm text-gray-900 truncate leading-tight" title={product.name}>
+                            {product.name}
+                          </div>
+                          <div className="text-xs text-gray-500 font-medium mt-1">
+                            {variant.name === 'Default' ? 'Standard Pack' : variant.name}
+                          </div>
+                        </div>
+
+                        {/* Price footer */}
+                        <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-gray-100/80">
+                          <span className="text-sm font-bold text-[#D97706]">
+                            KSh {priceToDisplay.toLocaleString()}
+                          </span>
+                          
+                          {/* Stock status indicator dot */}
+                          <div 
+                            className={`w-2 h-2 rounded-full ${hasStock ? 'bg-green-500' : 'bg-rose-500'}`} 
+                            title={hasStock ? 'In stock' : 'Out of stock'}
+                          ></div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ))}
+              </div>
             )}
           </div>
         </div>
 
-        {/* Scrollable Middle Section: Cart Items */}
-        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-          {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center gap-2">
-              <span className="text-xl">🛒</span>
-              <p className="font-medium text-sm text-zinc-400">Cart Empty</p>
-              <p className="text-xs text-zinc-500">Select a product to begin</p>
+        {/* Right Panel: Checkout / Current Order (35%, fixed, min-w-330px) */}
+        <div className="flex-[3.5] min-w-[330px] bg-[#1C1F24] flex flex-col h-full shrink-0">
+          
+          {/* Header */}
+          <div className="p-5 shrink-0 flex flex-col gap-4 border-b border-white/5">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2 text-white font-bold text-sm uppercase tracking-wider">
+                <ShoppingCart className="w-5 h-5 text-[#D97706]" />
+                Current Order
+              </div>
+              {cart.length > 0 && (
+                <button 
+                  onClick={() => setCart([])}
+                  className="text-xs font-bold uppercase tracking-wider text-red-500 hover:text-red-400 transition-colors cursor-pointer"
+                >
+                  Clear Order
+                </button>
+              )}
             </div>
-          ) : (
-            <div className="flex flex-col">
-              {cart.map((item) => (
-                <div key={item.unitId} className="flex flex-col py-3 border-b border-zinc-800/50 last:border-0 group">
-                  <div className="flex justify-between items-start">
-                    <div className="pr-2 flex-1">
-                      <div className="font-medium text-white text-sm truncate" title={item.productName}>{item.productName}</div>
-                    </div>
-                    <div className="font-semibold text-white text-sm shrink-0">
-                      KSH {(item.quantity * item.sellingPrice).toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="text-xs text-zinc-400 mt-0.5">
-                    {variantNameText(item)}
-                  </div>
-                  
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => updateQuantity(item.unitId, -1)}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg bg-zinc-800 text-zinc-300 hover:bg-[#D97706]/10 hover:text-[#D97706] transition-colors"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="font-medium text-sm w-8 text-center text-white">{item.quantity}</span>
-                      <button 
-                        onClick={() => updateQuantity(item.unitId, 1)}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg bg-zinc-800 text-zinc-300 hover:bg-[#D97706]/10 hover:text-[#D97706] transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <button 
-                      onClick={() => removeFromCart(item.unitId)} 
-                      className="w-9 h-9 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                      title="Remove item"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+          </div>
 
-        {/* Fixed Bottom Section: Totals & Checkout */}
-        <div className="p-4 shrink-0 bg-[#2A2926] border-t border-zinc-800">
-          <div className="flex flex-col gap-2 mb-4">
-            <div className="flex justify-between items-center text-sm text-zinc-400">
-              <span>Subtotal</span>
-              <span>KSH {cartSubtotal.toLocaleString()}</span>
-            </div>
-            
-            {isEditingDiscount ? (
-              <div className="flex justify-between items-center text-sm text-zinc-400">
-                <span>Discount</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs">KSH</span>
-                  <input
-                    type="number"
-                    autoFocus
-                    value={discountInput}
-                    onChange={(e) => setDiscountInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleApplyDiscount()}
-                    onBlur={handleApplyDiscount}
-                    className="w-20 bg-zinc-800 text-white border border-zinc-700 rounded px-2 py-1 outline-none text-right focus:border-[#D97706]"
-                  />
+          {/* Cart Items List */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-3.5 scrollbar-hide">
+            {cart.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center gap-3">
+                <div className="p-4 bg-white/5 rounded-full border border-white/5 text-[#D97706]/40">
+                  <ShoppingCart className="w-8 h-8" />
+                </div>
+                <div>
+                  <p className="font-bold text-sm text-zinc-300">Your cart is empty</p>
+                  <p className="text-xs text-zinc-500 mt-1">Select products from the catalog to build an order</p>
                 </div>
               </div>
             ) : (
-              <div 
-                className="flex justify-between items-center text-sm text-zinc-400 cursor-pointer hover:text-white transition-colors group"
-                onClick={() => {
-                  setDiscountInput(discount > 0 ? discount.toString() : '');
-                  setIsEditingDiscount(true);
-                }}
-              >
-                <span>Discount <span className="opacity-0 group-hover:opacity-100 text-[10px] ml-1 text-[#D97706]">(Click to edit)</span></span>
-                <span className={discount > 0 ? "text-[#D97706]" : ""}>
-                  {discount > 0 ? `- KSH ${discount.toLocaleString()}` : '—'}
-                </span>
+              <div className="flex flex-col gap-3">
+                {cart.map((item) => (
+                  <div 
+                    key={item.unitId} 
+                    className="flex flex-col p-4 bg-white/5 border border-white/5 rounded-2xl transition-all hover:bg-white/8 group"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="pr-3 flex-1 min-w-0">
+                        <div className="font-bold text-white text-sm truncate" title={item.productName}>
+                          {item.productName}
+                        </div>
+                        <div className="text-xs text-zinc-400 mt-1 font-medium">
+                          {variantNameText(item)}
+                        </div>
+                      </div>
+                      <div className="font-bold text-[#D97706] text-sm shrink-0">
+                        KSh {(item.quantity * item.sellingPrice).toLocaleString()}
+                      </div>
+                    </div>
+                    
+                    {/* Quantity Adjustment Row */}
+                    <div className="flex items-center justify-between mt-4.5 pt-3 border-t border-white/5">
+                      <div className="flex items-center gap-2.5">
+                        <button 
+                          onClick={() => updateQuantity(item.unitId, -1)}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="font-bold text-sm w-7 text-center text-white">{item.quantity}</span>
+                        <button 
+                          onClick={() => updateQuantity(item.unitId, 1)}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      
+                      <button 
+                        onClick={() => removeFromCart(item.unitId)} 
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                        title="Remove item"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
-            
-            <div className="flex justify-between items-end border-t border-[#D97706]/30 pt-3 mt-1">
-              <span className="text-sm font-bold text-white tracking-wider uppercase">Total</span>
-              <span className="text-2xl font-bold text-white leading-none">
-                KSH {cartTotal.toLocaleString()}
-              </span>
-            </div>
           </div>
-          
-          <button 
-            disabled={cart.length === 0}
-            onClick={() => setIsCheckoutOpen(true)}
-            className="w-full h-14 bg-[#D97706] hover:bg-[#F59E0B] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-base rounded-xl transition-colors flex justify-center items-center gap-2 shadow-sm"
-          >
-            Proceed To Payment
-          </button>
+
+          {/* Cart Summary & Action Footer */}
+          <div className="p-5 bg-white/5 border-t border-white/5 shadow-2xl">
+            <div className="flex flex-col gap-3.5 mb-5">
+              
+              {/* Subtotal */}
+              <div className="flex justify-between items-center text-sm text-zinc-400 font-medium">
+                <span>Subtotal</span>
+                <span className="text-zinc-200">KSh {cartSubtotal.toLocaleString()}</span>
+              </div>
+              
+              {/* Discount Row (Interactive Design) */}
+              {isEditingDiscount ? (
+                <div className="flex justify-between items-center text-sm text-zinc-400">
+                  <span className="font-medium">Discount</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-amber-500 font-bold">KSh</span>
+                    <input
+                      type="number"
+                      autoFocus
+                      value={discountInput}
+                      onChange={(e) => setDiscountInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleApplyDiscount()}
+                      onBlur={handleApplyDiscount}
+                      className="w-24 bg-white/5 text-white border border-white/10 rounded-xl px-2.5 py-1.5 outline-none text-right focus:border-[#D97706] text-xs font-bold"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  className="flex justify-between items-center text-sm text-zinc-400 cursor-pointer hover:text-white transition-all group"
+                  onClick={() => {
+                    setDiscountInput(discount > 0 ? discount.toString() : '');
+                    setIsEditingDiscount(true);
+                  }}
+                >
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <Tag className="w-3.5 h-3.5 text-[#D97706]" />
+                    Discount <span className="opacity-0 group-hover:opacity-100 text-[10px] text-amber-500 transition-opacity">(edit)</span>
+                  </span>
+                  <span className={discount > 0 ? "text-amber-500 font-bold" : "font-medium"}>
+                    {discount > 0 ? `- KSh ${discount.toLocaleString()}` : '—'}
+                  </span>
+                </div>
+              )}
+              
+              {/* Grand Total */}
+              <div className="flex justify-between items-end border-t border-white/5 pt-4 mt-2">
+                <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Grand Total</span>
+                <span className="text-2xl font-extrabold text-white tracking-tight leading-none">
+                  KSh {cartTotal.toLocaleString()}
+                </span>
+              </div>
+            </div>
+            
+            {/* Pay Button */}
+            <button 
+              disabled={cart.length === 0}
+              onClick={() => setIsCheckoutOpen(true)}
+              className="w-full h-13.5 bg-gradient-to-r from-[#D97706] to-[#B45309] disabled:from-zinc-800 disabled:to-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-2xl transition-all shadow-md shadow-[#D97706]/10 flex justify-center items-center gap-1.5 cursor-pointer"
+            >
+              <span>Proceed To Payment</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-      </div>
 
       </div>
 
