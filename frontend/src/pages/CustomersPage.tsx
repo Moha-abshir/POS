@@ -143,22 +143,22 @@ export const CustomersPage = () => {
         {/* Toolbar Row */}
         <div className="flex items-center gap-3 w-full">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--color-text-muted)]" />
             <input
               type="text"
               placeholder="Search by name or phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-9 pl-9 pr-4 bg-white border border-[#E5E1DA] rounded-lg text-sm placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-amber-500 transition-all"
+              className="w-full h-10 pl-10 pr-4 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm placeholder:text-[var(--color-text-muted)] outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
             />
           </div>
           
           <button
             onClick={() => setOwingOnly(!owingOnly)}
-            className={`h-9 px-4 rounded-lg text-sm transition-colors border shrink-0 select-none cursor-pointer ${
+            className={`h-10 px-4 rounded-[var(--radius-md)] text-sm transition-all border shrink-0 select-none cursor-pointer font-medium ${
               owingOnly 
-                ? 'bg-amber-50 border-amber-300 text-amber-700' 
-                : 'bg-white border-[#E5E1DA] text-gray-600 hover:bg-gray-50'
+                ? 'bg-[var(--color-accent-subtle)] border-[var(--color-accent)]/30 text-[var(--color-accent-hover)]' 
+                : 'bg-white border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-base)]'
             }`}
           >
             Owing only
@@ -166,7 +166,7 @@ export const CustomersPage = () => {
 
           <button
             onClick={handleOpenAddModal}
-            className="flex items-center justify-center gap-2 bg-[#D97706] hover:bg-[#B45309] text-white px-4 h-9 rounded-lg font-medium text-sm transition-colors shrink-0"
+            className="flex items-center justify-center gap-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-5 h-10 rounded-[var(--radius-md)] font-semibold text-sm transition-all shrink-0 cursor-pointer shadow-sm"
           >
             <Plus className="h-4 w-4" />
             Add Customer
@@ -174,23 +174,23 @@ export const CustomersPage = () => {
         </div>
 
         {/* Filter Tab Bar */}
-        <div className="flex items-center border-b border-[#E5E1DA]">
+        <div className="flex items-center border-b border-[var(--color-border)]">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 text-sm border-b-2 transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2 text-sm border-b-2 transition-colors cursor-pointer ${
                 activeTab === tab.id
-                  ? 'border-[#D97706] text-[#D97706] font-medium'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-[var(--color-accent)] text-[var(--color-accent)] font-semibold'
+                  : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
               }`}
             >
               {tab.label}
               <span 
-                className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${
                   activeTab === tab.id 
-                    ? 'bg-amber-100 text-amber-700' 
-                    : 'bg-gray-100 text-gray-500'
+                    ? 'bg-[var(--color-accent-subtle)] text-[var(--color-accent-hover)]' 
+                    : 'bg-[var(--color-bg-sunken)] text-[var(--color-text-secondary)]'
                 }`}
               >
                 {tab.count}
@@ -202,68 +202,68 @@ export const CustomersPage = () => {
 
       {/* Stat Cards Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 shrink-0">
-        <div className="bg-white border border-[#E5E1DA] rounded-lg p-4">
-          <h3 className="text-xs uppercase tracking-wide text-gray-400 mb-2">Total customers</h3>
-          <p className="text-2xl font-medium text-gray-900">{totalCustomers}</p>
+        <div className="bg-white border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-4">
+          <h3 className="text-xs uppercase tracking-wide text-[var(--color-text-muted)] mb-2">Total customers</h3>
+          <p className="text-2xl font-semibold text-[var(--color-text-primary)]">{totalCustomers}</p>
         </div>
-        <div className="bg-white border border-[#E5E1DA] rounded-lg p-4">
-          <h3 className="text-xs uppercase tracking-wide text-gray-400 mb-2">Outstanding debt</h3>
-          <p className={`text-2xl font-medium ${outstandingDebt > 0 ? 'text-[#D97706]' : 'text-gray-900'}`}>
+        <div className="bg-white border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-4">
+          <h3 className="text-xs uppercase tracking-wide text-[var(--color-text-muted)] mb-2">Outstanding debt</h3>
+          <p className={`text-2xl font-semibold ${outstandingDebt > 0 ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]'}`}>
             KSH {outstandingDebt.toLocaleString()}
           </p>
         </div>
-        <div className="bg-white border border-[#E5E1DA] rounded-lg p-4">
-          <h3 className="text-xs uppercase tracking-wide text-gray-400 mb-2">Overdue (&gt;30 days)</h3>
-          <p className={`text-2xl font-medium ${overdueDebt > 0 ? 'text-red-600' : 'text-gray-900'}`}>
+        <div className="bg-white border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-4">
+          <h3 className="text-xs uppercase tracking-wide text-[var(--color-text-muted)] mb-2">Overdue (&gt;30 days)</h3>
+          <p className={`text-2xl font-semibold ${overdueDebt > 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-primary)]'}`}>
             KSH {overdueDebt.toLocaleString()}
           </p>
         </div>
       </div>
 
       {/* Customer Table */}
-      <div className="flex-1 bg-white border border-[#E5E1DA] rounded-lg overflow-hidden flex flex-col">
+      <div className="flex-1 bg-white border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] overflow-hidden flex flex-col">
         <div className="flex-1 overflow-x-auto overflow-y-auto">
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
               <tr>
-                <th scope="col" className="px-4 py-3 text-xs font-medium uppercase tracking-[0.05em] text-gray-400 border-b border-[#E5E1DA] w-[28%] bg-white sticky top-0 z-10">Customer</th>
-                <th scope="col" className="px-4 py-3 text-xs font-medium uppercase tracking-[0.05em] text-gray-400 border-b border-[#E5E1DA] w-[10%] bg-white sticky top-0 z-10">Type</th>
-                <th scope="col" className="px-4 py-3 text-xs font-medium uppercase tracking-[0.05em] text-gray-400 border-b border-[#E5E1DA] w-[15%] bg-white sticky top-0 z-10">Balance</th>
-                <th scope="col" className="px-4 py-3 text-xs font-medium uppercase tracking-[0.05em] text-gray-400 border-b border-[#E5E1DA] w-[12%] bg-white sticky top-0 z-10">Purchases</th>
-                <th scope="col" className="px-4 py-3 text-xs font-medium uppercase tracking-[0.05em] text-gray-400 border-b border-[#E5E1DA] w-[15%] bg-white sticky top-0 z-10">Last seen</th>
-                <th scope="col" className="px-4 py-3 text-xs font-medium uppercase tracking-[0.05em] text-gray-400 border-b border-[#E5E1DA] w-[10%] bg-white sticky top-0 z-10">Status</th>
-                <th scope="col" className="px-4 py-3 text-xs font-medium uppercase tracking-[0.05em] text-gray-400 border-b border-[#E5E1DA] w-[72px] text-right bg-white sticky top-0 z-10">Actions</th>
+                <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.05em] text-[var(--color-text-muted)] border-b border-[var(--color-border)] w-[28%] bg-white sticky top-0 z-10">Customer</th>
+                <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.05em] text-[var(--color-text-muted)] border-b border-[var(--color-border)] w-[10%] bg-white sticky top-0 z-10">Type</th>
+                <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.05em] text-[var(--color-text-muted)] border-b border-[var(--color-border)] w-[15%] bg-white sticky top-0 z-10">Balance</th>
+                <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.05em] text-[var(--color-text-muted)] border-b border-[var(--color-border)] w-[12%] bg-white sticky top-0 z-10">Purchases</th>
+                <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.05em] text-[var(--color-text-muted)] border-b border-[var(--color-border)] w-[15%] bg-white sticky top-0 z-10">Last seen</th>
+                <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.05em] text-[var(--color-text-muted)] border-b border-[var(--color-border)] w-[10%] bg-white sticky top-0 z-10">Status</th>
+                <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.05em] text-[var(--color-text-muted)] border-b border-[var(--color-border)] w-[72px] text-right bg-white sticky top-0 z-10">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="h-32 text-center text-sm text-gray-500">Loading customers...</td>
+                  <td colSpan={6} className="h-32 text-center text-sm text-[var(--color-text-secondary)]">Loading customers...</td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={6} className="h-32 text-center text-sm text-red-500">Failed to load customers</td>
+                  <td colSpan={6} className="h-32 text-center text-sm text-[var(--color-danger)]">Failed to load customers</td>
                 </tr>
               ) : filteredCustomers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="h-64">
                     {customers.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full">
-                        <UserCircle className="w-11 h-11 text-gray-300 mb-3" />
-                        <h4 className="text-base font-medium text-gray-500 mb-1">No customers yet</h4>
-                        <p className="text-sm text-gray-400 mb-4">Add a customer to track credit sales and purchase history.</p>
+                        <UserCircle className="w-11 h-11 text-[var(--color-text-muted)] mb-3" />
+                        <h4 className="text-base font-medium text-[var(--color-text-secondary)] mb-1">No customers yet</h4>
+                        <p className="text-sm text-[var(--color-text-muted)] mb-4">Add a customer to track credit sales and purchase history.</p>
                         <button 
                           onClick={handleOpenAddModal}
-                          className="bg-[#D97706] hover:bg-[#B45309] text-white px-4 h-9 rounded-lg font-medium text-sm transition-colors"
+                          className="bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-5 h-10 rounded-[var(--radius-md)] font-semibold text-sm transition-all shadow-sm cursor-pointer"
                         >
                           + Add Customer
                         </button>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center h-full">
-                        <Filter className="w-11 h-11 text-gray-300 mb-3" />
-                        <h4 className="text-base font-medium text-gray-500 mb-1">No customers match this filter</h4>
-                        <p className="text-sm text-gray-400">Try adjusting your search or filter.</p>
+                        <Filter className="w-11 h-11 text-[var(--color-text-muted)] mb-3" />
+                        <h4 className="text-base font-medium text-[var(--color-text-secondary)] mb-1">No customers match this filter</h4>
+                        <p className="text-sm text-[var(--color-text-muted)]">Try adjusting your search or filter.</p>
                       </div>
                     )}
                   </td>
@@ -280,7 +280,7 @@ export const CustomersPage = () => {
                   return (
                     <tr 
                       key={customer.id} 
-                      className={`hover:bg-[#F7F6F4] transition-colors ${isLastRow ? '' : 'border-b border-[#F0EDE8]'}`}
+                      className={`hover:bg-[var(--color-bg-base)] transition-colors ${isLastRow ? '' : 'border-b border-[var(--color-border)]'}`}
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -288,46 +288,46 @@ export const CustomersPage = () => {
                             {initials}
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-sm font-medium text-gray-900">{customer.name}</span>
+                            <span className="text-sm font-semibold text-[var(--color-text-primary)]">{customer.name}</span>
                             {customer.phone && (
-                              <span className="text-xs text-gray-400">{customer.phone}</span>
+                              <span className="text-xs text-[var(--color-text-muted)]">{customer.phone}</span>
                             )}
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
                           customer.type === 'BUSINESS' 
-                            ? 'bg-blue-100 text-blue-700' 
-                            : 'bg-gray-100 text-gray-500'
+                            ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                            : 'bg-[var(--color-bg-sunken)] text-[var(--color-text-secondary)]'
                         }`}>
                           {customer.type === 'BUSINESS' ? 'Business' : 'Individual'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`text-sm ${balance > 0 ? 'text-[#D97706] font-medium' : 'text-gray-400'}`}>
+                        <span className={`text-sm ${balance > 0 ? 'text-[var(--color-accent)] font-semibold' : 'text-[var(--color-text-muted)]'}`}>
                           KSH {balance.toLocaleString()}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`text-sm ${purchaseCount > 0 ? 'text-gray-600' : 'text-gray-300'}`}>
+                        <span className={`text-sm ${purchaseCount > 0 ? 'text-[var(--color-text-secondary)] font-medium' : 'text-[var(--color-text-muted)]'}`}>
                           {purchaseCount > 0 ? purchaseCount : '—'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`text-sm ${customer.lastPurchaseDate ? 'text-gray-500' : 'text-gray-400'}`}>
+                        <span className={`text-sm ${customer.lastPurchaseDate ? 'text-[var(--color-text-secondary)]' : 'text-[var(--color-text-muted)]'}`}>
                           {getRelativeTime(customer.lastPurchaseDate)}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.className}`}>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${status.className}`}>
                           {status.label}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button 
-                            className="p-1 text-gray-400 hover:text-[#D97706] transition-colors rounded" 
+                            className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors rounded cursor-pointer" 
                             title="View details" 
                             onClick={() => setCustomerToView(customer)}
                           >
