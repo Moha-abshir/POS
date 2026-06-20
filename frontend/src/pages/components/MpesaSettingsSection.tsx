@@ -76,7 +76,6 @@ export const MpesaSettingsSection: React.FC = () => {
         isDefault: accounts.length === 0
       });
     }
-    }
     setError('');
     setIsRevealed(false);
     setIsModalOpen(true);
