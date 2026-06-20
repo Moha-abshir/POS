@@ -134,15 +134,15 @@ export function PurchasingPage() {
       <div className="bg-white rounded-xl shadow-sm border border-[var(--color-border)] overflow-hidden flex flex-col flex-1">
         {activeTab === 'suppliers' && (
           <>
-            <div className="p-4 border-b border-[var(--color-border)]">
+            <div className="p-4 border-b border-[var(--color-border)] bg-white/50">
               <div className="relative w-full max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={18} />
                 <input
                   type="text"
                   placeholder="Search suppliers..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full h-10 pl-10 pr-4 bg-[var(--color-bg-sunken)] border-transparent rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-transparent focus:ring-2 focus:ring-amber-500 transition-all placeholder:text-gray-400"
+                  className="w-full h-10 pl-10 pr-4 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm text-[var(--color-text-primary)] outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all placeholder:text-[var(--color-text-muted)]"
                 />
               </div>
             </div>
@@ -239,7 +239,7 @@ export function PurchasingPage() {
               <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Purchase History</h2>
               <button 
                 onClick={handleOpenFilters} 
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium border rounded-md transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold border rounded-[var(--radius-md)] transition-all bg-white text-[var(--color-text-secondary)] border-[var(--color-border)] hover:bg-[var(--color-bg-base)] cursor-pointer"
               >
                 <Filter size={16} /> Filters
               </button>
@@ -247,33 +247,33 @@ export function PurchasingPage() {
             
             {isFilterOpen && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                <div className="bg-white rounded-xl shadow-xl w-full max-w-lg border border-[var(--color-border)] flex flex-col">
-                  <div className="px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center bg-gray-50 rounded-t-xl">
-                    <h3 className="text-lg font-bold">Filter Purchases</h3>
-                    <button type="button" onClick={() => setIsFilterOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <div className="bg-white rounded-[var(--radius-lg)] shadow-2xl w-full max-w-lg border border-[var(--color-border)] flex flex-col overflow-hidden">
+                  <div className="px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center bg-white">
+                    <h3 className="text-base font-bold text-[var(--color-text-primary)]">Filter Purchases</h3>
+                    <button type="button" onClick={() => setIsFilterOpen(false)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-all cursor-pointer">
                       <X size={20} />
                     </button>
                   </div>
                   
                   <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                      <input type="date" value={tempPurchaseFilters.startDate} onChange={e => setTempPurchaseFilters(p => ({ ...p, startDate: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
+                      <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">Start Date</label>
+                      <input type="date" value={tempPurchaseFilters.startDate} onChange={e => setTempPurchaseFilters(p => ({ ...p, startDate: e.target.value }))} className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                      <input type="date" value={tempPurchaseFilters.endDate} onChange={e => setTempPurchaseFilters(p => ({ ...p, endDate: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
+                      <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">End Date</label>
+                      <input type="date" value={tempPurchaseFilters.endDate} onChange={e => setTempPurchaseFilters(p => ({ ...p, endDate: e.target.value }))} className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all" />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
-                      <input type="text" placeholder="Search product..." value={tempPurchaseFilters.product} onChange={e => setTempPurchaseFilters(p => ({ ...p, product: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
+                      <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">Product</label>
+                      <input type="text" placeholder="Search product..." value={tempPurchaseFilters.product} onChange={e => setTempPurchaseFilters(p => ({ ...p, product: e.target.value }))} className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
+                      <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">Supplier</label>
                       <select 
                         value={tempPurchaseFilters.supplier} 
                         onChange={e => setTempPurchaseFilters(p => ({ ...p, supplier: e.target.value }))} 
-                        className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none bg-white"
+                        className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
                       >
                         <option value="">All Suppliers</option>
                         {allSuppliers.map((s: Supplier) => (
@@ -282,14 +282,14 @@ export function PurchasingPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                      <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">Payment Method</label>
                       <select 
                         value={tempPurchaseFilters.paymentMethod} 
                         onChange={e => {
                           const val = e.target.value;
                           setTempPurchaseFilters(p => ({ ...p, paymentMethod: val, ...(val !== 'MPESA' && { mpesaRef: '' }) }));
                         }} 
-                        className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none bg-white"
+                        className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
                       >
                         <option value="">All</option>
                         <option value="CASH">Cash</option>
@@ -297,22 +297,22 @@ export function PurchasingPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Ref</label>
-                      <input type="text" placeholder="Search invoice..." value={tempPurchaseFilters.invoiceRef} onChange={e => setTempPurchaseFilters(p => ({ ...p, invoiceRef: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
+                      <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">Invoice Ref</label>
+                      <input type="text" placeholder="Search invoice..." value={tempPurchaseFilters.invoiceRef} onChange={e => setTempPurchaseFilters(p => ({ ...p, invoiceRef: e.target.value }))} className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all" />
                     </div>
                     {tempPurchaseFilters.paymentMethod === 'MPESA' && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">M-Pesa Ref</label>
-                        <input type="text" placeholder="Search ref..." value={tempPurchaseFilters.mpesaRef} onChange={e => setTempPurchaseFilters(p => ({ ...p, mpesaRef: e.target.value }))} className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent outline-none" />
+                        <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">M-Pesa Ref</label>
+                        <input type="text" placeholder="Search ref..." value={tempPurchaseFilters.mpesaRef} onChange={e => setTempPurchaseFilters(p => ({ ...p, mpesaRef: e.target.value }))} className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all" />
                       </div>
                     )}
                   </div>
                   
-                  <div className="p-4 border-t border-[var(--color-border)] flex justify-end gap-3 bg-gray-50 rounded-b-xl">
-                    <button onClick={handleClearFilters} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm">
+                  <div className="p-4 border-t border-[var(--color-border)] flex justify-end gap-3 bg-[var(--color-bg-base)]/50">
+                    <button onClick={handleClearFilters} className="px-4 py-2 text-[var(--color-text-secondary)] bg-[var(--color-bg-sunken)] hover:bg-[var(--color-border)] rounded-[var(--radius-md)] font-semibold transition-all shadow-sm cursor-pointer select-none">
                       Clear
                     </button>
-                    <button onClick={handleApplyFilters} className="px-4 py-2 bg-[var(--color-accent)] text-white font-semibold rounded-lg hover:bg-[var(--color-accent-hover)] transition-colors shadow-sm">
+                    <button onClick={handleApplyFilters} className="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-[var(--radius-md)] transition-all shadow-sm cursor-pointer select-none">
                       Apply Filters
                     </button>
                   </div>
