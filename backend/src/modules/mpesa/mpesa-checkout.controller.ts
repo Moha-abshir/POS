@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { MpesaCheckoutService } from './mpesa-checkout.service';
 import { z } from 'zod';
+import { SalesService } from '../sales/sales.service';
 
 const pushSchema = z.object({
   saleId: z.string().uuid(),
@@ -20,6 +21,13 @@ export class MpesaCheckoutController {
       );
       res.json(result);
     } catch (error: any) {
+      if (req.body.saleId) {
+        try {
+          await SalesService.deleteFailedSale(req.body.saleId);
+        } catch (rollbackError) {
+          console.error('Failed to rollback sale:', rollbackError);
+        }
+      }
       res.status(400).json({ message: error.errors || error.message });
     }
   }
