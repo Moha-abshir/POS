@@ -233,4 +233,101 @@ export class MpesaCheckoutService {
       }
     }
   }
+
+  static async querySafaricom(checkoutRequestId: string, businessId: string) {
+    const transaction = await db.query.mpesaTransactions.findFirst({
+      where: eq(mpesaTransactions.checkoutRequestId, checkoutRequestId)
+    });
+
+    if (!transaction) throw new Error("Transaction not found");
+
+    if (transaction.status !== 'PENDING') {
+      return { status: transaction.status, resultDesc: transaction.resultDesc };
+    }
+
+    try {
+      const account = await db.query.businessMpesaAccounts.findFirst({
+        where: eq(businessMpesaAccounts.id, transaction.mpesaAccountId)
+      });
+      if (!account) throw new Error("Account not found");
+
+      const passkey = decrypt(account.passkey);
+      const cKey = decrypt(account.consumerKey);
+      const cSecret = decrypt(account.consumerSecret);
+      const isSandbox = account.environment === 'SANDBOX';
+      
+      const accessToken = await this.getOAuthToken(cKey, cSecret, isSandbox);
+      
+      const date = new Date();
+      const timestamp = date.getFullYear().toString() + 
+                        (date.getMonth() + 1).toString().padStart(2, '0') + 
+                        date.getDate().toString().padStart(2, '0') + 
+                        date.getHours().toString().padStart(2, '0') + 
+                        date.getMinutes().toString().padStart(2, '0') + 
+                        date.getSeconds().toString().padStart(2, '0');
+                        
+      const password = Buffer.from(`${account.shortcode}${passkey}${timestamp}`).toString('base64');
+      
+      const url = isSandbox
+        ? 'https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query'
+        : 'https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query';
+        
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          BusinessShortCode: account.shortcode,
+          Password: password,
+          Timestamp: timestamp,
+          CheckoutRequestID: checkoutRequestId
+        })
+      });
+      
+      const data = await response.json();
+
+      if (data && data.ResultCode !== undefined && data.ResultCode !== null) {
+        // Definitive failure codes
+        // 1032 = Cancelled, 1 = Insufficient funds, 2001 = Wrong PIN, 17 = Risk limit, 4999 = Subscriber busy
+        const definitiveFailureCodes = ['1032', '1', '2001', '17', '4999'];
+        if (definitiveFailureCodes.includes(String(data.ResultCode))) {
+          // Re-simulate payload
+          const simulatedPayload = {
+            Body: {
+              stkCallback: {
+                MerchantRequestID: data.MerchantRequestID,
+                CheckoutRequestID: data.CheckoutRequestID,
+                ResultCode: Number(data.ResultCode),
+                ResultDesc: data.ResultDesc
+              }
+            }
+          };
+          await this.processCallback(simulatedPayload);
+          return { status: 'FAILED', resultDesc: data.ResultDesc };
+        } else if (Number(data.ResultCode) === 0) {
+          // Success code
+          await db.update(mpesaTransactions).set({ status: 'COMPLETED', resultCode: 0, resultDesc: data.ResultDesc }).where(eq(mpesaTransactions.id, transaction.id));
+          await db.update(payments).set({ status: 'COMPLETED' }).where(eq(payments.id, transaction.paymentId));
+          
+          const payment = await db.query.payments.findFirst({ where: eq(payments.id, transaction.paymentId) });
+          if (payment) {
+            const sale = await db.query.sales.findFirst({ where: eq(sales.id, payment.referenceId) });
+            if (sale) await db.update(sales).set({ paymentStatus: 'PAID', amountPaid: sale.totalAmount }).where(eq(sales.id, payment.referenceId));
+          }
+          return { status: 'COMPLETED', resultDesc: data.ResultDesc };
+        }
+      }
+      return { status: 'PENDING' };
+
+    } catch (err: any) {
+      // 500.001.1001 = The transaction is being processed
+      if (err?.errorCode === '500.001.1001') {
+        return { status: 'PENDING' };
+      }
+      console.warn("STK Query Fallback Error:", err.message);
+      return { status: 'PENDING' };
+    }
+  }
 }

@@ -19,6 +19,7 @@ router.patch('/settings/:id/default', MpesaSettingsController.setDefaultAccount)
 const checkoutRouter = Router();
 checkoutRouter.post('/push', authenticate, MpesaCheckoutController.initiatePush);
 checkoutRouter.get('/status/:id', authenticate, MpesaCheckoutController.checkStatus);
+checkoutRouter.post('/query/:id', authenticate, MpesaCheckoutController.queryStatus);
 
 // Webhook is public (Safaricom hits this)
 const webhookRouter = Router();

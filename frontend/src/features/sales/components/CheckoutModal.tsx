@@ -86,28 +86,82 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
     }
   });
 
+  // ── 1. Local Webhook Poller ──────────────────────────────────
+  // Checks our DB every 3s. DB is updated by Safaricom's webhook callback instantly.
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    if (isPolling && checkoutRequestId) {
-      interval = setInterval(async () => {
-        try {
-          const res = await api.get(`/mpesa/checkout/status/${checkoutRequestId}`);
-          if (res.data.status === 'COMPLETED') {
-            clearInterval(interval);
-            toast.success('M-Pesa Payment Received!');
-            onSuccess();
-            onClose();
-          } else if (res.data.status === 'FAILED') {
-            clearInterval(interval);
-            toast.error(`Payment Failed: ${res.data.resultDesc}`);
-            setIsPolling(false);
-          }
-        } catch {
-          // Polling errors are transient — next interval will retry
+    let localPollTimer: ReturnType<typeof setTimeout>;
+    
+    const pollLocalSession = async () => {
+      if (!isPolling || !checkoutRequestId) return;
+      
+      try {
+        const res = await api.get(`/mpesa/checkout/status/${checkoutRequestId}`);
+        if (res.data.status === 'COMPLETED') {
+          toast.success('M-Pesa Payment Received!');
+          setIsPolling(false);
+          onSuccess();
+          onClose();
+          return;
+        } else if (res.data.status === 'FAILED') {
+          toast.error(`Payment Failed: ${res.data.resultDesc}`);
+          setIsPolling(false);
+          return;
         }
-      }, 3000);
+      } catch {
+        // Transient error
+      }
+      
+      if (isPolling) {
+        localPollTimer = setTimeout(pollLocalSession, 3000);
+      }
+    };
+
+    if (isPolling && checkoutRequestId) {
+      localPollTimer = setTimeout(pollLocalSession, 3000);
     }
-    return () => clearInterval(interval);
+    
+    return () => clearTimeout(localPollTimer);
+  }, [isPolling, checkoutRequestId, onSuccess, onClose]);
+
+  // ── 2. Slow Safaricom Query Fallback ──────────────────────────────────
+  // Asks Safaricom directly what happened. Runs every 15s. First run delayed 20s.
+  useEffect(() => {
+    let safaricomQueryTimer: ReturnType<typeof setTimeout>;
+    
+    const triggerSafaricomQuery = async () => {
+      if (!isPolling || !checkoutRequestId) return;
+      
+      try {
+        const res = await api.post(`/mpesa/checkout/query/${checkoutRequestId}`);
+        // The backend query endpoint updates the local DB if successful or failed.
+        // The local poller will naturally catch the DB update on its next cycle.
+        // We only act here if it explicitly returned FAILED (due to definitive failure).
+        if (res.data.status === 'FAILED') {
+          toast.error(`Payment Failed: ${res.data.resultDesc}`);
+          setIsPolling(false);
+          return;
+        } else if (res.data.status === 'COMPLETED') {
+          // If the query returns COMPLETED, we can close instantly.
+          toast.success('M-Pesa Payment Received via Query Fallback!');
+          setIsPolling(false);
+          onSuccess();
+          onClose();
+          return;
+        }
+      } catch (err) {
+        console.warn('Safaricom query error', err);
+      }
+      
+      if (isPolling) {
+        safaricomQueryTimer = setTimeout(triggerSafaricomQuery, 15000);
+      }
+    };
+
+    if (isPolling && checkoutRequestId) {
+      safaricomQueryTimer = setTimeout(triggerSafaricomQuery, 20000);
+    }
+    
+    return () => clearTimeout(safaricomQueryTimer);
   }, [isPolling, checkoutRequestId, onSuccess, onClose]);
 
   if (!isOpen) return null;

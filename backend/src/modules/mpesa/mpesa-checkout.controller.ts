@@ -41,6 +41,15 @@ export class MpesaCheckoutController {
     }
   }
 
+  static async queryStatus(req: Request, res: Response) {
+    try {
+      const status = await MpesaCheckoutService.querySafaricom(req.params.id as string, req.user!.businessId);
+      res.json(status);
+    } catch (error: any) {
+      res.status(404).json({ message: error.message });
+    }
+  }
+
   static async handleCallback(req: Request, res: Response) {
     try {
       await MpesaCheckoutService.processCallback(req.body);
