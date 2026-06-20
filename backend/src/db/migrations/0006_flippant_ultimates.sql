@@ -4,7 +4,7 @@ CREATE TABLE "refund_items" (
 	"refund_id" uuid NOT NULL,
 	"variant_id" uuid NOT NULL,
 	"unit_id" uuid NOT NULL,
-	"quantity" numeric(10, 3) NOT NULL,
+	"quantity" numeric(10, 3) NOT NULL, 
 	"unit_price" numeric(12, 2) NOT NULL,
 	"subtotal" numeric(12, 2) NOT NULL,
 	CONSTRAINT "refund_items_quantity_check" CHECK ("refund_items"."quantity" > 0),
