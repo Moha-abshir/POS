@@ -359,3 +359,39 @@ export const mpesaTransactions = pgTable('mpesa_transactions', {
   checkoutIdx: index('mpesa_trans_checkout_idx').on(table.checkoutRequestId)
 }));
 
+
+export const refunds = pgTable('refunds', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  saleId: uuid('sale_id').notNull().references(() => sales.id, { onDelete: 'restrict' }),
+  totalAmount: decimal('total_amount', { precision: 12, scale: 2 }).notNull(),
+  reason: text('reason'),
+  refundedAt: timestamp('refunded_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  createdBy: uuid('created_by').references(() => users.id),
+}, (table) => ({
+  businessIdx: index('refunds_business_idx').on(table.businessId),
+  saleIdx: index('refunds_sale_idx').on(table.saleId),
+  totalAmountCheck: check('refunds_total_amount_check', sql`${table.totalAmount} >= 0`),
+}));
+
+export const refundItems = pgTable('refund_items', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  refundId: uuid('refund_id').notNull().references(() => refunds.id, { onDelete: 'restrict' }),
+  variantId: uuid('variant_id').notNull().references(() => productVariants.id, { onDelete: 'restrict' }),
+  unitId: uuid('unit_id').notNull().references(() => variantUnits.id, { onDelete: 'restrict' }),
+  quantity: decimal('quantity', { precision: 10, scale: 3 }).notNull(),
+  unitPrice: decimal('unit_price', { precision: 12, scale: 2 }).notNull(),
+  subtotal: decimal('subtotal', { precision: 12, scale: 2 }).notNull(),
+}, (table) => ({
+  businessIdx: index('refund_items_business_idx').on(table.businessId),
+  refundIdx: index('refund_items_refund_idx').on(table.refundId),
+  variantIdx: index('refund_items_variant_idx').on(table.variantId),
+  unitIdx: index('refund_items_unit_idx').on(table.unitId),
+  quantityCheck: check('refund_items_quantity_check', sql`${table.quantity} > 0`),
+  unitPriceCheck: check('refund_items_unit_price_check', sql`${table.unitPrice} >= 0`),
+  subtotalCheck: check('refund_items_subtotal_check', sql`${table.subtotal} >= 0`),
+}));
+
+
