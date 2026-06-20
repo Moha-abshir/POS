@@ -78,7 +78,7 @@ export class MpesaCheckoutService {
       PartyA: phoneNumber,
       PartyB: account.shortcode,
       PhoneNumber: phoneNumber,
-      CallBackURL: `${appUrl}/api/mpesa/checkout/webhook`,
+      CallBackURL: `${appUrl}/mpesa/webhook/callback`,
       AccountReference: `Sale ${saleId.slice(0, 8)}`,
       TransactionDesc: "POS Purchase"
     };

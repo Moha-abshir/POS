@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useCustomers } from '../../customers/api/customers.api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { salesApi } from '../api/sales.api';
+import { api } from '../../../lib/api';
 import { X, CreditCard, User, AlertCircle, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -44,22 +45,37 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
 
   const createSaleMutation = useMutation({
     mutationFn: salesApi.createSale,
-    onSuccess: () => {
-      toast.success('Sale completed successfully!');
-      queryClient.invalidateQueries({ queryKey: ['pos-catalog'] });
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-      queryClient.invalidateQueries({ queryKey: ['sales'] });
-      // Reset state for next open
-      setIsCreditSale(false);
-      setIsBusinessSale(false);
-      setPaymentMethod('CASH');
-      setMpesaRef('');
-      setMpesaPhoneNumber('');
-      setIsStkPush(false);
-      setIsPolling(false);
-      setCheckoutRequestId(null);
-      onSuccess();
-      onClose();
+    onSuccess: async (data: any) => {
+      if (paymentMethod === 'MPESA' && isStkPush) {
+        try {
+          const res = await api.post('/mpesa/checkout/push', {
+            saleId: data.data.id,
+            phoneNumber: mpesaPhoneNumber,
+            amount: Number(amountPaid) || 0
+          });
+          setCheckoutRequestId(res.data.checkoutRequestId);
+          setIsPolling(true);
+          toast.success('STK Push sent to customer phone. Waiting for PIN...');
+        } catch (e: any) {
+          toast.error(e.response?.data?.message || 'Failed to send STK push');
+        }
+      } else {
+        toast.success('Sale completed successfully!');
+        queryClient.invalidateQueries({ queryKey: ['pos-catalog'] });
+        queryClient.invalidateQueries({ queryKey: ['customers'] });
+        queryClient.invalidateQueries({ queryKey: ['sales'] });
+        // Reset state for next open
+        setIsCreditSale(false);
+        setIsBusinessSale(false);
+        setPaymentMethod('CASH');
+        setMpesaRef('');
+        setMpesaPhoneNumber('');
+        setIsStkPush(false);
+        setIsPolling(false);
+        setCheckoutRequestId(null);
+        onSuccess();
+        onClose();
+      }
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to complete sale');
@@ -130,30 +146,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
       mpesaRef: paymentMethod === 'MPESA' && !isStkPush ? mpesaRef : undefined,
       mpesaPhoneNumber: paymentMethod === 'MPESA' ? mpesaPhoneNumber : undefined,
       isStkPush: paymentMethod === 'MPESA' && isStkPush,
-    }, {
-      onSuccess: async (data: any) => {
-        if (paymentMethod === 'MPESA' && isStkPush) {
-          try {
-            // After sale is created (UNPAID), trigger STK Push
-            const res = await api.post('/mpesa/checkout/push', {
-              saleId: data.data.id,
-              phoneNumber: mpesaPhoneNumber,
-              amount: paidVal
-            });
-            setCheckoutRequestId(res.data.checkoutRequestId);
-            setIsPolling(true);
-            toast.success('STK Push sent to customer phone. Waiting for PIN...');
-          } catch (e: any) {
-            toast.error(e.response?.data?.message || 'Failed to send STK push');
-          }
-        } else {
-          toast.success('Sale completed successfully!');
-          queryClient.invalidateQueries({ queryKey: ['pos-catalog'] });
-          queryClient.invalidateQueries({ queryKey: ['sales'] });
-          onSuccess();
-          onClose();
-        }
-      }
     });
   };
 

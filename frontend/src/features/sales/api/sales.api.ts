@@ -43,6 +43,7 @@ export const salesApi = {
     paymentMethod: 'CASH' | 'MPESA';
     mpesaRef?: string;
     mpesaPhoneNumber?: string;
+    isStkPush?: boolean;
   }) => {
     const { data } = await api.post('/sales', saleData);
     return data.data;
