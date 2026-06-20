@@ -94,66 +94,66 @@ export const SettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Settings</h1>
+    <div className="p-6 max-w-3xl mx-auto space-y-6">
+      <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Settings</h1>
       
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">Profile & Business Setup</h2>
+      <div className="bg-white rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] border border-[var(--color-border)] p-8">
+        <h2 className="text-lg font-semibold mb-6 text-[var(--color-text-primary)] border-b border-[var(--color-border)] pb-3">Profile & Business Setup</h2>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-2 gap-6">
             <div className="col-span-2 sm:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">First Name *</label>
               <input
                 name="firstName"
                 type="text"
                 required
                 value={formData.firstName}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"
+                className="w-full px-4 py-2.5 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
               />
             </div>
             <div className="col-span-2 sm:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Last Name *</label>
               <input
                 name="lastName"
                 type="text"
                 required
                 value={formData.lastName}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"
+                className="w-full px-4 py-2.5 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number *</label>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Mobile Number *</label>
               <input
                 name="mobileNumber"
                 type="tel"
                 required
                 value={formData.mobileNumber}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"
+                className="w-full px-4 py-2.5 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
               />
             </div>
 
             {user?.role === 'OWNER' && (
               <>
-                <div className="col-span-2 mt-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2 border-b pb-1">Business Details</h3>
+                <div className="col-span-2 mt-6">
+                  <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-4 border-b border-[var(--color-border)] pb-2">Business Details</h3>
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Organization Name *</label>
+                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Organization Name *</label>
                   <input
                     name="organizationName"
                     type="text"
                     required
                     value={formData.organizationName}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"
+                    className="w-full px-4 py-2.5 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
                   />
                 </div>
                 <div className="col-span-2 sm:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sector *</label>
+                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Sector *</label>
                   <CustomSelect
                     name="sector"
                     required
@@ -165,25 +165,25 @@ export const SettingsPage: React.FC = () => {
                   />
                 </div>
                 <div className="col-span-2 sm:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Business Phone *</label>
+                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Business Phone *</label>
                   <input
                     name="businessPhone"
                     type="tel"
                     required
                     value={formData.businessPhone}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"
+                    className="w-full px-4 py-2.5 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Physical Location *</label>
+                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Physical Location *</label>
                   <textarea
                     name="location"
                     required
                     rows={2}
                     value={formData.location}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500 resize-none"
+                    className="w-full px-4 py-2.5 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all resize-none"
                   />
                 </div>
               </>
@@ -191,21 +191,21 @@ export const SettingsPage: React.FC = () => {
           </div>
           
           {errorMsg && (
-            <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm border border-red-200">
+            <div className="p-3 bg-[var(--color-danger-bg)] text-[var(--color-danger)] rounded-[var(--radius-md)] text-sm border border-[var(--color-danger-bg)]">
               {errorMsg}
             </div>
           )}
           {successMsg && (
-            <div className="p-3 bg-green-50 text-green-700 rounded-md text-sm border border-green-200">
+            <div className="p-3 bg-[var(--color-success-bg)] text-[var(--color-success)] rounded-[var(--radius-md)] text-sm border border-[var(--color-success-bg)]">
               {successMsg}
             </div>
           )}
 
-          <div className="pt-4 border-t">
+          <div className="pt-6 border-t border-[var(--color-border)]">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50 transition-colors flex items-center justify-center min-w-[120px]"
+              className="px-6 py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-[var(--radius-md)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2 disabled:opacity-50 transition-all select-none cursor-pointer flex items-center justify-center min-w-[120px]"
             >
               {isSubmitting ? <Loader2 className="animate-spin w-5 h-5" /> : 'Save Changes'}
             </button>
