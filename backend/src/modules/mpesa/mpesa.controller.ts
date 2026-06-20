@@ -20,7 +20,7 @@ export class MpesaSettingsController {
       res.status(201).json(account);
     } catch (error: any) {
       const message = error instanceof ZodError 
-        ? error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+        ? error.issues.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ')
         : error.message;
       res.status(400).json({ message });
     }
@@ -34,7 +34,7 @@ export class MpesaSettingsController {
       res.json(account);
     } catch (error: any) {
       const message = error instanceof ZodError 
-        ? error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+        ? error.issues.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ')
         : error.message;
       res.status(400).json({ message });
     }
