@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
-import { Loader2, Plus, Trash2, CheckCircle, Circle, Edit2 } from 'lucide-react';
+import { Loader2, Plus, Trash2, CheckCircle, Circle, Edit2, Eye, EyeOff } from 'lucide-react';
 
 interface MpesaAccount {
   id: string;
@@ -18,6 +18,8 @@ export const MpesaSettingsSection: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isRevealed, setIsRevealed] = useState(false);
+  const [isRevealing, setIsRevealing] = useState(false);
   
   const [formData, setFormData] = useState({
     accountName: '',
@@ -74,8 +76,29 @@ export const MpesaSettingsSection: React.FC = () => {
         isDefault: accounts.length === 0
       });
     }
+    }
     setError('');
+    setIsRevealed(false);
     setIsModalOpen(true);
+  };
+
+  const handleReveal = async () => {
+    try {
+      setIsRevealing(true);
+      setError('');
+      const res = await api.get(`/mpesa/settings/${editingId}/reveal`);
+      setFormData(prev => ({
+        ...prev,
+        consumerKey: res.data.consumerKey,
+        consumerSecret: res.data.consumerSecret,
+        passkey: res.data.passkey
+      }));
+      setIsRevealed(true);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to reveal credentials');
+    } finally {
+      setIsRevealing(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -198,6 +221,21 @@ export const MpesaSettingsSection: React.FC = () => {
                 </div>
               </div>
 
+              {editingId && !isRevealed && (
+                <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg flex items-center justify-between">
+                  <p className="text-sm text-blue-800">Credentials are masked for security.</p>
+                  <button 
+                    type="button" 
+                    onClick={handleReveal}
+                    disabled={isRevealing}
+                    className="flex items-center text-sm font-medium text-[var(--color-accent)] hover:text-orange-700"
+                  >
+                    {isRevealing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Eye className="w-4 h-4 mr-1" />}
+                    Reveal to Edit
+                  </button>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Consumer Key</label>
                 <input required type="text" value={formData.consumerKey} onChange={e => setFormData({...formData, consumerKey: e.target.value})} className="w-full border rounded p-2 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]" />
@@ -205,12 +243,12 @@ export const MpesaSettingsSection: React.FC = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Consumer Secret</label>
-                <input required type="password" value={formData.consumerSecret} onChange={e => setFormData({...formData, consumerSecret: e.target.value})} className="w-full border rounded p-2 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]" />
+                <input required type={isRevealed || !editingId ? "text" : "password"} value={formData.consumerSecret} onChange={e => setFormData({...formData, consumerSecret: e.target.value})} className="w-full border rounded p-2 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Passkey</label>
-                <input required type="password" value={formData.passkey} onChange={e => setFormData({...formData, passkey: e.target.value})} className="w-full border rounded p-2 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]" />
+                <input required type={isRevealed || !editingId ? "text" : "password"} value={formData.passkey} onChange={e => setFormData({...formData, passkey: e.target.value})} className="w-full border rounded p-2 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]" />
               </div>
 
               <div>

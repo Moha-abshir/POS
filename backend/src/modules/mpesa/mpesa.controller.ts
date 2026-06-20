@@ -59,4 +59,14 @@ export class MpesaSettingsController {
       res.status(500).json({ message: error.message });
     }
   }
+
+  static async revealCredentials(req: Request, res: Response) {
+    try {
+      const credentials = await MpesaService.revealCredentials(req.user!.businessId, req.params.id as string);
+      if (!credentials) return res.status(404).json({ message: 'Account not found' });
+      res.json(credentials);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 }

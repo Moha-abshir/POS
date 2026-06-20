@@ -117,4 +117,21 @@ export class MpesaService {
       
     return account;
   }
+
+  static async revealCredentials(businessId: string, accountId: string) {
+    const account = await db.query.businessMpesaAccounts.findFirst({
+      where: and(
+        eq(businessMpesaAccounts.id, accountId),
+        eq(businessMpesaAccounts.businessId, businessId)
+      )
+    });
+
+    if (!account) return null;
+
+    return {
+      consumerKey: decrypt(account.consumerKey),
+      consumerSecret: decrypt(account.consumerSecret),
+      passkey: decrypt(account.passkey)
+    };
+  }
 }

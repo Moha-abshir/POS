@@ -12,6 +12,7 @@ router.get('/settings', MpesaSettingsController.getAccounts);
 router.post('/settings', MpesaSettingsController.createAccount);
 router.put('/settings/:id', MpesaSettingsController.updateAccount);
 router.delete('/settings/:id', MpesaSettingsController.deleteAccount);
+router.get('/settings/:id/reveal', MpesaSettingsController.revealCredentials);
 router.patch('/settings/:id/default', MpesaSettingsController.setDefaultAccount);
 
 // Checkout and Webhook (Does not require OWNER role)
