@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useCategories } from '../features/catalog/api/catalog.api';
 import { ShoppingCart, Search, Plus, Minus, Trash2, Tag, ArrowRight, Package, ShoppingBag } from 'lucide-react';
@@ -24,7 +24,14 @@ export const PosPage = () => {
   const { data: fetchedCategories } = useCategories();
   const products = catalogData?.data || [];
 
-  const [cart, setCart] = useState<any[]>([]);
+  const [cart, setCart] = useState<any[]>(() => {
+    const saved = localStorage.getItem('pos_cart');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('pos_cart', JSON.stringify(cart));
+  }, [cart]);
   const [selectingUnitFor, setSelectingUnitFor] = useState<{product: any, variant: any} | null>(null);
   
   const [discount, setDiscount] = useState<number>(0);
