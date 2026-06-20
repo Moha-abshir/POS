@@ -26,8 +26,8 @@ const webhookRouter = Router();
 webhookRouter.post('/callback', MpesaCheckoutController.handleCallback);
 
 const mainRouter = Router();
-mainRouter.use('/', router);
-mainRouter.use('/checkout', checkoutRouter);
 mainRouter.use('/webhook', webhookRouter);
+mainRouter.use('/checkout', checkoutRouter);
+mainRouter.use('/', router);
 
 export default mainRouter;

@@ -197,7 +197,10 @@ export class MpesaCheckoutService {
 
       // Update generic Payment
       await db.update(payments)
-        .set({ status: 'COMPLETED' })
+        .set({ 
+          status: 'COMPLETED',
+          mpesaReceiptNumber: mpesaReceiptNumber
+        })
         .where(eq(payments.id, transaction.paymentId));
 
       // Fetch payment to get saleId
@@ -210,7 +213,11 @@ export class MpesaCheckoutService {
         const sale = await db.query.sales.findFirst({ where: eq(sales.id, payment.referenceId) });
         if (sale) {
            await db.update(sales)
-            .set({ paymentStatus: 'PAID', amountPaid: sale.totalAmount })
+            .set({ 
+              paymentStatus: 'PAID', 
+              amountPaid: sale.totalAmount,
+              mpesaRef: mpesaReceiptNumber
+            })
             .where(eq(sales.id, payment.referenceId));
         }
       }
@@ -295,14 +302,22 @@ export class MpesaCheckoutService {
 
       if (data && data.ResultCode !== undefined && data.ResultCode !== null) {
         if (Number(data.ResultCode) === 0) {
-          // Success code
-          await db.update(mpesaTransactions).set({ status: 'COMPLETED', resultCode: 0, resultDesc: data.ResultDesc }).where(eq(mpesaTransactions.id, transaction.id));
-          await db.update(payments).set({ status: 'COMPLETED' }).where(eq(payments.id, transaction.paymentId));
+          const fallbackRef = `STK-${checkoutRequestId.slice(-6).toUpperCase()}`;
+          await db.update(mpesaTransactions).set({ status: 'COMPLETED', resultCode: 0, resultDesc: data.ResultDesc, transactionCode: fallbackRef }).where(eq(mpesaTransactions.id, transaction.id));
+          await db.update(payments).set({ status: 'COMPLETED', mpesaReceiptNumber: fallbackRef }).where(eq(payments.id, transaction.paymentId));
           
           const payment = await db.query.payments.findFirst({ where: eq(payments.id, transaction.paymentId) });
           if (payment) {
             const sale = await db.query.sales.findFirst({ where: eq(sales.id, payment.referenceId) });
-            if (sale) await db.update(sales).set({ paymentStatus: 'PAID', amountPaid: sale.totalAmount }).where(eq(sales.id, payment.referenceId));
+            if (sale) {
+              await db.update(sales)
+                .set({ 
+                  paymentStatus: 'PAID', 
+                  amountPaid: sale.totalAmount,
+                  mpesaRef: fallbackRef
+                })
+                .where(eq(sales.id, payment.referenceId));
+            }
           }
           return { status: 'COMPLETED', resultDesc: data.ResultDesc };
         } else {
