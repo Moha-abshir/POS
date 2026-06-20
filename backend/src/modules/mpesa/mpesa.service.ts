@@ -1,7 +1,7 @@
 import { eq, and, isNull, ne } from 'drizzle-orm';
 import { db } from '../../db';
 import { businessMpesaAccounts } from '../../db/schema';
-import { encrypt } from '../../core/utils/crypto.util';
+import { encrypt, decrypt } from '../../core/utils/crypto.util';
 
 export class MpesaService {
   static async getAccounts(businessId: string) {
