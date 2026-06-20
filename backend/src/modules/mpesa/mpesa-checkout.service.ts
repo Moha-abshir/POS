@@ -146,7 +146,12 @@ export class MpesaCheckoutService {
       where: eq(mpesaTransactions.checkoutRequestId, checkoutRequestId)
     });
 
-    if (!transaction) throw new Error("Transaction not found");
+    if (!transaction) {
+      return {
+        status: 'FAILED',
+        resultDesc: 'Transaction was cancelled or failed'
+      };
+    }
 
     return {
       status: transaction.status,
@@ -289,10 +294,19 @@ export class MpesaCheckoutService {
       const data = await response.json();
 
       if (data && data.ResultCode !== undefined && data.ResultCode !== null) {
-        // Definitive failure codes
-        // 1032 = Cancelled, 1 = Insufficient funds, 2001 = Wrong PIN, 17 = Risk limit, 4999 = Subscriber busy
-        const definitiveFailureCodes = ['1032', '1', '2001', '17', '4999'];
-        if (definitiveFailureCodes.includes(String(data.ResultCode))) {
+        if (Number(data.ResultCode) === 0) {
+          // Success code
+          await db.update(mpesaTransactions).set({ status: 'COMPLETED', resultCode: 0, resultDesc: data.ResultDesc }).where(eq(mpesaTransactions.id, transaction.id));
+          await db.update(payments).set({ status: 'COMPLETED' }).where(eq(payments.id, transaction.paymentId));
+          
+          const payment = await db.query.payments.findFirst({ where: eq(payments.id, transaction.paymentId) });
+          if (payment) {
+            const sale = await db.query.sales.findFirst({ where: eq(sales.id, payment.referenceId) });
+            if (sale) await db.update(sales).set({ paymentStatus: 'PAID', amountPaid: sale.totalAmount }).where(eq(sales.id, payment.referenceId));
+          }
+          return { status: 'COMPLETED', resultDesc: data.ResultDesc };
+        } else {
+          // Any non-zero code is a failure (cancelled, insufficient funds, wrong PIN, timeout, etc.)
           // Re-simulate payload
           const simulatedPayload = {
             Body: {
@@ -306,17 +320,6 @@ export class MpesaCheckoutService {
           };
           await this.processCallback(simulatedPayload);
           return { status: 'FAILED', resultDesc: data.ResultDesc };
-        } else if (Number(data.ResultCode) === 0) {
-          // Success code
-          await db.update(mpesaTransactions).set({ status: 'COMPLETED', resultCode: 0, resultDesc: data.ResultDesc }).where(eq(mpesaTransactions.id, transaction.id));
-          await db.update(payments).set({ status: 'COMPLETED' }).where(eq(payments.id, transaction.paymentId));
-          
-          const payment = await db.query.payments.findFirst({ where: eq(payments.id, transaction.paymentId) });
-          if (payment) {
-            const sale = await db.query.sales.findFirst({ where: eq(sales.id, payment.referenceId) });
-            if (sale) await db.update(sales).set({ paymentStatus: 'PAID', amountPaid: sale.totalAmount }).where(eq(sales.id, payment.referenceId));
-          }
-          return { status: 'COMPLETED', resultDesc: data.ResultDesc };
         }
       }
       return { status: 'PENDING' };
