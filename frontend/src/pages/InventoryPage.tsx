@@ -81,30 +81,30 @@ export function InventoryPage() {
       </div>
 
       {view === 'ledger' ? (
-        <div className="bg-white rounded-xl shadow-sm border border-[var(--color-border)] overflow-hidden flex flex-col flex-1">
+        <div className="bg-white rounded-xl shadow-[var(--shadow-sm)] border border-[var(--color-border)] overflow-hidden flex flex-col flex-1">
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-white border-b border-[var(--color-border)]">
-                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Date & Time</th>
-                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Product</th>
-                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Type</th>
-                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase text-right">Change</th>
-                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Notes</th>
+                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase">Date & Time</th>
+                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase">Product</th>
+                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase">Type</th>
+                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase text-right">Change</th>
+                  <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase">Notes</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-gray-400">Loading ledger...</td>
+                    <td colSpan={5} className="px-6 py-8 text-center text-[var(--color-text-muted)] animate-pulse">Loading ledger...</td>
                   </tr>
                 ) : movements.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="p-16 text-center">
                       <div className="flex flex-col items-center justify-center max-w-sm mx-auto text-center">
-                        <Package className="h-12 w-12 text-gray-300 mb-4" />
-                        <p className="text-lg font-semibold text-gray-500 mb-1">No stock movements yet</p>
-                        <p className="text-sm text-gray-400">Record a purchase or manual adjustment to see history.</p>
+                        <Package className="h-12 w-12 text-[var(--color-text-muted)] mb-4" />
+                        <p className="text-lg font-semibold text-[var(--color-text-secondary)] mb-1">No stock movements yet</p>
+                        <p className="text-sm text-[var(--color-text-muted)]">Record a purchase or manual adjustment to see history.</p>
                       </div>
                     </td>
                   </tr>
@@ -112,29 +112,43 @@ export function InventoryPage() {
                   movements.map((movement, index) => {
                     const qty = Number(movement.quantityChange);
                     const isPositive = qty > 0;
+                    
+                    const getTypeBadgeStyle = (type: string) => {
+                      switch(type) {
+                        case 'PURCHASE': return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+                        case 'SALE': return 'bg-indigo-50 text-indigo-700 border border-indigo-200';
+                        case 'REFUND': return 'bg-blue-50 text-blue-700 border border-blue-200';
+                        case 'DAMAGE': return 'bg-red-50 text-red-700 border border-red-200';
+                        case 'ADJUSTMENT': return 'bg-amber-50 text-amber-700 border border-amber-200';
+                        default: return 'bg-gray-50 text-gray-700 border border-gray-200';
+                      }
+                    };
+
                     return (
-                      <tr key={movement.id} className={`border-b border-[var(--color-border)] h-12 transition-colors duration-150 hover:bg-[var(--color-bg-sunken)] ${index % 2 === 0 ? 'bg-white' : 'bg-[var(--color-bg-base)]'}`}>
-                        <td className="px-6 py-0 text-[var(--color-text-secondary)]">
+                      <tr key={movement.id} className={`border-b border-[var(--color-border)] h-12 transition-colors duration-150 hover:bg-[var(--color-bg-base)] ${index % 2 === 0 ? 'bg-white' : 'bg-[var(--color-bg-base)]/20'}`}>
+                        <td className="px-6 py-2 text-sm text-[var(--color-text-secondary)]">
                           {new Date(movement.createdAt).toLocaleString()}
                         </td>
-                        <td className="px-6 py-0 font-medium text-[var(--color-text-primary)]">
+                        <td className="px-6 py-2 font-semibold text-sm text-[var(--color-text-primary)]">
                           {movement.productName}
-                          {movement.variantName && <span className="text-gray-400 font-normal text-sm ml-1.5">({movement.variantName})</span>}
+                          {movement.variantName && <span className="text-[var(--color-text-muted)] font-normal text-xs ml-1.5">({movement.variantName})</span>}
                         </td>
-                        <td className="px-6 py-0">
+                        <td className="px-6 py-2">
                           <div className="flex items-center gap-2">
                             {getMovementIcon(movement.type)}
-                            <span className="text-[var(--color-text-secondary)] font-medium text-xs tracking-wider uppercase">{movement.type}</span>
+                            <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-[var(--radius-sm)] text-[10px] font-bold uppercase tracking-wider ${getTypeBadgeStyle(movement.type)}`}>
+                              {movement.type}
+                            </span>
                           </div>
                         </td>
-                        <td className="px-6 py-0 text-right">
-                          <span className={`inline-flex items-center justify-center min-w-[48px] px-1.5 py-0.5 rounded-[var(--radius-sm)] text-[11px] font-bold tracking-wider ${
-                            isPositive ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' : 'bg-[var(--color-danger-bg)] text-[var(--color-danger)]'
+                        <td className="px-6 py-2 text-right">
+                          <span className={`inline-flex items-center justify-center min-w-[48px] px-2 py-0.5 rounded-[var(--radius-sm)] text-[11px] font-bold tracking-wider ${
+                            isPositive ? 'bg-[var(--color-success-bg)] text-[var(--color-success)] border border-green-200' : 'bg-[var(--color-danger-bg)] text-[var(--color-danger)] border border-red-200'
                           }`}>
                             {isPositive ? '+' : ''}{qty}
                           </span>
                         </td>
-                        <td className="px-6 py-0 text-[var(--color-text-muted)] truncate max-w-[200px]" title={movement.notes || ''}>
+                        <td className="px-6 py-2 text-sm text-[var(--color-text-secondary)] truncate max-w-[200px]" title={movement.notes || ''}>
                           {movement.notes || '-'}
                         </td>
                       </tr>
