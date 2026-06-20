@@ -49,7 +49,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
       if (paymentMethod === 'MPESA' && isStkPush) {
         try {
           const res = await api.post('/mpesa/checkout/push', {
-            saleId: data.data.id,
+            saleId: data.id,
             phoneNumber: mpesaPhoneNumber,
             amount: Number(amountPaid) || 0
           });
