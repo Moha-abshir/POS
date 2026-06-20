@@ -4,7 +4,6 @@ import { db } from '../../db';
 import { businessMpesaAccounts, payments, mpesaTransactions, sales } from '../../db/schema';
 import { decrypt } from '../../core/utils/crypto.util';
 import crypto from 'crypto';
-import crypto from 'crypto';
 
 export class MpesaCheckoutService {
   private static async getOAuthToken(cKey: string, cSecret: string, isSandbox: boolean): Promise<string> {
