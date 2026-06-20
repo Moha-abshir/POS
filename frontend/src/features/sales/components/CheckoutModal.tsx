@@ -87,7 +87,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
   });
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (isPolling && checkoutRequestId) {
       interval = setInterval(async () => {
         try {
@@ -102,7 +102,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
             toast.error(`Payment Failed: ${res.data.resultDesc}`);
             setIsPolling(false);
           }
-        } catch (e) {}
+        } catch {
+          // Polling errors are transient — next interval will retry
+        }
       }, 3000);
     }
     return () => clearInterval(interval);
