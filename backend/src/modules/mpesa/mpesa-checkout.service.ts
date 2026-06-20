@@ -69,15 +69,23 @@ export class MpesaCheckoutService {
       throw new Error("Missing APP_URL environment variable. Safaricom requires a public webhook URL to notify us of the payment.");
     }
 
+    // Format Phone Number to 2547XXXXXXXX
+    let formattedPhone = phoneNumber.replace(/[^0-9]/g, '');
+    if (formattedPhone.startsWith('0')) {
+      formattedPhone = `254${formattedPhone.slice(1)}`;
+    } else if (formattedPhone.length === 9) {
+      formattedPhone = `254${formattedPhone}`;
+    }
+
     const payload = {
       BusinessShortCode: account.shortcode,
       Password: password,
       Timestamp: timestamp,
       TransactionType: account.accountType === 'PAYBILL' ? 'CustomerPayBillOnline' : 'CustomerBuyGoodsOnline',
       Amount: Math.round(amount), // Safaricom expects integer amounts
-      PartyA: phoneNumber,
+      PartyA: formattedPhone,
       PartyB: account.shortcode,
-      PhoneNumber: phoneNumber,
+      PhoneNumber: formattedPhone,
       CallBackURL: `${appUrl}/mpesa/webhook/callback`,
       AccountReference: `Sale ${saleId.slice(0, 8)}`,
       TransactionDesc: "POS Purchase"
