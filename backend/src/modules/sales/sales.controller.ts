@@ -12,8 +12,9 @@ export class SalesController {
       const endDate = req.query.endDate as string;
       const paymentStatus = req.query.paymentStatus as 'PAID' | 'PARTIAL' | 'UNPAID';
       const paymentMethod = req.query.paymentMethod as 'CASH' | 'MPESA';
+      const mpesaRef = req.query.mpesaRef as string;
 
-      const result = await SalesService.getSales(req.user!.businessId, { limit, offset, customerId, startDate, endDate, paymentStatus, paymentMethod });
+      const result = await SalesService.getSales(req.user!.businessId, { limit, offset, customerId, startDate, endDate, paymentStatus, paymentMethod, mpesaRef });
       res.status(200).json({ status: 'success', message: 'Sales retrieved successfully', ...result });
     } catch (error) {
       next(error);

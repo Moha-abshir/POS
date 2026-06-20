@@ -1,4 +1,4 @@
-import { eq, and, sql, desc, gte, lte } from 'drizzle-orm';
+import { eq, and, sql, desc, gte, lte, ilike } from 'drizzle-orm';
 import { db } from '../../db';
 import { sales, saleItems, stockMovements, productVariants, customers, payments, variantUnits } from '../../db/schema';
 
@@ -12,8 +12,9 @@ export class SalesService {
     endDate?: string;
     paymentStatus?: 'PAID' | 'PARTIAL' | 'UNPAID';
     paymentMethod?: 'CASH' | 'MPESA';
+    mpesaRef?: string;
   } = {}) {
-    const { limit = 50, offset = 0, customerId, startDate, endDate, paymentStatus, paymentMethod } = filters;
+    const { limit = 50, offset = 0, customerId, startDate, endDate, paymentStatus, paymentMethod, mpesaRef } = filters;
     
     const conditions: any[] = [eq(sales.businessId, businessId)];
     if (customerId) {
@@ -30,6 +31,9 @@ export class SalesService {
     }
     if (paymentMethod) {
       conditions.push(eq(sales.paymentMethod, paymentMethod));
+    }
+    if (mpesaRef) {
+      conditions.push(ilike(sales.mpesaRef, `%${mpesaRef}%`));
     }
 
     const data = await db.select({

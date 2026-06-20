@@ -18,11 +18,13 @@ export function SalesPage() {
     endDate: string;
     paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID' | '';
     paymentMethod: 'CASH' | 'MPESA' | '';
+    mpesaRef: string;
   }>({
     startDate: '',
     endDate: '',
     paymentStatus: '',
     paymentMethod: '',
+    mpesaRef: '',
   });
 
   const [tempFilters, setTempFilters] = useState(filters);
@@ -42,6 +44,7 @@ export function SalesPage() {
       endDate: filters.endDate || undefined,
       paymentStatus: filters.paymentStatus || undefined,
       paymentMethod: filters.paymentMethod || undefined,
+      mpesaRef: filters.mpesaRef || undefined,
     }),
   });
 
@@ -59,6 +62,7 @@ export function SalesPage() {
         endDate: filters.endDate || undefined,
         paymentStatus: filters.paymentStatus || undefined,
         paymentMethod: filters.paymentMethod || undefined,
+        mpesaRef: filters.mpesaRef || undefined,
       });
 
       if (!exportData.data || exportData.data.length === 0) return;
@@ -201,10 +205,21 @@ export function SalesPage() {
                     </select>
                   </div>
 
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">M-Pesa Reference</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. SGT8WQ12A"
+                      value={tempFilters.mpesaRef}
+                      onChange={(e) => setTempFilters({...tempFilters, mpesaRef: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    />
+                  </div>
+
                   <div className="flex gap-2 pt-2 border-t border-gray-100">
                     <button 
                       onClick={() => {
-                        const empty = { startDate: '', endDate: '', paymentStatus: '', paymentMethod: '' as any };
+                        const empty = { startDate: '', endDate: '', paymentStatus: '' as any, paymentMethod: '' as any, mpesaRef: '' };
                         setTempFilters(empty);
                         setFilters(empty);
                         setIsFilterOpen(false);
@@ -270,7 +285,12 @@ export function SalesPage() {
                       {sale.id.slice(0, 8).toUpperCase()}
                     </td>
                     <td className="px-6 py-2 text-sm text-gray-900">
-                      {sale.customerName || <span className="text-gray-400 italic">Walk-in Customer</span>}
+                      <div>{sale.customerName || <span className="text-gray-400 italic">Walk-in Customer</span>}</div>
+                      {sale.mpesaRef && (
+                        <span className="block text-[11px] text-gray-400 font-medium font-mono mt-0.5">
+                          Ref: {sale.mpesaRef}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-2 text-sm text-right font-bold text-gray-900">
                       KSH {Number(sale.totalAmount).toLocaleString()}

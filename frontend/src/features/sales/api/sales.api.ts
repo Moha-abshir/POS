@@ -27,6 +27,7 @@ export interface SalesFilters {
   endDate?: string;
   paymentStatus?: 'PAID' | 'PARTIAL' | 'UNPAID' | '';
   paymentMethod?: 'CASH' | 'MPESA' | '';
+  mpesaRef?: string;
 }
 
 export const salesApi = {
