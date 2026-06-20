@@ -9,5 +9,6 @@ router.use(authenticate);
 router.get('/', SalesController.getSales);
 router.get('/:id', SalesController.getSaleDetails);
 router.post('/', SalesController.createSale);
+router.post('/:id/refund', SalesController.refundSale);
 
 export default router;

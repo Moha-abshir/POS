@@ -1,5 +1,5 @@
 import { api } from '../../../lib/api';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export interface Sale {
   id: string;
@@ -53,6 +53,11 @@ export const salesApi = {
   getSaleDetails: async (id: string) => {
     const { data } = await api.get(`/sales/${id}`);
     return data.data;
+  },
+
+  refundSale: async (id: string, refundData: { reason?: string; items: { variantId: string; unitId: string; quantity: number }[] }) => {
+    const { data } = await api.post(`/sales/${id}/refund`, refundData);
+    return data.data;
   }
 };
 
@@ -68,5 +73,19 @@ export const useSaleDetails = (id: string | null) => {
     queryKey: ['sales', 'detail', id],
     queryFn: () => id ? salesApi.getSaleDetails(id) : null,
     enabled: !!id,
+  });
+};
+
+export const useRefundSale = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, refundData }: { id: string; refundData: { reason?: string; items: { variantId: string; unitId: string; quantity: number }[] } }) => 
+      salesApi.refundSale(id, refundData),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      queryClient.invalidateQueries({ queryKey: ['sales', 'detail', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['inventory', 'movements'] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    }
   });
 };

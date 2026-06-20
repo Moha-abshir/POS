@@ -1,9 +1,10 @@
-import React from 'react';
-import { X, Printer, Receipt } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Printer, Receipt, RefreshCcw } from 'lucide-react';
 import { useSaleDetails } from '../api/sales.api';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
+import { RefundModal } from './RefundModal';
 
 interface ReceiptModalProps {
   saleId: string | null;
@@ -12,6 +13,7 @@ interface ReceiptModalProps {
 
 export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
   const { data: sale, isLoading } = useSaleDetails(saleId);
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
 
   // Fetch business and cashier details to display on the receipt
   const { data: meData } = useQuery({
@@ -22,6 +24,24 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     },
     enabled: !!saleId,
   });
+
+  const getPreviouslyRefundedQty = (item: any) => {
+    if (!sale?.refunds) return 0;
+    return sale.refunds.reduce((total: number, refund: any) => {
+      const matched = refund.items?.find(
+        (ri: any) => ri.variantId === item.variantId && ri.unitId === item.unitId
+      );
+      return total + (matched ? Number(matched.quantity) : 0);
+    }, 0);
+  };
+
+  const getRemainingReturnableQty = () => {
+    if (!sale?.items) return 0;
+    return sale.items.reduce((total: number, item: any) => {
+      const prevRefunded = getPreviouslyRefundedQty(item);
+      return total + Math.max(0, Number(item.quantity) - prevRefunded);
+    }, 0);
+  };
 
   if (!saleId) return null;
 
@@ -84,6 +104,15 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {sale && getRemainingReturnableQty() > 0 && (
+              <button 
+                onClick={() => setIsRefundModalOpen(true)}
+                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 cursor-pointer no-print"
+                title="Refund Items"
+              >
+                <RefreshCcw size={20} />
+              </button>
+            )}
             <button 
               onClick={handlePrint}
               disabled={isLoading || !sale}
@@ -283,6 +312,67 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
                     </div>
                   </div>
 
+                  {/* Refunds / Returns Section */}
+                  {sale.refunds && sale.refunds.length > 0 && (
+                    <div className="pt-3 border-t border-dashed border-gray-300 mb-5">
+                      <div className="text-gray-950 text-[11px] font-extrabold uppercase tracking-widest text-center mb-2 flex items-center justify-center gap-1.5">
+                        <RefreshCcw size={12} className="shrink-0" />
+                        <span>Returns & Refunds</span>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        {sale.refunds.map((refund: any) => (
+                          <div key={refund.id} className="text-[11px] text-gray-800 space-y-1">
+                            <div className="flex justify-between font-bold text-gray-950">
+                              <span>REFUND #{refund.id.slice(0, 6).toUpperCase()}</span>
+                              <span>{format(new Date(refund.refundedAt), 'dd/MM/yy HH:mm')}</span>
+                            </div>
+                            
+                            {refund.reason && (
+                              <p className="text-[10px] text-gray-500 italic mt-0.5">Reason: {refund.reason}</p>
+                            )}
+
+                            <div className="space-y-1.5 pl-2 border-l border-gray-300 mt-1.5">
+                              {refund.items?.map((ri: any) => {
+                                const originalItem = sale.items?.find(
+                                  (item: any) => item.variantId === ri.variantId && item.unitId === ri.unitId
+                                );
+                                const isGenericVariant = !originalItem?.variantName || originalItem.variantName === 'Default' || originalItem.variantName === 'Standard';
+                                const displayName = originalItem 
+                                  ? (originalItem.productName ? `${originalItem.productName}${isGenericVariant ? '' : ` - ${originalItem.variantName}`}` : originalItem.variantName)
+                                  : 'Unknown Product';
+
+                                return (
+                                  <div key={ri.id} className="flex justify-between items-center text-gray-700">
+                                    <span>
+                                      - {Number(ri.quantity)} {originalItem?.unitName || 'Unit'}(s) @ KSH {Number(ri.unitPrice).toLocaleString()}
+                                    </span>
+                                    <span className="font-semibold text-gray-900">
+                                      - KSH {Number(ri.subtotal).toLocaleString()}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div className="flex justify-between text-xs font-extrabold text-gray-950 pt-1.5 border-t border-dotted border-gray-300 mt-1">
+                              <span>REFUNDED AMOUNT</span>
+                              <span>KSH {Number(refund.totalAmount).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Cumulative Refund summary */}
+                      <div className="mt-4 pt-2 border-t border-dashed border-gray-300 flex justify-between text-[11px] font-extrabold text-gray-950">
+                        <span>TOTAL REFUNDED</span>
+                        <span>
+                          KSH {sale.refunds.reduce((sum: number, r: any) => sum + Number(r.totalAmount), 0).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Footer message */}
                   <div className="text-gray-400 text-[11px] text-center mb-4">--------------------------------</div>
                   <div className="text-center space-y-1.5 text-[10px] text-gray-500 font-sans tracking-wide mb-6">
@@ -315,6 +405,13 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
           )}
         </div>
       </div>
+
+      {isRefundModalOpen && sale && (
+        <RefundModal 
+          sale={sale} 
+          onClose={() => setIsRefundModalOpen(false)} 
+        />
+      )}
     </div>
   );
 }

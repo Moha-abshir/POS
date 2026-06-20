@@ -44,4 +44,19 @@ export class SalesController {
       next(error);
     }
   }
+
+  static async refundSale(req: Request, res: Response, next: NextFunction) {
+    try {
+      const saleId = req.params.id as string;
+      const refund = await SalesService.refundSale(
+        req.user!.businessId,
+        req.user!.id,
+        saleId,
+        req.body
+      );
+      res.status(201).json({ status: 'success', message: 'Refund processed successfully', data: refund });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

@@ -1,6 +1,8 @@
-import { eq, and, sql, desc, gte, lte, ilike } from 'drizzle-orm';
+import { eq, and, sql, desc, gte, lte, ilike, inArray } from 'drizzle-orm';
 import { db } from '../../db';
-import { sales, saleItems, stockMovements, productVariants, customers, payments, variantUnits, products } from '../../db/schema';
+import { sales, saleItems, stockMovements, productVariants, customers, payments, variantUnits, products, refunds, refundItems } from '../../db/schema';
+import { AppError } from '../../core/utils/AppError';
+import { InventoryService } from '../inventory/inventory.service';
 
 
 export class SalesService {
@@ -97,7 +99,39 @@ export class SalesService {
       .innerJoin(variantUnits, eq(saleItems.unitId, variantUnits.id))
       .where(eq(saleItems.saleId, saleId));
 
-    return { ...sale, items };
+    // Fetch existing refunds for this sale
+    const saleRefunds = await db.select({
+      id: refunds.id,
+      totalAmount: refunds.totalAmount,
+      reason: refunds.reason,
+      refundedAt: refunds.refundedAt,
+    })
+      .from(refunds)
+      .where(and(eq(refunds.saleId, saleId), eq(refunds.businessId, businessId)));
+
+    // Fetch items for each refund
+    const refundIds = saleRefunds.map(r => r.id);
+    let refundedItems: any[] = [];
+    if (refundIds.length > 0) {
+      refundedItems = await db.select({
+        id: refundItems.id,
+        refundId: refundItems.refundId,
+        variantId: refundItems.variantId,
+        unitId: refundItems.unitId,
+        quantity: refundItems.quantity,
+        unitPrice: refundItems.unitPrice,
+        subtotal: refundItems.subtotal,
+      })
+        .from(refundItems)
+        .where(and(inArray(refundItems.refundId, refundIds), eq(refundItems.businessId, businessId)));
+    }
+
+    const refundsWithItems = saleRefunds.map(r => ({
+      ...r,
+      items: refundedItems.filter(item => item.refundId === r.id)
+    }));
+
+    return { ...sale, items, refunds: refundsWithItems };
   }
 
   static async createSale(businessId: string, userId: string, data: {
@@ -273,6 +307,161 @@ export class SalesService {
 
       // Delete the sale record itself
       await tx.delete(sales).where(eq(sales.id, saleId));
+    });
+  }
+
+  static async refundSale(
+    businessId: string,
+    userId: string,
+    saleId: string,
+    data: {
+      reason?: string;
+      items: {
+        variantId: string;
+        unitId: string;
+        quantity: number;
+      }[];
+    }
+  ) {
+    return await db.transaction(async (tx) => {
+      // 1. Fetch sale
+      const [sale] = await tx.select()
+        .from(sales)
+        .where(and(eq(sales.id, saleId), eq(sales.businessId, businessId)));
+
+      if (!sale) {
+        throw new AppError('Sale not found', 404);
+      }
+
+      // 2. Fetch sale items
+      const saleItemsList = await tx.select()
+        .from(saleItems)
+        .where(and(eq(saleItems.saleId, saleId), eq(saleItems.businessId, businessId)));
+
+      // 3. Fetch existing refunds for this sale
+      const existingRefunds = await tx.select({
+        variantId: refundItems.variantId,
+        unitId: refundItems.unitId,
+        quantity: refundItems.quantity,
+      })
+        .from(refundItems)
+        .innerJoin(refunds, eq(refundItems.refundId, refunds.id))
+        .where(and(eq(refunds.saleId, saleId), eq(refunds.businessId, businessId)));
+
+      // Helper to count previously refunded qty for a variant/unit combination
+      const getPrevRefundedQty = (variantId: string, unitId: string) => {
+        return existingRefunds
+          .filter(r => r.variantId === variantId && r.unitId === unitId)
+          .reduce((sum, r) => sum + Number(r.quantity), 0);
+      };
+
+      let refundTotal = 0;
+      const refundItemsToInsert: any[] = [];
+
+      // 4. Validate each refund item
+      for (const refundItem of data.items) {
+        const originalItem = saleItemsList.find(
+          si => si.variantId === refundItem.variantId && si.unitId === refundItem.unitId
+        );
+
+        if (!originalItem) {
+          throw new AppError(`Item was not purchased in this sale`, 400);
+        }
+
+        const prevRefunded = getPrevRefundedQty(refundItem.variantId, refundItem.unitId);
+        const maxReturnable = Number(originalItem.quantity) - prevRefunded;
+
+        if (refundItem.quantity <= 0) {
+          throw new AppError(`Quantity to refund must be greater than 0`, 400);
+        }
+
+        if (refundItem.quantity > maxReturnable) {
+          throw new AppError(
+            `Cannot refund ${refundItem.quantity} unit(s). Only ${maxReturnable} unit(s) remaining.`,
+            400
+          );
+        }
+
+        // Fetch unit details to obtain the conversion factor for correct base stock recalculation
+        const [unit] = await tx.select()
+          .from(variantUnits)
+          .where(and(eq(variantUnits.id, refundItem.unitId), eq(variantUnits.businessId, businessId)));
+
+        if (!unit) {
+          throw new AppError(`Unit not found for the refunded item`, 404);
+        }
+
+        const conversionFactor = Number(unit.conversionFactor);
+        const unitPrice = Number(originalItem.sellingPrice);
+        const subtotal = refundItem.quantity * unitPrice;
+        refundTotal += subtotal;
+
+        refundItemsToInsert.push({
+          businessId,
+          variantId: refundItem.variantId,
+          unitId: refundItem.unitId,
+          quantity: refundItem.quantity.toString(),
+          unitPrice: unitPrice.toString(),
+          subtotal: subtotal.toString(),
+          conversionFactor,
+        });
+      }
+
+      if (refundTotal <= 0) {
+        throw new AppError('No items selected for refund', 400);
+      }
+
+      // 5. Create refund record
+      const [refundRecord] = await tx.insert(refunds).values({
+        businessId,
+        saleId,
+        totalAmount: refundTotal.toString(),
+        reason: data.reason || null,
+        createdBy: userId,
+      }).returning();
+
+      // 6. Create refund items and log stock movements
+      for (const item of refundItemsToInsert) {
+        await tx.insert(refundItems).values({
+          businessId: item.businessId,
+          refundId: refundRecord.id,
+          variantId: item.variantId,
+          unitId: item.unitId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          subtotal: item.subtotal,
+        });
+
+        const quantityChange = Number(item.quantity) * item.conversionFactor;
+
+        // Log refund stock movement (this increases inventory in base units)
+        await InventoryService.recordMovement(tx, businessId, {
+          variantId: item.variantId,
+          type: 'REFUND',
+          quantityChange: quantityChange,
+          referenceType: 'REFUND',
+          referenceId: refundRecord.id,
+          notes: `Refund for sale #${saleId.slice(0, 8).toUpperCase()}${data.reason ? `: ${data.reason}` : ''}`,
+          userId,
+        });
+      }
+
+      // 7. Adjust customer balance if credit sale
+      const totalAmount = Number(sale.totalAmount);
+      const amountPaid = Number(sale.amountPaid);
+      const currentDebt = Math.max(0, totalAmount - amountPaid);
+
+      if (sale.customerId && currentDebt > 0) {
+        const debtReduction = Math.min(refundTotal, currentDebt);
+        await tx.update(customers)
+          .set({
+            balance: sql`${customers.balance} - ${debtReduction}`,
+            updatedAt: new Date()
+          })
+          .where(and(eq(customers.id, sale.customerId), eq(customers.businessId, businessId)));
+      }
+
+      return refundRecord;
     });
   }
 }
