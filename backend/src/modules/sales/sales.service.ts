@@ -179,13 +179,15 @@ export class SalesService {
         createdBy: userId,
       }).returning();
 
+      // Fetch all units in a single batch query to prevent query-in-loop transaction overhead
+      const unitIds = data.items.map(item => item.unitId);
+      const unitsList = await tx.select({ id: variantUnits.id, conversionFactor: variantUnits.conversionFactor })
+        .from(variantUnits)
+        .where(and(eq(variantUnits.businessId, businessId), inArray(variantUnits.id, unitIds)));
+
       // 2. Create Sale Items & Deduct Inventory
       for (const item of data.items) {
-        
-        // Fetch the unit to get the conversion factor
-        const [unit] = await tx.select({ conversionFactor: variantUnits.conversionFactor })
-          .from(variantUnits)
-          .where(eq(variantUnits.id, item.unitId));
+        const unit = unitsList.find(u => u.id === item.unitId);
           
         if (!unit) {
           throw new Error(`Unit not found for id ${item.unitId}`);
@@ -360,6 +362,15 @@ export class SalesService {
       let refundTotal = 0;
       const refundItemsToInsert: any[] = [];
 
+      // Fetch all units in a single batch query to prevent query-in-loop transaction overhead
+      const refundUnitIds = data.items.map(item => item.unitId);
+      let refundUnitsList: any[] = [];
+      if (refundUnitIds.length > 0) {
+        refundUnitsList = await tx.select()
+          .from(variantUnits)
+          .where(and(eq(variantUnits.businessId, businessId), inArray(variantUnits.id, refundUnitIds)));
+      }
+
       // 4. Validate each refund item
       for (const refundItem of data.items) {
         const originalItem = saleItemsList.find(
@@ -384,10 +395,8 @@ export class SalesService {
           );
         }
 
-        // Fetch unit details to obtain the conversion factor for correct base stock recalculation
-        const [unit] = await tx.select()
-          .from(variantUnits)
-          .where(and(eq(variantUnits.id, refundItem.unitId), eq(variantUnits.businessId, businessId)));
+        // Find the unit details from the batch query list
+        const unit = refundUnitsList.find(u => u.id === refundItem.unitId);
 
         if (!unit) {
           throw new AppError(`Unit not found for the refunded item`, 404);
