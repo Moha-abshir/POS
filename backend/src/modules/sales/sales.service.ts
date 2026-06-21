@@ -86,6 +86,8 @@ export class SalesService {
 
     const items = await db.select({
       id: saleItems.id,
+      variantId: saleItems.variantId,
+      unitId: saleItems.unitId,
       quantity: saleItems.quantity,
       sellingPrice: saleItems.sellingPrice,
       subtotal: saleItems.subtotal,
