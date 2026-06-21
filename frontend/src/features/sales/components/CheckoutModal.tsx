@@ -281,8 +281,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
           {/* Header */}
           <div className="w-full flex justify-between items-center mb-8">
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-green-400">Secure Payment Gateway</span>
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">Secure Payment Gateway</span>
             </div>
             <button 
               onClick={handleClose} 
@@ -295,12 +295,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
           {/* Animated Bubble Area */}
           <div className="relative w-48 h-48 flex justify-center items-center mb-8">
             {/* Ripples */}
-            <div className="absolute inset-0 rounded-full border border-green-500/20 ripple-ring-1"></div>
-            <div className="absolute inset-0 rounded-full border border-green-500/20 ripple-ring-2"></div>
-            <div className="absolute inset-0 rounded-full border border-green-500/20 ripple-ring-3"></div>
+            <div className="absolute inset-0 rounded-full border border-amber-500/20 ripple-ring-1"></div>
+            <div className="absolute inset-0 rounded-full border border-amber-500/20 ripple-ring-2"></div>
+            <div className="absolute inset-0 rounded-full border border-amber-500/20 ripple-ring-3"></div>
             
             {/* Morphing Bubble */}
-            <div className="w-28 h-28 bg-gradient-to-tr from-[#16A34A] to-[#D97706] rounded-[50%] morphing-bubble flex flex-col justify-center items-center shadow-xl shadow-green-950/40 border border-white/10">
+            <div className="w-28 h-28 bg-gradient-to-tr from-[#D97706] to-[#F59E0B] rounded-[50%] morphing-bubble flex flex-col justify-center items-center shadow-xl shadow-amber-950/40 border border-white/10">
               <Smartphone className="w-10 h-10 text-white animate-pulse" />
             </div>
           </div>
@@ -319,7 +319,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
 
           {/* Progress bar loader */}
           <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden mb-8">
-            <div className="bg-gradient-to-r from-green-500 to-amber-500 h-full rounded-full progress-anim"></div>
+            <div className="bg-gradient-to-r from-amber-500 to-amber-600 h-full rounded-full progress-anim"></div>
           </div>
 
           {/* Action */}
@@ -346,7 +346,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
           .spinner-accent {
             border-top-color: #D97706;
             border-right-color: transparent;
-            border-bottom-color: #16A34A;
+            border-bottom-color: #F59E0B;
             border-left-color: transparent;
           }
         `}</style>
