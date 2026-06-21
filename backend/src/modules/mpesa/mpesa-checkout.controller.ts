@@ -52,6 +52,13 @@ export class MpesaCheckoutController {
 
   static async handleCallback(req: Request, res: Response) {
     try {
+      // Validate secure webhook token if configured in environment variables to prevent spoofing
+      const webhookToken = process.env.MPESA_WEBHOOK_TOKEN;
+      if (webhookToken && req.query.token !== webhookToken) {
+        console.warn('Unauthorized M-Pesa webhook callback attempt blocked.');
+        return res.status(401).json({ ResultCode: 1, ResultDesc: "Unauthorized Callback" });
+      }
+
       await MpesaCheckoutService.processCallback(req.body);
       // Safaricom expects a success response immediately
       res.json({ ResultCode: 0, ResultDesc: "Accepted" });

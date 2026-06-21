@@ -77,6 +77,11 @@ export class MpesaCheckoutService {
       formattedPhone = `254${formattedPhone}`;
     }
 
+    const webhookToken = process.env.MPESA_WEBHOOK_TOKEN;
+    const callbackUrl = webhookToken 
+      ? `${appUrl}/mpesa/webhook/callback?token=${webhookToken}`
+      : `${appUrl}/mpesa/webhook/callback`;
+
     const payload = {
       BusinessShortCode: account.shortcode,
       Password: password,
@@ -86,7 +91,7 @@ export class MpesaCheckoutService {
       PartyA: formattedPhone,
       PartyB: account.shortcode,
       PhoneNumber: formattedPhone,
-      CallBackURL: `${appUrl}/mpesa/webhook/callback`,
+      CallBackURL: callbackUrl,
       AccountReference: `Sale ${saleId.slice(0, 8)}`,
       TransactionDesc: "POS Purchase"
     };
