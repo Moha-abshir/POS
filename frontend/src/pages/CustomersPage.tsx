@@ -363,11 +363,16 @@ export const CustomersPage = () => {
         customerToEdit={customerToEdit}
       />
       
-      <CustomerDetailsModal
-        isOpen={!!customerToView}
-        onClose={() => setCustomerToView(null)}
-        customer={customerToView}
-      />
+      {(() => {
+        const activeCustomer = customerToView ? (customers.find(c => c.id === customerToView.id) || customerToView) : null;
+        return (
+          <CustomerDetailsModal
+            isOpen={!!customerToView}
+            onClose={() => setCustomerToView(null)}
+            customer={activeCustomer}
+          />
+        );
+      })()}
     </div>
   );
 };

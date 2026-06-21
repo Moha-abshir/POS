@@ -305,13 +305,12 @@ export function RecordCustomerPaymentModal({ customer, onClose }: RecordCustomer
             border-left-color: transparent;
           }
         `}</style>
-        <div className="bg-[#1C1F24] rounded-3xl w-full max-w-sm p-8 flex flex-col items-center border border-white/5 shadow-2xl">
-          <div className="relative w-16 h-16 mb-6">
-            <div className="absolute inset-0 rounded-full border-4 border-white/5"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-t-amber-500 border-r-transparent border-b-amber-600 border-l-transparent animate-spin spinner-accent animate-pulse"></div>
-          </div>
-          <h3 className="text-lg font-bold text-white mb-2">Initiating M-PESA STK Push</h3>
-          <p className="text-sm text-white/60 text-center">Please verify the prompt on your phone once sent.</p>
+        <div className="bg-[#1C1F24] rounded-3xl w-full max-w-sm p-8 flex flex-col items-center text-white border border-white/10 shadow-2xl">
+          <div className="w-16 h-16 border-4 rounded-full spinner-accent animate-[spin-slow_1.5s_linear_infinite] mb-6"></div>
+          <h3 className="text-lg font-bold mb-2">Initiating M-Pesa STK Push</h3>
+          <p className="text-sm text-white/60 text-center leading-relaxed">
+            Please wait while we request the payment prompt for phone <span className="font-semibold text-amber-400">{mpesaPhoneNumber}</span>...
+          </p>
         </div>
       </div>
     );
