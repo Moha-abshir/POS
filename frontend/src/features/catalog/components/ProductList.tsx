@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useProducts, useCategories } from '../api/catalog.api';
 import { Package, Plus, Search, Loader2, MoreHorizontal } from 'lucide-react';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
+import { TableSkeleton } from '../../../components/ui/Loading';
 import { ProductRestockModal } from './ProductRestockModal';
 
 interface ProductListProps {
@@ -118,9 +119,8 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={5} className="p-12 text-center text-gray-400">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-amber-500" />
-                  <p className="mt-2 text-sm font-medium">Loading inventory...</p>
+                <td colSpan={5} className="p-0">
+                  <TableSkeleton rows={5} cols={5} />
                 </td>
               </tr>
             )}

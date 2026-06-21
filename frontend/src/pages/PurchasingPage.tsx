@@ -7,6 +7,7 @@ import { SupplierModal } from '../features/suppliers/components/SupplierModal';
 import { SupplierDetailsModal } from '../features/suppliers/components/SupplierDetailsModal';
 import { PurchaseModal } from '../features/inventory/components/PurchaseModal';
 import { RecordPaymentModal } from '../features/suppliers/components/RecordPaymentModal';
+import { TableSkeleton, LoadingSpinner } from '../components/ui/Loading';
 
 export function PurchasingPage() {
   const [activeTab, setActiveTab] = useState<'suppliers' | 'purchases'>('suppliers');
@@ -161,7 +162,9 @@ export function PurchasingPage() {
                 <tbody>
                   {isLoadingSuppliers ? (
                     <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-gray-400">Loading suppliers...</td>
+                      <td colSpan={5} className="p-0">
+                        <TableSkeleton rows={5} cols={5} />
+                      </td>
                     </tr>
                   ) : suppliers.length === 0 ? (
                     <tr>
@@ -335,7 +338,9 @@ export function PurchasingPage() {
               <tbody>
                 {isLoadingMovements ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-gray-400">Loading purchases...</td>
+                    <td colSpan={7} className="p-0">
+                      <TableSkeleton rows={5} cols={7} />
+                    </td>
                   </tr>
                 ) : movements.length === 0 ? (
                   <tr>

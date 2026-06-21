@@ -2,6 +2,7 @@ import React from 'react';
 import { X, UserCircle, Phone, MapPin, Receipt, Calendar, Download } from 'lucide-react';
 import { type Customer, useCustomerPurchases } from '../api/customers.api';
 import { format } from 'date-fns';
+import { LoadingSpinner } from '../../../components/ui/Loading';
 
 interface CustomerDetailsModalProps {
   isOpen: boolean;
@@ -138,7 +139,9 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
             </div>
 
             {isLoading ? (
-              <div className="text-sm text-gray-500 text-center py-8">Loading purchases...</div>
+              <div className="flex justify-center py-8">
+                <LoadingSpinner size="sm" />
+              </div>
             ) : purchases && purchases.length > 0 ? (
               <div className="space-y-3">
                 {purchases.map((purchase: any) => (

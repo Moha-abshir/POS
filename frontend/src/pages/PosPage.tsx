@@ -5,6 +5,7 @@ import { ShoppingCart, Search, Plus, Minus, Trash2, Tag, ArrowRight, Package, Sh
 import { api } from '../lib/api';
 import { CheckoutModal } from '../features/sales/components/CheckoutModal';
 import { UnitSelectionModal } from '../features/sales/components/UnitSelectionModal';
+import { CardSkeleton } from '../components/ui/Loading';
 
 // POS Catalog API hook
 const usePosCatalog = (search?: string) => {
@@ -143,12 +144,7 @@ export const PosPage = () => {
           {/* Product Grid */}
           <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-hide">
             {isLoading ? (
-              <div className="flex items-center justify-center h-48 text-gray-500">
-                <div className="flex flex-col items-center">
-                  <div className="w-9 h-9 border-4 border-[#D97706] border-t-transparent rounded-full animate-spin mb-3"></div>
-                  <p className="text-xs font-semibold text-gray-500">Loading catalog...</p>
-                </div>
-              </div>
+              <CardSkeleton count={8} />
             ) : filteredProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
                 <ShoppingBag className="w-10 h-10 opacity-30" />

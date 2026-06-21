@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { Loader2, Plus, Trash2, CheckCircle, Circle, Edit2, Eye, EyeOff } from 'lucide-react';
+import { LoadingSpinner } from '../../components/ui/Loading';
 
 interface MpesaAccount {
   id: string;
@@ -149,7 +150,7 @@ export const MpesaSettingsSection: React.FC = () => {
 
       {isLoading ? (
         <div className="flex justify-center p-4">
-          <Loader2 className="w-6 h-6 animate-spin text-[var(--color-accent)]" />
+          <LoadingSpinner size="sm" />
         </div>
       ) : accounts.length === 0 ? (
         <p className="text-gray-500 text-sm py-4">No M-Pesa accounts configured yet.</p>

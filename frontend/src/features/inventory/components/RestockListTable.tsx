@@ -21,9 +21,7 @@ export function RestockListTable() {
     updateItem.mutate({ id, isOrdered: !currentStatus });
   };
 
-  if (isLoading) {
-    return <div className="p-8 text-center text-gray-400">Loading restock list...</div>;
-  }
+
 
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-[var(--color-border)] overflow-hidden relative">
@@ -50,74 +48,90 @@ export function RestockListTable() {
       </div>
 
       <div className="flex-1 overflow-auto p-4 space-y-6">
-        {/* Pending Section */}
-        <div>
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 px-2 flex items-center gap-2">
-            <ClipboardList size={16} /> To Order ({pendingItems.length})
-          </h3>
-          
-          {pendingItems.length === 0 ? (
-             <div className="text-center p-6 text-gray-400 text-sm border-2 border-dashed border-gray-100 rounded-xl">No pending items to restock.</div>
-          ) : (
-            <div className="space-y-1">
-              {pendingItems.map((item) => (
-                <div 
-                  key={item.id} 
-                  onClick={() => handleToggle(item.id, item.isOrdered)}
-                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 cursor-pointer group transition-colors border border-transparent hover:border-gray-100"
-                >
-                  <div className="relative w-6 h-6 shrink-0 flex items-center justify-center">
-                    <div className="absolute inset-0 transition-transform duration-300 scale-100 opacity-100">
-                      <Circle className="text-gray-300 group-hover:text-[var(--color-accent)] w-6 h-6" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-[var(--color-text-primary)]">{item.productName}</div>
-                    <div className="text-xs text-[var(--color-text-secondary)]">{item.variantName}</div>
-                  </div>
-                  <div className="text-sm font-mono text-gray-500 flex items-center gap-1.5 shrink-0 bg-gray-50 px-2 py-1 rounded-md">
-                    <Package size={14} />
-                    Stock: {item.currentStock || 0}
-                  </div>
+        {isLoading ? (
+          <div className="space-y-3 animate-pulse">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div key={idx} className="flex items-center gap-4 p-3 rounded-lg border border-gray-100">
+                <div className="w-6 h-6 rounded-full bg-gray-200" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-1/3" />
+                  <div className="h-3 bg-gray-200 rounded w-1/4" />
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Ordered Section */}
-        {orderedItems.length > 0 && (
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 px-2 flex items-center gap-2">
-              <CheckCircle2 size={16} /> Ordered ({orderedItems.length})
-            </h3>
-            
-            <div className="space-y-1">
-              {orderedItems.map((item) => (
-                <div 
-                  key={item.id} 
-                  onClick={() => handleToggle(item.id, item.isOrdered)}
-                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 cursor-pointer group transition-colors opacity-60"
-                >
-                  <div className="relative w-6 h-6 shrink-0 flex items-center justify-center">
-                    <div className="absolute inset-0 transition-transform duration-300 scale-100 opacity-100">
-                      <CheckCircle2 className="text-[var(--color-success)] w-6 h-6" />
-                    </div>
-                  </div>
-                  <div className="flex-1 line-through">
-                    <div className="font-medium text-[var(--color-text-primary)]">{item.productName}</div>
-                    <div className="text-xs text-[var(--color-text-secondary)]">{item.variantName}</div>
-                  </div>
-                  <div className="text-sm font-mono text-gray-400 flex items-center gap-1.5 shrink-0 px-2 py-1">
-                    <Package size={14} />
-                    Stock: {item.currentStock || 0}
-                  </div>
-                </div>
-              ))}
-            </div>
+                <div className="w-20 h-6 bg-gray-200 rounded" />
+              </div>
+            ))}
           </div>
-        )}
+        ) : (
+          <>
+            {/* Pending Section */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 px-2 flex items-center gap-2">
+                <ClipboardList size={16} /> To Order ({pendingItems.length})
+              </h3>
+              
+              {pendingItems.length === 0 ? (
+                 <div className="text-center p-6 text-gray-400 text-sm border-2 border-dashed border-gray-100 rounded-xl">No pending items to restock.</div>
+              ) : (
+                <div className="space-y-1">
+                  {pendingItems.map((item) => (
+                    <div 
+                      key={item.id} 
+                      onClick={() => handleToggle(item.id, item.isOrdered)}
+                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 cursor-pointer group transition-colors border border-transparent hover:border-gray-100"
+                    >
+                      <div className="relative w-6 h-6 shrink-0 flex items-center justify-center">
+                        <div className="absolute inset-0 transition-transform duration-300 scale-100 opacity-100">
+                          <Circle className="text-gray-300 group-hover:text-[var(--color-accent)] w-6 h-6" />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-[var(--color-text-primary)]">{item.productName}</div>
+                        <div className="text-xs text-[var(--color-text-secondary)]">{item.variantName}</div>
+                      </div>
+                      <div className="text-sm font-mono text-gray-500 flex items-center gap-1.5 shrink-0 bg-gray-50 px-2 py-1 rounded-md">
+                        <Package size={14} />
+                        Stock: {item.currentStock || 0}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
+            {/* Ordered Section */}
+            {orderedItems.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 px-2 flex items-center gap-2">
+                  <CheckCircle2 size={16} /> Ordered ({orderedItems.length})
+                </h3>
+                
+                <div className="space-y-1">
+                  {orderedItems.map((item) => (
+                    <div 
+                      key={item.id} 
+                      onClick={() => handleToggle(item.id, item.isOrdered)}
+                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 cursor-pointer group transition-colors opacity-60"
+                    >
+                      <div className="relative w-6 h-6 shrink-0 flex items-center justify-center">
+                        <div className="absolute inset-0 transition-transform duration-300 scale-100 opacity-100">
+                          <CheckCircle2 className="text-[var(--color-success)] w-6 h-6" />
+                        </div>
+                      </div>
+                      <div className="flex-1 line-through">
+                        <div className="font-medium text-[var(--color-text-primary)]">{item.productName}</div>
+                        <div className="text-xs text-[var(--color-text-secondary)]">{item.variantName}</div>
+                      </div>
+                      <div className="text-sm font-mono text-gray-400 flex items-center gap-1.5 shrink-0 px-2 py-1">
+                        <Package size={14} />
+                        Stock: {item.currentStock || 0}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Clear Modal */}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Phone, Mail, ArrowUpRight, ArrowDownRight, Download } from 'lucide-react';
 import { type Supplier, useSupplierPayments, useSupplierPurchases } from '../api/suppliers.api';
 import { format } from 'date-fns';
+import { LoadingSpinner } from '../../../components/ui/Loading';
 
 interface SupplierDetailsModalProps {
   isOpen: boolean;
@@ -183,7 +184,9 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ isOp
               {activeTab === 'payments' && (
                 <div>
                   {loadingPayments ? (
-                    <div className="text-sm text-gray-500 text-center py-8">Loading payments...</div>
+                    <div className="flex justify-center py-8">
+                      <LoadingSpinner size="sm" />
+                    </div>
                   ) : payments && payments.length > 0 ? (
                     <div className="space-y-3">
                       {payments.map((payment: any) => (
@@ -220,7 +223,9 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ isOp
               {activeTab === 'purchases' && (
                 <div>
                   {loadingPurchases ? (
-                    <div className="text-sm text-gray-500 text-center py-8">Loading purchases...</div>
+                    <div className="flex justify-center py-8">
+                      <LoadingSpinner size="sm" />
+                    </div>
                   ) : purchases && purchases.length > 0 ? (
                     <div className="space-y-3">
                       {purchases.map((purchase: any) => {

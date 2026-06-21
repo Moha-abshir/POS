@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useDamagesLog } from '../api/inventory.api';
 import { Search, AlertTriangle, FileWarning, Calendar } from 'lucide-react';
+import { TableSkeleton } from '../../../components/ui/Loading';
 
 export function DamagesLogTable() {
   const { data: damages = [], isLoading } = useDamagesLog();
@@ -11,10 +12,6 @@ export function DamagesLogTable() {
     item.variantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (item.reason && item.reason.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
-  if (isLoading) {
-    return <div className="p-8 text-center text-gray-400">Loading damages log...</div>;
-  }
 
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-[var(--color-border)] overflow-hidden">
@@ -43,7 +40,13 @@ export function DamagesLogTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
-            {filteredDamages.length === 0 ? (
+            {isLoading ? (
+              <tr>
+                <td colSpan={5} className="p-0">
+                  <TableSkeleton rows={5} cols={5} />
+                </td>
+              </tr>
+            ) : filteredDamages.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                   <div className="flex flex-col items-center justify-center">

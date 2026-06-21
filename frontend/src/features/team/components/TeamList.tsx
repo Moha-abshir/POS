@@ -1,21 +1,14 @@
 import React, { useState } from 'react';
 import { useTeamMembers } from '../api/team.api';
 import { AddUserModal } from './AddUserModal';
-import { Users, Loader2 } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { useAuthStore } from '../../auth/stores/auth.store';
+import { TableSkeleton } from '../../../components/ui/Loading';
 
 export const TeamList: React.FC = () => {
   const { data: team, isLoading } = useTeamMembers();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const currentUser = useAuthStore((state) => state.user);
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col flex-1 p-6 items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-text-muted)]" />
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col flex-1 p-6 bg-[var(--color-bg-base)]">
@@ -38,7 +31,9 @@ export const TeamList: React.FC = () => {
       {/* Table */}
       <div className="bg-[var(--color-bg-surface)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] border border-[var(--color-border)] overflow-hidden flex flex-col flex-1">
         
-        {(!team || team.length === 0) ? (
+        {isLoading ? (
+          <TableSkeleton rows={4} cols={4} />
+        ) : (!team || team.length === 0) ? (
           <div className="flex flex-col items-center justify-center flex-1 py-16">
             <Users className="w-12 h-12 text-[var(--color-text-muted)] mb-4" />
             <h3 className="text-[var(--text-lg)] font-semibold text-[var(--color-text-secondary)]">No team members yet</h3>

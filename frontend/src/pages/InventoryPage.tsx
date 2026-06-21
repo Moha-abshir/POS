@@ -6,6 +6,7 @@ import { AdjustStockModal } from '../features/inventory/components/AdjustStockMo
 import { RestockListTable } from '../features/inventory/components/RestockListTable';
 import { ReportDamageModal } from '../features/inventory/components/ReportDamageModal';
 import { DamagesLogTable } from '../features/inventory/components/DamagesLogTable';
+import { TableSkeleton } from '../components/ui/Loading';
 
 export function InventoryPage() {
   const [view, setView] = useState<'ledger' | 'restock' | 'damages'>('ledger');
@@ -96,7 +97,9 @@ export function InventoryPage() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-[var(--color-text-muted)] animate-pulse">Loading ledger...</td>
+                    <td colSpan={5} className="p-0">
+                      <TableSkeleton rows={5} cols={5} />
+                    </td>
                   </tr>
                 ) : movements.length === 0 ? (
                   <tr>

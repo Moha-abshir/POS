@@ -1,6 +1,7 @@
 import { AxiosError } from 'axios';
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { LoadingSpinner } from '../components/ui/Loading';
 import { useAuthStore } from '../features/auth/stores/auth.store';
 import { api } from '../lib/api';
 import { useQuery } from '@tanstack/react-query';
@@ -87,8 +88,8 @@ export const SettingsPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="p-6 flex justify-center items-center h-full">
-        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-accent)]" />
+      <div className="p-6 flex justify-center items-center h-[calc(100vh-200px)]">
+        <LoadingSpinner size="lg" />
       </div>
     );
   }

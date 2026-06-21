@@ -4,6 +4,7 @@ import { salesApi } from '../features/sales/api/sales.api';
 import { format } from 'date-fns';
 import { Search, Receipt, ArrowUpRight, Filter, Download, X } from 'lucide-react';
 import { ReceiptModal } from '../features/sales/components/ReceiptModal';
+import { TableSkeleton } from '../components/ui/Loading';
 
 export function SalesPage() {
   const [page, setPage] = useState(1);
@@ -261,8 +262,8 @@ export function SalesPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-[var(--color-text-secondary)]">
-                    Loading sales history...
+                  <td colSpan={7} className="p-0">
+                    <TableSkeleton rows={5} cols={7} />
                   </td>
                 </tr>
               ) : sales.length === 0 ? (

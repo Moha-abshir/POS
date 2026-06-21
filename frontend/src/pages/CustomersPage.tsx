@@ -4,6 +4,7 @@ import { Search, Plus, UserCircle, Eye, Pencil, Filter } from 'lucide-react';
 import { CustomerModal } from '../features/customers/components/CustomerModal';
 import { CustomerDetailsModal } from '../features/customers/components/CustomerDetailsModal';
 import { formatDistanceToNow } from 'date-fns';
+import { TableSkeleton } from '../components/ui/Loading';
 
 type TabType = 'all' | 'owing' | 'business' | 'frequent' | 'inactive';
 
@@ -238,7 +239,9 @@ export const CustomersPage = () => {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="h-32 text-center text-sm text-[var(--color-text-secondary)]">Loading customers...</td>
+                  <td colSpan={7} className="p-0">
+                    <TableSkeleton rows={5} cols={7} />
+                  </td>
                 </tr>
               ) : error ? (
                 <tr>
