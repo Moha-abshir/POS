@@ -186,6 +186,85 @@ export class CustomersService {
     });
   }
 
+  static async completeMpesaDebtPayment(
+    tx: any,
+    paymentId: string,
+    customerId: string,
+    amount: number,
+    mpesaReceiptNumber: string
+  ) {
+    // 1. Verify customer exists
+    const [customer] = await tx.select()
+      .from(customers)
+      .where(eq(customers.id, customerId));
+
+    if (!customer) {
+      throw new Error('Customer not found');
+    }
+
+    const balanceNum = Number(customer.balance);
+    const newBalance = Math.max(0, balanceNum - amount);
+    const paymentStatusStr = amount === balanceNum ? 'completed' : 'partial';
+
+    // 2. Decrease customer balance
+    await tx.update(customers)
+      .set({
+        balance: newBalance.toString(),
+        hasActiveCredit: newBalance > 0,
+        updatedAt: new Date()
+      })
+      .where(eq(customers.id, customerId));
+
+    // 3. Allocate payment to customer's outstanding credit sales (FIFO order)
+    let remainingAmount = amount;
+    const unpaidSales = await tx.select()
+      .from(sales)
+      .where(and(
+        eq(sales.customerId, customerId),
+        sql`${sales.paymentStatus} IN ('UNPAID', 'PARTIAL')`
+      ))
+      .orderBy(sales.soldAt);
+
+    for (const sale of unpaidSales) {
+      if (remainingAmount <= 0) break;
+
+      const saleTotal = Number(sale.totalAmount);
+      const salePaid = Number(sale.amountPaid);
+      const saleDebt = Math.max(0, saleTotal - salePaid);
+
+      if (saleDebt <= 0) continue;
+
+      if (remainingAmount >= saleDebt) {
+        await tx.update(sales)
+          .set({
+            amountPaid: sale.totalAmount,
+            paymentStatus: 'PAID',
+            mpesaRef: mpesaReceiptNumber.toUpperCase()
+          })
+          .where(eq(sales.id, sale.id));
+        remainingAmount -= saleDebt;
+      } else {
+        const newPaidAmount = salePaid + remainingAmount;
+        await tx.update(sales)
+          .set({
+            amountPaid: newPaidAmount.toString(),
+            paymentStatus: 'PARTIAL',
+            mpesaRef: mpesaReceiptNumber.toUpperCase()
+          })
+          .where(eq(sales.id, sale.id));
+        remainingAmount = 0;
+      }
+    }
+
+    // 4. Update the payment record with notes and receipt number
+    await tx.update(payments)
+      .set({
+        notes: paymentStatusStr,
+        mpesaReceiptNumber: mpesaReceiptNumber
+      })
+      .where(eq(payments.id, paymentId));
+  }
+
   static async getCustomerPayments(businessId: string, customerId: string) {
     return await db.select()
       .from(payments)

@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { SalesService } from '../sales/sales.service';
 
 const pushSchema = z.object({
-  saleId: z.string().uuid(),
+  saleId: z.string().uuid().optional(),
+  customerId: z.string().uuid().optional(),
   phoneNumber: z.string().min(10),
   amount: z.number().positive()
 });
@@ -13,9 +14,18 @@ export class MpesaCheckoutController {
   static async initiatePush(req: Request, res: Response) {
     try {
       const validatedData = pushSchema.parse(req.body);
+
+      if (!validatedData.saleId && !validatedData.customerId) {
+        return res.status(400).json({ message: "Either saleId or customerId is required" });
+      }
+
+      const referenceType = validatedData.saleId ? 'SALE' : 'CUSTOMER_DEBT';
+      const referenceId = (validatedData.saleId || validatedData.customerId)!;
+
       const result = await MpesaCheckoutService.initiateSTKPush(
         req.user!.businessId, 
-        validatedData.saleId, 
+        referenceType,
+        referenceId, 
         validatedData.phoneNumber, 
         validatedData.amount
       );

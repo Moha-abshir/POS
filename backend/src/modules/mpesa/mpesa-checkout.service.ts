@@ -1,5 +1,6 @@
 import { eq, and, isNull } from 'drizzle-orm';
 import { SalesService } from '../sales/sales.service';
+import { CustomersService } from '../customers/customers.service';
 import { db } from '../../db';
 import { businessMpesaAccounts, payments, mpesaTransactions, sales } from '../../db/schema';
 import { decrypt } from '../../core/utils/crypto.util';
@@ -25,7 +26,13 @@ export class MpesaCheckoutService {
     return data.access_token;
   }
 
-  static async initiateSTKPush(businessId: string, saleId: string, phoneNumber: string, amount: number) {
+  static async initiateSTKPush(
+    businessId: string,
+    referenceType: 'SALE' | 'CUSTOMER_DEBT',
+    referenceId: string,
+    phoneNumber: string,
+    amount: number
+  ) {
     // 1. Get Default Active M-Pesa Account
     const account = await db.query.businessMpesaAccounts.findFirst({
       where: and(
@@ -92,8 +99,8 @@ export class MpesaCheckoutService {
       PartyB: account.shortcode,
       PhoneNumber: formattedPhone,
       CallBackURL: callbackUrl,
-      AccountReference: `Sale ${saleId.slice(0, 8)}`,
-      TransactionDesc: "POS Purchase"
+      AccountReference: referenceType === 'SALE' ? `Sale ${referenceId.slice(0, 8)}` : `Debt ${referenceId.slice(0, 8)}`,
+      TransactionDesc: referenceType === 'SALE' ? "POS Purchase" : "Debt Payment"
     };
 
     const url = isSandbox
@@ -121,8 +128,8 @@ export class MpesaCheckoutService {
 
     // 5. Create Payment Record (Generic)
     const [payment] = await db.insert(payments).values({
-      referenceType: 'SALE',
-      referenceId: saleId,
+      referenceType,
+      referenceId,
       businessId,
       method: 'MPESA',
       amount: amount.toString(),
@@ -208,22 +215,33 @@ export class MpesaCheckoutService {
         })
         .where(eq(payments.id, transaction.paymentId));
 
-      // Fetch payment to get saleId
+      // Fetch payment to get referenceType and referenceId
       const payment = await db.query.payments.findFirst({
         where: eq(payments.id, transaction.paymentId)
       });
 
       if (payment) {
-        // Update Sale status to PAID and set amountPaid = totalAmount (assuming full payment for now)
-        const sale = await db.query.sales.findFirst({ where: eq(sales.id, payment.referenceId) });
-        if (sale) {
-           await db.update(sales)
-            .set({ 
-              paymentStatus: 'PAID', 
-              amountPaid: sale.totalAmount,
-              mpesaRef: mpesaReceiptNumber
-            })
-            .where(eq(sales.id, payment.referenceId));
+        if (payment.referenceType === 'SALE') {
+          // Update Sale status to PAID and set amountPaid = totalAmount
+          const sale = await db.query.sales.findFirst({ where: eq(sales.id, payment.referenceId) });
+          if (sale) {
+             await db.update(sales)
+              .set({ 
+                paymentStatus: 'PAID', 
+                amountPaid: sale.totalAmount,
+                mpesaRef: mpesaReceiptNumber
+              })
+              .where(eq(sales.id, payment.referenceId));
+          }
+        } else if (payment.referenceType === 'CUSTOMER_DEBT') {
+          // Complete customer debt payment in DB
+          await CustomersService.completeMpesaDebtPayment(
+            db,
+            payment.id,
+            payment.referenceId,
+            Number(payment.amount),
+            mpesaReceiptNumber
+          );
         }
       }
 
@@ -313,15 +331,28 @@ export class MpesaCheckoutService {
           
           const payment = await db.query.payments.findFirst({ where: eq(payments.id, transaction.paymentId) });
           if (payment) {
-            const sale = await db.query.sales.findFirst({ where: eq(sales.id, payment.referenceId) });
-            if (sale) {
-              await db.update(sales)
-                .set({ 
-                  paymentStatus: 'PAID', 
-                  amountPaid: sale.totalAmount,
-                  mpesaRef: fallbackRef
-                })
-                .where(eq(sales.id, payment.referenceId));
+            if (payment.referenceType === 'SALE') {
+              const sale = await db.query.sales.findFirst({ where: eq(sales.id, payment.referenceId) });
+              if (sale) {
+                await db.update(sales)
+                  .set({ 
+                    paymentStatus: 'PAID', 
+                    amountPaid: sale.totalAmount,
+                    mpesaRef: fallbackRef
+                  })
+                  .where(eq(sales.id, payment.referenceId));
+              }
+            } else if (payment.referenceType === 'CUSTOMER_DEBT') {
+              // Complete customer debt payment in DB inside a transaction
+              await db.transaction(async (tx) => {
+                await CustomersService.completeMpesaDebtPayment(
+                  tx,
+                  payment.id,
+                  payment.referenceId,
+                  Number(payment.amount),
+                  fallbackRef
+                );
+              });
             }
           }
           return { status: 'COMPLETED', resultDesc: data.ResultDesc };
