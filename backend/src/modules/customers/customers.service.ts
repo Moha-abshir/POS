@@ -271,7 +271,8 @@ export class CustomersService {
       .where(and(
         eq(payments.businessId, businessId),
         eq(payments.referenceType, 'CUSTOMER_DEBT'),
-        eq(payments.referenceId, customerId)
+        eq(payments.referenceId, customerId),
+        eq(payments.status, 'COMPLETED')
       ))
       .orderBy(desc(payments.paidAt));
   }
