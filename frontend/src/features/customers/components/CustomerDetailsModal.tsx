@@ -240,10 +240,21 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                     <div className="space-y-3">
                       {paymentsList.map((payment: any) => (
                         <div key={payment.id} className="p-3 border border-gray-100 rounded-md hover:bg-gray-50 transition-colors">
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="text-sm font-medium text-gray-900">
-                              {format(new Date(payment.paidAt), 'MMM d, yyyy - h:mm a')}
-                            </span>
+                          <div className="flex justify-between items-center mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-900">
+                                {format(new Date(payment.paidAt), 'MMM d, yyyy - h:mm a')}
+                              </span>
+                              {payment.notes && (
+                                <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider border ${
+                                  payment.notes === 'Completed'
+                                    ? 'bg-green-50 text-green-700 border-green-200'
+                                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                                }`}>
+                                  {payment.notes}
+                                </span>
+                              )}
+                            </div>
                             <span className="text-sm font-bold text-green-600">
                               KSH {Number(payment.amount).toLocaleString()}
                             </span>

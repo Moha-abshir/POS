@@ -8,7 +8,7 @@ dotenv.config();
 async function runMigrations() {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : true,
+    ssl: process.env.DATABASE_URL?.includes('neon.tech') ? { rejectUnauthorized: false } : (process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined),
     max: 1,
     connectionTimeoutMillis: 15000,
     idleTimeoutMillis: 5000,

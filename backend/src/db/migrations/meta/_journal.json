@@ -50,6 +50,13 @@
       "when": 1781963446177,
       "tag": "0006_flippant_ultimates",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782047555949,
+      "tag": "0007_spicy_taskmaster",
+      "breakpoints": true
     }
   ]
 }

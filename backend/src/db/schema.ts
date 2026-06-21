@@ -194,6 +194,7 @@ export const payments = pgTable('payments', {
   method: paymentMethodEnum('method').notNull(),
   status: transactionStatusEnum('status').notNull().default('COMPLETED'),
   mpesaReceiptNumber: varchar('mpesa_receipt_number', { length: 50 }).unique(),
+  notes: text('notes'),
   paidAt: timestamp('paid_at', { withTimezone: true }).defaultNow().notNull(),
   createdBy: uuid('created_by').references(() => users.id),
 }, (table) => ({

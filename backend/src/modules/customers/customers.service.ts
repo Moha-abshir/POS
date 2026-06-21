@@ -110,6 +110,7 @@ export class CustomersService {
       }
 
       const newBalance = balanceNum - data.amount;
+      const paymentStatusStr = data.amount === balanceNum ? 'Completed' : 'Partial';
 
       // 2. Decrease balance
       const [updatedCustomer] = await tx.update(customers)
@@ -121,7 +122,55 @@ export class CustomersService {
         .where(eq(customers.id, customerId))
         .returning();
 
-      // 3. Create payment record
+      // 3. Allocate payment to customer's outstanding credit sales (FIFO order)
+      let remainingAmount = data.amount;
+      
+      // Fetch all credit sales for this customer that are not fully paid
+      const unpaidSales = await tx.select()
+        .from(sales)
+        .where(and(
+          eq(sales.businessId, businessId),
+          eq(sales.customerId, customerId),
+          sql`${sales.paymentStatus} IN ('UNPAID', 'PARTIAL')`
+        ))
+        .orderBy(sales.soldAt); // Oldest first (FIFO)
+
+      for (const sale of unpaidSales) {
+        if (remainingAmount <= 0) break;
+
+        const saleTotal = Number(sale.totalAmount);
+        const salePaid = Number(sale.amountPaid);
+        const saleDebt = Math.max(0, saleTotal - salePaid);
+
+        if (saleDebt <= 0) continue;
+
+        if (remainingAmount >= saleDebt) {
+          // Fully pay off this sale
+          await tx.update(sales)
+            .set({
+              amountPaid: sale.totalAmount,
+              paymentStatus: 'PAID',
+              mpesaRef: data.method === 'MPESA' && data.mpesaReceiptNumber ? data.mpesaReceiptNumber.toUpperCase() : sale.mpesaRef
+            })
+            .where(eq(sales.id, sale.id));
+          
+          remainingAmount -= saleDebt;
+        } else {
+          // Partially pay off this sale
+          const newPaidAmount = salePaid + remainingAmount;
+          await tx.update(sales)
+            .set({
+              amountPaid: newPaidAmount.toString(),
+              paymentStatus: 'PARTIAL',
+              mpesaRef: data.method === 'MPESA' && data.mpesaReceiptNumber ? data.mpesaReceiptNumber.toUpperCase() : sale.mpesaRef
+            })
+            .where(eq(sales.id, sale.id));
+          
+          remainingAmount = 0;
+        }
+      }
+
+      // 4. Create payment record
       const [payment] = await tx.insert(payments).values({
         businessId,
         referenceType: 'CUSTOMER_DEBT',
@@ -129,6 +178,7 @@ export class CustomersService {
         amount: data.amount.toString(),
         method: data.method,
         mpesaReceiptNumber: data.method === 'MPESA' && data.mpesaReceiptNumber ? data.mpesaReceiptNumber.toUpperCase() : null,
+        notes: paymentStatusStr,
         createdBy: userId,
       }).returning();
 
