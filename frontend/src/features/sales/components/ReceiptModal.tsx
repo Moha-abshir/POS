@@ -67,6 +67,16 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
       {/* Print styles stylesheet */}
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
+          @page {
+            size: 80mm auto;
+            margin: 0;
+          }
+          html, body {
+            width: 80mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+          }
           /* Hide everything except the temporary body-level print container */
           body > * {
             display: none !important;
@@ -76,7 +86,7 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
-            width: 100% !important;
+            width: 80mm !important;
             background: white !important;
             padding: 0 !important;
             margin: 0 !important;
@@ -87,10 +97,10 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
           #printable-receipt {
             box-shadow: none !important;
             border: none !important;
-            margin: 0 auto !important;
+            margin: 0 !important;
             width: 100% !important;
-            max-width: 380px !important;
-            padding: 10px !important;
+            max-width: 100% !important;
+            padding: 6mm !important;
             display: flex !important;
             flex-direction: column !important;
             background: white !important;
