@@ -247,7 +247,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                               </span>
                               {payment.notes && (
                                 <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider border ${
-                                  payment.notes === 'Completed'
+                                  payment.notes.toLowerCase() === 'completed'
                                     ? 'bg-green-50 text-green-700 border-green-200'
                                     : 'bg-amber-50 text-amber-700 border-amber-200'
                                 }`}>

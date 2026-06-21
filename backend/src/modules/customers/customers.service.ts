@@ -110,7 +110,7 @@ export class CustomersService {
       }
 
       const newBalance = balanceNum - data.amount;
-      const paymentStatusStr = data.amount === balanceNum ? 'Completed' : 'Partial';
+      const paymentStatusStr = data.amount === balanceNum ? 'completed' : 'partial';
 
       // 2. Decrease balance
       const [updatedCustomer] = await tx.update(customers)
