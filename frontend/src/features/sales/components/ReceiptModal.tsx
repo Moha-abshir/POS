@@ -47,7 +47,19 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
   if (!saleId) return null;
 
   const handlePrint = () => {
+    const printContent = document.getElementById('printable-receipt');
+    if (!printContent) return;
+
+    // Create a temporary body-level container to bypass React root layout constraints during printing
+    const printContainer = document.createElement('div');
+    printContainer.id = 'temp-print-container';
+    printContainer.innerHTML = printContent.outerHTML;
+    document.body.appendChild(printContainer);
+
     window.print();
+
+    // Clean up after print dialog closes
+    document.body.removeChild(printContainer);
   };
 
   return (
@@ -55,11 +67,11 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
       {/* Print styles stylesheet */}
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-          /* Hide everything except the receipt wrapper */
+          /* Hide everything except the temporary body-level print container */
           body > * {
             display: none !important;
           }
-          #print-root-wrapper {
+          body > #temp-print-container {
             display: block !important;
             position: absolute !important;
             left: 0 !important;
@@ -79,6 +91,9 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
             width: 100% !important;
             max-width: 380px !important;
             padding: 10px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            background: white !important;
           }
         }
       `}} />
