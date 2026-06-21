@@ -72,7 +72,7 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
             margin: 0;
           }
           html, body {
-            width: 80mm !important;
+            width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
             background: white !important;
@@ -84,12 +84,14 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
           body > #temp-print-container {
             display: block !important;
             position: absolute !important;
-            left: 0 !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
             top: 0 !important;
             width: 80mm !important;
             background: white !important;
             padding: 0 !important;
             margin: 0 !important;
+            page-break-inside: avoid !important;
           }
           .no-print {
             display: none !important;
@@ -100,10 +102,32 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
             margin: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
-            padding: 6mm !important;
+            padding: 4mm !important;
             display: flex !important;
             flex-direction: column !important;
             background: white !important;
+            page-break-inside: avoid !important;
+          }
+          /* Compress spacing for a compact, single-page thermal receipt */
+          #printable-receipt .px-6.py-8 {
+            padding: 4mm 4mm !important;
+          }
+          #printable-receipt .mb-5, 
+          #printable-receipt .mb-6, 
+          #printable-receipt .mb-4 {
+            margin-bottom: 2mm !important;
+          }
+          #printable-receipt .space-y-3.5 > * + * {
+            margin-top: 1.5mm !important;
+          }
+          #printable-receipt .space-y-1.5 > * + * {
+            margin-top: 1mm !important;
+          }
+          #printable-receipt .pt-3 {
+            padding-top: 1.5mm !important;
+          }
+          #printable-receipt .pt-2 {
+            padding-top: 1mm !important;
           }
         }
       `}} />
