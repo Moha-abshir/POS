@@ -42,4 +42,27 @@ export class CustomersController {
       next(error);
     }
   }
+
+  static async recordPayment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await CustomersService.recordPayment(
+        req.user!.businessId,
+        req.user!.id,
+        req.params.id as string,
+        req.body
+      );
+      res.status(200).json({ status: 'success', message: 'Payment recorded successfully', data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getCustomerPayments(req: Request, res: Response, next: NextFunction) {
+    try {
+      const payments = await CustomersService.getCustomerPayments(req.user!.businessId, req.params.id as string);
+      res.status(200).json({ status: 'success', message: 'Customer payments retrieved successfully', data: payments });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

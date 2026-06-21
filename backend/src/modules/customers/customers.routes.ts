@@ -10,5 +10,7 @@ router.get('/', CustomersController.getCustomers);
 router.post('/', CustomersController.createCustomer);
 router.patch('/:id', CustomersController.updateCustomer);
 router.get('/:id/purchases', CustomersController.getCustomerPurchases);
+router.post('/:id/payments', CustomersController.recordPayment);
+router.get('/:id/payments', CustomersController.getCustomerPayments);
 
 export default router;

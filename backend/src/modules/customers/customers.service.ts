@@ -1,6 +1,7 @@
 import { eq, and, sql, desc } from 'drizzle-orm';
 import { db } from '../../db';
-import { customers, sales } from '../../db/schema';
+import { customers, sales, payments } from '../../db/schema';
+import { AppError } from '../../core/utils/AppError';
 
 export class CustomersService {
   static async getCustomers(businessId: string, filters: { limit?: number; offset?: number; search?: string } = {}) {
@@ -83,5 +84,66 @@ export class CustomersService {
         eq(sales.customerId, customerId)
       ))
       .orderBy(desc(sales.soldAt));
+  }
+
+  static async recordPayment(
+    businessId: string,
+    userId: string,
+    customerId: string,
+    data: { amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string }
+  ) {
+    if (data.amount <= 0) throw new AppError('Payment amount must be greater than zero', 400);
+
+    return await db.transaction(async (tx) => {
+      // 1. Verify customer exists and has outstanding balance
+      const [customer] = await tx.select()
+        .from(customers)
+        .where(and(eq(customers.id, customerId), eq(customers.businessId, businessId)));
+
+      if (!customer) {
+        throw new AppError('Customer not found', 404);
+      }
+
+      const balanceNum = Number(customer.balance);
+      if (balanceNum < data.amount) {
+        throw new AppError(`Payment amount (${data.amount}) exceeds outstanding balance (${customer.balance})`, 400);
+      }
+
+      const newBalance = balanceNum - data.amount;
+
+      // 2. Decrease balance
+      const [updatedCustomer] = await tx.update(customers)
+        .set({
+          balance: newBalance.toString(),
+          hasActiveCredit: newBalance > 0,
+          updatedAt: new Date()
+        })
+        .where(eq(customers.id, customerId))
+        .returning();
+
+      // 3. Create payment record
+      const [payment] = await tx.insert(payments).values({
+        businessId,
+        referenceType: 'CUSTOMER_DEBT',
+        referenceId: customerId,
+        amount: data.amount.toString(),
+        method: data.method,
+        mpesaReceiptNumber: data.method === 'MPESA' && data.mpesaReceiptNumber ? data.mpesaReceiptNumber.toUpperCase() : null,
+        createdBy: userId,
+      }).returning();
+
+      return { payment, customer: updatedCustomer };
+    });
+  }
+
+  static async getCustomerPayments(businessId: string, customerId: string) {
+    return await db.select()
+      .from(payments)
+      .where(and(
+        eq(payments.businessId, businessId),
+        eq(payments.referenceType, 'CUSTOMER_DEBT'),
+        eq(payments.referenceId, customerId)
+      ))
+      .orderBy(desc(payments.paidAt));
   }
 }

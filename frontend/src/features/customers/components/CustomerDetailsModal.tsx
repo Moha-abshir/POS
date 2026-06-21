@@ -1,8 +1,9 @@
-import React from 'react';
-import { X, UserCircle, Phone, MapPin, Receipt, Calendar, Download } from 'lucide-react';
-import { type Customer, useCustomerPurchases } from '../api/customers.api';
+import React, { useState } from 'react';
+import { X, UserCircle, Phone, MapPin, Receipt, Calendar, Download, DollarSign, CreditCard } from 'lucide-react';
+import { type Customer, useCustomerPurchases, useCustomerPayments } from '../api/customers.api';
 import { format } from 'date-fns';
 import { LoadingSpinner } from '../../../components/ui/Loading';
+import { RecordCustomerPaymentModal } from './RecordCustomerPaymentModal';
 
 interface CustomerDetailsModalProps {
   isOpen: boolean;
@@ -11,7 +12,11 @@ interface CustomerDetailsModalProps {
 }
 
 export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOpen, onClose, customer }) => {
-  const { data: purchases, isLoading } = useCustomerPurchases(customer?.id);
+  const [activeTab, setActiveTab] = useState<'purchases' | 'payments'>('purchases');
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  const { data: purchases, isLoading: isPurchasesLoading } = useCustomerPurchases(customer?.id);
+  const { data: paymentsList, isLoading: isPaymentsLoading } = useCustomerPayments(customer?.id);
 
   if (!isOpen || !customer) return null;
 
@@ -42,7 +47,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `${customer?.name.replace(/\\s+/g, '_')}_purchases.csv`);
+    link.setAttribute('download', `${customer?.name.replace(/\s+/g, '_')}_purchases.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -57,7 +62,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
       />
       
       {/* Modal Card */}
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-3xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 shrink-0">
           <h2 className="text-base font-medium text-gray-900">Customer Profile</h2>
@@ -73,7 +78,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
         <div className="p-6 overflow-y-auto flex-1 flex flex-col md:flex-row gap-6">
           
           {/* Left Column: Details */}
-          <div className="w-full md:w-1/3 space-y-6">
+          <div className="w-full md:w-1/3 space-y-6 shrink-0">
             <div className="flex flex-col items-center text-center">
               <div className="w-20 h-20 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-2xl font-bold mb-3">
                 {initials}
@@ -82,6 +87,15 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
               <p className={`mt-1 text-sm font-medium ${Number(customer.balance) > 0 ? 'text-[#D97706]' : 'text-green-600'}`}>
                 Balance: KSH {Number(customer.balance).toLocaleString()}
               </p>
+              {Number(customer.balance) > 0 && (
+                <button
+                  onClick={() => setIsPaymentModalOpen(true)}
+                  className="mt-3 w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold py-2 px-3 rounded-md transition-colors shadow-sm cursor-pointer"
+                >
+                  <DollarSign className="w-4 h-4" />
+                  Record Payment
+                </button>
+              )}
             </div>
 
             <div className="space-y-3 pt-4 border-t border-gray-100">
@@ -119,66 +133,140 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
             )}
           </div>
 
-          {/* Right Column: Purchases */}
-          <div className="w-full md:w-2/3 border-t md:border-t-0 md:border-l border-gray-100 md:pl-6 pt-6 md:pt-0">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-gray-400" />
-                Recent Purchases
-              </h4>
-              {purchases && purchases.length > 0 && (
-                <button
-                  onClick={handleExportCSV}
-                  className="flex items-center gap-1.5 text-xs font-medium text-[#D97706] bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-md transition-colors border border-amber-200 shadow-sm"
-                  title="Export purchases to spreadsheet"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  Export CSV
-                </button>
+          {/* Right Column: Purchases & Payments */}
+          <div className="w-full md:w-2/3 border-t md:border-t-0 md:border-l border-gray-100 md:pl-6 pt-6 md:pt-0 flex flex-col min-w-0">
+            
+            {/* Tabs Header */}
+            <div className="flex border-b border-gray-200 mb-4 shrink-0">
+              <button
+                onClick={() => setActiveTab('purchases')}
+                className={`pb-2 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
+                  activeTab === 'purchases'
+                    ? 'border-amber-500 text-amber-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Purchases
+              </button>
+              <button
+                onClick={() => setActiveTab('payments')}
+                className={`pb-2 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
+                  activeTab === 'payments'
+                    ? 'border-amber-500 text-amber-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Payment History
+              </button>
+            </div>
+
+            {/* Tab Body */}
+            <div className="flex-1 overflow-y-auto min-h-0">
+              {activeTab === 'purchases' ? (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      <Receipt className="w-4 h-4 text-gray-400" />
+                      Recent Purchases
+                    </h4>
+                    {purchases && purchases.length > 0 && (
+                      <button
+                        onClick={handleExportCSV}
+                        className="flex items-center gap-1.5 text-xs font-medium text-[#D97706] bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-md transition-colors border border-amber-200 shadow-sm"
+                        title="Export purchases to spreadsheet"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Export CSV
+                      </button>
+                    )}
+                  </div>
+
+                  {isPurchasesLoading ? (
+                    <div className="flex justify-center py-8">
+                      <LoadingSpinner size="sm" />
+                    </div>
+                  ) : purchases && purchases.length > 0 ? (
+                    <div className="space-y-3">
+                      {purchases.map((purchase: any) => (
+                        <div key={purchase.id} className="p-3 border border-gray-100 rounded-md hover:bg-gray-50 transition-colors">
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="text-sm font-medium text-gray-900">
+                              {format(new Date(purchase.createdAt), 'MMM d, yyyy - h:mm a')}
+                            </span>
+                            <span className="text-sm font-semibold text-gray-900">
+                              Total: KSH {Number(purchase.totalAmount).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-start mb-1 text-xs">
+                            <span className="text-green-600 font-medium">
+                              Paid: KSH {Number(purchase.amountPaid).toLocaleString()}
+                            </span>
+                            {Number(purchase.totalAmount) > Number(purchase.amountPaid) && (
+                              <span className="text-amber-600 font-medium">
+                                Debt: KSH {(Number(purchase.totalAmount) - Number(purchase.amountPaid)).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500 mt-1 pt-1 border-t border-gray-100">
+                            <span>Receipt #{purchase.receiptNumber || purchase.id.slice(0, 8)}</span>
+                            <span className={purchase.paymentMethod === 'CREDIT' ? 'text-amber-600 font-medium' : ''}>
+                              {purchase.paymentMethod}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                      <Receipt className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">No purchases found for this customer.</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-gray-400" />
+                      Debt Payments
+                    </h4>
+                  </div>
+
+                  {isPaymentsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <LoadingSpinner size="sm" />
+                    </div>
+                  ) : paymentsList && paymentsList.length > 0 ? (
+                    <div className="space-y-3">
+                      {paymentsList.map((payment: any) => (
+                        <div key={payment.id} className="p-3 border border-gray-100 rounded-md hover:bg-gray-50 transition-colors">
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="text-sm font-medium text-gray-900">
+                              {format(new Date(payment.paidAt), 'MMM d, yyyy - h:mm a')}
+                            </span>
+                            <span className="text-sm font-bold text-green-600">
+                              KSH {Number(payment.amount).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500 mt-2 pt-1 border-t border-gray-100">
+                            <span>Method: <span className="font-bold text-gray-700">{payment.method}</span></span>
+                            {payment.mpesaReceiptNumber && (
+                              <span>M-Pesa Ref: <span className="font-mono font-bold text-amber-800">{payment.mpesaReceiptNumber}</span></span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                      <CreditCard className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">No payments recorded yet.</p>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
-            {isLoading ? (
-              <div className="flex justify-center py-8">
-                <LoadingSpinner size="sm" />
-              </div>
-            ) : purchases && purchases.length > 0 ? (
-              <div className="space-y-3">
-                {purchases.map((purchase: any) => (
-                  <div key={purchase.id} className="p-3 border border-gray-100 rounded-md hover:bg-gray-50 transition-colors">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-sm font-medium text-gray-900">
-                        {format(new Date(purchase.createdAt), 'MMM d, yyyy - h:mm a')}
-                      </span>
-                      <span className="text-sm font-semibold text-gray-900">
-                        Total: KSH {Number(purchase.totalAmount).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-start mb-1 text-xs">
-                      <span className="text-green-600 font-medium">
-                        Paid: KSH {Number(purchase.amountPaid).toLocaleString()}
-                      </span>
-                      {Number(purchase.totalAmount) > Number(purchase.amountPaid) && (
-                        <span className="text-amber-600 font-medium">
-                          Debt: KSH {(Number(purchase.totalAmount) - Number(purchase.amountPaid)).toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500 mt-1 pt-1 border-t border-gray-100">
-                      <span>Receipt #{purchase.receiptNumber || purchase.id.slice(0, 8)}</span>
-                      <span className={purchase.paymentMethod === 'CREDIT' ? 'text-amber-600 font-medium' : ''}>
-                        {purchase.paymentMethod}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                <Receipt className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">No purchases found for this customer.</p>
-              </div>
-            )}
           </div>
           
         </div>
@@ -187,12 +275,19 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
         <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl flex justify-end gap-3 shrink-0">
           <button
             onClick={onClose}
-            className="px-6 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
+            className="px-6 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors shadow-sm"
           >
             Close
           </button>
         </div>
       </div>
+
+      {isPaymentModalOpen && (
+        <RecordCustomerPaymentModal
+          customer={customer}
+          onClose={() => setIsPaymentModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

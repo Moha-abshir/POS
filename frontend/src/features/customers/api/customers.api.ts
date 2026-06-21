@@ -17,6 +17,15 @@ export interface Customer {
   purchaseCount?: number;
 }
 
+export interface CustomerPayment {
+  id: string;
+  amount: string | number;
+  method: 'CASH' | 'MPESA';
+  mpesaReceiptNumber?: string;
+  paidAt: string;
+  createdBy: string;
+}
+
 export const customersApi = {
   getCustomers: async (filters?: { page?: number; limit?: number; search?: string }) => {
     const { data } = await api.get('/customers', { params: filters });
@@ -35,6 +44,16 @@ export const customersApi = {
 
   getCustomerPurchases: async (id: string) => {
     const { data } = await api.get(`/customers/${id}/purchases`);
+    return data.data;
+  },
+
+  recordPayment: async (id: string, paymentData: { amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string }) => {
+    const { data } = await api.post(`/customers/${id}/payments`, paymentData);
+    return data.data;
+  },
+
+  getCustomerPayments: async (id: string) => {
+    const { data } = await api.get(`/customers/${id}/payments`);
     return data.data;
   }
 };
@@ -70,6 +89,26 @@ export const useCustomerPurchases = (id?: string) => {
   return useQuery({
     queryKey: ['customers', id, 'purchases'],
     queryFn: () => id ? customersApi.getCustomerPurchases(id) : Promise.resolve([]),
+    enabled: !!id,
+  });
+};
+
+export const useRecordCustomerPayment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string; amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string }) => 
+      customersApi.recordPayment(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'payments'] });
+    },
+  });
+};
+
+export const useCustomerPayments = (id?: string) => {
+  return useQuery<CustomerPayment[]>({
+    queryKey: ['customers', id, 'payments'],
+    queryFn: () => id ? customersApi.getCustomerPayments(id) : Promise.resolve([]),
     enabled: !!id,
   });
 };
