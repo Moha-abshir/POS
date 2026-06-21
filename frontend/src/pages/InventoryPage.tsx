@@ -148,8 +148,23 @@ export function InventoryPage() {
                             {isPositive ? '+' : ''}{qty}
                           </span>
                         </td>
-                        <td className="px-6 py-2 text-sm text-[var(--color-text-secondary)] truncate max-w-[200px]" title={movement.notes || ''}>
-                          {movement.notes || '-'}
+                        <td className="px-6 py-2 text-sm text-[var(--color-text-secondary)] max-w-[250px] break-words" title={movement.notes || ''}>
+                          {movement.notes ? (
+                            (() => {
+                              const parts = movement.notes.split(': ');
+                              if (parts.length > 1) {
+                                return (
+                                  <div className="flex flex-col">
+                                    <span className="font-medium text-[var(--color-text-primary)]">{parts[0]}</span>
+                                    <span className="text-xs text-[var(--color-text-muted)] italic mt-0.5">{parts.slice(1).join(': ')}</span>
+                                  </div>
+                                );
+                              }
+                              return movement.notes;
+                            })()
+                          ) : (
+                            '-'
+                          )}
                         </td>
                       </tr>
                     )
