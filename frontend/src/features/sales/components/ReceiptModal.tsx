@@ -50,6 +50,14 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     const printContent = document.getElementById('printable-receipt');
     if (!printContent) return;
 
+    // Save the original document title
+    const originalTitle = document.title;
+    
+    // Set a custom document title for the default file name (e.g. Receipt-2A1E0E0E)
+    if (sale) {
+      document.title = `Receipt-${sale.id.slice(0, 8).toUpperCase()}`;
+    }
+
     // Create a temporary body-level container to bypass React root layout constraints during printing
     const printContainer = document.createElement('div');
     printContainer.id = 'temp-print-container';
@@ -58,8 +66,9 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
 
     window.print();
 
-    // Clean up after print dialog closes
+    // Clean up and restore original title after print dialog closes
     document.body.removeChild(printContainer);
+    document.title = originalTitle;
   };
 
   return (
