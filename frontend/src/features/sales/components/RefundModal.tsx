@@ -18,7 +18,7 @@ export function RefundModal({ sale, onClose }: RefundModalProps) {
     [key: string]: { selected: boolean; quantity: number };
   }>({});
 
-  const getItemKey = (item: any) => `${item.variantId}-${item.unitId}`;
+  const getItemKey = (item: any) => `${item.variantId}:${item.unitId}`;
 
   // Helper to calculate previously refunded quantities from sale.refunds
   const getPreviouslyRefundedQty = (item: any) => {
@@ -67,7 +67,7 @@ export function RefundModal({ sale, onClose }: RefundModalProps) {
     const refundItems = Object.keys(selectedItems)
       .filter(key => selectedItems[key].selected && selectedItems[key].quantity > 0)
       .map(key => {
-        const [variantId, unitId] = key.split('-');
+        const [variantId, unitId] = key.split(':');
         return {
           variantId,
           unitId,
