@@ -4,7 +4,7 @@ import { AppError } from './AppError';
 // Use a fallback random key for testing if not provided, but in production it MUST be provided
 // Key should be exactly 32 bytes (64 hex characters) for aes-256-cbc. 
 // For simplicity, if the string is less than 32 bytes, we hash it to get 32 bytes.
-const rawKey = process.env.ENCRYPTION_KEY || 'default-secret-key-change-in-prod';
+const rawKey = process.env.ENCRYPTION_KEY;
 const ENCRYPTION_KEY = crypto.createHash('sha256').update(String(rawKey)).digest();
 
 const IV_LENGTH = 16; 
