@@ -18,8 +18,10 @@ interface CheckoutModalProps {
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, totalAmount, discountAmount = 0, onSuccess }) => {
   const [isCreditSale, setIsCreditSale] = useState(false);
   const [isBusinessSale, setIsBusinessSale] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA' | 'SPLIT'>('CASH');
   const [amountPaid, setAmountPaid] = useState<number | ''>(totalAmount);
+  const [cashAmount, setCashAmount] = useState<number | ''>(0);
+  const [mpesaAmount, setMpesaAmount] = useState<number | ''>(0);
   const [customerId, setCustomerId] = useState<string>('');
   const [mpesaRef, setMpesaRef] = useState('');
   const [mpesaPhoneNumber, setMpesaPhoneNumber] = useState('');
@@ -45,6 +47,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
     setIsBusinessSale(false);
     setPaymentMethod('CASH');
     setAmountPaid(totalAmount);
+    setCashAmount(0);
+    setMpesaAmount(0);
     setCustomerId('');
     setMpesaRef('');
     setMpesaPhoneNumber('');
@@ -67,16 +71,35 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
     setCustomerId('');
   }, [isBusinessSale]);
 
+  // Setup split payment defaults when switching to SPLIT or toggling Credit
+  useEffect(() => {
+    if (paymentMethod === 'SPLIT') {
+      if (!isCreditSale) {
+        setCashAmount(totalAmount);
+        setMpesaAmount(0);
+      }
+    }
+  }, [isCreditSale, paymentMethod, totalAmount]);
+
+  useEffect(() => {
+    if (paymentMethod === 'SPLIT') {
+      setCashAmount(totalAmount);
+      setMpesaAmount(0);
+    }
+  }, [paymentMethod, totalAmount]);
+
   const createSaleMutation = useMutation({
     mutationFn: salesApi.createSale,
     onSuccess: async (data: any) => {
-      if (paymentMethod === 'MPESA' && isStkPush) {
+      const needsStkPush = (paymentMethod === 'MPESA' && isStkPush) || (paymentMethod === 'SPLIT' && isStkPush && Number(mpesaAmount) > 0);
+      if (needsStkPush) {
         setIsInitiatingPush(true);
         try {
+          const pushAmount = paymentMethod === 'SPLIT' ? Number(mpesaAmount) : (Number(amountPaid) || 0);
           const res = await api.post('/mpesa/checkout/push', {
             saleId: data.id,
             phoneNumber: mpesaPhoneNumber,
-            amount: Number(amountPaid) || 0
+            amount: pushAmount
           });
           setCheckoutRequestId(res.data.checkoutRequestId);
           setIsPolling(true);
@@ -190,7 +213,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
 
   if (!isOpen) return null;
 
-  const paidVal = Number(amountPaid) || 0;
+  const paidVal = paymentMethod === 'SPLIT' ? (Number(cashAmount) + Number(mpesaAmount)) : (Number(amountPaid) || 0);
   const isCustomerRequired = isCreditSale || isBusinessSale;
   const filteredCustomers = customers.filter((c: any) => 
     isBusinessSale ? c.type === 'BUSINESS' : (c.type === 'INDIVIDUAL' || !c.type)
@@ -204,15 +227,46 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
       return;
     }
 
-    if (paymentMethod === 'MPESA' && !isStkPush && !mpesaRef && !mpesaPhoneNumber) {
-      toast.error('Please provide M-Pesa reference and phone number');
-      return;
+    if (paymentMethod === 'SPLIT') {
+      const splitTotal = Number(cashAmount) + Number(mpesaAmount);
+      if (!isCreditSale && splitTotal !== totalAmount) {
+        toast.error(`Split payment total must equal KSh ${totalAmount.toLocaleString()}`);
+        return;
+      }
+      if (isCreditSale && splitTotal > totalAmount) {
+        toast.error(`Split payment total cannot exceed KSh ${totalAmount.toLocaleString()}`);
+        return;
+      }
+      if (splitTotal <= 0) {
+        toast.error('Total split payment amount must be greater than 0');
+        return;
+      }
+      
+      const hasMpesa = Number(mpesaAmount) > 0;
+      if (hasMpesa) {
+        if (!isStkPush && !mpesaRef && !mpesaPhoneNumber) {
+          toast.error('Please provide M-Pesa reference and phone number');
+          return;
+        }
+        if (isStkPush && !mpesaPhoneNumber) {
+          toast.error('Phone number is required for STK Push');
+          return;
+        }
+      }
+    } else {
+      if (paymentMethod === 'MPESA' && !isStkPush && !mpesaRef && !mpesaPhoneNumber) {
+        toast.error('Please provide M-Pesa reference and phone number');
+        return;
+      }
+      if (paymentMethod === 'MPESA' && isStkPush && !mpesaPhoneNumber) {
+        toast.error('Phone number is required for STK Push');
+        return;
+      }
     }
-    
-    if (paymentMethod === 'MPESA' && isStkPush && !mpesaPhoneNumber) {
-      toast.error('Phone number is required for STK Push');
-      return;
-    }
+
+    const finalPaid = paymentMethod === 'SPLIT'
+      ? (isStkPush ? Number(cashAmount) : Number(cashAmount) + Number(mpesaAmount))
+      : ((paymentMethod === 'MPESA' && isStkPush) ? 0 : paidVal);
 
     createSaleMutation.mutate({
       customerId: customerId || undefined,
@@ -222,12 +276,23 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
         quantity: item.quantity,
         sellingPrice: item.sellingPrice,
       })),
-      amountPaid: (paymentMethod === 'MPESA' && isStkPush) ? 0 : paidVal,
+      amountPaid: finalPaid,
       discountAmount,
       paymentMethod,
-      mpesaRef: paymentMethod === 'MPESA' && !isStkPush ? mpesaRef : undefined,
-      mpesaPhoneNumber: paymentMethod === 'MPESA' ? mpesaPhoneNumber : undefined,
-      isStkPush: paymentMethod === 'MPESA' && isStkPush,
+      mpesaRef: paymentMethod === 'MPESA' && !isStkPush 
+        ? mpesaRef 
+        : (paymentMethod === 'SPLIT' && !isStkPush ? mpesaRef : undefined),
+      mpesaPhoneNumber: paymentMethod === 'MPESA' 
+        ? mpesaPhoneNumber 
+        : (paymentMethod === 'SPLIT' && Number(mpesaAmount) > 0 ? mpesaPhoneNumber : undefined),
+      isStkPush: (paymentMethod === 'MPESA' && isStkPush) || (paymentMethod === 'SPLIT' && isStkPush && Number(mpesaAmount) > 0),
+      splitDetails: paymentMethod === 'SPLIT' ? {
+        cashAmount: Number(cashAmount) || 0,
+        mpesaAmount: Number(mpesaAmount) || 0,
+        mpesaRef: !isStkPush ? mpesaRef : undefined,
+        mpesaPhoneNumber: mpesaPhoneNumber || undefined,
+        isStkPush: isStkPush
+      } : undefined
     });
   };
 
@@ -312,8 +377,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
               We've pushed a payment prompt to <span className="font-semibold text-amber-400">{mpesaPhoneNumber}</span>. Please enter your M-Pesa PIN on your mobile phone to authorize the transaction.
             </p>
             <div className="bg-white/5 rounded-xl p-3.5 border border-white/5 inline-flex justify-between items-center w-full max-w-xs mx-auto">
-              <span className="text-xs text-white/50">Total Amount Due</span>
-              <span className="text-base font-bold text-amber-400">KSh {totalAmount.toLocaleString()}</span>
+              <span className="text-xs text-white/50">{paymentMethod === 'SPLIT' ? 'M-Pesa Portion Due' : 'Total Amount Due'}</span>
+              <span className="text-base font-bold text-amber-400">KSh {paymentMethod === 'SPLIT' ? Number(mpesaAmount).toLocaleString() : totalAmount.toLocaleString()}</span>
             </div>
           </div>
 
@@ -432,36 +497,110 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
             {/* Payment Method Selector */}
             <div>
               <label className="block text-sm font-bold text-gray-800 mb-3 uppercase tracking-wider">Payment Method</label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('CASH')}
-                  className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2.5 transition-all shadow-sm ${
+                  className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all shadow-sm ${
                     paymentMethod === 'CASH' 
                       ? 'border-[#D97706] bg-amber-50/50 text-[#D97706]' 
                       : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  <CreditCard className="w-6 h-6" />
-                  <span className="font-semibold text-sm">Cash Payment</span>
+                  <CreditCard className="w-5 h-5" />
+                  <span className="font-semibold text-xs">Cash Payment</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('MPESA')}
-                  className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2.5 transition-all shadow-sm ${
+                  className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all shadow-sm ${
                     paymentMethod === 'MPESA' 
                       ? 'border-green-600 bg-green-50/40 text-green-700' 
                       : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  <CreditCard className="w-6 h-6" />
-                  <span className="font-semibold text-sm">M-Pesa Mobile</span>
+                  <CreditCard className="w-5 h-5" />
+                  <span className="font-semibold text-xs">M-Pesa Mobile</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('SPLIT')}
+                  className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all shadow-sm ${
+                    paymentMethod === 'SPLIT' 
+                      ? 'border-purple-600 bg-purple-50/40 text-purple-700' 
+                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <CreditCard className="w-5 h-5" />
+                  <span className="font-semibold text-xs">Split Payment</span>
                 </button>
               </div>
             </div>
 
+            {/* Split Payment Details */}
+            {paymentMethod === 'SPLIT' && (
+              <div className="p-5 bg-purple-50/30 rounded-2xl border border-purple-200/50 space-y-4 shadow-sm">
+                <h4 className="text-sm font-bold text-purple-900 uppercase tracking-wider">Split Payment Details</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Cash Amount</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">KSh</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={cashAmount}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? '' : Number(e.target.value);
+                          setCashAmount(val);
+                          if (!isCreditSale && val !== '') {
+                            const rem = Math.max(0, totalAmount - Number(val));
+                            setMpesaAmount(rem);
+                          }
+                        }}
+                        placeholder="0"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all shadow-sm text-sm font-bold"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">M-Pesa Amount</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">KSh</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={mpesaAmount}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? '' : Number(e.target.value);
+                          setMpesaAmount(val);
+                          if (!isCreditSale && val !== '') {
+                            const rem = Math.max(0, totalAmount - Number(val));
+                            setCashAmount(rem);
+                          }
+                        }}
+                        placeholder="0"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all shadow-sm text-sm font-bold"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-xs font-semibold flex justify-between items-center px-1">
+                  <span className="text-gray-500">Split Total:</span>
+                  <span className={`font-bold ${
+                    (!isCreditSale && Number(cashAmount) + Number(mpesaAmount) !== totalAmount) || (isCreditSale && Number(cashAmount) + Number(mpesaAmount) > totalAmount)
+                      ? 'text-red-600'
+                      : 'text-green-600'
+                  }`}>
+                    KSh {(Number(cashAmount) + Number(mpesaAmount)).toLocaleString()} / {totalAmount.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* M-Pesa Settings View */}
-            {paymentMethod === 'MPESA' && (
+            {(paymentMethod === 'MPESA' || (paymentMethod === 'SPLIT' && Number(mpesaAmount) > 0)) && (
               <div className="p-5 bg-green-50/40 rounded-2xl border border-green-200/50 space-y-4 shadow-inner">
                 <div className="flex gap-5 mb-2 border-b border-green-200 pb-3">
                   <label className="flex items-center gap-2 cursor-pointer">

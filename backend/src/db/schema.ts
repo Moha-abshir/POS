@@ -281,7 +281,7 @@ export const sales = pgTable('sales', {
   discountAmount: decimal('discount_amount', { precision: 12, scale: 2 }).notNull().default('0'),
   amountPaid: decimal('amount_paid', { precision: 12, scale: 2 }).notNull().default('0'),
   paymentStatus: paymentStatusEnum('payment_status').notNull().default('UNPAID'),
-  paymentMethod: paymentMethodEnum('payment_method').notNull(),
+  paymentMethod: extendedPaymentMethodEnum('payment_method').notNull(),
   mpesaRef: varchar('mpesa_ref', { length: 50 }),
   mpesaPhoneNumber: varchar('mpesa_phone_number', { length: 50 }),
   soldAt: timestamp('sold_at', { withTimezone: true }).defaultNow().notNull(),

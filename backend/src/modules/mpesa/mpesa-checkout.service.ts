@@ -1,8 +1,8 @@
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, sql } from 'drizzle-orm';
 import { SalesService } from '../sales/sales.service';
 import { CustomersService } from '../customers/customers.service';
 import { db } from '../../db';
-import { businessMpesaAccounts, payments, mpesaTransactions, sales } from '../../db/schema';
+import { businessMpesaAccounts, payments, mpesaTransactions, sales, customers } from '../../db/schema';
 import { decrypt } from '../../core/utils/crypto.util';
 import crypto from 'crypto';
 
@@ -222,16 +222,37 @@ export class MpesaCheckoutService {
 
       if (payment) {
         if (payment.referenceType === 'SALE') {
-          // Update Sale status to PAID and set amountPaid = totalAmount
+          // Increment amountPaid and determine new paymentStatus
           const sale = await db.query.sales.findFirst({ where: eq(sales.id, payment.referenceId) });
           if (sale) {
-             await db.update(sales)
+            const newAmountPaid = Number(sale.amountPaid) + Number(payment.amount);
+            const newPaymentStatus = newAmountPaid >= Number(sale.totalAmount) ? 'PAID' : 'PARTIAL';
+            await db.update(sales)
               .set({ 
-                paymentStatus: 'PAID', 
-                amountPaid: sale.totalAmount,
+                paymentStatus: newPaymentStatus, 
+                amountPaid: newAmountPaid.toString(),
                 mpesaRef: mpesaReceiptNumber
               })
               .where(eq(sales.id, payment.referenceId));
+
+            // Deduct customer balance by the paid M-Pesa portion since it was charged as debt initially
+            if (sale.customerId) {
+              await db.update(customers)
+                .set({
+                  balance: sql`max(0, ${customers.balance} - ${payment.amount})`,
+                  updatedAt: new Date()
+                })
+                .where(eq(customers.id, sale.customerId));
+                
+              const [updatedCustomer] = await db.select({ balance: customers.balance })
+                .from(customers)
+                .where(eq(customers.id, sale.customerId));
+              if (updatedCustomer) {
+                await db.update(customers)
+                  .set({ hasActiveCredit: Number(updatedCustomer.balance) > 0 })
+                  .where(eq(customers.id, sale.customerId));
+              }
+            }
           }
         } else if (payment.referenceType === 'CUSTOMER_DEBT') {
           // Complete customer debt payment in DB
@@ -334,13 +355,34 @@ export class MpesaCheckoutService {
             if (payment.referenceType === 'SALE') {
               const sale = await db.query.sales.findFirst({ where: eq(sales.id, payment.referenceId) });
               if (sale) {
+                const newAmountPaid = Number(sale.amountPaid) + Number(payment.amount);
+                const newPaymentStatus = newAmountPaid >= Number(sale.totalAmount) ? 'PAID' : 'PARTIAL';
                 await db.update(sales)
                   .set({ 
-                    paymentStatus: 'PAID', 
-                    amountPaid: sale.totalAmount,
+                    paymentStatus: newPaymentStatus, 
+                    amountPaid: newAmountPaid.toString(),
                     mpesaRef: fallbackRef
                   })
                   .where(eq(sales.id, payment.referenceId));
+
+                // Deduct customer balance by the paid M-Pesa portion since it was charged as debt initially
+                if (sale.customerId) {
+                  await db.update(customers)
+                    .set({
+                      balance: sql`max(0, ${customers.balance} - ${payment.amount})`,
+                      updatedAt: new Date()
+                    })
+                    .where(eq(customers.id, sale.customerId));
+                    
+                  const [updatedCustomer] = await db.select({ balance: customers.balance })
+                    .from(customers)
+                    .where(eq(customers.id, sale.customerId));
+                  if (updatedCustomer) {
+                    await db.update(customers)
+                      .set({ hasActiveCredit: Number(updatedCustomer.balance) > 0 })
+                      .where(eq(customers.id, sale.customerId));
+                  }
+                }
               }
             } else if (payment.referenceType === 'CUSTOMER_DEBT') {
               // Complete customer debt payment in DB inside a transaction

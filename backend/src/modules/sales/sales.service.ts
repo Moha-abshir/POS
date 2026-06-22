@@ -136,33 +136,57 @@ export class SalesService {
     return { ...sale, items, refunds: refundsWithItems };
   }
 
-  static async createSale(businessId: string, userId: string, data: {
-    customerId?: string;
-    items: { variantId: string; unitId: string; quantity: number; sellingPrice: number }[];
-    amountPaid: number;
-    discountAmount?: number;
-    paymentMethod: 'CASH' | 'MPESA';
-    mpesaRef?: string;
-    mpesaPhoneNumber?: string;
-    isStkPush?: boolean;
-  }) {
+  static async createSale(
+    businessId: string,
+    userId: string,
+    data: {
+      customerId?: string;
+      items: { variantId: string; unitId: string; quantity: number; sellingPrice: number; unitPrice?: number }[];
+      amountPaid: number;
+      discountAmount?: number;
+      paymentMethod: 'CASH' | 'MPESA' | 'SPLIT';
+      mpesaRef?: string;
+      mpesaPhoneNumber?: string;
+      isStkPush?: boolean;
+      splitDetails?: {
+        cashAmount: number;
+        mpesaAmount: number;
+        mpesaRef?: string;
+        mpesaPhoneNumber?: string;
+        isStkPush?: boolean;
+      };
+    }
+  ) {
     // Calculate totals
     const subtotal = data.items.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
     const discountAmount = data.discountAmount || 0;
     const totalAmount = Math.max(0, subtotal - discountAmount);
+
+    if (data.paymentMethod === 'SPLIT' && !data.splitDetails) {
+      throw new Error('Split details are required for split payments');
+    }
     
-    // Determine payment status
+    // Determine payment status (Cash is paid immediately, STK push M-Pesa is pending)
+    const amountPaidInitially = data.paymentMethod === 'SPLIT' && data.splitDetails?.isStkPush
+      ? data.splitDetails.cashAmount
+      : data.amountPaid;
+
     let paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID' = 'UNPAID';
-    if (data.amountPaid >= totalAmount) {
+    if (amountPaidInitially >= totalAmount) {
       paymentStatus = 'PAID';
-    } else if (data.amountPaid > 0) {
+    } else if (amountPaidInitially > 0) {
       paymentStatus = 'PARTIAL';
     }
 
     // Validation
-    if (paymentStatus !== 'PAID' && !data.customerId && !data.isStkPush) {
+    if (paymentStatus !== 'PAID' && !data.customerId && !data.isStkPush && !(data.paymentMethod === 'SPLIT' && data.splitDetails?.isStkPush)) {
       throw new Error('Customer must be provided for credit or partial sales');
     }
+
+    // Initial amount paid recorded on the sale is only the confirmed portion (i.e. Cash only if STK push is pending)
+    const initialAmountPaid = data.paymentMethod === 'SPLIT' && data.splitDetails?.isStkPush
+      ? data.splitDetails.cashAmount
+      : data.amountPaid;
 
     return await db.transaction(async (tx) => {
       // 1. Create Sale Record
@@ -171,11 +195,11 @@ export class SalesService {
         customerId: data.customerId || null,
         totalAmount: totalAmount.toString(),
         discountAmount: discountAmount.toString(),
-        amountPaid: data.amountPaid.toString(),
+        amountPaid: initialAmountPaid.toString(),
         paymentStatus,
         paymentMethod: data.paymentMethod,
-        mpesaRef: data.mpesaRef,
-        mpesaPhoneNumber: data.mpesaPhoneNumber,
+        mpesaRef: data.paymentMethod === 'SPLIT' ? (data.splitDetails?.isStkPush ? undefined : data.splitDetails?.mpesaRef) : data.mpesaRef,
+        mpesaPhoneNumber: data.paymentMethod === 'SPLIT' ? data.splitDetails?.mpesaPhoneNumber : data.mpesaPhoneNumber,
         createdBy: userId,
       }).returning();
 
@@ -230,7 +254,7 @@ export class SalesService {
 
       // 3. Update Customer Balance (If credit sale)
       if (data.customerId && paymentStatus !== 'PAID') {
-        const debtAmount = totalAmount - data.amountPaid;
+        const debtAmount = totalAmount - initialAmountPaid;
         await tx.update(customers)
           .set({
             balance: sql`${customers.balance} + ${debtAmount}`,
@@ -241,15 +265,44 @@ export class SalesService {
       }
 
       // 4. Record Payment (If any amount was paid)
-      if (data.amountPaid > 0) {
-        await tx.insert(payments).values({
-          businessId,
-          referenceType: 'SALE',
-          referenceId: newSale.id,
-          amount: data.amountPaid.toString(),
-          method: data.paymentMethod,
-          createdBy: userId,
-        });
+      if (data.paymentMethod === 'SPLIT') {
+        const details = data.splitDetails!;
+        // Record Cash Portion if paid
+        if (details.cashAmount > 0) {
+          await tx.insert(payments).values({
+            businessId,
+            referenceType: 'SALE',
+            referenceId: newSale.id,
+            amount: details.cashAmount.toString(),
+            method: 'CASH',
+            status: 'COMPLETED',
+            createdBy: userId,
+          });
+        }
+        // Record M-Pesa Portion if paid (only if manual. For STK push, it will be inserted by initiateSTKPush)
+        if (details.mpesaAmount > 0 && !details.isStkPush) {
+          await tx.insert(payments).values({
+            businessId,
+            referenceType: 'SALE',
+            referenceId: newSale.id,
+            amount: details.mpesaAmount.toString(),
+            method: 'MPESA',
+            status: 'COMPLETED',
+            mpesaReceiptNumber: details.mpesaRef,
+            createdBy: userId,
+          });
+        }
+      } else {
+        if (data.amountPaid > 0) {
+          await tx.insert(payments).values({
+            businessId,
+            referenceType: 'SALE',
+            referenceId: newSale.id,
+            amount: data.amountPaid.toString(),
+            method: data.paymentMethod,
+            createdBy: userId,
+          });
+        }
       }
 
       return newSale;
@@ -292,15 +345,27 @@ export class SalesService {
           eq(stockMovements.referenceId, saleId)
         ));
 
-      // Revert customer balance if it was a credit sale (unpaid)
-      if (sale.customerId && sale.paymentStatus === 'UNPAID') {
+      // Revert customer balance if it was a credit sale (unpaid/partial)
+      if (sale.customerId) {
         const debtAmount = Number(sale.totalAmount) - Number(sale.amountPaid);
-        await tx.update(customers)
-          .set({
-            balance: sql`${customers.balance} - ${debtAmount}`,
-            updatedAt: new Date()
-          })
-          .where(eq(customers.id, sale.customerId));
+        if (debtAmount > 0) {
+          await tx.update(customers)
+            .set({
+              balance: sql`max(0, ${customers.balance} - ${debtAmount})`,
+              updatedAt: new Date()
+            })
+            .where(eq(customers.id, sale.customerId));
+          
+          // Recompute hasActiveCredit
+          const [updatedCustomer] = await tx.select({ balance: customers.balance })
+            .from(customers)
+            .where(eq(customers.id, sale.customerId));
+          if (updatedCustomer) {
+            await tx.update(customers)
+              .set({ hasActiveCredit: Number(updatedCustomer.balance) > 0 })
+              .where(eq(customers.id, sale.customerId));
+          }
+        }
       }
 
       // Delete sale items

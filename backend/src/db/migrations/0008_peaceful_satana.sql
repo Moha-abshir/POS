@@ -1,0 +1,1 @@
+ALTER TABLE "sales" ALTER COLUMN "payment_method" SET DATA TYPE "public"."extended_payment_method" USING "payment_method"::text::"public"."extended_payment_method";
