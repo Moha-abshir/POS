@@ -163,6 +163,7 @@ export const purchases = pgTable('purchases', {
   supplierIdx: index('purchases_supplier_idx').on(table.supplierId),
   purchasedAtIdx: index('purchases_purchased_at_idx').on(table.purchasedAt),
   businessIdx: index('purchases_business_idx').on(table.businessId),
+  businessPurchasedAtIdx: index('purchases_business_purchased_at_idx').on(table.businessId, table.purchasedAt),
   totalAmountCheck: check('purchases_total_amount_check', sql`${table.totalAmount} >= 0`),
   amountPaidCheck: check('purchases_amount_paid_check', sql`${table.amountPaid} >= 0`)
 }));
@@ -201,6 +202,7 @@ export const payments = pgTable('payments', {
   referenceIdx: index('payments_reference_idx').on(table.referenceType, table.referenceId),
   paidAtIdx: index('payments_paid_at_idx').on(table.paidAt),
   businessIdx: index('payments_business_idx').on(table.businessId),
+  businessPaidAtIdx: index('payments_business_paid_at_idx').on(table.businessId, table.paidAt),
   amountCheck: check('payments_amount_check', sql`${table.amount} > 0`)
 }));
 
@@ -236,6 +238,7 @@ export const damagedGoods = pgTable('damaged_goods', {
   variantIdx: index('damaged_goods_variant_idx').on(table.variantId),
   damagedAtIdx: index('damaged_goods_damaged_at_idx').on(table.damagedAt),
   businessIdx: index('damaged_goods_business_idx').on(table.businessId),
+  businessDamagedAtIdx: index('damaged_goods_business_damaged_at_idx').on(table.businessId, table.damagedAt),
   quantityCheck: check('damaged_goods_quantity_check', sql`${table.quantity} > 0`)
 }));
 
@@ -291,6 +294,7 @@ export const sales = pgTable('sales', {
   customerIdx: index('sales_customer_idx').on(table.customerId),
   soldAtIdx: index('sales_sold_at_idx').on(table.soldAt),
   businessIdx: index('sales_business_idx').on(table.businessId),
+  businessSoldAtIdx: index('sales_business_sold_at_idx').on(table.businessId, table.soldAt),
   totalAmountCheck: check('sales_total_amount_check', sql`${table.totalAmount} >= 0`),
   amountPaidCheck: check('sales_amount_paid_check', sql`${table.amountPaid} >= 0`)
 }));
@@ -303,6 +307,7 @@ export const saleItems = pgTable('sale_items', {
   unitId: uuid('unit_id').notNull().references(() => variantUnits.id, { onDelete: 'restrict' }),
   quantity: decimal('quantity', { precision: 10, scale: 3 }).notNull(),
   sellingPrice: decimal('selling_price', { precision: 12, scale: 2 }).notNull(),
+  costPrice: decimal('cost_price', { precision: 12, scale: 2 }).notNull().default('0'),
   subtotal: decimal('subtotal', { precision: 12, scale: 2 }).notNull(),
 }, (table) => ({
   saleIdx: index('sale_items_sale_idx').on(table.saleId),
@@ -310,7 +315,8 @@ export const saleItems = pgTable('sale_items', {
   unitIdx: index('sale_items_unit_idx').on(table.unitId),
   businessIdx: index('sale_items_business_idx').on(table.businessId),
   quantityCheck: check('sale_items_quantity_check', sql`${table.quantity} > 0`),
-  sellingPriceCheck: check('sale_items_selling_price_check', sql`${table.sellingPrice} >= 0`)
+  sellingPriceCheck: check('sale_items_selling_price_check', sql`${table.sellingPrice} >= 0`),
+  costPriceCheck: check('sale_items_cost_price_check', sql`${table.costPrice} >= 0`)
 }));
 
 
@@ -393,6 +399,23 @@ export const refundItems = pgTable('refund_items', {
   quantityCheck: check('refund_items_quantity_check', sql`${table.quantity} > 0`),
   unitPriceCheck: check('refund_items_unit_price_check', sql`${table.unitPrice} >= 0`),
   subtotalCheck: check('refund_items_subtotal_check', sql`${table.subtotal} >= 0`),
+}));
+
+export const expenses = pgTable('expenses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  category: varchar('category', { length: 100 }).notNull(),
+  description: text('description'),
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  expenseDate: timestamp('expense_date', { withTimezone: true }).defaultNow().notNull(),
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
+}, (table) => ({
+  businessIdx: index('expenses_business_idx').on(table.businessId),
+  expenseDateIdx: index('expenses_date_idx').on(table.expenseDate),
+  amountCheck: check('expenses_amount_check', sql`${table.amount} > 0`)
 }));
 
 
