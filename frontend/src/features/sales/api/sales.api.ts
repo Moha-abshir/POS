@@ -26,7 +26,7 @@ export interface SalesFilters {
   startDate?: string;
   endDate?: string;
   paymentStatus?: 'PAID' | 'PARTIAL' | 'UNPAID' | '';
-  paymentMethod?: 'CASH' | 'MPESA' | '';
+  paymentMethod?: 'CASH' | 'MPESA' | 'SPLIT' | 'CREDIT' | '';
   mpesaRef?: string;
 }
 
@@ -41,10 +41,17 @@ export const salesApi = {
     items: SaleItemData[];
     amountPaid: number;
     discountAmount?: number;
-    paymentMethod: 'CASH' | 'MPESA';
+    paymentMethod: 'CASH' | 'MPESA' | 'SPLIT';
     mpesaRef?: string;
     mpesaPhoneNumber?: string;
     isStkPush?: boolean;
+    splitDetails?: {
+      cashAmount: number;
+      mpesaAmount: number;
+      mpesaRef?: string;
+      mpesaPhoneNumber?: string;
+      isStkPush?: boolean;
+    };
   }) => {
     const { data } = await api.post('/sales', saleData);
     return data.data;

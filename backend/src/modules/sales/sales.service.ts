@@ -74,6 +74,7 @@ export class SalesService {
       paymentStatus: sales.paymentStatus,
       paymentMethod: sales.paymentMethod,
       mpesaRef: sales.mpesaRef,
+      mpesaPhoneNumber: sales.mpesaPhoneNumber,
       soldAt: sales.soldAt,
       customerName: customers.name,
       customerPhone: customers.phone,
@@ -133,7 +134,22 @@ export class SalesService {
       items: refundedItems.filter(item => item.refundId === r.id)
     }));
 
-    return { ...sale, items, refunds: refundsWithItems };
+    const salePayments = await db.select({
+      id: payments.id,
+      amount: payments.amount,
+      method: payments.method,
+      status: payments.status,
+      mpesaReceiptNumber: payments.mpesaReceiptNumber,
+      paidAt: payments.paidAt,
+    })
+      .from(payments)
+      .where(and(
+        eq(payments.referenceType, 'SALE'),
+        eq(payments.referenceId, saleId),
+        eq(payments.businessId, businessId)
+      ));
+
+    return { ...sale, items, refunds: refundsWithItems, payments: salePayments };
   }
 
   static async createSale(

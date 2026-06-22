@@ -345,8 +345,20 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
                   <div className="space-y-1.5 text-[11px] pt-3 border-t border-dashed border-gray-300 mb-6">
                     <div className="flex justify-between text-gray-700">
                       <span className="text-gray-400">PAYMENT METHOD:</span>
-                      <span className="font-bold uppercase">{sale.paymentMethod}</span>
+                      <span className="font-bold uppercase">
+                        {sale.paymentMethod === 'SPLIT' ? 'SPLIT (CASH & MPESA)' : sale.paymentMethod}
+                      </span>
                     </div>
+                    {sale.paymentMethod === 'SPLIT' && sale.payments && sale.payments.length > 0 && (
+                      <div className="pl-3 border-l-2 border-gray-200 space-y-1 text-[10px] text-gray-500 mt-1">
+                        {sale.payments.map((p: any) => (
+                          <div key={p.id} className="flex justify-between">
+                            <span>{p.method === 'CASH' ? 'Cash Amount:' : 'M-Pesa Amount:'}</span>
+                            <span className="font-bold text-gray-800">KSh {Number(p.amount).toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {sale.mpesaRef && (
                       <div className="flex justify-between text-gray-700">
                         <span className="text-gray-400">MPESA REF NO:</span>

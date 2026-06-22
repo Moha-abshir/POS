@@ -18,7 +18,7 @@ export function SalesPage() {
     startDate: string;
     endDate: string;
     paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID' | '';
-    paymentMethod: 'CASH' | 'MPESA' | '';
+    paymentMethod: 'CASH' | 'MPESA' | 'SPLIT' | 'CREDIT' | '';
     mpesaRef: string;
   }>({
     startDate: '',
@@ -203,6 +203,8 @@ export function SalesPage() {
                       <option value="">All Methods</option>
                       <option value="CASH">Cash</option>
                       <option value="MPESA">M-Pesa</option>
+                      <option value="SPLIT">Split Payment</option>
+                      <option value="CREDIT">Credit</option>
                     </select>
                   </div>
 
@@ -307,7 +309,7 @@ export function SalesPage() {
                     </td>
                     <td className="px-6 py-2 text-center">
                       <span className="text-xs font-semibold text-[var(--color-text-secondary)]">
-                        {sale.paymentMethod}
+                        {sale.paymentMethod === 'SPLIT' ? 'CASH & MPESA' : sale.paymentMethod}
                         {sale.mpesaRef && <span className="block text-[10px] text-[var(--color-text-muted)] font-mono mt-0.5">{sale.mpesaRef}</span>}
                       </span>
                     </td>
