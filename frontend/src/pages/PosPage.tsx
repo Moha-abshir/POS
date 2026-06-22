@@ -107,7 +107,7 @@ export const PosPage = () => {
 
   return (
     <div className="h-full w-full p-4 lg:p-6 overflow-hidden bg-[var(--color-bg-base)]">
-      <div className="h-full w-full flex flex-col lg:flex-row rounded-3xl shadow-lg border border-[var(--color-border)] overflow-hidden bg-white">
+      <div className="h-full w-full flex flex-row rounded-3xl shadow-lg border border-[var(--color-border)] overflow-hidden bg-white">
         
         {/* Left Panel: Product Catalog (65%) */}
         <div className="flex-[6.5] flex flex-col relative h-full bg-[#F7F6F4]/50 border-r border-[var(--color-border)]">
@@ -125,19 +125,23 @@ export const PosPage = () => {
             </div>
 
             <div className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-2 mt-4 pb-1">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-4.5 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-150 cursor-pointer ${
-                    selectedCategory === cat
-                      ? 'bg-[#D97706] text-white shadow-sm'
-                      : 'bg-white text-gray-600 border border-[var(--color-border)] hover:bg-gray-50'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+              {categories.map((cat) => {
+                // Strip trailing space + digits (from seed script) for premium display
+                const cleanCatName = cat.replace(/\s+\d+$/, '');
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-4.5 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-150 cursor-pointer ${
+                      selectedCategory === cat
+                        ? 'bg-[#D97706] text-white shadow-sm'
+                        : 'bg-white text-gray-600 border border-[var(--color-border)] hover:bg-gray-50'
+                    }`}
+                  >
+                    {cleanCatName}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
