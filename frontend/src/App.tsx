@@ -10,6 +10,7 @@ import { InventoryPage } from './pages/InventoryPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { PosPage } from './pages/PosPage';
 import { SalesPage } from './pages/SalesPage';
+import { ReportsPage } from './pages/ReportsPage';
 
 const NotFound = () => (
   <div className="flex flex-col items-center justify-center h-full p-6 text-center">
@@ -63,7 +64,7 @@ function App() {
             <Route path="/customers" element={<CustomersPage />} />
             <Route path="/purchasing" element={<PurchasingPage />} />
             <Route path="/sales" element={<SalesPage />} />
-            <Route path="/reports" element={<ComingSoon title="Reports & Analytics" />} />
+            <Route path="/reports" element={<ReportsPage />} />
             
             {/* 404 Catch-all */}
             <Route path="*" element={<NotFound />} />
