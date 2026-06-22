@@ -17,11 +17,25 @@ export class ReportsService {
   }
 
   /**
+   * Helper to parse query parameters into start and end Date objects,
+   * setting them to local date boundaries (00:00:00.000 for start and 23:59:59.999 for end)
+   * so that transactions created on boundary days are correctly included.
+   */
+  private static parseDateRange(startDate?: string, endDate?: string) {
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const end = endDate ? new Date(endDate) : new Date();
+
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+
+    return { start, end };
+  }
+
+  /**
    * 1. Overview Report Service
    */
   static async getOverviewReport(businessId: string, startDate?: string, endDate?: string) {
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const end = endDate ? new Date(endDate) : new Date();
+    const { start, end } = this.parseDateRange(startDate, endDate);
 
     // Setup date conditions
     const salesConditions = [eq(sales.businessId, businessId), gte(sales.soldAt, start), lte(sales.soldAt, end)];
@@ -145,8 +159,7 @@ export class ReportsService {
     endDate?: string; 
     groupBy?: 'day' | 'week' | 'month' | 'category' | 'product' | 'customer' | 'hour';
   }) {
-    const start = options.startDate ? new Date(options.startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const end = options.endDate ? new Date(options.endDate) : new Date();
+    const { start, end } = this.parseDateRange(options.startDate, options.endDate);
     const groupBy = options.groupBy || 'day';
 
     const conditions = [eq(sales.businessId, businessId), gte(sales.soldAt, start), lte(sales.soldAt, end)];
@@ -255,8 +268,7 @@ export class ReportsService {
    * 3. Profit & Loss Service
    */
   static async getProfitLossReport(businessId: string, startDate?: string, endDate?: string) {
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const end = endDate ? new Date(endDate) : new Date();
+    const { start, end } = this.parseDateRange(startDate, endDate);
 
     const salesConditions = [eq(sales.businessId, businessId), gte(sales.soldAt, start), lte(sales.soldAt, end)];
     const expensesConditions = [eq(expenses.businessId, businessId), gte(expenses.expenseDate, start), lte(expenses.expenseDate, end), isNull(expenses.deletedAt)];
@@ -414,8 +426,7 @@ export class ReportsService {
    * 5. Customer Report Service
    */
   static async getCustomerReport(businessId: string, startDate?: string, endDate?: string) {
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const end = endDate ? new Date(endDate) : new Date();
+    const { start, end } = this.parseDateRange(startDate, endDate);
 
     const conditions = [eq(sales.businessId, businessId), gte(sales.soldAt, start), lte(sales.soldAt, end)];
 
@@ -520,8 +531,7 @@ export class ReportsService {
    * 7. Supplier Purchase & Debt Report Service
    */
   static async getSupplierReport(businessId: string, startDate?: string, endDate?: string) {
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const end = endDate ? new Date(endDate) : new Date();
+    const { start, end } = this.parseDateRange(startDate, endDate);
 
     const conditions = [eq(purchases.businessId, businessId), gte(purchases.purchasedAt, start), lte(purchases.purchasedAt, end)];
 
@@ -565,8 +575,7 @@ export class ReportsService {
    * 8. M-Pesa Performance & Collection Metrics
    */
   static async getMpesaReport(businessId: string, startDate?: string, endDate?: string) {
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const end = endDate ? new Date(endDate) : new Date();
+    const { start, end } = this.parseDateRange(startDate, endDate);
 
     // Query collections via mpesaTransactions table
     // Fetch transaction codes and status breakdowns
@@ -648,8 +657,7 @@ export class ReportsService {
    * 9. Refunds Report Service
    */
   static async getRefundReport(businessId: string, startDate?: string, endDate?: string) {
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const end = endDate ? new Date(endDate) : new Date();
+    const { start, end } = this.parseDateRange(startDate, endDate);
 
     const conditions = [eq(refunds.businessId, businessId), gte(refunds.refundedAt, start), lte(refunds.refundedAt, end)];
 
@@ -686,8 +694,7 @@ export class ReportsService {
    * 10. Damaged Goods Report Service
    */
   static async getDamagedGoodsReport(businessId: string, startDate?: string, endDate?: string) {
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const end = endDate ? new Date(endDate) : new Date();
+    const { start, end } = this.parseDateRange(startDate, endDate);
 
     const conditions = [eq(damagedGoods.businessId, businessId), gte(damagedGoods.damagedAt, start), lte(damagedGoods.damagedAt, end)];
 
