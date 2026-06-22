@@ -290,9 +290,9 @@ export const ReportsPage: React.FC = () => {
                         <div className="flex items-center gap-1.5 relative group">
                           <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Gross Sales Revenue</span>
                           <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
-                          <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                          <div className="absolute left-0 top-full mt-1.5 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
                             Total income generated from all sales transactions in the selected period (excluding refunds and before any deductions).
-                            <div className="absolute left-4 top-full w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                            <div className="absolute left-4 top-0 w-2 h-2 bg-gray-900 rotate-45 -translate-y-1/2"></div>
                           </div>
                         </div>
                         <div className="p-1.5 bg-amber-50 rounded"><DollarSign className="w-4 h-4 text-[var(--color-accent)]" /></div>
@@ -306,9 +306,9 @@ export const ReportsPage: React.FC = () => {
                         <div className="flex items-center gap-1.5 relative group">
                           <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Gross Profit</span>
                           <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
-                          <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                          <div className="absolute left-0 top-full mt-1.5 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
                             Total revenue minus the Cost of Goods Sold (COGS). Shows earnings left after paying for the product stock, before operational expenses.
-                            <div className="absolute left-4 top-full w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                            <div className="absolute left-4 top-0 w-2 h-2 bg-gray-900 rotate-45 -translate-y-1/2"></div>
                           </div>
                         </div>
                         <div className="p-1.5 bg-green-50 rounded"><TrendingUp className="w-4 h-4 text-green-600" /></div>
@@ -322,9 +322,9 @@ export const ReportsPage: React.FC = () => {
                         <div className="flex items-center gap-1.5 relative group">
                           <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Expenses</span>
                           <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
-                          <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                          <div className="absolute right-0 top-full mt-1.5 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
                             Sum of all operational costs (such as rent, utilities, salaries, and marketing) recorded during the selected period.
-                            <div className="absolute left-4 top-full w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                            <div className="absolute right-4 top-0 w-2 h-2 bg-gray-900 rotate-45 -translate-y-1/2"></div>
                           </div>
                         </div>
                         <div className="p-1.5 bg-red-50 rounded"><TrendingDown className="w-4 h-4 text-red-600" /></div>
@@ -338,9 +338,9 @@ export const ReportsPage: React.FC = () => {
                         <div className="flex items-center gap-1.5 relative group">
                           <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Net Operating Profit</span>
                           <Info className="w-3.5 h-3.5 text-amber-500 hover:text-amber-700 cursor-help" />
-                          <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                          <div className="absolute right-0 top-full mt-1.5 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
                             Final business earnings after deducting both operational expenses and inventory losses (damaged/waste) from Gross Profit.<br/><b className="text-amber-400 font-semibold">Formula:</b> Gross Profit - Expenses - Damaged Loss
-                            <div className="absolute left-4 top-full w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                            <div className="absolute right-4 top-0 w-2 h-2 bg-gray-900 rotate-45 -translate-y-1/2"></div>
                           </div>
                         </div>
                         <div className="p-1.5 bg-amber-100 rounded"><PiggyBank className="w-4 h-4 text-[var(--color-accent)]" /></div>
@@ -433,9 +433,9 @@ export const ReportsPage: React.FC = () => {
                           <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
                         </div>
                         <p className="text-lg font-bold text-gray-900">{formatKES(overviewData.damagedCost)}</p>
-                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                        <div className="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
                           Total valuation (cost price) of products recorded as damaged, expired, or lost during the period.
-                          <div className="absolute left-4 top-full w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                          <div className="absolute left-4 bottom-0 w-2 h-2 bg-gray-900 rotate-45 translate-y-1/2"></div>
                         </div>
                       </div>
                     </div>
@@ -447,9 +447,9 @@ export const ReportsPage: React.FC = () => {
                           <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
                         </div>
                         <p className="text-lg font-bold text-gray-900">{formatKES(overviewData.totalUnpaidCredit)}</p>
-                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                        <div className="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
                           Total value of sales made on credit during this period that have not yet been paid by customers.
-                          <div className="absolute left-4 top-full w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                          <div className="absolute left-4 bottom-0 w-2 h-2 bg-gray-900 rotate-45 translate-y-1/2"></div>
                         </div>
                       </div>
                     </div>
@@ -461,9 +461,9 @@ export const ReportsPage: React.FC = () => {
                           <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
                         </div>
                         <p className="text-lg font-bold text-gray-900">{formatKES(overviewData.purchases)}</p>
-                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                        <div className="absolute right-0 bottom-full mb-1.5 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
                           Total valuation of supply inventory purchased from suppliers in this period (cash paid or unpaid liabilities).
-                          <div className="absolute left-4 top-full w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                          <div className="absolute right-4 bottom-0 w-2 h-2 bg-gray-900 rotate-45 translate-y-1/2"></div>
                         </div>
                       </div>
                     </div>
