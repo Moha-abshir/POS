@@ -117,6 +117,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
         queryClient.invalidateQueries({ queryKey: ['pos-catalog'] });
         queryClient.invalidateQueries({ queryKey: ['customers'] });
         queryClient.invalidateQueries({ queryKey: ['sales'] });
+        onSuccessRef.current();
         handleClose();
       }
     },
