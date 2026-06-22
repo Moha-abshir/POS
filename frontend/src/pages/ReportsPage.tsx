@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   FileText, TrendingUp, TrendingDown, Receipt, DollarSign, Users, AlertTriangle, 
   Truck, Printer, Download, Calendar, RefreshCcw, 
-  Trash2, CreditCard, ShoppingBag, PiggyBank, BarChart3
+  Trash2, CreditCard, ShoppingBag, PiggyBank, BarChart3, Info
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { 
@@ -287,7 +287,14 @@ export const ReportsPage: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="bg-white p-5 rounded-lg border border-[var(--color-border)] shadow-sm">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Gross Sales Revenue</span>
+                        <div className="flex items-center gap-1.5 relative group">
+                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Gross Sales Revenue</span>
+                          <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
+                          <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                            Total income generated from all sales transactions in the selected period (excluding refunds and before any deductions).
+                            <div className="absolute left-4 top-full w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                          </div>
+                        </div>
                         <div className="p-1.5 bg-amber-50 rounded"><DollarSign className="w-4 h-4 text-[var(--color-accent)]" /></div>
                       </div>
                       <h3 className="text-2xl font-bold text-gray-900 mt-2">{formatKES(overviewData.revenue)}</h3>
@@ -296,7 +303,14 @@ export const ReportsPage: React.FC = () => {
 
                     <div className="bg-white p-5 rounded-lg border border-[var(--color-border)] shadow-sm">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Gross Profit Margin</span>
+                        <div className="flex items-center gap-1.5 relative group">
+                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Gross Profit</span>
+                          <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
+                          <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                            Total revenue minus the Cost of Goods Sold (COGS). Shows earnings left after paying for the product stock, before operational expenses.
+                            <div className="absolute left-4 top-full w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                          </div>
+                        </div>
                         <div className="p-1.5 bg-green-50 rounded"><TrendingUp className="w-4 h-4 text-green-600" /></div>
                       </div>
                       <h3 className="text-2xl font-bold text-gray-900 mt-2">{formatKES(overviewData.grossProfit)}</h3>
@@ -305,7 +319,14 @@ export const ReportsPage: React.FC = () => {
 
                     <div className="bg-white p-5 rounded-lg border border-[var(--color-border)] shadow-sm">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Expenses</span>
+                        <div className="flex items-center gap-1.5 relative group">
+                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Expenses</span>
+                          <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
+                          <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                            Sum of all operational costs (such as rent, utilities, salaries, and marketing) recorded during the selected period.
+                            <div className="absolute left-4 top-full w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                          </div>
+                        </div>
                         <div className="p-1.5 bg-red-50 rounded"><TrendingDown className="w-4 h-4 text-red-600" /></div>
                       </div>
                       <h3 className="text-2xl font-bold text-gray-900 mt-2">{formatKES(overviewData.expenses)}</h3>
@@ -314,7 +335,14 @@ export const ReportsPage: React.FC = () => {
 
                     <div className="bg-white p-5 rounded-lg border border-[var(--color-border)] shadow-sm bg-gradient-to-br from-amber-50/20 to-white">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Net Operating Profit</span>
+                        <div className="flex items-center gap-1.5 relative group">
+                          <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Net Operating Profit</span>
+                          <Info className="w-3.5 h-3.5 text-amber-500 hover:text-amber-700 cursor-help" />
+                          <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                            Final business earnings after deducting both operational expenses and inventory losses (damaged/waste) from Gross Profit.<br/><b className="text-amber-400 font-semibold">Formula:</b> Gross Profit - Expenses - Damaged Loss
+                            <div className="absolute left-4 top-full w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                          </div>
+                        </div>
                         <div className="p-1.5 bg-amber-100 rounded"><PiggyBank className="w-4 h-4 text-[var(--color-accent)]" /></div>
                       </div>
                       <h3 className="text-2xl font-bold text-amber-900 mt-2">{formatKES(overviewData.netProfit)}</h3>
@@ -399,23 +427,44 @@ export const ReportsPage: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm flex items-center gap-4">
                       <div className="p-3 bg-red-50 rounded-full text-red-600"><Trash2 className="w-5 h-5" /></div>
-                      <div>
-                        <p className="text-xs text-gray-400 font-medium">Damaged Goods Loss</p>
+                      <div className="relative group flex-1">
+                        <div className="flex items-center gap-1">
+                          <p className="text-xs text-gray-400 font-medium">Damaged Goods Loss</p>
+                          <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
+                        </div>
                         <p className="text-lg font-bold text-gray-900">{formatKES(overviewData.damagedCost)}</p>
+                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                          Total valuation (cost price) of products recorded as damaged, expired, or lost during the period.
+                          <div className="absolute left-4 top-full w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                        </div>
                       </div>
                     </div>
                     <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm flex items-center gap-4">
                       <div className="p-3 bg-amber-50 rounded-full text-[var(--color-accent)]"><CreditCard className="w-5 h-5" /></div>
-                      <div>
-                        <p className="text-xs text-gray-400 font-medium">New Outstanding Credit</p>
+                      <div className="relative group flex-1">
+                        <div className="flex items-center gap-1">
+                          <p className="text-xs text-gray-400 font-medium">New Outstanding Credit</p>
+                          <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
+                        </div>
                         <p className="text-lg font-bold text-gray-900">{formatKES(overviewData.totalUnpaidCredit)}</p>
+                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                          Total value of sales made on credit during this period that have not yet been paid by customers.
+                          <div className="absolute left-4 top-full w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                        </div>
                       </div>
                     </div>
                     <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm flex items-center gap-4">
                       <div className="p-3 bg-blue-50 rounded-full text-blue-600"><Truck className="w-5 h-5" /></div>
-                      <div>
-                        <p className="text-xs text-gray-400 font-medium">Supplier Purchases Cost</p>
+                      <div className="relative group flex-1">
+                        <div className="flex items-center gap-1">
+                          <p className="text-xs text-gray-400 font-medium">Supplier Purchases Cost</p>
+                          <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
+                        </div>
                         <p className="text-lg font-bold text-gray-900">{formatKES(overviewData.purchases)}</p>
+                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                          Total valuation of supply inventory purchased from suppliers in this period (cash paid or unpaid liabilities).
+                          <div className="absolute left-4 top-full w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                        </div>
                       </div>
                     </div>
                   </div>
