@@ -14,6 +14,7 @@ import purchasingRoutes from './modules/purchasing/purchasing.routes';
 import customersRoutes from './modules/customers/customers.routes';
 import salesRoutes from './modules/sales/sales.routes';
 import mpesaRoutes from './modules/mpesa/mpesa.routes';
+import reportsRoutes from './modules/reports/reports.routes';
 import { errorHandler } from './core/middleware/errorHandler';
 
 import { z } from 'zod';
@@ -60,6 +61,7 @@ app.use('/purchases', purchasingRoutes);
 app.use('/customers', customersRoutes);
 app.use('/sales', salesRoutes);
 app.use('/mpesa', mpesaRoutes);
+app.use('/reports', reportsRoutes);
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
