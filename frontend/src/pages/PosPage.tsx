@@ -110,7 +110,7 @@ export const PosPage = () => {
       <div className="h-full w-full flex flex-row rounded-3xl shadow-lg border border-[var(--color-border)] overflow-hidden bg-white">
         
         {/* Left Panel: Product Catalog (65%) */}
-        <div className="flex-[6.5] flex flex-col relative h-full bg-[#F7F6F4]/50 border-r border-[var(--color-border)]">
+        <div className="flex-[6.5] min-w-0 flex flex-col relative h-full bg-[#F7F6F4]/50 border-r border-[var(--color-border)]">
           {/* Sticky Header: Search and Categories */}
           <div className="sticky top-0 z-10 bg-[#F7F6F4]/80 backdrop-blur-md px-6 pt-6 pb-4 border-b border-[var(--color-border)]/55">
             <div className="relative w-full h-[46px]">

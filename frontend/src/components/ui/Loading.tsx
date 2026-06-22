@@ -67,7 +67,7 @@ interface CardSkeletonProps {
 
 export function CardSkeleton({ count = 8, className = '' }: CardSkeletonProps) {
   return (
-    <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-4 animate-pulse ${className}`}>
+    <div className={`grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 animate-pulse ${className}`}>
       {Array.from({ length: count }).map((_, idx) => (
         <div key={idx} className="p-3 bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] flex flex-col space-y-3.5 shadow-sm">
           {/* Mock Product Image */}
