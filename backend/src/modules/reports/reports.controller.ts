@@ -328,7 +328,7 @@ export class ReportsController {
                 </tbody>
               </table>
               <div class="footer">
-                <p>Antigravity POS SaaS Platform Reports Module</p>
+                <p>Smart POS Platform Reports Module</p>
               </div>
               <script>
                 // Auto prompt print dialog

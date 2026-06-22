@@ -577,7 +577,7 @@ export const ReportsPage: React.FC = () => {
                 <div className="max-w-3xl mx-auto bg-white p-8 rounded-lg border border-[var(--color-border)] shadow-md">
                   <div className="text-center border-b border-[var(--color-border)] pb-6 mb-6">
                     <h2 className="text-2xl font-bold text-gray-900">Profit &amp; Loss Statement</h2>
-                    <p className="text-sm text-gray-500 mt-1">Hardware SaaS POS Platform</p>
+                    <p className="text-sm text-gray-500 mt-1">Smart POS Platform</p>
                     <p className="text-xs text-[var(--color-accent)] font-semibold mt-1">
                       Period: {startDate} to {endDate}
                     </p>
@@ -1332,7 +1332,7 @@ export const ReportsPage: React.FC = () => {
               </div>
 
               <div className="text-center text-xs text-gray-400 border-t border-gray-100 pt-6">
-                <p>Generated via SaaS POS platform reports center</p>
+                <p>Generated via Smart POS Platform reports center</p>
               </div>
             </div>
 
