@@ -171,7 +171,7 @@ This guide explains how to read and interpret the Profit & Loss (P&L) Statement 
 * If this is positive (greater than 0), your business is running profitably.
 * If this is negative (less than 0), the business is operating at a loss.
 
-Need support? Contact Smart POS Customer Support.
+Need support? Contact Smart POS Customer Support. (+254714731331)
 `;
 
     const blob = new Blob([guideContent], { type: 'text/plain;charset=utf-8' });
