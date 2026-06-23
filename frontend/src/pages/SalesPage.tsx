@@ -36,11 +36,11 @@ export function SalesPage() {
   }, [searchQuery]);
 
   const { data: salesData, isLoading } = useQuery({
-    queryKey: ['sales', { page, limit, customerId: debouncedSearch, ...filters }],
+    queryKey: ['sales', { page, limit, search: debouncedSearch, ...filters }],
     queryFn: () => salesApi.getSales({ 
       page, 
       limit, 
-      customerId: debouncedSearch ? debouncedSearch : undefined,
+      search: debouncedSearch ? debouncedSearch : undefined,
       startDate: filters.startDate || undefined,
       endDate: filters.endDate || undefined,
       paymentStatus: filters.paymentStatus || undefined,
@@ -58,7 +58,7 @@ export function SalesPage() {
       // Fetch up to 1000 recent sales matching current filter for export
       const exportData = await salesApi.getSales({
         limit: 1000,
-        customerId: debouncedSearch ? debouncedSearch : undefined,
+        search: debouncedSearch ? debouncedSearch : undefined,
         startDate: filters.startDate || undefined,
         endDate: filters.endDate || undefined,
         paymentStatus: filters.paymentStatus || undefined,

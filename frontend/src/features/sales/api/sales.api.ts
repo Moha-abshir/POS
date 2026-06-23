@@ -23,6 +23,7 @@ export interface SalesFilters {
   page?: number;
   limit?: number;
   customerId?: string;
+  search?: string;
   startDate?: string;
   endDate?: string;
   paymentStatus?: 'PAID' | 'PARTIAL' | 'UNPAID' | '';

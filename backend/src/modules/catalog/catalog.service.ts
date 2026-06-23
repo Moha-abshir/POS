@@ -1,4 +1,4 @@
-import { eq, and, inArray, sql } from 'drizzle-orm';
+import { eq, and, inArray, sql, or, ilike } from 'drizzle-orm';
 import { db } from '../../db';
 import { AppError } from '../../core/utils/AppError';
 import { categories, products, productVariants, variantUnits } from '../../db/schema';
@@ -102,10 +102,32 @@ export class CatalogService {
     });
   }
 
-  static async getProducts(businessId: string, limit = 50, offset = 0, isActive?: boolean) {
+  static async getProducts(businessId: string, limit = 50, offset = 0, isActive?: boolean, search?: string) {
     const conditions = [eq(products.businessId, businessId)];
     if (isActive !== undefined) {
       conditions.push(eq(products.isActive, isActive));
+    }
+
+    if (search) {
+      const matchingVariants = await db.select({ productId: productVariants.productId })
+        .from(productVariants)
+        .where(
+          and(
+            eq(productVariants.businessId, businessId),
+            or(
+              ilike(productVariants.name, `%${search}%`),
+              ilike(productVariants.sku, `%${search}%`)
+            )
+          )
+        );
+      const productIdsFromVariants = matchingVariants.map(v => v.productId);
+
+      const orCondition = productIdsFromVariants.length > 0
+        ? or(ilike(products.name, `%${search}%`), inArray(products.id, productIdsFromVariants))
+        : ilike(products.name, `%${search}%`);
+      if (orCondition) {
+        conditions.push(orCondition);
+      }
     }
 
     const result = await db.select({

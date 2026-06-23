@@ -45,11 +45,12 @@ export class CatalogController {
       const businessId = req.user!.businessId;
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = parseInt(req.query.offset as string) || 0;
+      const search = req.query.search as string | undefined;
       let isActive: boolean | undefined = undefined;
       if (req.query.isActive !== undefined) {
         isActive = req.query.isActive === 'true';
       }
-      const result = await CatalogService.getProducts(businessId, limit, offset, isActive);
+      const result = await CatalogService.getProducts(businessId, limit, offset, isActive, search);
       res.json({ success: true, data: result.data, meta: result.meta });
     } catch (error) {
       next(error);

@@ -1,4 +1,4 @@
-import { eq, and, sql, desc, gte, lte, ilike, inArray } from 'drizzle-orm';
+import { eq, and, sql, desc, gte, lte, ilike, inArray, or } from 'drizzle-orm';
 import { db } from '../../db';
 import { sales, saleItems, stockMovements, productVariants, customers, payments, variantUnits, products, refunds, refundItems } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
@@ -10,17 +10,27 @@ export class SalesService {
     limit?: number; 
     offset?: number; 
     customerId?: string;
+    search?: string;
     startDate?: string;
     endDate?: string;
     paymentStatus?: 'PAID' | 'PARTIAL' | 'UNPAID';
     paymentMethod?: 'CASH' | 'MPESA';
     mpesaRef?: string;
   } = {}) {
-    const { limit = 50, offset = 0, customerId, startDate, endDate, paymentStatus, paymentMethod, mpesaRef } = filters;
+    const { limit = 50, offset = 0, customerId, search, startDate, endDate, paymentStatus, paymentMethod, mpesaRef } = filters;
     
     const conditions: any[] = [eq(sales.businessId, businessId)];
     if (customerId) {
       conditions.push(eq(sales.customerId, customerId));
+    }
+    if (search) {
+      const searchCond = or(
+        ilike(sql`CAST(${sales.id} AS TEXT)`, `%${search}%`),
+        ilike(customers.name, `%${search}%`)
+      );
+      if (searchCond) {
+        conditions.push(searchCond);
+      }
     }
     if (startDate) {
       conditions.push(gte(sales.soldAt, new Date(startDate)));

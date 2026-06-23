@@ -9,13 +9,14 @@ export class SalesController {
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = (page - 1) * limit;
       const customerId = req.query.customerId as string;
+      const search = req.query.search as string;
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
       const paymentStatus = req.query.paymentStatus as 'PAID' | 'PARTIAL' | 'UNPAID';
       const paymentMethod = req.query.paymentMethod as 'CASH' | 'MPESA';
       const mpesaRef = req.query.mpesaRef as string;
 
-      const result = await SalesService.getSales(req.user!.businessId, { limit, offset, customerId, startDate, endDate, paymentStatus, paymentMethod, mpesaRef });
+      const result = await SalesService.getSales(req.user!.businessId, { limit, offset, customerId, search, startDate, endDate, paymentStatus, paymentMethod, mpesaRef });
       res.status(200).json({ status: 'success', message: 'Sales retrieved successfully', ...result });
     } catch (error) {
       next(error);
