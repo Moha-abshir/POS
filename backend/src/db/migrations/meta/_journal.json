@@ -71,6 +71,13 @@
       "when": 1782116722379,
       "tag": "0009_luxuriant_quasar",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1782216794599,
+      "tag": "0010_clear_marauders",
+      "breakpoints": true
     }
   ]
 }

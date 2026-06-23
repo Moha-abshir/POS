@@ -418,4 +418,39 @@ export const expenses = pgTable('expenses', {
   amountCheck: check('expenses_amount_check', sql`${table.amount} > 0`)
 }));
 
+export const cashDrawerSessions = pgTable('cash_drawer_sessions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  openedById: uuid('opened_by_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
+  closedById: uuid('closed_by_id').references(() => users.id, { onDelete: 'restrict' }),
+  status: varchar('status', { length: 20 }).notNull().default('OPEN'),
+  openingFloat: decimal('opening_float', { precision: 12, scale: 2 }).notNull().default('0'),
+  expectedCash: decimal('expected_cash', { precision: 12, scale: 2 }).notNull().default('0'),
+  actualCash: decimal('actual_cash', { precision: 12, scale: 2 }).notNull().default('0'),
+  difference: decimal('difference', { precision: 12, scale: 2 }).notNull().default('0'),
+  denominationCounts: jsonb('denomination_counts'),
+  notes: text('notes'),
+  openedAt: timestamp('opened_at', { withTimezone: true }).defaultNow().notNull(),
+  closedAt: timestamp('closed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
+}, (table) => ({
+  businessIdx: index('cash_drawer_sessions_business_idx').on(table.businessId),
+  openedByIdx: index('cash_drawer_sessions_opened_by_idx').on(table.openedById),
+  statusIdx: index('cash_drawer_sessions_status_idx').on(table.status),
+}));
+
+export const notifications = pgTable('notifications', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  type: varchar('type', { length: 50 }).notNull(), // 'LOW_STOCK', 'DAMAGE', 'CASH_DISCREPANCY', 'SYSTEM'
+  title: varchar('title', { length: 255 }).notNull(),
+  message: text('message').notNull(),
+  isRead: boolean('is_read').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  businessIdx: index('notifications_business_idx').on(table.businessId),
+  isReadIdx: index('notifications_is_read_idx').on(table.isRead),
+}));
+
 

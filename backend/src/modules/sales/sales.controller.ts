@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { SalesService } from './sales.service';
+import { CashSessionsService } from '../cash-sessions/cash-sessions.service';
 
 export class SalesController {
   static async getSales(req: Request, res: Response, next: NextFunction) {
@@ -23,6 +24,14 @@ export class SalesController {
 
   static async createSale(req: Request, res: Response, next: NextFunction) {
     try {
+      const activeSession = await CashSessionsService.getActiveSession(req.user!.businessId);
+      if (!activeSession) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Checkout is blocked. Please open the cash register session (input an opening float) before processing sales.' 
+        });
+      }
+
       const sale = await SalesService.createSale(req.user!.businessId, req.user!.id, req.body);
       res.status(201).json({ status: 'success', message: 'Sale recorded successfully', data: sale });
     } catch (error) {
@@ -47,6 +56,14 @@ export class SalesController {
 
   static async refundSale(req: Request, res: Response, next: NextFunction) {
     try {
+      const activeSession = await CashSessionsService.getActiveSession(req.user!.businessId);
+      if (!activeSession) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Refund blocked. Please open the cash register session before processing refunds.' 
+        });
+      }
+
       const saleId = req.params.id as string;
       const refund = await SalesService.refundSale(
         req.user!.businessId,

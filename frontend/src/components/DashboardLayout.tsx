@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '../features/auth/stores/auth.store';
 import { OnboardingModal } from '../features/auth/components/OnboardingModal';
 import { 
@@ -13,9 +13,15 @@ import {
   Bell,
   Truck,
   Contact,
-  Receipt
+  Receipt,
+  X,
+  RefreshCw,
+  Calculator,
+  AlertTriangle
 } from 'lucide-react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import { api } from '../lib/api';
+import { toast } from 'react-hot-toast';
 
 export const DashboardLayout: React.FC = () => {
   const { user, logout } = useAuthStore();
@@ -42,8 +48,126 @@ export const DashboardLayout: React.FC = () => {
     month: 'short' 
   });
 
-    const { hasSkippedOnboarding } = useAuthStore();
+  const { hasSkippedOnboarding } = useAuthStore();
   const showOnboarding = user && !hasSkippedOnboarding && (!user.firstName || (user.role === 'OWNER' && !user.isSetupComplete));
+
+  // Notifications state
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notificationsList, setNotificationsList] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Cash Register Session state
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [activeSession, setActiveSession] = useState<any>(null);
+  const [openingFloat, setOpeningFloat] = useState('');
+  
+  // Register closure counter state
+  const [isClosingStep, setIsClosingStep] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [counts, setCounts] = useState<Record<number, number>>({
+    1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0, 5: 0, 1: 0
+  });
+
+  const KES_DENOMINATIONS = [
+    { value: 1000, label: '1,000 Note', type: 'note' },
+    { value: 500, label: '500 Note', type: 'note' },
+    { value: 200, label: '200 Note', type: 'note' },
+    { value: 100, label: '100 Note', type: 'note' },
+    { value: 50, label: '50 Note', type: 'note' },
+    { value: 20, label: '20 Coin', type: 'coin' },
+    { value: 10, label: '10 Coin', type: 'coin' },
+    { value: 5, label: '5 Coin', type: 'coin' },
+    { value: 1, label: '1 Coin', type: 'coin' },
+  ];
+
+  const totalCounted = Object.entries(counts).reduce((acc, [val, qty]) => acc + (Number(val) * qty), 0);
+
+  // Fetch alerts and register session
+  const fetchData = useCallback(async () => {
+    try {
+      // Fetch notifications
+      const notifRes = await api.get('/notifications');
+      setNotificationsList(notifRes.data.data);
+      const unreadRes = await api.get('/notifications/unread-count');
+      setUnreadCount(unreadRes.data.count);
+
+      // Fetch active cash register session
+      const sessionRes = await api.get('/cash-sessions/active');
+      setActiveSession(sessionRes.data.data);
+    } catch (err) {
+      console.error('Error fetching header widgets data:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+    // Poll every 30s for live updates
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  const handleOpenRegister = async () => {
+    if (!openingFloat || Number(openingFloat) < 0) {
+      toast.error('Please input a valid opening float');
+      return;
+    }
+    try {
+      await api.post('/cash-sessions/open', { openingFloat: Number(openingFloat) });
+      toast.success('Cash register opened successfully');
+      setOpeningFloat('');
+      setIsRegisterModalOpen(false);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to open register');
+    }
+  };
+
+  const handleCloseRegister = async () => {
+    const expected = Number(activeSession.expectedCash);
+    const variance = totalCounted - expected;
+    if (Math.abs(variance) > 0.01 && !notes.trim()) {
+      toast.error('Please provide discrepancy notes');
+      return;
+    }
+
+    try {
+      await api.post('/cash-sessions/close', {
+        denominationCounts: counts,
+        actualCash: totalCounted,
+        notes: notes.trim(),
+      });
+      toast.success('Cash register closed successfully');
+      setNotes('');
+      setCounts({ 1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0, 5: 0, 1: 0 });
+      setIsClosingStep(false);
+      setIsRegisterModalOpen(false);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to close register');
+    }
+  };
+
+  const handleMarkRead = async (id: string) => {
+    try {
+      await api.post(`/notifications/${id}/read`);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.post('/notifications/mark-all-read');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const formatKES = (amount: number) => {
+    return amount.toLocaleString('en-KE', { style: 'currency', currency: 'KES' });
+  };
 
   return (
     <div className="h-screen overflow-hidden bg-[var(--color-bg-base)] flex text-[var(--color-text-primary)] font-sans">
@@ -75,7 +199,7 @@ export const DashboardLayout: React.FC = () => {
                       : 'text-[var(--color-text-inverse)]/60 hover:text-[var(--color-text-inverse)] hover:bg-white/5'
                   }`}
                 >
-                  {/* Active Indicator (3px amber border on the left) */}
+                  {/* Active Indicator (3px border on the left) */}
                   <div className={`absolute left-0 top-0 bottom-0 w-[3px] transition-colors ${
                     isActive ? 'bg-[var(--color-accent)]' : hoveredNav === item.name ? 'bg-[var(--color-border-strong)]/30' : 'bg-transparent'
                   }`} />
@@ -112,8 +236,7 @@ export const DashboardLayout: React.FC = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         
         {/* Top Bar */}
-        <header className="h-16 border-b border-[var(--color-border)] bg-[var(--color-bg-surface)] flex items-center justify-between px-6 shrink-0">
-          {/* We would typically render the page title dynamically here based on route. For now, we leave it to the page components or grab a default */}
+        <header className="h-16 border-b border-[var(--color-border)] bg-[var(--color-bg-surface)] flex items-center justify-between px-6 shrink-0 z-30">
           <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
             {navItems.find(i => location.pathname === i.path || (location.pathname.startsWith(i.path) && i.path !== '/'))?.name || 'Dashboard'}
           </h1>
@@ -122,11 +245,86 @@ export const DashboardLayout: React.FC = () => {
             <span className="text-sm font-medium text-[var(--color-text-muted)] tracking-wide uppercase">
               {today}
             </span>
-            <button className="relative text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">
-              <Bell className="h-5 w-5" />
-              {/* Notification badge example */}
-              {/* <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[var(--color-danger)]"></span> */}
+
+            {/* Cash Drawer Shift Widget */}
+            <button 
+              onClick={() => {
+                setIsClosingStep(false);
+                setIsRegisterModalOpen(true);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                activeSession 
+                  ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' 
+                  : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+              }`}
+            >
+              <Calculator className="w-3.5 h-3.5" />
+              {activeSession ? 'Register: OPEN' : 'Register: CLOSED'}
             </button>
+
+            {/* Notifications Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                className="relative text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors p-1"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-600 text-white text-[9px] font-bold flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {isNotificationsOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsNotificationsOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-80 bg-white border border-[var(--color-border)] rounded-lg shadow-xl z-50 py-1 text-sm">
+                    <div className="flex justify-between items-center px-4 py-2 border-b border-[var(--color-border)] bg-gray-50 rounded-t-lg">
+                      <span className="font-bold text-gray-950">Notifications Center</span>
+                      {unreadCount > 0 && (
+                        <button 
+                          onClick={handleMarkAllRead}
+                          className="text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] font-bold"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notificationsList.length === 0 ? (
+                        <div className="px-4 py-8 text-center text-gray-400 text-xs">No notifications or alerts</div>
+                      ) : (
+                        notificationsList.map(notif => (
+                          <div 
+                            key={notif.id} 
+                            onClick={() => handleMarkRead(notif.id)}
+                            className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
+                              !notif.isRead ? 'bg-amber-50/20 font-medium' : ''
+                            }`}
+                          >
+                            <div className="flex justify-between items-start gap-1">
+                              <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                                notif.type === 'LOW_STOCK' ? 'text-amber-600' :
+                                notif.type === 'CASH_DISCREPANCY' ? 'text-purple-600' :
+                                notif.type === 'DAMAGE' ? 'text-red-600' : 'text-blue-600'
+                              }`}>
+                                {notif.type.replace('_', ' ')}
+                              </span>
+                              <span className="text-[9px] text-gray-400">
+                                {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <p className="text-xs font-bold text-gray-900 mt-1">{notif.title}</p>
+                            <p className="text-xs text-gray-500 mt-0.5 leading-normal">{notif.message}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
 
@@ -134,8 +332,212 @@ export const DashboardLayout: React.FC = () => {
         <main className="flex-1 overflow-auto bg-[var(--color-bg-base)]">
           <Outlet />
         </main>
-        
       </div>
+
+      {/* CASH REGISTER MANAGEMENT MODAL */}
+      {isRegisterModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-xl border border-gray-200 shadow-2xl p-6 relative flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-center border-b pb-3 mb-4">
+              <h3 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
+                <Calculator className="w-5 h-5 text-[var(--color-accent)]" />
+                {activeSession 
+                  ? (isClosingStep ? 'Register Reconciliation' : 'Cash Drawer Shift Info') 
+                  : 'Open Cash Drawer Session'
+                }
+              </h3>
+              <button 
+                onClick={() => {
+                  setIsClosingStep(false);
+                  setIsRegisterModalOpen(false);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="overflow-y-auto flex-1 pr-1 text-sm text-gray-600 space-y-4">
+              
+              {/* STATE: CLOSED - Open Register Shift Form */}
+              {!activeSession && (
+                <div className="space-y-4 py-2">
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    Opening the cash drawer records your starting float cash (cash in the drawer to start matching transactions and issuing change).
+                  </p>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Opening Float Amount (KES)</label>
+                    <input 
+                      type="number" 
+                      value={openingFloat}
+                      onChange={(e) => setOpeningFloat(e.target.value)}
+                      placeholder="e.g. 5,000"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] font-semibold text-gray-900"
+                    />
+                  </div>
+                  <button 
+                    onClick={handleOpenRegister}
+                    className="w-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 mt-4"
+                  >
+                    Open Register Shift
+                  </button>
+                </div>
+              )}
+
+              {/* STATE: OPEN - Drawer shift summaries */}
+              {activeSession && !isClosingStep && (
+                <div className="space-y-3.5">
+                  <div className="bg-green-50/50 border border-green-100 rounded-lg p-4 space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">Status</span>
+                      <span className="font-bold text-green-700 uppercase tracking-wider">Active (Open)</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">Opened By</span>
+                      <span className="font-bold text-gray-800">{activeSession.openedByFirstName} {activeSession.openedByLastName}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">Opened At</span>
+                      <span className="font-medium text-gray-800">
+                        {new Date(activeSession.openedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-b border-gray-100 py-3 space-y-2">
+                    <div className="flex justify-between font-medium">
+                      <span>Opening Float</span>
+                      <span className="text-gray-900">{formatKES(Number(activeSession.openingFloat))}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-gray-900 pt-1 border-t border-dashed">
+                      <span className="flex items-center gap-1">
+                        Expected Drawer Cash
+                        <span className="text-[10px] text-gray-400 font-normal hover:underline cursor-help" title="Opening Float + Cash Sales - Cash Refunds - Cash Purchases">?</span>
+                      </span>
+                      <span className="text-amber-700 underline decoration-double">{formatKES(Number(activeSession.expectedCash))}</span>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      setCounts({ 1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0, 5: 0, 1: 0 });
+                      setNotes('');
+                      setIsClosingStep(true);
+                    }}
+                    className="w-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 mt-4"
+                  >
+                    Proceed to Count &amp; Close Register
+                  </button>
+                </div>
+              )}
+
+              {/* STATE: OPEN - Closing Shift Denomination Counter */}
+              {activeSession && isClosingStep && (
+                <div className="space-y-4">
+                  <div className="text-xs text-gray-500">
+                    Input the quantity of each coin or note denomination counted inside the cash drawer.
+                  </div>
+
+                  {/* Denomination Counter grid */}
+                  <div className="border border-gray-100 rounded-lg overflow-hidden max-h-56 overflow-y-auto">
+                    <table className="min-w-full divide-y divide-gray-100 text-xs">
+                      <thead className="bg-gray-50 sticky top-0 font-bold uppercase tracking-wider text-gray-500">
+                        <tr>
+                          <th className="px-3 py-2 text-left">Denomination</th>
+                          <th className="px-3 py-2 text-center">Quantity</th>
+                          <th className="px-3 py-2 text-right">Subtotal</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 bg-white font-medium text-gray-800">
+                        {KES_DENOMINATIONS.map((denom) => (
+                          <tr key={denom.value}>
+                            <td className="px-3 py-1.5 text-left">{denom.label}</td>
+                            <td className="px-3 py-1.5 text-center">
+                              <input 
+                                type="number" 
+                                min="0"
+                                value={counts[denom.value] || ''}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value) || 0;
+                                  setCounts(prev => ({ ...prev, [denom.value]: val }));
+                                }}
+                                className="w-16 px-1.5 py-0.5 border border-gray-300 rounded text-center focus:ring-1 focus:ring-[var(--color-accent)] focus:outline-none"
+                              />
+                            </td>
+                            <td className="px-3 py-1.5 text-right font-bold">
+                              {formatKES((counts[denom.value] || 0) * denom.value)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Financial Reconciliation summary */}
+                  <div className="bg-gray-50 p-4 rounded-lg space-y-2 border border-gray-100 text-xs font-semibold">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Total Counted Cash</span>
+                      <span className="font-bold text-gray-900 text-sm">{formatKES(totalCounted)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">System Expected Cash</span>
+                      <span className="font-bold text-gray-900 text-sm">{formatKES(Number(activeSession.expectedCash))}</span>
+                    </div>
+
+                    {/* Discrepancy feedback block */}
+                    {Math.abs(totalCounted - Number(activeSession.expectedCash)) > 0.01 ? (
+                      <div className={`p-3 rounded-lg border flex flex-col gap-1 mt-2 ${
+                        totalCounted > Number(activeSession.expectedCash)
+                          ? 'bg-blue-50 border-blue-200 text-blue-800'
+                          : 'bg-red-50 border-red-200 text-red-800'
+                      }`}>
+                        <div className="flex items-center gap-1">
+                          <AlertTriangle className="w-4 h-4 shrink-0" />
+                          <span>
+                            Discrepancy: {totalCounted > Number(activeSession.expectedCash) ? 'Surplus' : 'Shortage'} of{' '}
+                            {formatKES(Math.abs(totalCounted - Number(activeSession.expectedCash)))}
+                          </span>
+                        </div>
+                        <textarea
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          placeholder="Please document the reason for the discrepancy (required)..."
+                          className="w-full mt-2 p-2 border border-gray-300 rounded-lg text-xs font-normal focus:outline-none text-gray-900 bg-white"
+                          rows={2}
+                        />
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-lg border bg-green-50 border-green-200 text-green-800 flex items-center gap-1.5 mt-2">
+                        <span>✓ Drawer count matches expectation perfectly!</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button 
+                      onClick={() => setIsClosingStep(false)}
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 rounded-lg transition-colors"
+                    >
+                      Back
+                    </button>
+                    <button 
+                      onClick={handleCloseRegister}
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg transition-colors"
+                    >
+                      Close Shift Register
+                    </button>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

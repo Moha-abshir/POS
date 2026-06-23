@@ -11,6 +11,8 @@ import { CustomersPage } from './pages/CustomersPage';
 import { PosPage } from './pages/PosPage';
 import { SalesPage } from './pages/SalesPage';
 import { ReportsPage } from './pages/ReportsPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { ReconciliationLogsPage } from './pages/ReconciliationLogsPage';
 
 const NotFound = () => (
   <div className="flex flex-col items-center justify-center h-full p-6 text-center">
@@ -49,12 +51,8 @@ function App() {
           <Route 
             element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" replace />}
           >
-            <Route path="/" element={
-              <div className="p-6">
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-500 mt-1">Welcome back to Hardware Store POS!</p>
-              </div>
-            } />
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/cash-reconciliation" element={<ReconciliationLogsPage />} />
             <Route path="/catalog" element={<CatalogPage />} />
             <Route path="/team" element={<TeamPage />} />
             <Route path="/settings" element={<SettingsPage />} />
