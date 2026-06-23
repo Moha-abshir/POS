@@ -884,7 +884,14 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                   <div className="bg-white p-5 rounded-lg border border-[var(--color-border)] shadow-sm">
                     <div className="flex justify-between items-center">
                       <div>
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Outstanding Customer Credit Debt</p>
+                        <div className="flex items-center gap-1.5 relative group">
+                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Outstanding Customer Credit Debt</span>
+                          <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
+                          <div className="absolute left-0 top-full mt-1.5 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                            The total unpaid balance currently owed to your business by all customers who bought items on credit.
+                            <div className="absolute left-4 top-0 w-2 h-2 bg-gray-900 rotate-45 -translate-y-1/2"></div>
+                          </div>
+                        </div>
                         <h3 className="text-3xl font-black text-red-600 mt-2">{formatKES(customerData.totalOutstandingCredit)}</h3>
                       </div>
                       <div className="p-3 bg-red-50 rounded text-red-600"><AlertTriangle className="w-6 h-6" /></div>
