@@ -30,7 +30,7 @@ export const ReconciliationLogsPage: React.FC = () => {
     return amount.toLocaleString('en-KE', { style: 'currency', currency: 'KES' });
   };
 
-  const renderVarianceBadge = (diff: number, expectedCash: number) => {
+  const renderVarianceBadge = (diff: number) => {
     if (Math.abs(diff) <= 0.01) {
       return (
         <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-100 flex items-center justify-center gap-1 w-max">
@@ -39,7 +39,7 @@ export const ReconciliationLogsPage: React.FC = () => {
       );
     }
 
-    const isSurplus = expectedCash >= 0 ? diff > 0 : false;
+    const isSurplus = diff > 0;
     return (
       <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border flex items-center justify-center gap-1 w-max ${
         isSurplus 
@@ -149,7 +149,7 @@ export const ReconciliationLogsPage: React.FC = () => {
                             {sess.status === 'OPEN' ? (
                               <span className="px-2 py-0.5 rounded bg-green-50 text-green-700 text-[10px] border border-green-100 font-bold tracking-wide uppercase">Open Shift</span>
                             ) : (
-                              renderVarianceBadge(Number(sess.difference), Number(sess.expectedCash))
+                              renderVarianceBadge(Number(sess.actualCash) - Math.abs(Number(sess.expectedCash)))
                             )}
                           </div>
                         </td>
@@ -228,7 +228,7 @@ export const ReconciliationLogsPage: React.FC = () => {
                       <span className="font-bold">{formatKES(Number(selectedSession.actualCash))}</span>
                     </div>
                     <div className="pt-2">
-                      {renderVarianceBadge(Number(selectedSession.difference), Number(selectedSession.expectedCash))}
+                      {renderVarianceBadge(Number(selectedSession.actualCash) - Math.abs(Number(selectedSession.expectedCash)))}
                     </div>
                   </div>
                 )}

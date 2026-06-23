@@ -85,7 +85,7 @@ export class CashSessionsService {
     }
 
     const expectedCash = await this.calculateExpectedCash(businessId, active.openedAt, Number(active.openingFloat));
-    const difference = actualCash - expectedCash;
+    const difference = actualCash - Math.abs(expectedCash);
 
     const [closedSession] = await db.update(cashDrawerSessions)
       .set({
@@ -111,7 +111,7 @@ export class CashSessionsService {
 
     // If there is a discrepancy, trigger a notification
     if (Math.abs(difference) > 0.01) {
-      const discrepancyType = expectedCash >= 0 ? (difference > 0 ? 'surplus' : 'shortage') : 'shortage';
+      const discrepancyType = difference > 0 ? 'surplus' : 'shortage';
       const formattedDiff = Math.abs(difference).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       const formattedExpected = expectedCash.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       const formattedActual = actualCash.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

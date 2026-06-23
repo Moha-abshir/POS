@@ -124,7 +124,8 @@ export const DashboardLayout: React.FC = () => {
 
   const handleCloseRegister = async () => {
     const expected = Number(activeSession.expectedCash);
-    const variance = totalCounted - expected;
+    const targetCash = Math.abs(expected);
+    const variance = totalCounted - targetCash;
     if (Math.abs(variance) > 0.01 && !notes.trim()) {
       toast.error('Please provide discrepancy notes');
       return;
@@ -488,32 +489,44 @@ export const DashboardLayout: React.FC = () => {
                     </div>
 
                     {/* Discrepancy feedback block */}
-                    {Math.abs(totalCounted - Number(activeSession.expectedCash)) > 0.01 ? (
-                      <div className={`p-3 rounded-lg border flex flex-col gap-1 mt-2 ${
-                        (Number(activeSession.expectedCash) >= 0 && totalCounted > Number(activeSession.expectedCash))
-                          ? 'bg-blue-50 border-blue-200 text-blue-800'
-                          : 'bg-red-50 border-red-200 text-red-800'
-                      }`}>
-                        <div className="flex items-center gap-1">
-                          <AlertTriangle className="w-4 h-4 shrink-0" />
-                          <span>
-                            Discrepancy: {(Number(activeSession.expectedCash) >= 0 && totalCounted > Number(activeSession.expectedCash)) ? 'Surplus' : 'Shortage'} of{' '}
-                            {formatKES(Math.abs(totalCounted - Number(activeSession.expectedCash)))}
-                          </span>
+                    {(() => {
+                      const expectedVal = Number(activeSession.expectedCash);
+                      const targetCash = Math.abs(expectedVal);
+                      const diff = totalCounted - targetCash;
+                      const hasDiscrepancy = Math.abs(diff) > 0.01;
+
+                      if (!hasDiscrepancy) {
+                        return (
+                          <div className="p-3 rounded-lg border bg-green-50 border-green-200 text-green-800 flex items-center gap-1.5 mt-2">
+                            <span>✓ Drawer count matches expectation perfectly!</span>
+                          </div>
+                        );
+                      }
+
+                      const isSurplus = diff > 0;
+                      return (
+                        <div className={`p-3 rounded-lg border flex flex-col gap-1 mt-2 ${
+                          isSurplus
+                            ? 'bg-blue-50 border-blue-200 text-blue-800'
+                            : 'bg-red-50 border-red-200 text-red-800'
+                        }`}>
+                          <div className="flex items-center gap-1">
+                            <AlertTriangle className="w-4 h-4 shrink-0" />
+                            <span>
+                              Discrepancy: {isSurplus ? 'Surplus' : 'Shortage'} of{' '}
+                              {formatKES(Math.abs(diff))}
+                            </span>
+                          </div>
+                          <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Please document the reason for the discrepancy (required)..."
+                            className="w-full mt-2 p-2 border border-gray-300 rounded-lg text-xs font-normal focus:outline-none text-gray-900 bg-white"
+                            rows={2}
+                          />
                         </div>
-                        <textarea
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                          placeholder="Please document the reason for the discrepancy (required)..."
-                          className="w-full mt-2 p-2 border border-gray-300 rounded-lg text-xs font-normal focus:outline-none text-gray-900 bg-white"
-                          rows={2}
-                        />
-                      </div>
-                    ) : (
-                      <div className="p-3 rounded-lg border bg-green-50 border-green-200 text-green-800 flex items-center gap-1.5 mt-2">
-                        <span>✓ Drawer count matches expectation perfectly!</span>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
 
                   <div className="flex gap-3 pt-2">
