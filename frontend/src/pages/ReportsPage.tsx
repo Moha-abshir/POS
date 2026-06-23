@@ -136,6 +136,56 @@ export const ReportsPage: React.FC = () => {
     toast.success(`Exporting ${report} as ${format.toUpperCase()}...`);
   };
 
+  const downloadPLGuide = () => {
+    const guideContent = `SMART POS PLATFORM - PROFIT & LOSS STATEMENT GUIDE
+===================================================
+
+This guide explains how to read and interpret the Profit & Loss (P&L) Statement on the Smart POS Platform.
+
+1. OPERATING REVENUE
+--------------------
+* Gross Sales Revenue: The total money received from all sales transactions before any deductions.
+* Returns & Refunds Processed: Money returned to customers for returned goods. This is subtracted from your revenue.
+* Net Operating Revenue: The actual sales income you keep after refunds are subtracted.
+  [Net Operating Revenue = Gross Sales Revenue - Refunds]
+
+2. COST OF GOODS SOLD (COGS)
+----------------------------
+* Total Cost of Sold Inventory: The wholesale cost (what you paid the supplier) for the items you sold.
+* Gross Operating Profit: The money you made purely from your markup.
+  [Gross Operating Profit = Net Operating Revenue - Cost of Sold Inventory]
+
+3. INVENTORY LOSSES
+-------------------
+* Damaged Goods Waste Costs: The value of stock that expired, broke, went missing, or was wasted. Since you paid for these items but cannot sell them, this directly reduces your net profit.
+
+4. OPERATING EXPENSES
+---------------------
+* Operational Costs: Running expenses logged for the business (e.g., Rent, Electricity, Salaries, Transport).
+* Total Operating Expenses: The sum of all your business running costs.
+
+5. NET OPERATING PROFIT / INCOME (THE BOTTOM LINE)
+--------------------------------------------------
+* Net Operating Profit: The final profit of the business after all costs, expenses, and inventory losses are subtracted.
+  [Net Operating Profit = Gross Operating Profit - Inventory Losses - Total Expenses]
+* If this is positive (greater than 0), your business is running profitably.
+* If this is negative (less than 0), the business is operating at a loss.
+
+Need support? Contact Smart POS Customer Support.
+`;
+
+    const blob = new Blob([guideContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'Smart_POS_PL_Explanation_Guide.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('P&L Explanation Guide downloaded successfully!');
+  };
+
   // Helper format currency
   const formatKES = (num: number) => {
     return 'KES ' + (num || 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -575,12 +625,19 @@ export const ReportsPage: React.FC = () => {
               {/* TAB: PROFIT & LOSS STATEMENT */}
               {activeTab === 'profit-loss' && profitLossData && (
                 <div className="max-w-3xl mx-auto bg-white p-8 rounded-lg border border-[var(--color-border)] shadow-md">
-                  <div className="text-center border-b border-[var(--color-border)] pb-6 mb-6">
+                  <div className="text-center border-b border-[var(--color-border)] pb-6 mb-6 relative">
                     <h2 className="text-2xl font-bold text-gray-900">Profit &amp; Loss Statement</h2>
                     <p className="text-sm text-gray-500 mt-1">Smart POS Platform</p>
                     <p className="text-xs text-[var(--color-accent)] font-semibold mt-1">
                       Period: {startDate} to {endDate}
                     </p>
+                    <button
+                      onClick={downloadPLGuide}
+                      className="absolute right-0 bottom-2 flex items-center gap-1 text-[11px] font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] bg-[var(--color-accent-subtle)] px-2.5 py-1.5 rounded transition-colors"
+                      title="Download Profit & Loss Terminology Guide"
+                    >
+                      <Download className="w-3.5 h-3.5" /> P&amp;L Guide
+                    </button>
                   </div>
 
                   <div className="space-y-6">
