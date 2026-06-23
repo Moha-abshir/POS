@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  FileText, TrendingUp, TrendingDown, Receipt, DollarSign, Users, AlertTriangle, 
+  TrendingUp, TrendingDown, Receipt, DollarSign, Users, AlertTriangle, 
   Truck, Printer, Download, Calendar, RefreshCcw, 
   Trash2, CreditCard, ShoppingBag, PiggyBank, BarChart3, Info
 } from 'lucide-react';
@@ -295,25 +295,6 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                 title="Refresh Report Data"
               >
                 <RefreshCcw className="w-4 h-4 text-gray-500" />
-              </button>
-              <div className="h-6 w-px bg-gray-200"></div>
-              <button
-                onClick={() => handleExport(activeTab, 'csv')}
-                className="flex items-center gap-1 text-xs font-medium border border-gray-300 rounded px-2.5 py-1.5 hover:bg-gray-50 text-[var(--color-text-secondary)] transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" /> CSV
-              </button>
-              <button
-                onClick={() => handleExport(activeTab, 'excel')}
-                className="flex items-center gap-1 text-xs font-medium border border-green-300 rounded px-2.5 py-1.5 hover:bg-green-50 text-green-700 transition-colors"
-              >
-                <FileText className="w-3.5 h-3.5" /> Excel
-              </button>
-              <button
-                onClick={() => handleExport(activeTab, 'pdf')}
-                className="flex items-center gap-1 text-xs font-medium border border-amber-300 rounded px-2.5 py-1.5 hover:bg-amber-50 text-[var(--color-accent-hover)] transition-colors"
-              >
-                <Printer className="w-3.5 h-3.5" /> PDF / Print
               </button>
             </div>
           </div>

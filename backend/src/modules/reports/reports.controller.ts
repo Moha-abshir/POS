@@ -263,6 +263,7 @@ export class ReportsController {
           ];
           break;
         }
+        case 'damaged':
         case 'damaged-goods': {
           sheetName = 'Damaged_Goods_Report';
           const data = await ReportsService.getDamagedGoodsReport(businessId, startDate as string, endDate as string);
