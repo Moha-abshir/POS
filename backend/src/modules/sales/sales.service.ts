@@ -24,10 +24,17 @@ export class SalesService {
       conditions.push(eq(sales.customerId, customerId));
     }
     if (search) {
-      const searchCond = or(
+      const searchLower = search.toLowerCase();
+      const searchConditions = [
         ilike(sql`CAST(${sales.id} AS TEXT)`, `%${search}%`),
         ilike(customers.name, `%${search}%`)
-      );
+      ];
+      
+      if ('walk-in customer'.includes(searchLower) || 'walk-in'.includes(searchLower) || 'walkin'.includes(searchLower)) {
+        searchConditions.push(sql`${sales.customerId} IS NULL`);
+      }
+      
+      const searchCond = or(...searchConditions);
       if (searchCond) {
         conditions.push(searchCond);
       }
@@ -67,6 +74,7 @@ export class SalesService {
 
     const [{ count }] = await db.select({ count: sql`count(*)`.mapWith(Number) })
       .from(sales)
+      .leftJoin(customers, eq(sales.customerId, customers.id))
       .where(and(...conditions));
 
     return {
