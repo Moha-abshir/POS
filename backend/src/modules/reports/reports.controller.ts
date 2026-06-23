@@ -147,7 +147,9 @@ export class ReportsController {
           const data = await ReportsService.getOverviewReport(businessId, startDate as string, endDate as string);
           headers = ['Metric', 'Value'];
           rows = [
-            ['Gross Revenue', data.revenue],
+            ['Gross Sales Revenue (Before Discounts)', data.revenue + data.discount],
+            ['Total Discounts Given', data.discount],
+            ['Net Sales Revenue', data.revenue],
             ['COGS', data.cogs],
             ['Gross Profit', data.grossProfit],
             ['Gross Margin (%)', data.grossMargin.toFixed(2)],
@@ -191,7 +193,8 @@ export class ReportsController {
           const data = await ReportsService.getProfitLossReport(businessId, startDate as string, endDate as string);
           headers = ['Line Item', 'Amount (KES)'];
           rows = [
-            ['Gross Sales Revenue', data.grossRevenue],
+            ['Gross Sales Revenue (Before Discounts)', data.grossRevenue],
+            ['Minus Discounts Given', -data.discount],
             ['Minus Refunds / Returns', -data.refunds],
             ['Net Sales Revenue', data.netRevenue],
             ['Minus Cost of Goods Sold (COGS)', -data.cogs],

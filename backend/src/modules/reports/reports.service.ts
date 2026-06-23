@@ -48,6 +48,7 @@ export class ReportsService {
     const [salesSummary] = await db.select({
       totalRevenue: sql<string>`COALESCE(SUM(${sales.totalAmount}), 0)`,
       totalPaid: sql<string>`COALESCE(SUM(${sales.amountPaid}), 0)`,
+      totalDiscount: sql<string>`COALESCE(SUM(${sales.discountAmount}), 0)`,
       salesCount: sql<number>`COUNT(${sales.id})::int`,
     })
     .from(sales)
@@ -55,6 +56,7 @@ export class ReportsService {
 
     const totalRevenue = this.parseNum(salesSummary?.totalRevenue);
     const totalPaid = this.parseNum(salesSummary?.totalPaid);
+    const totalDiscount = this.parseNum(salesSummary?.totalDiscount);
     const salesCount = salesSummary?.salesCount || 0;
     const totalUnpaid = Math.max(0, totalRevenue - totalPaid);
     const averageBasket = salesCount > 0 ? totalRevenue / salesCount : 0;
@@ -146,6 +148,7 @@ export class ReportsService {
       expenses: totalExpenses,
       purchases: totalPurchases,
       damagedCost: totalDamagedCost,
+      discount: totalDiscount,
       paymentsBreakdown,
       trend: formattedTrend
     };
@@ -277,11 +280,14 @@ export class ReportsService {
 
     // Revenue
     const [salesSummary] = await db.select({
-      totalRevenue: sql<string>`COALESCE(SUM(${sales.totalAmount}), 0)`
+      totalRevenue: sql<string>`COALESCE(SUM(${sales.totalAmount}), 0)`,
+      totalDiscount: sql<string>`COALESCE(SUM(${sales.discountAmount}), 0)`
     })
     .from(sales)
     .where(and(...salesConditions));
-    const grossRevenue = this.parseNum(salesSummary?.totalRevenue);
+    const netSales = this.parseNum(salesSummary?.totalRevenue);
+    const totalDiscount = this.parseNum(salesSummary?.totalDiscount);
+    const grossRevenue = netSales + totalDiscount;
 
     // Refunds
     const [refundsSummary] = await db.select({
@@ -291,7 +297,7 @@ export class ReportsService {
     .where(and(...refundConditions));
     const totalRefunds = this.parseNum(refundsSummary?.totalRefunds);
 
-    const netRevenue = grossRevenue - totalRefunds;
+    const netRevenue = grossRevenue - totalDiscount - totalRefunds;
 
     // COGS
     const [cogsSummary] = await db.select({
@@ -335,6 +341,7 @@ export class ReportsService {
 
     return {
       grossRevenue,
+      discount: totalDiscount,
       refunds: totalRefunds,
       netRevenue,
       cogs,

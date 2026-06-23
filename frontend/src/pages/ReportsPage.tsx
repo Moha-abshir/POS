@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   TrendingUp, TrendingDown, Receipt, DollarSign, Users, AlertTriangle, 
   Truck, Printer, Download, Calendar, RefreshCcw, 
-  Trash2, CreditCard, ShoppingBag, PiggyBank, BarChart3, Info
+  Trash2, CreditCard, ShoppingBag, PiggyBank, BarChart3, Info, Percent
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { 
@@ -358,14 +358,14 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                           <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Gross Sales Revenue</span>
                           <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
                           <div className="absolute left-0 top-full mt-1.5 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
-                            Total income generated from all sales transactions in the selected period (excluding refunds and before any deductions).
+                            Total income generated from all sales transactions in the selected period (excluding refunds and before any discount/deductions).
                             <div className="absolute left-4 top-0 w-2 h-2 bg-gray-900 rotate-45 -translate-y-1/2"></div>
                           </div>
                         </div>
                         <div className="p-1.5 bg-amber-50 rounded"><DollarSign className="w-4 h-4 text-[var(--color-accent)]" /></div>
                       </div>
-                      <h3 className="text-2xl font-bold text-gray-900 mt-2">{formatKES(overviewData.revenue)}</h3>
-                      <p className="text-xs text-gray-400 mt-1">Total revenue in period</p>
+                      <h3 className="text-2xl font-bold text-gray-900 mt-2">{formatKES(overviewData.revenue + (overviewData.discount || 0))}</h3>
+                      <p className="text-xs text-gray-400 mt-1">Total revenue before discounts</p>
                     </div>
 
                     <div className="bg-white p-5 rounded-lg border border-[var(--color-border)] shadow-sm">
@@ -490,8 +490,8 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                     </div>
                   </div>
 
-                  {/* Waste and Credit summary blocks */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Waste, Credit and Discount summary blocks */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm flex items-center gap-4">
                       <div className="p-3 bg-red-50 rounded-full text-red-600"><Trash2 className="w-5 h-5" /></div>
                       <div className="relative group flex-1">
@@ -516,6 +516,20 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                         <p className="text-lg font-bold text-gray-900">{formatKES(overviewData.totalUnpaidCredit)}</p>
                         <div className="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
                           Total value of sales made on credit during this period that have not yet been paid by customers.
+                          <div className="absolute left-4 bottom-0 w-2 h-2 bg-gray-900 rotate-45 translate-y-1/2"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm flex items-center gap-4">
+                      <div className="p-3 bg-purple-50 rounded-full text-purple-600"><Percent className="w-5 h-5" /></div>
+                      <div className="relative group flex-1">
+                        <div className="flex items-center gap-1">
+                          <p className="text-xs text-gray-400 font-medium">Total Discounts Given</p>
+                          <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
+                        </div>
+                        <p className="text-lg font-bold text-gray-900">{formatKES(overviewData.discount || 0)}</p>
+                        <div className="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                          Total value of promotional discounts offered to customers during the period.
                           <div className="absolute left-4 bottom-0 w-2 h-2 bg-gray-900 rotate-45 translate-y-1/2"></div>
                         </div>
                       </div>
@@ -662,8 +676,12 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                     <div>
                       <h3 className="text-sm font-bold text-gray-900 uppercase border-b border-gray-200 pb-1 mb-2">Operating Revenue</h3>
                       <div className="flex justify-between py-1.5 text-sm">
-                        <span className="text-gray-600 pl-4">Gross Sales Revenue</span>
+                        <span className="text-gray-600 pl-4">Gross Sales Revenue (Before Discounts)</span>
                         <span className="font-medium">{formatKES(profitLossData.grossRevenue)}</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 text-sm text-red-600">
+                        <span className="pl-4">Minus Discounts Given</span>
+                        <span>({formatKES(profitLossData.discount || 0)})</span>
                       </div>
                       <div className="flex justify-between py-1.5 text-sm text-red-600 border-b border-dashed border-gray-100">
                         <span className="pl-4">Minus Returns &amp; Refunds processed</span>
