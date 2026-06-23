@@ -170,8 +170,7 @@ This guide explains how to read and interpret the Profit & Loss (P&L) Statement 
   [Net Operating Profit = Gross Operating Profit - Inventory Losses - Total Expenses]
 * If this is positive (greater than 0), your business is running profitably.
 * If this is negative (less than 0), the business is operating at a loss.
-
-Need support? Contact Smart POS Customer Support. (+254714731331)
+Need support? Contact Smart POS Customer Support at +254714731331.
 `;
 
     const blob = new Blob([guideContent], { type: 'text/plain;charset=utf-8' });
@@ -717,19 +716,46 @@ Need support? Contact Smart POS Customer Support. (+254714731331)
                   {/* Valuation Summary Card Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-white p-5 rounded-lg border border-[var(--color-border)] shadow-sm">
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Inventory Value (Cost Price)</p>
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-1.5 relative group">
+                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Inventory Value (Cost Price)</span>
+                          <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
+                          <div className="absolute left-0 top-full mt-1.5 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                            The total cash value of your current stock based on the cost price you paid the supplier.
+                            <div className="absolute left-4 top-0 w-2 h-2 bg-gray-900 rotate-45 -translate-y-1/2"></div>
+                          </div>
+                        </div>
+                      </div>
                       <h3 className="text-2xl font-bold text-gray-900 mt-2">{formatKES(inventoryData.assetValueCost)}</h3>
                       <p className="text-xs text-gray-400 mt-1">Asset cost valuation</p>
                     </div>
 
                     <div className="bg-white p-5 rounded-lg border border-[var(--color-border)] shadow-sm">
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Potential Sales Revenue (Selling Price)</p>
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-1.5 relative group">
+                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Potential Sales Revenue (Selling Price)</span>
+                          <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
+                          <div className="absolute left-0 top-full mt-1.5 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                            The total revenue you will generate if all your current stock is sold at your retail price.
+                            <div className="absolute left-4 top-0 w-2 h-2 bg-gray-900 rotate-45 -translate-y-1/2"></div>
+                          </div>
+                        </div>
+                      </div>
                       <h3 className="text-2xl font-bold text-gray-900 mt-2">{formatKES(inventoryData.assetValueRetail)}</h3>
                       <p className="text-xs text-gray-400 mt-1">If all items sold at current unit price</p>
                     </div>
 
                     <div className="bg-white p-5 rounded-lg border border-[var(--color-border)] shadow-sm bg-gradient-to-br from-green-50/20 to-white">
-                      <p className="text-xs font-bold text-green-700 uppercase tracking-wider">Potential Profit Margin</p>
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-1.5 relative group">
+                          <span className="text-xs font-bold text-green-700 uppercase tracking-wider">Potential Profit Margin</span>
+                          <Info className="w-3.5 h-3.5 text-green-500 hover:text-green-700 cursor-help" />
+                          <div className="absolute right-0 top-full mt-1.5 hidden group-hover:block w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                            The estimated gross profit you stand to make once all current inventory is sold.<br/><b className="text-green-400 font-semibold">Formula:</b> Revenue (Selling) - Value (Cost)
+                            <div className="absolute right-4 top-0 w-2 h-2 bg-gray-900 rotate-45 -translate-y-1/2"></div>
+                          </div>
+                        </div>
+                      </div>
                       <h3 className="text-2xl font-bold text-green-800 mt-2">{formatKES(inventoryData.potentialProfit)}</h3>
                       <p className="text-xs text-green-600 font-semibold mt-1">Estimated gross profit margin</p>
                     </div>
@@ -738,22 +764,36 @@ Need support? Contact Smart POS Customer Support. (+254714731331)
                   {/* Stock Levels Summary Block */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 relative group flex-1">
                         <div className="p-3 bg-amber-50 rounded text-[var(--color-accent)]"><AlertTriangle className="w-5 h-5" /></div>
                         <div>
-                          <h4 className="text-sm font-bold text-gray-950">Low Stock Items Alert</h4>
+                          <div className="flex items-center gap-1">
+                            <h4 className="text-sm font-bold text-gray-950">Low Stock Items Alert</h4>
+                            <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
+                          </div>
                           <p className="text-xs text-gray-400">At or below warning thresholds</p>
+                        </div>
+                        <div className="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                          Number of unique products whose current stock level is at or below the warning threshold (reorder point).
+                          <div className="absolute left-4 bottom-0 w-2 h-2 bg-gray-900 rotate-45 translate-y-1/2"></div>
                         </div>
                       </div>
                       <span className="text-2xl font-black text-amber-700">{inventoryData.lowStockCount}</span>
                     </div>
 
                     <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 relative group flex-1">
                         <div className="p-3 bg-red-50 rounded text-red-600"><AlertTriangle className="w-5 h-5" /></div>
                         <div>
-                          <h4 className="text-sm font-bold text-gray-950">Out of Stock Items</h4>
+                          <div className="flex items-center gap-1">
+                            <h4 className="text-sm font-bold text-gray-950">Out of Stock Items</h4>
+                            <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
+                          </div>
                           <p className="text-xs text-gray-400">Completely depleted items</p>
+                        </div>
+                        <div className="absolute right-0 bottom-full mb-1.5 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                          Number of unique products that have completely run out of stock (current stock is 0).
+                          <div className="absolute right-4 bottom-0 w-2 h-2 bg-gray-900 rotate-45 translate-y-1/2"></div>
                         </div>
                       </div>
                       <span className="text-2xl font-black text-red-600">{inventoryData.outOfStockCount}</span>
