@@ -78,6 +78,13 @@
       "when": 1782216794599,
       "tag": "0010_clear_marauders",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1782228865931,
+      "tag": "0011_chief_starjammers",
+      "breakpoints": true
     }
   ]
 }

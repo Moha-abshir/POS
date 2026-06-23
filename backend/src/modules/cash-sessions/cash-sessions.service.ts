@@ -1,5 +1,5 @@
 import { db } from '../../db';
-import { cashDrawerSessions, payments, refunds, sales, users } from '../../db/schema';
+import { cashDrawerSessions, payments, refunds, sales, users, expenses } from '../../db/schema';
 import { eq, and, gte, sql, desc, or } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -97,6 +97,7 @@ export class CashSessionsService {
         difference: difference.toString(),
         denominationCounts,
         notes: notes || null,
+        resolutionStatus: Math.abs(difference) <= 0.01 ? 'NO_DISCREPANCY' : 'UNRESOLVED',
       })
       .where(eq(cashDrawerSessions.id, active.id))
       .returning();
@@ -136,6 +137,7 @@ export class CashSessionsService {
   static async getHistory(businessId: string) {
     const openedUsers = alias(users, 'opened_users');
     const closedUsers = alias(users, 'closed_users');
+    const resolvedUsers = alias(users, 'resolved_users');
 
     return await db.select({
       id: cashDrawerSessions.id,
@@ -150,10 +152,18 @@ export class CashSessionsService {
       closedAt: cashDrawerSessions.closedAt,
       openedByName: sql<string>`COALESCE(${openedUsers.firstName} || ' ' || ${openedUsers.lastName}, 'System')`,
       closedByName: sql<string>`COALESCE(${closedUsers.firstName} || ' ' || ${closedUsers.lastName}, 'N/A')`,
+      resolutionStatus: cashDrawerSessions.resolutionStatus,
+      resolutionType: cashDrawerSessions.resolutionType,
+      resolvedAt: cashDrawerSessions.resolvedAt,
+      resolvedById: cashDrawerSessions.resolvedById,
+      resolutionNotes: cashDrawerSessions.resolutionNotes,
+      resolutionReferenceId: cashDrawerSessions.resolutionReferenceId,
+      resolvedByName: sql<string>`COALESCE(${resolvedUsers.firstName} || ' ' || ${resolvedUsers.lastName}, 'N/A')`,
     })
     .from(cashDrawerSessions)
     .leftJoin(openedUsers, eq(cashDrawerSessions.openedById, openedUsers.id))
     .leftJoin(closedUsers, eq(cashDrawerSessions.closedById, closedUsers.id))
+    .leftJoin(resolvedUsers, eq(cashDrawerSessions.resolvedById, resolvedUsers.id))
     .where(eq(cashDrawerSessions.businessId, businessId))
     .orderBy(desc(cashDrawerSessions.openedAt));
   }
@@ -217,5 +227,113 @@ export class CashSessionsService {
     const refunded = Number(cashRefunds?.total || 0);
 
     return openingFloat + received - paid - refunded;
+  }
+
+  /**
+   * Resolve a closed session discrepancy
+   */
+  static async resolveSessionDiscrepancy(
+    businessId: string,
+    userId: string,
+    sessionId: string,
+    data: {
+      resolutionType: 'ADDED_TO_SALES' | 'RECORDED_AS_EXPENSE' | 'IGNORED';
+      notes?: string;
+    }
+  ) {
+    const [session] = await db.select()
+      .from(cashDrawerSessions)
+      .where(
+        and(
+          eq(cashDrawerSessions.id, sessionId),
+          eq(cashDrawerSessions.businessId, businessId)
+        )
+      )
+      .limit(1);
+
+    if (!session) {
+      throw new Error('Cash session not found');
+    }
+
+    if (session.status !== 'CLOSED') {
+      throw new Error('Only closed sessions can be resolved');
+    }
+
+    if (session.resolutionStatus !== 'UNRESOLVED') {
+      throw new Error('This session discrepancy has already been resolved');
+    }
+
+    const difference = Number(session.difference);
+    const absDiff = Math.abs(difference);
+
+    if (absDiff <= 0.01) {
+      throw new Error('This session does not have a discrepancy to resolve');
+    }
+
+    return await db.transaction(async (tx) => {
+      let resolutionReferenceId: string | null = null;
+
+      if (data.resolutionType === 'ADDED_TO_SALES') {
+        if (difference < 0) {
+          throw new Error('A shortage cannot be added to sales');
+        }
+
+        // 1. Create Sale
+        const [newSale] = await tx.insert(sales).values({
+          businessId,
+          totalAmount: absDiff.toString(),
+          amountPaid: absDiff.toString(),
+          paymentStatus: 'PAID',
+          paymentMethod: 'CASH',
+          soldAt: new Date(),
+          createdBy: userId,
+        }).returning();
+
+        // 2. Create Payment
+        await tx.insert(payments).values({
+          businessId,
+          referenceType: 'SALE',
+          referenceId: newSale.id,
+          amount: absDiff.toString(),
+          method: 'CASH',
+          status: 'COMPLETED',
+          paidAt: new Date(),
+        });
+
+        resolutionReferenceId = newSale.id;
+
+      } else if (data.resolutionType === 'RECORDED_AS_EXPENSE') {
+        if (difference > 0) {
+          throw new Error('A surplus cannot be recorded as an expense');
+        }
+
+        // 1. Create Expense
+        const [newExpense] = await tx.insert(expenses).values({
+          businessId,
+          category: 'Cash Register Shortage',
+          description: `Discrepancy resolution for shift closed at ${new Date(session.closedAt!).toLocaleString('en-GB')}.${data.notes ? ` Notes: ${data.notes}` : ''}`,
+          amount: absDiff.toString(),
+          expenseDate: new Date(),
+          createdBy: userId,
+        }).returning();
+
+        resolutionReferenceId = newExpense.id;
+      }
+
+      // Update cash drawer session resolution info
+      const [updatedSession] = await tx.update(cashDrawerSessions)
+        .set({
+          resolutionStatus: 'RESOLVED',
+          resolutionType: data.resolutionType,
+          resolvedAt: new Date(),
+          resolvedById: userId,
+          resolutionNotes: data.notes || null,
+          resolutionReferenceId,
+        })
+        .where(eq(cashDrawerSessions.id, sessionId))
+        .returning();
+
+      return updatedSession;
+    });
   }
 }

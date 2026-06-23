@@ -10,5 +10,6 @@ router.get('/active', CashSessionsController.getActive);
 router.post('/open', CashSessionsController.open);
 router.post('/close', CashSessionsController.close);
 router.get('/history', CashSessionsController.getHistory);
+router.post('/:id/resolve', CashSessionsController.resolveDiscrepancy);
 
 export default router;

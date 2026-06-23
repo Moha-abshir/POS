@@ -55,4 +55,29 @@ export class CashSessionsController {
       next(error);
     }
   }
+
+  static async resolveDiscrepancy(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (req.user!.role !== 'OWNER') {
+        return res.status(403).json({ status: 'error', message: 'Only store owners are allowed to resolve discrepancies' });
+      }
+
+      const id = req.params.id as string;
+      const { resolutionType, notes } = req.body;
+
+      if (!resolutionType) {
+        return res.status(400).json({ status: 'error', message: 'Resolution type is required' });
+      }
+
+      const data = await CashSessionsService.resolveSessionDiscrepancy(
+        req.user!.businessId,
+        req.user!.id,
+        id,
+        { resolutionType, notes }
+      );
+      res.status(200).json({ status: 'success', data });
+    } catch (error: any) {
+      res.status(400).json({ status: 'error', message: error.message });
+    }
+  }
 }

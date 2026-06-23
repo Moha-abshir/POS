@@ -5,11 +5,46 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { Link } from 'react-router-dom';
+import { useAuthStore } from '../features/auth/stores/auth.store';
+import { toast } from 'react-hot-toast';
 
 export const ReconciliationLogsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState<any[]>([]);
   const [selectedSession, setSelectedSession] = useState<any | null>(null);
+
+  const { user } = useAuthStore();
+  const [resType, setResType] = useState<'ADDED_TO_SALES' | 'RECORDED_AS_EXPENSE' | 'IGNORED' | ''>('');
+  const [resNotes, setResNotes] = useState('');
+  const [submittingRes, setSubmittingRes] = useState(false);
+
+  useEffect(() => {
+    setResType('');
+    setResNotes('');
+  }, [selectedSession]);
+
+  const handleResolve = async () => {
+    if (!resType || !selectedSession) return;
+    setSubmittingRes(true);
+    try {
+      const res = await api.post(`/cash-sessions/${selectedSession.id}/resolve`, {
+        resolutionType: resType,
+        notes: resNotes.trim()
+      });
+      toast.success('Discrepancy resolved successfully');
+      setResType('');
+      setResNotes('');
+      
+      const historyRes = await api.get('/cash-sessions/history');
+      setSessions(historyRes.data.data);
+      const updatedSess = historyRes.data.data.find((s: any) => s.id === selectedSession.id);
+      setSelectedSession(updatedSess || res.data.data);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to resolve discrepancy');
+    } finally {
+      setSubmittingRes(false);
+    }
+  };
 
   useEffect(() => {
     fetchHistory();
@@ -149,7 +184,14 @@ export const ReconciliationLogsPage: React.FC = () => {
                             {sess.status === 'OPEN' ? (
                               <span className="px-2 py-0.5 rounded bg-green-50 text-green-700 text-[10px] border border-green-100 font-bold tracking-wide uppercase">Open Shift</span>
                             ) : (
-                              renderVarianceBadge(Number(sess.actualCash) - Math.abs(Number(sess.expectedCash)))
+                              <div className="flex flex-col items-center gap-1">
+                                {renderVarianceBadge(Number(sess.actualCash) - Math.abs(Number(sess.expectedCash)))}
+                                {sess.resolutionStatus === 'RESOLVED' && (
+                                  <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 text-[8px] font-bold uppercase tracking-wider">
+                                    Resolved
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </div>
                         </td>
@@ -238,6 +280,162 @@ export const ReconciliationLogsPage: React.FC = () => {
                   <div className="bg-amber-50/30 border border-amber-100 rounded-lg p-3 text-xs leading-relaxed text-amber-900">
                     <p className="font-bold uppercase tracking-wider text-[9px] mb-0.5 text-amber-700">Cashier Explanation Notes</p>
                     <p className="font-medium italic">"{selectedSession.notes}"</p>
+                  </div>
+                )}
+
+                {/* Discrepancy Resolution Section */}
+                {selectedSession.status === 'CLOSED' && Math.abs(Number(selectedSession.actualCash) - Math.abs(Number(selectedSession.expectedCash))) > 0.01 && (
+                  <div className="border border-gray-100 rounded-lg p-4 space-y-3 bg-gray-50 text-xs">
+                    <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Discrepancy Resolution</h4>
+                    
+                    {selectedSession.resolutionStatus === 'RESOLVED' ? (
+                      <div className="space-y-2 text-gray-700">
+                        <div className="bg-green-50 border border-green-200 text-green-800 p-2.5 rounded-lg font-bold flex items-center gap-1.5">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span>Discrepancy Settled & Resolved</span>
+                        </div>
+                        <div className="space-y-1 bg-white p-3 border border-gray-100 rounded-lg font-semibold">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Method</span>
+                            <span className="font-bold text-gray-800">
+                              {selectedSession.resolutionType === 'ADDED_TO_SALES' ? 'Added to Sales' : 
+                               selectedSession.resolutionType === 'RECORDED_AS_EXPENSE' ? 'Recorded as Expense' : 
+                               'Ignored Discrepancy'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Resolved By</span>
+                            <span className="font-semibold text-gray-800">{selectedSession.resolvedByName || 'System'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Resolved At</span>
+                            <span className="text-gray-600 font-normal">
+                              {new Date(selectedSession.resolvedAt).toLocaleDateString('en-GB')} at {new Date(selectedSession.resolvedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          {selectedSession.resolutionNotes && (
+                            <div className="mt-2 pt-2 border-t border-gray-100 text-gray-600 italic font-medium">
+                              "{selectedSession.resolutionNotes}"
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {user?.role !== 'OWNER' ? (
+                          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-lg">
+                            <div className="flex items-center gap-1.5 font-bold mb-1">
+                              <AlertTriangle className="w-4 h-4 text-amber-600" />
+                              <span>Resolution Pending</span>
+                            </div>
+                            <p className="font-medium text-amber-700 leading-normal">
+                              Only the business owner is authorized to resolve register discrepancies.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <p className="text-gray-500 leading-normal">
+                              Choose how to resolve this discrepancy in your financial accounts:
+                            </p>
+                            
+                            <div className="flex flex-col gap-2">
+                              {/* Option for Surplus */}
+                              {Number(selectedSession.actualCash) - Math.abs(Number(selectedSession.expectedCash)) > 0 && (
+                                <label className={`p-2.5 rounded-lg border font-semibold flex items-start gap-2 cursor-pointer transition-colors ${
+                                  resType === 'ADDED_TO_SALES' 
+                                    ? 'border-blue-500 bg-blue-50 text-blue-900' 
+                                    : 'border-gray-200 hover:bg-gray-100 text-gray-700 bg-white'
+                                }`}>
+                                  <input 
+                                    type="radio" 
+                                    name="resolutionType" 
+                                    value="ADDED_TO_SALES" 
+                                    checked={resType === 'ADDED_TO_SALES'}
+                                    onChange={() => setResType('ADDED_TO_SALES')}
+                                    className="mt-0.5" 
+                                  />
+                                  <div>
+                                    <p className="font-bold">Convert Surplus to Sale</p>
+                                    <p className="font-medium text-gray-500 mt-0.5 leading-normal">
+                                      Create a cash sale for {formatKES(Math.abs(Number(selectedSession.actualCash) - Math.abs(Number(selectedSession.expectedCash))))} to account for the extra cash.
+                                    </p>
+                                  </div>
+                                </label>
+                              )}
+
+                              {/* Option for Shortage */}
+                              {Number(selectedSession.actualCash) - Math.abs(Number(selectedSession.expectedCash)) < 0 && (
+                                <label className={`p-2.5 rounded-lg border font-semibold flex items-start gap-2 cursor-pointer transition-colors ${
+                                  resType === 'RECORDED_AS_EXPENSE' 
+                                    ? 'border-red-500 bg-red-50 text-red-900' 
+                                    : 'border-gray-200 hover:bg-gray-100 text-gray-700 bg-white'
+                                }`}>
+                                  <input 
+                                    type="radio" 
+                                    name="resolutionType" 
+                                    value="RECORDED_AS_EXPENSE" 
+                                    checked={resType === 'RECORDED_AS_EXPENSE'}
+                                    onChange={() => setResType('RECORDED_AS_EXPENSE')}
+                                    className="mt-0.5" 
+                                  />
+                                  <div>
+                                    <p className="font-bold">Record Shortage as Expense</p>
+                                    <p className="font-medium text-gray-500 mt-0.5 leading-normal">
+                                      Create a "Cash Register Shortage" expense of {formatKES(Math.abs(Number(selectedSession.actualCash) - Math.abs(Number(selectedSession.expectedCash))))} to write off the loss.
+                                    </p>
+                                  </div>
+                                </label>
+                              )}
+
+                              {/* Option to Ignore */}
+                              <label className={`p-2.5 rounded-lg border font-semibold flex items-start gap-2 cursor-pointer transition-colors ${
+                                resType === 'IGNORED' 
+                                  ? 'border-gray-500 bg-gray-100 text-gray-900' 
+                                  : 'border-gray-200 hover:bg-gray-100 text-gray-700 bg-white'
+                              }`}>
+                                <input 
+                                  type="radio" 
+                                  name="resolutionType" 
+                                  value="IGNORED" 
+                                  checked={resType === 'IGNORED'}
+                                  onChange={() => setResType('IGNORED')}
+                                  className="mt-0.5" 
+                                />
+                                <div>
+                                  <p className="font-bold">Ignore Discrepancy</p>
+                                  <p className="font-medium text-gray-500 mt-0.5 leading-normal">
+                                    Mark the mismatch as resolved without posting any sales or expense transactions.
+                                  </p>
+                                </div>
+                              </label>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Resolution Notes (Optional)</label>
+                              <textarea
+                                value={resNotes}
+                                onChange={(e) => setResNotes(e.target.value)}
+                                placeholder="Describe why or how this discrepancy was settled..."
+                                className="w-full p-2 border border-gray-300 rounded-lg text-xs font-normal focus:outline-none text-gray-900 bg-white"
+                                rows={2}
+                              />
+                            </div>
+
+                            <button
+                              onClick={handleResolve}
+                              disabled={!resType || submittingRes}
+                              className={`w-full py-2 rounded-lg font-bold text-xs uppercase tracking-wider text-white transition-colors ${
+                                !resType || submittingRes 
+                                  ? 'bg-gray-300 cursor-not-allowed' 
+                                  : 'bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)]'
+                              }`}
+                            >
+                              {submittingRes ? 'Settling Discrepancy...' : 'Settle Discrepancy'}
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 )}
 
