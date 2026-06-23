@@ -953,23 +953,62 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                   {/* Aging Bucket Card Deck */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm">
-                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Outstanding Credit</p>
+                      <div className="flex items-center gap-1.5 relative group">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Outstanding Credit</span>
+                        <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
+                        <div className="absolute left-0 top-full mt-1.5 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                          The sum of all unpaid customer balances currently owed to your business.
+                          <div className="absolute left-4 top-0 w-2 h-2 bg-gray-900 rotate-45 -translate-y-1/2"></div>
+                        </div>
+                      </div>
                       <h4 className="text-xl font-bold text-red-600 mt-1">{formatKES(creditData.summary.totalOutstanding)}</h4>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm border-l-4 border-l-green-600">
-                      <p className="text-[10px] font-bold text-green-700 uppercase tracking-wider">0 - 30 Days Old</p>
+
+                    <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm">
+                      <div className="flex items-center gap-1.5 relative group">
+                        <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">0 - 30 Days Old</span>
+                        <Info className="w-3 h-3 text-green-500 hover:text-green-600 cursor-help" />
+                        <div className="absolute left-0 top-full mt-1.5 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                          Recent customer credit debt logged within the last 30 days.
+                          <div className="absolute left-4 top-0 w-2 h-2 bg-gray-900 rotate-45 -translate-y-1/2"></div>
+                        </div>
+                      </div>
                       <h4 className="text-xl font-bold text-gray-900 mt-1">{formatKES(creditData.summary.bucket_0_30)}</h4>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm border-l-4 border-l-amber-500">
-                      <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">31 - 60 Days Old</p>
+
+                    <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm">
+                      <div className="flex items-center gap-1.5 relative group">
+                        <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">31 - 60 Days Old</span>
+                        <Info className="w-3 h-3 text-amber-500 hover:text-amber-600 cursor-help" />
+                        <div className="absolute left-0 top-full mt-1.5 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                          Outstanding credit debt that has been unpaid for 31 to 60 days.
+                          <div className="absolute left-4 top-0 w-2 h-2 bg-gray-900 rotate-45 -translate-y-1/2"></div>
+                        </div>
+                      </div>
                       <h4 className="text-xl font-bold text-gray-900 mt-1">{formatKES(creditData.summary.bucket_31_60)}</h4>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm border-l-4 border-l-orange-500">
-                      <p className="text-[10px] font-bold text-orange-700 uppercase tracking-wider">61 - 90 Days Old</p>
+
+                    <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm">
+                      <div className="flex items-center gap-1.5 relative group">
+                        <span className="text-[10px] font-bold text-orange-700 uppercase tracking-wider">61 - 90 Days Old</span>
+                        <Info className="w-3 h-3 text-orange-500 hover:text-orange-600 cursor-help" />
+                        <div className="absolute right-0 top-full mt-1.5 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                          Outstanding credit debt that has been unpaid for 61 to 90 days.
+                          <div className="absolute right-4 top-0 w-2 h-2 bg-gray-900 rotate-45 -translate-y-1/2"></div>
+                        </div>
+                      </div>
                       <h4 className="text-xl font-bold text-gray-900 mt-1">{formatKES(creditData.summary.bucket_61_90)}</h4>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm border-l-4 border-l-red-600">
-                      <p className="text-[10px] font-bold text-red-700 uppercase tracking-wider">90+ Days (Critical)</p>
+
+                    <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm">
+                      <div className="flex items-center gap-1.5 relative group">
+                        <span className="text-[10px] font-bold text-red-700 uppercase tracking-wider">90+ Days (Critical)</span>
+                        <Info className="w-3 h-3 text-red-500 hover:text-red-600 cursor-help" />
+                        <div className="absolute right-0 top-full mt-1.5 hidden group-hover:block w-56 p-2 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl z-50 normal-case font-normal leading-relaxed">
+                          Overdue credit debt unpaid for more than 90 days. High risk of loss.
+                          <div className="absolute right-4 top-0 w-2 h-2 bg-gray-900 rotate-45 -translate-y-1/2"></div>
+                        </div>
+                      </div>
                       <h4 className="text-xl font-bold text-red-600 mt-1">{formatKES(creditData.summary.bucket_90_plus)}</h4>
                     </div>
                   </div>
@@ -1400,7 +1439,7 @@ Need support? Contact Smart POS Customer Support at +254714731331.
             <div className="flex-1 overflow-y-auto p-6" id="printable-statement">
               <div className="border-b-2 border-gray-900 pb-4 mb-4 flex justify-between items-start">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Hardware Store POS System</h2>
+                  <h2 className="text-xl font-bold text-gray-900">Smart Store POS</h2>
                   <p className="text-xs text-gray-400">Nairobi, Kenya</p>
                 </div>
                 <div className="text-right">
