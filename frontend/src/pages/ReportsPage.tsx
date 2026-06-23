@@ -130,10 +130,47 @@ export const ReportsPage: React.FC = () => {
   }, [fetchReportData]);
 
   // Export File trigger
-  const handleExport = (report: string, format: 'csv' | 'excel' | 'pdf') => {
-    const url = `${api.defaults.baseURL}/reports/export?reportType=${report}&format=${format}&startDate=${startDate}&endDate=${endDate}&groupBy=${groupBy}`;
-    window.open(url, '_blank');
-    toast.success(`Exporting ${report} as ${format.toUpperCase()}...`);
+  const handleExport = async (report: string, format: 'csv' | 'excel' | 'pdf') => {
+    const toastId = toast.loading(`Preparing export for ${report}...`);
+    try {
+      const response = await api.get(`/reports/export`, {
+        params: {
+          reportType: report,
+          format,
+          startDate,
+          endDate,
+          groupBy
+        },
+        responseType: 'blob'
+      });
+
+      toast.dismiss(toastId);
+
+      const contentType = format === 'pdf' ? 'text/html' : (format === 'excel' ? 'application/vnd.ms-excel' : 'text/csv');
+      const blob = new Blob([response.data], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
+
+      if (format === 'pdf') {
+        window.open(url, '_blank');
+        setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+      } else {
+        const link = document.createElement('a');
+        link.href = url;
+        const fileExt = format === 'excel' ? 'xls' : 'csv';
+        const dateStr = new Date().toISOString().split('T')[0];
+        link.download = `${report}_report_${dateStr}.${fileExt}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+      
+      toast.success(`${format.toUpperCase()} report downloaded successfully!`);
+    } catch (err) {
+      console.error(err);
+      toast.dismiss(toastId);
+      toast.error('Failed to export report. Please try again.');
+    }
   };
 
   const downloadPLGuide = () => {
