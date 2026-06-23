@@ -490,14 +490,14 @@ export const DashboardLayout: React.FC = () => {
                     {/* Discrepancy feedback block */}
                     {Math.abs(totalCounted - Number(activeSession.expectedCash)) > 0.01 ? (
                       <div className={`p-3 rounded-lg border flex flex-col gap-1 mt-2 ${
-                        totalCounted > Number(activeSession.expectedCash)
+                        (Number(activeSession.expectedCash) >= 0 && totalCounted > Number(activeSession.expectedCash))
                           ? 'bg-blue-50 border-blue-200 text-blue-800'
                           : 'bg-red-50 border-red-200 text-red-800'
                       }`}>
                         <div className="flex items-center gap-1">
                           <AlertTriangle className="w-4 h-4 shrink-0" />
                           <span>
-                            Discrepancy: {totalCounted > Number(activeSession.expectedCash) ? 'Surplus' : 'Shortage'} of{' '}
+                            Discrepancy: {(Number(activeSession.expectedCash) >= 0 && totalCounted > Number(activeSession.expectedCash)) ? 'Surplus' : 'Shortage'} of{' '}
                             {formatKES(Math.abs(totalCounted - Number(activeSession.expectedCash)))}
                           </span>
                         </div>

@@ -111,7 +111,7 @@ export class CashSessionsService {
 
     // If there is a discrepancy, trigger a notification
     if (Math.abs(difference) > 0.01) {
-      const discrepancyType = difference > 0 ? 'surplus' : 'shortage';
+      const discrepancyType = expectedCash >= 0 ? (difference > 0 ? 'surplus' : 'shortage') : 'shortage';
       const formattedDiff = Math.abs(difference).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       const formattedExpected = expectedCash.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       const formattedActual = actualCash.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
