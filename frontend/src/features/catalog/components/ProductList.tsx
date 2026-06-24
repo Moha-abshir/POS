@@ -199,7 +199,8 @@ export const ProductList: React.FC<ProductListProps> = ({
               const primaryVariant = product.variants?.[0];
               const totalStock = product.variants?.reduce((sum, v) => sum + parseFloat(v.baseStockQuantity as string), 0) || 0;
               const hasMultipleVariants = (product.variants?.length || 0) > 1;
-              const costPriceLabel = hasMultipleVariants ? 'Multiple Variants' : `KSH ${parseFloat(primaryVariant?.costPrice as string || '0').toLocaleString()}`;
+              const defaultUnit = primaryVariant?.units?.find((u: any) => u.isDefault) || primaryVariant?.units?.[0];
+              const priceLabel = hasMultipleVariants ? 'Multiple Variants' : `KSH ${parseFloat(defaultUnit?.sellingPrice as string || '0').toLocaleString()}`;
               
               let stockStatus = 'Good';
               let badgeColor = 'bg-[var(--color-success-bg)] text-[var(--color-success)]';
@@ -235,7 +236,7 @@ export const ProductList: React.FC<ProductListProps> = ({
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium text-[var(--color-text-primary)] leading-tight">{product.name}</p>
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5 leading-tight">{costPriceLabel}</p>
+                    <p className="text-xs text-gray-400 mt-0.5 leading-tight">{priceLabel}</p>
                   </td>
                   <td className="px-6 py-0">
                     <span className="text-sm text-gray-500">
