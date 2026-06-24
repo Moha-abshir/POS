@@ -1,18 +1,29 @@
 import React, { useState } from 'react';
 import { useProducts, useCategories } from '../api/catalog.api';
-import { Package, Plus, Search, Loader2, MoreHorizontal } from 'lucide-react';
+import { Package, Plus, Search, Loader2, MoreHorizontal, Upload, Download } from 'lucide-react';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
 import { TableSkeleton } from '../../../components/ui/Loading';
 import { ProductRestockModal } from './ProductRestockModal';
+import { useAuthStore } from '../../auth/stores/auth.store';
 
 interface ProductListProps {
   onAddProduct: () => void;
   onAddCategory: () => void;
   onEditProduct: (product: any) => void;
   onToggleStatus: (product: any) => void;
+  onImportProducts?: () => void;
+  onExportProducts?: () => void;
 }
 
-export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCategory, onEditProduct, onToggleStatus }) => {
+export const ProductList: React.FC<ProductListProps> = ({ 
+  onAddProduct, 
+  onAddCategory, 
+  onEditProduct, 
+  onToggleStatus,
+  onImportProducts,
+  onExportProducts
+}) => {
+  const currentUser = useAuthStore((state) => state.user);
   const { data: products, isLoading, isError } = useProducts();
   const { data: categories, isError: isCategoriesError } = useCategories();
   
@@ -94,13 +105,35 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddProduct, onAddCat
             </div>
           </div>
 
-          <button 
-            onClick={onAddProduct}
-            className="flex items-center justify-center gap-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-5 h-10 rounded-[var(--radius-md)] font-semibold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 shrink-0 select-none cursor-pointer"
-          >
-            <Plus className="h-4 w-4" />
-            Add Product
-          </button>
+          {currentUser?.role !== 'CASHIER' && onImportProducts && (
+            <button 
+              onClick={onImportProducts}
+              className="flex items-center justify-center gap-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 px-4 h-10 rounded-[var(--radius-md)] font-semibold transition-all shrink-0 select-none cursor-pointer"
+            >
+              <Upload size={16} />
+              <span>Import</span>
+            </button>
+          )}
+
+          {onExportProducts && (
+            <button 
+              onClick={onExportProducts}
+              className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-4 h-10 rounded-[var(--radius-md)] font-semibold transition-all shrink-0 select-none cursor-pointer"
+            >
+              <Download size={16} />
+              <span>Export</span>
+            </button>
+          )}
+
+          {currentUser?.role !== 'CASHIER' && (
+            <button 
+              onClick={onAddProduct}
+              className="flex items-center justify-center gap-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-5 h-10 rounded-[var(--radius-md)] font-semibold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 shrink-0 select-none cursor-pointer"
+            >
+              <Plus size={18} />
+              <span>Add Product</span>
+            </button>
+          )}
         </div>
       </div>
 

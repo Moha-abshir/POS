@@ -4,12 +4,64 @@ import { AddCategoryModal } from '../features/catalog/components/AddCategoryModa
 import { AddProductModal } from '../features/catalog/components/AddProductModal';
 import { ProductHubModal } from '../features/catalog/components/ProductHubModal';
 import { useUpdateProduct, type Product } from '../features/catalog/api/catalog.api';
+import { ImportModal } from '../components/ui/ImportModal';
+import { api } from '../lib/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-hot-toast';
 
 export const CatalogPage: React.FC = () => {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const updateProduct = useUpdateProduct();
+  const queryClient = useQueryClient();
+
+  const handleExportProducts = async () => {
+    try {
+      const { data } = await api.get('/export/products', { responseType: 'text' });
+      const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `products_export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Products exported successfully');
+    } catch (error) {
+      toast.error('Failed to export products');
+    }
+  };
+
+  const handleImportSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['products'] });
+    queryClient.invalidateQueries({ queryKey: ['categories'] });
+  };
+
+  const templateHeaders = [
+    'Name',
+    'Description',
+    'Category',
+    'SKU',
+    'Cost Price',
+    'Base Unit Name',
+    'Selling Price',
+    'Low Stock Threshold',
+    'Initial Stock'
+  ];
+
+  const sampleRow = [
+    '"Amara Body Lotion"',
+    '"Hydrating skin care lotion"',
+    '"Beauty"',
+    '"SKU-AMARA400"',
+    '250',
+    '"Piece"',
+    '450',
+    '10',
+    '50'
+  ];
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto h-full flex flex-col">
@@ -18,6 +70,8 @@ export const CatalogPage: React.FC = () => {
         onAddCategory={() => setIsCategoryModalOpen(true)}
         onEditProduct={(p) => setEditingProduct(p)}
         onToggleStatus={(p) => updateProduct.mutate({ id: p.id, data: { isActive: !p.isActive } })}
+        onImportProducts={() => setIsImportModalOpen(true)}
+        onExportProducts={handleExportProducts}
       />
 
       <AddCategoryModal 
@@ -36,6 +90,16 @@ export const CatalogPage: React.FC = () => {
           setEditingProduct(null);
         }}
         product={editingProduct}
+      />
+
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        title="Import Products"
+        templateHeaders={templateHeaders}
+        sampleRow={sampleRow}
+        importUrl="/import/products"
+        onSuccess={handleImportSuccess}
       />
     </div>
   );

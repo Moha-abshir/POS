@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { suppliersApi, type Supplier } from '../features/suppliers/api/suppliers.api';
 import { inventoryApi } from '../features/inventory/api/inventory.api';
-import { Plus, Search, Truck, Edit, Package, ArrowDownRight, DollarSign, Filter, X, Eye } from 'lucide-react';
+import { Plus, Search, Truck, Edit, Package, ArrowDownRight, DollarSign, Filter, X, Eye, Upload, Download } from 'lucide-react';
 import { SupplierModal } from '../features/suppliers/components/SupplierModal';
 import { SupplierDetailsModal } from '../features/suppliers/components/SupplierDetailsModal';
 import { PurchaseModal } from '../features/inventory/components/PurchaseModal';
 import { RecordPaymentModal } from '../features/suppliers/components/RecordPaymentModal';
 import { TableSkeleton, LoadingSpinner } from '../components/ui/Loading';
 import { useAuthStore } from '../features/auth/stores/auth.store';
+import { ImportModal } from '../components/ui/ImportModal';
+import { api } from '../lib/api';
+import { toast } from 'react-hot-toast';
 
 export function PurchasingPage() {
   const currentUser = useAuthStore((state) => state.user);
@@ -22,6 +25,7 @@ export function PurchasingPage() {
   const [selectedPaymentSupplier, setSelectedPaymentSupplier] = useState<Supplier | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedDetailsSupplier, setSelectedDetailsSupplier] = useState<Supplier | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   
   const queryClient = useQueryClient();
 
@@ -84,6 +88,30 @@ export function PurchasingPage() {
     setIsSupplierModalOpen(true);
   };
 
+  const handleExportSuppliers = async () => {
+    try {
+      const { data } = await api.get('/export/suppliers', { responseType: 'text' });
+      const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `suppliers_export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Suppliers exported successfully');
+    } catch (error) {
+      toast.error('Failed to export suppliers');
+    }
+  };
+
+  const handleImportSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+  };
+
+  const templateHeaders = ['Name', 'Phone', 'Email'];
+  const sampleRow = ['"Supplier ACME"', '"0722111222"', '"info@acme.com"'];
+
   return (
     <div className="p-6 max-w-[1400px] mx-auto h-full flex flex-col space-y-6">
       <div className="flex justify-between items-center">
@@ -92,16 +120,37 @@ export function PurchasingPage() {
           <p className="text-sm text-[var(--color-text-secondary)] mt-1">Manage your vendors and purchase history</p>
         </div>
         
-        {currentUser?.role !== 'CASHIER' && (
-          activeTab === 'suppliers' ? (
-            <button
-              onClick={handleAddSupplier}
-              className="flex items-center gap-2 px-5 py-2 h-10 bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 select-none cursor-pointer"
-            >
-              <Plus size={18} />
-              <span>Add Supplier</span>
-            </button>
-          ) : (
+        <div className="flex items-center gap-3">
+          {activeTab === 'suppliers' && (
+            <>
+              {currentUser?.role !== 'CASHIER' && (
+                <button
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="flex items-center justify-center gap-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 px-4 h-10 rounded-[var(--radius-md)] font-semibold text-sm transition-all shrink-0 select-none cursor-pointer"
+                >
+                  <Upload size={16} />
+                  <span>Import</span>
+                </button>
+              )}
+              <button
+                onClick={handleExportSuppliers}
+                className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-4 h-10 rounded-[var(--radius-md)] font-semibold text-sm transition-all shrink-0 select-none cursor-pointer"
+              >
+                <Download size={16} />
+                <span>Export</span>
+              </button>
+              {currentUser?.role !== 'CASHIER' && (
+                <button
+                  onClick={handleAddSupplier}
+                  className="flex items-center gap-2 px-5 py-2 h-10 bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 select-none cursor-pointer"
+                >
+                  <Plus size={18} />
+                  <span>Add Supplier</span>
+                </button>
+              )}
+            </>
+          )}
+          {activeTab === 'purchases' && currentUser?.role !== 'CASHIER' && (
             <button
               onClick={() => setIsPurchaseModalOpen(true)}
               className="flex items-center gap-2 px-5 py-2 h-10 bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 select-none cursor-pointer"
@@ -109,8 +158,8 @@ export function PurchasingPage() {
               <Package size={18} />
               <span>Record Purchase</span>
             </button>
-          )
-        )}
+          )}
+        </div>
       </div>
 
       <div className="flex space-x-1 border-b border-[var(--color-border)] mb-4">
@@ -422,6 +471,16 @@ export function PurchasingPage() {
           setSelectedDetailsSupplier(null);
         }}
         supplier={selectedDetailsSupplier}
+      />
+
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        title="Import Suppliers"
+        templateHeaders={templateHeaders}
+        sampleRow={sampleRow}
+        importUrl="/import/suppliers"
+        onSuccess={handleImportSuccess}
       />
     </div>
   );

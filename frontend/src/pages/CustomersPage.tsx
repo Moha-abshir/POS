@@ -1,21 +1,53 @@
 import { useState, useMemo } from 'react';
 import { useCustomers, type Customer } from '../features/customers/api/customers.api';
-import { Search, Plus, UserCircle, Eye, Pencil, Filter } from 'lucide-react';
+import { Search, Plus, UserCircle, Eye, Pencil, Filter, Upload, Download } from 'lucide-react';
 import { CustomerModal } from '../features/customers/components/CustomerModal';
 import { CustomerDetailsModal } from '../features/customers/components/CustomerDetailsModal';
 import { formatDistanceToNow } from 'date-fns';
 import { TableSkeleton } from '../components/ui/Loading';
+import { useAuthStore } from '../features/auth/stores/auth.store';
+import { api } from '../lib/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-hot-toast';
+import { ImportModal } from '../components/ui/ImportModal';
 
 type TabType = 'all' | 'owing' | 'business' | 'frequent' | 'inactive';
 
 export const CustomersPage = () => {
+  const currentUser = useAuthStore((state) => state.user);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [owingOnly, setOwingOnly] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('all');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
   const [customerToView, setCustomerToView] = useState<Customer | null>(null);
+
+  const handleExportCustomers = async () => {
+    try {
+      const { data } = await api.get('/export/customers', { responseType: 'text' });
+      const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `customers_export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Customers exported successfully');
+    } catch (error) {
+      toast.error('Failed to export customers');
+    }
+  };
+
+  const handleImportSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['customers'] });
+  };
+
+  const templateHeaders = ['Name', 'Phone', 'National ID', 'Address', 'Notes', 'Type'];
+  const sampleRow = ['"John Doe"', '"0712345678"', '"12345678"', '"Nairobi, Kenya"', '"Premium client"', '"INDIVIDUAL"'];
 
   const { data: customersResponse, isLoading, error } = useCustomers();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -163,6 +195,24 @@ export const CustomersPage = () => {
             }`}
           >
             Owing only
+          </button>
+
+          {currentUser?.role !== 'CASHIER' && (
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="flex items-center justify-center gap-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 px-4 h-10 rounded-[var(--radius-md)] font-semibold text-sm transition-all shrink-0 select-none cursor-pointer"
+            >
+              <Upload size={16} />
+              <span>Import</span>
+            </button>
+          )}
+
+          <button
+            onClick={handleExportCustomers}
+            className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-4 h-10 rounded-[var(--radius-md)] font-semibold text-sm transition-all shrink-0 select-none cursor-pointer"
+          >
+            <Download size={16} />
+            <span>Export</span>
           </button>
 
           <button
@@ -373,6 +423,16 @@ export const CustomersPage = () => {
           />
         );
       })()}
+
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        title="Import Customers"
+        templateHeaders={templateHeaders}
+        sampleRow={sampleRow}
+        importUrl="/import/customers"
+        onSuccess={handleImportSuccess}
+      />
     </div>
   );
 };
