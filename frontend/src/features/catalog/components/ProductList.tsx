@@ -110,7 +110,7 @@ export const ProductList: React.FC<ProductListProps> = ({
               onClick={onImportProducts}
               className="flex items-center justify-center gap-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 px-4 h-10 rounded-[var(--radius-md)] font-semibold transition-all shrink-0 select-none cursor-pointer"
             >
-              <Upload size={16} />
+              <Download size={16} />
               <span>Import</span>
             </button>
           )}
@@ -120,7 +120,7 @@ export const ProductList: React.FC<ProductListProps> = ({
               onClick={onExportProducts}
               className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-4 h-10 rounded-[var(--radius-md)] font-semibold transition-all shrink-0 select-none cursor-pointer"
             >
-              <Download size={16} />
+              <Upload size={16} />
               <span>Export</span>
             </button>
           )}
