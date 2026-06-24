@@ -7,6 +7,6 @@ const router = Router();
 router.use(authenticate);
 
 router.post('/', authorize(['OWNER', 'MANAGER']), PurchasingController.createPurchase);
-router.get('/', authorize(['OWNER', 'MANAGER']), PurchasingController.getPurchases);
+router.get('/', authorize(['OWNER', 'MANAGER', 'CASHIER']), PurchasingController.getPurchases);
 
 export default router;

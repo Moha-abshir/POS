@@ -35,8 +35,10 @@ export const DashboardLayout: React.FC = () => {
     { name: 'Inventory', path: '/inventory', icon: Boxes },
     { name: 'Customers', path: '/customers', icon: Users },
     { name: 'Purchasing', path: '/purchasing', icon: Truck },
-    { name: 'Team', path: '/team', icon: Contact },
-    { name: 'Reports', path: '/reports', icon: FileText },
+    ...(user?.role === 'OWNER' ? [
+      { name: 'Team', path: '/team', icon: Contact },
+      { name: 'Reports', path: '/reports', icon: FileText }
+    ] : [])
   ];
 
   // Helper for tooltip

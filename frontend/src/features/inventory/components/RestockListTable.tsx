@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useRestockList, useUpdateRestockItem, useClearOrderedItems } from '../api/restock.api';
 import { ClipboardList, CheckCircle2, Circle, Search, Trash2, Package } from 'lucide-react';
+import { useAuthStore } from '../../auth/stores/auth.store';
 
 export function RestockListTable() {
   const { data: items = [], isLoading } = useRestockList();
@@ -23,6 +24,8 @@ export function RestockListTable() {
 
 
 
+  const currentUser = useAuthStore((state) => state.user);
+
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-[var(--color-border)] overflow-hidden relative">
       <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between bg-white">
@@ -37,14 +40,16 @@ export function RestockListTable() {
           />
         </div>
         
-        <button 
-          onClick={() => setIsClearModalOpen(true)}
-          disabled={orderedItems.length === 0 || clearItems.isPending}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-danger)] bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Trash2 size={16} />
-          Clear Checked Items
-        </button>
+        {currentUser?.role !== 'CASHIER' && (
+          <button 
+            onClick={() => setIsClearModalOpen(true)}
+            disabled={orderedItems.length === 0 || clearItems.isPending}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-danger)] bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Trash2 size={16} />
+            Clear Checked Items
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-auto p-4 space-y-6">

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAuthStore } from '../features/auth/stores/auth.store';
+import { Navigate } from 'react-router-dom';
 import { 
   TrendingUp, TrendingDown, Receipt, DollarSign, Users, AlertTriangle, 
   Truck, Printer, Download, Calendar, RefreshCcw, 
@@ -23,6 +25,11 @@ const COLORS = {
 };
 
 export const ReportsPage: React.FC = () => {
+  const user = useAuthStore((state) => state.user);
+  if (user?.role !== 'OWNER') {
+    return <Navigate to="/" replace />;
+  }
+
   // Navigation State
   const [activeTab, setActiveTab] = useState<string>('overview');
 

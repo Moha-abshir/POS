@@ -8,8 +8,10 @@ import { SupplierDetailsModal } from '../features/suppliers/components/SupplierD
 import { PurchaseModal } from '../features/inventory/components/PurchaseModal';
 import { RecordPaymentModal } from '../features/suppliers/components/RecordPaymentModal';
 import { TableSkeleton, LoadingSpinner } from '../components/ui/Loading';
+import { useAuthStore } from '../features/auth/stores/auth.store';
 
 export function PurchasingPage() {
+  const currentUser = useAuthStore((state) => state.user);
   const [activeTab, setActiveTab] = useState<'suppliers' | 'purchases'>('suppliers');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -90,22 +92,24 @@ export function PurchasingPage() {
           <p className="text-sm text-[var(--color-text-secondary)] mt-1">Manage your vendors and purchase history</p>
         </div>
         
-        {activeTab === 'suppliers' ? (
-          <button
-            onClick={handleAddSupplier}
-            className="flex items-center gap-2 px-5 py-2 h-10 bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 select-none cursor-pointer"
-          >
-            <Plus size={18} />
-            <span>Add Supplier</span>
-          </button>
-        ) : (
-          <button
-            onClick={() => setIsPurchaseModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-2 h-10 bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 select-none cursor-pointer"
-          >
-            <Package size={18} />
-            <span>Record Purchase</span>
-          </button>
+        {currentUser?.role !== 'CASHIER' && (
+          activeTab === 'suppliers' ? (
+            <button
+              onClick={handleAddSupplier}
+              className="flex items-center gap-2 px-5 py-2 h-10 bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 select-none cursor-pointer"
+            >
+              <Plus size={18} />
+              <span>Add Supplier</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsPurchaseModalOpen(true)}
+              className="flex items-center gap-2 px-5 py-2 h-10 bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 select-none cursor-pointer"
+            >
+              <Package size={18} />
+              <span>Record Purchase</span>
+            </button>
+          )
         )}
       </div>
 
@@ -197,7 +201,7 @@ export function PurchasingPage() {
                           </span>
                         </td>
                         <td className="px-6 py-0 text-right space-x-2">
-                          {Number(supplier.balance) > 0 && (
+                          {Number(supplier.balance) > 0 && currentUser?.role !== 'CASHIER' && (
                             <button
                               onClick={() => {
                                 setSelectedPaymentSupplier(supplier);
@@ -206,7 +210,7 @@ export function PurchasingPage() {
                               className="p-2 text-gray-400 hover:text-green-600 transition-colors inline-flex items-center justify-center cursor-pointer"
                               title="Record Payment"
                             >
-                              <DollarSign size={16} />
+                               <DollarSign size={16} />
                             </button>
                           )}
                           <button
@@ -219,13 +223,15 @@ export function PurchasingPage() {
                           >
                             <Eye size={16} />
                           </button>
-                          <button
-                            onClick={() => handleEditSupplier(supplier)}
-                            className="p-2 text-gray-400 hover:text-[var(--color-accent)] transition-colors inline-flex items-center justify-center cursor-pointer"
-                            title="Edit Supplier"
-                          >
-                            <Edit size={16} />
-                          </button>
+                          {currentUser?.role !== 'CASHIER' && (
+                            <button
+                              onClick={() => handleEditSupplier(supplier)}
+                              className="p-2 text-gray-400 hover:text-[var(--color-accent)] transition-colors inline-flex items-center justify-center cursor-pointer"
+                              title="Edit Supplier"
+                            >
+                              <Edit size={16} />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))

@@ -7,8 +7,10 @@ import { RestockListTable } from '../features/inventory/components/RestockListTa
 import { ReportDamageModal } from '../features/inventory/components/ReportDamageModal';
 import { DamagesLogTable } from '../features/inventory/components/DamagesLogTable';
 import { TableSkeleton } from '../components/ui/Loading';
+import { useAuthStore } from '../features/auth/stores/auth.store';
 
 export function InventoryPage() {
+  const currentUser = useAuthStore((state) => state.user);
   const [view, setView] = useState<'ledger' | 'restock' | 'damages'>('ledger');
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [isDamageModalOpen, setIsDamageModalOpen] = useState(false);
@@ -70,13 +72,15 @@ export function InventoryPage() {
               <AlertTriangle size={18} />
               <span>Report Damage</span>
             </button>
-            <button
-              onClick={() => setIsAdjustModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 h-10 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[var(--radius-md)] hover:bg-[var(--color-bg-surface)] transition-colors shadow-sm font-semibold select-none cursor-pointer"
-            >
-              <Wrench size={18} />
-              <span>Adjust Stock</span>
-            </button>
+            {currentUser?.role !== 'CASHIER' && (
+              <button
+                onClick={() => setIsAdjustModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 h-10 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[var(--radius-md)] hover:bg-[var(--color-bg-surface)] transition-colors shadow-sm font-semibold select-none cursor-pointer"
+              >
+                <Wrench size={18} />
+                <span>Adjust Stock</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

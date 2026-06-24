@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { ReportsController } from './reports.controller';
-import { authenticate } from '../../core/middleware/auth';
+import { authenticate, authorize } from '../../core/middleware/auth';
 
 const router = Router();
 
-// Apply auth middleware to all report endpoints
-router.use(authenticate);
+// Apply auth middleware and authorize OWNER role to all report endpoints
+router.use(authenticate, authorize(['OWNER']));
 
 router.get('/overview', ReportsController.getOverview);
 router.get('/sales', ReportsController.getSales);
