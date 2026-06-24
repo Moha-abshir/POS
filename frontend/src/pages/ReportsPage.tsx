@@ -26,9 +26,6 @@ const COLORS = {
 
 export const ReportsPage: React.FC = () => {
   const user = useAuthStore((state) => state.user);
-  if (user?.role !== 'OWNER') {
-    return <Navigate to="/" replace />;
-  }
 
   // Navigation State
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -248,6 +245,10 @@ Need support? Contact Smart POS Customer Support at +254714731331.
     { id: 'damaged', name: 'Damaged Goods', icon: Trash2 },
     { id: 'export', name: 'Export Center', icon: Download },
   ];
+
+  if (user?.role !== 'OWNER') {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-[var(--color-bg-base)]">
