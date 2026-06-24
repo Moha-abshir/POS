@@ -306,7 +306,7 @@ export const DashboardPage: React.FC = () => {
                       recentSales.map((sale: any) => (
                         <tr key={sale.id} className="hover:bg-gray-50/50">
                           <td className="py-2.5">
-                            {new Date(sale.soldAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(sale.soldAt).toLocaleDateString([], { day: '2-digit', month: 'short' })}, {new Date(sale.soldAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </td>
                           <td className="py-2.5">{sale.customerName}</td>
                           <td className="py-2.5 font-bold">{formatKES(Number(sale.totalAmount))}</td>
@@ -340,7 +340,7 @@ export const DashboardPage: React.FC = () => {
                         <div>
                           <p className="font-bold text-gray-900">{move.productName} ({move.variantName})</p>
                           <p className="text-[10px] text-gray-400 mt-0.5">
-                            Type: <span className="font-bold text-gray-500">{move.type}</span> • {new Date(move.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            Type: <span className="font-bold text-gray-500">{move.type}</span> • {new Date(move.createdAt).toLocaleDateString([], { day: '2-digit', month: 'short' })}, {new Date(move.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                         <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${
