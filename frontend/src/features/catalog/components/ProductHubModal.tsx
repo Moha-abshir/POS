@@ -10,6 +10,7 @@ import { DeactivateConfirmModal } from './hub/DeactivateConfirmModal';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
 import { ImageUploader } from '../../../components/ui/ImageUploader';
 import { AxiosError } from 'axios';
+import toast from 'react-hot-toast';
 
 interface ProductHubModalProps {
   isOpen: boolean;
@@ -27,8 +28,6 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
   const [isEditingLowStock, setIsEditingLowStock] = useState(false);
   const [lowStockValue, setLowStockValue] = useState('');
-  const [isEditingVarImage, setIsEditingVarImage] = useState(false);
-  const [varImageUrl, setVarImageUrl] = useState('');
   const [varImageError, setVarImageError] = useState('');
 
   useEffect(() => {
@@ -81,16 +80,16 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
     }
   };
 
-  const handleVarImageSave = async () => {
-    if (!selectedVariant) return;
+  const handleVarImageChange = async (url: string) => {
+    if (!selectedVariant || !product) return;
     setVarImageError('');
     try {
       await updateVariant.mutateAsync({
         id: product.id,
         variantId: selectedVariant.id,
-        data: { imageUrl: varImageUrl }
+        data: { imageUrl: url || '' }
       });
-      setIsEditingVarImage(false);
+      toast.success(url ? 'Variant image uploaded' : 'Variant image removed');
     } catch (err) {
       setVarImageError((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to update variant image');
     }
@@ -312,41 +311,12 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
                   
                   <div className="space-y-4">
                     <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)]">
-                          Variant Image URL
-                        </label>
-                        {!isEditingVarImage && (
-                          <button onClick={() => { setVarImageUrl(selectedVariant.imageUrl || ''); setVarImageError(''); setIsEditingVarImage(true); }} className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors">
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                      
-                      {isEditingVarImage ? (
-                        <div className="flex flex-col gap-2">
-                          <ImageUploader
-                            value={varImageUrl}
-                            onChange={setVarImageUrl}
-                          />
-                          <div className="flex items-center justify-end gap-2 mt-2">
-                            <button onClick={handleVarImageSave} disabled={updateVariant.isPending} className="px-3 py-1.5 bg-green-100 text-green-700 hover:bg-green-200 rounded transition-colors shadow-sm text-xs font-semibold flex items-center gap-1 cursor-pointer">
-                              <Check className="w-3.5 h-3.5" /> Save
-                            </button>
-                            <button onClick={() => setIsEditingVarImage(false)} className="px-3 py-1.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded transition-colors shadow-sm text-xs font-semibold flex items-center gap-1 cursor-pointer">
-                              <X className="w-3.5 h-3.5" /> Cancel
-                            </button>
-                          </div>
-                          {varImageError && <span className="text-[12px] font-medium text-red-500">{varImageError}</span>}
-                        </div>
-                      ) : (
-                        <div className="font-semibold text-[var(--color-text-primary)] bg-[var(--color-bg-sunken)] px-4 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)]/50 break-all min-h-[40px] leading-normal flex items-center justify-between gap-4">
-                          <span className="truncate max-w-[320px]">{selectedVariant.imageUrl || '-'}</span>
-                          {selectedVariant.imageUrl && (
-                            <img src={selectedVariant.imageUrl} className="w-8 h-8 object-cover rounded border border-gray-100/50 shrink-0" alt={selectedVariant.name} />
-                          )}
-                        </div>
-                      )}
+                      <ImageUploader
+                        label="Variant Image"
+                        value={selectedVariant.imageUrl || ''}
+                        onChange={handleVarImageChange}
+                      />
+                      {varImageError && <span className="text-[12px] font-medium text-red-500 mt-1 block">{varImageError}</span>}
                     </div>
                   </div>
                 </section>

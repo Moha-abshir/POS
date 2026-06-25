@@ -138,64 +138,60 @@ export const ProductList: React.FC<ProductListProps> = ({
       </div>
 
       {/* Data Table */}
-      <div className="overflow-x-auto flex-1">
-        <table className="w-full text-left border-collapse min-w-[800px]">
-          <thead>
-            <tr className="bg-white border-b border-[var(--color-border)]">
-              <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Image</th>
-              <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Name</th>
-              <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Cat.</th>
-              <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Stock</th>
-              <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading && (
-              <tr>
-                <td colSpan={5} className="p-0">
-                  <TableSkeleton rows={5} cols={5} />
-                </td>
-              </tr>
-            )}
-            
-            {isError && (
-              <tr>
-                <td colSpan={5} className="p-16 text-center">
-                  <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
-                    <p className="text-red-500 font-semibold mb-2">Failed to load inventory.</p>
-                    <button 
-                      onClick={() => window.location.reload()}
-                      className="text-amber-600 hover:underline font-medium text-sm"
-                    >
-                      Retry
-                    </button>
+      <div className="overflow-y-auto flex-1 p-6">
+        {isLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-8">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="animate-pulse bg-white border border-[var(--color-border)] rounded-2xl overflow-hidden h-[380px] flex flex-col">
+                <div className="bg-gray-100 h-1/2 w-full animate-pulse"></div>
+                <div className="p-5 flex-1 flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="h-4 bg-gray-100 rounded w-1/4"></div>
+                    <div className="h-5 bg-gray-100 rounded w-2/3"></div>
+                    <div className="h-4 bg-gray-100 rounded w-1/3"></div>
                   </div>
-                </td>
-              </tr>
-            )}
-
-            {!isLoading && !isError && filteredProducts?.length === 0 && (
-              <tr>
-                <td colSpan={5} className="p-16">
-                  <div className="flex flex-col items-center justify-center max-w-sm mx-auto text-center">
-                    <Package className="h-12 w-12 text-gray-300 mb-4" fill="currentColor" strokeWidth={1} />
-                    <h3 className="text-lg font-semibold text-gray-500 mb-1">No products yet</h3>
-                    <p className="text-sm text-gray-400 mb-6">
-                      {searchTerm || selectedCategory ? 'No products match your current filters.' : 'Add your first product to start tracking inventory.'}
-                    </p>
-                    <button 
-                      onClick={onAddProduct}
-                      className="inline-flex items-center justify-center gap-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-5 h-10 rounded-[var(--radius-md)] font-semibold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 select-none cursor-pointer"
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add Product
-                    </button>
+                  <div className="flex gap-3 mt-auto">
+                    <div className="h-9 bg-gray-100 rounded-lg flex-1"></div>
+                    <div className="h-9 bg-gray-100 rounded-lg w-9"></div>
                   </div>
-                </td>
-              </tr>
-            )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {isError && (
+          <div className="flex flex-col items-center justify-center py-16 text-center max-w-sm mx-auto">
+            <p className="text-red-500 font-semibold mb-2">Failed to load inventory.</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="text-amber-600 hover:underline font-medium text-sm"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
-            {filteredProducts?.map((product, index) => {
+        {!isLoading && !isError && filteredProducts?.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 text-center max-w-sm mx-auto">
+            <Package className="h-12 w-12 text-gray-300 mb-4" fill="currentColor" strokeWidth={1} />
+            <h3 className="text-lg font-semibold text-gray-500 mb-1">No products yet</h3>
+            <p className="text-sm text-gray-400 mb-6">
+              {searchTerm || selectedCategory ? 'No products match your current filters.' : 'Add your first product to start tracking inventory.'}
+            </p>
+            <button 
+              onClick={onAddProduct}
+              className="inline-flex items-center justify-center gap-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-5 h-10 rounded-[var(--radius-md)] font-semibold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 select-none cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              Add Product
+            </button>
+          </div>
+        )}
+
+        {!isLoading && !isError && filteredProducts && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {filteredProducts.map((product) => {
               const primaryVariant = product.variants?.[0];
               const totalStock = product.variants?.reduce((sum, v) => sum + parseFloat(v.baseStockQuantity as string), 0) || 0;
               const hasMultipleVariants = (product.variants?.length || 0) > 1;
@@ -216,86 +212,97 @@ export const ProductList: React.FC<ProductListProps> = ({
                 badgeColor = 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]';
               }
 
+              const variantWithImage = product.variants?.find((v: any) => v.imageUrl);
+              const displayImage = product.imageUrl || variantWithImage?.imageUrl || product.variants?.[0]?.imageUrl;
+
               return (
-                <tr 
-                  key={product.id} 
+                <div 
+                  key={product.id}
                   onClick={() => setRestockProduct(product)}
-                  className={`border-b border-[var(--color-border)] h-12 transition-colors duration-150 hover:bg-[var(--color-bg-sunken)] cursor-pointer ${index % 2 === 0 ? 'bg-white' : 'bg-[var(--color-bg-base)]'}`}
+                  className="group bg-white rounded-2xl border border-[var(--color-border)] shadow-sm hover:shadow-md hover:border-amber-500/50 transition-all duration-200 flex flex-col overflow-hidden h-[380px] relative cursor-pointer"
                 >
-                  <td className="px-6 py-0 w-16">
-                    <div className="h-8 w-8 bg-gray-100 rounded-[var(--radius-sm)] flex items-center justify-center text-gray-400 text-[10px] font-medium uppercase relative overflow-hidden border border-gray-100/50">
-                      {(() => {
-                        const displayImage = product.imageUrl || product.variants?.[0]?.imageUrl;
-                        return displayImage ? (
-                          <img src={displayImage} className="h-full w-full object-cover" alt={product.name} />
-                        ) : (
-                          <Package size={14} className="text-gray-300" />
-                        );
-                      })()}
-                      {(isLow || isOut) && (
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-white z-10">
-                          <div className="absolute inset-0 bg-amber-500 rounded-full animate-ping opacity-75"></div>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-[var(--color-text-primary)] leading-tight">{product.name}</p>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-0.5 leading-tight">{priceLabel}</p>
-                  </td>
-                  <td className="px-6 py-0">
-                    <span className="text-sm text-gray-500">
-                      {product.categoryName || 'Uncat.'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-0">
-                    <div className="flex items-center gap-3">
-                      <p className="text-sm font-mono text-[var(--color-text-primary)] min-w-[3rem] text-right">{totalStock}</p>
-                      <span className={`inline-flex items-center justify-center min-w-[48px] px-1.5 py-0.5 rounded-[var(--radius-sm)] text-[10px] font-bold uppercase tracking-wider ${badgeColor}`}>
+                  {/* Image: exactly 50% height */}
+                  <div className="w-full h-1/2 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 relative shrink-0">
+                    {displayImage ? (
+                      <img 
+                        src={displayImage} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300" 
+                        alt={product.name} 
+                      />
+                    ) : (
+                      <Package className="w-12 h-12 text-gray-300 group-hover:scale-105 transition-all duration-300" />
+                    )}
+                    
+                    {/* Status badge overlaid on image */}
+                    <div className="absolute top-3 left-3">
+                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm border border-white/20 ${badgeColor}`}>
                         {stockStatus}
                       </span>
                     </div>
-                  </td>
-                  <td className="px-6 py-0 text-right">
-                    <div className="flex items-center justify-end gap-3 relative">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); onEditProduct(product); }} 
-                        className="text-amber-600 font-medium text-sm hover:underline outline-none focus:ring-2 focus:ring-amber-500 rounded px-1"
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        aria-label="More options" 
-                        onClick={(e) => { e.stopPropagation(); setActiveDropdown(activeDropdown === product.id ? null : product.id); }} 
-                        className="text-gray-400 hover:text-gray-600 transition-colors outline-none focus:ring-2 focus:ring-amber-500 rounded p-1"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
-                      {activeDropdown === product.id && (
-                        <>
-                          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setActiveDropdown(null); }} />
-                          <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-lg z-20 py-1">
-                            <button
-                              onClick={() => {
-                                setActiveDropdown(null);
-                                onToggleStatus(product);
-                              }}
-                              className="w-full text-left px-4 py-2 text-[var(--text-sm)] text-[var(--color-text-primary)] hover:bg-gray-50 transition-colors"
-                            >
-                              {product.isActive ? 'Deactivate' : 'Activate'}
-                            </button>
-                          </div>
-                        </>
-                      )}
+
+                    {/* Stock count overlaid on bottom right of the image */}
+                    <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-md text-[11px] font-mono font-bold">
+                      {totalStock} in stock
                     </div>
-                  </td>
-                </tr>
+                  </div>
+
+                  {/* Details: 50% height */}
+                  <div className="p-5 flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          {product.categoryName || 'Unclassified'}
+                        </span>
+                      </div>
+                      <h4 className="text-sm font-bold text-[var(--color-text-primary)] mt-2 group-hover:text-amber-600 transition-colors line-clamp-2" title={product.name}>
+                        {product.name}
+                      </h4>
+                      <p className="text-xs text-gray-400 mt-1 font-semibold">
+                        {priceLabel}
+                      </p>
+                    </div>
+
+                    {/* Action buttons at the bottom of the card */}
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-auto gap-2" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => onEditProduct(product)}
+                        className="flex-1 h-9 flex items-center justify-center text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors border border-amber-200/50 cursor-pointer"
+                      >
+                        Edit Details
+                      </button>
+                      
+                      <div className="relative">
+                        <button
+                          onClick={() => setActiveDropdown(activeDropdown === product.id ? null : product.id)}
+                          className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 border border-gray-200 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                        
+                        {activeDropdown === product.id && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
+                            <div className="absolute right-0 bottom-full mb-2 w-32 bg-white border border-[var(--color-border)] rounded-lg shadow-lg z-20 py-1">
+                              <button
+                                onClick={() => {
+                                  setActiveDropdown(null);
+                                  onToggleStatus(product);
+                                }}
+                                className="w-full text-left px-4 py-2 text-xs font-semibold text-[var(--color-text-primary)] hover:bg-gray-50 transition-colors cursor-pointer"
+                              >
+                                {product.isActive ? 'Deactivate' : 'Activate'}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               );
             })}
-          </tbody>
-        </table>
+          </div>
+        )}
       </div>
 
       {restockProduct && (
