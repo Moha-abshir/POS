@@ -41,8 +41,6 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
       setSelectedUnit(null);
       setIsEditingLowStock(false);
       setLowStockValue('');
-      setIsEditingVarImage(false);
-      setVarImageUrl('');
       setVarImageError('');
     }
   }, [isOpen, product, selectedVariantId]);
