@@ -45,6 +45,7 @@ export class CatalogService {
       const [product] = await tx.insert(products).values({
         name: data.name,
         description: data.description,
+        imageUrl: data.imageUrl,
         categoryId: data.categoryId,
         businessId,
         createdBy: userId,

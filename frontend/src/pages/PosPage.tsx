@@ -171,7 +171,18 @@ export const PosPage = () => {
                       >
                         {/* Image / Icon container */}
                         <div className="w-full aspect-[4/3] bg-[#F7F6F4] rounded-xl mb-3 flex items-center justify-center overflow-hidden transition-colors group-hover:bg-amber-50/40 relative">
-                          <Package className="w-9 h-9 text-gray-400/80 transition-transform group-hover:scale-105" />
+                          {(() => {
+                            const posImageUrl = product.imageUrl || variant.imageUrl || product.variants?.[0]?.imageUrl;
+                            return posImageUrl ? (
+                              <img 
+                                src={posImageUrl} 
+                                className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300" 
+                                alt={product.name} 
+                              />
+                            ) : (
+                              <Package className="w-9 h-9 text-gray-400/80 transition-transform group-hover:scale-105" />
+                            );
+                          })()}
                           <div className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-bold border ${
                             hasStock 
                               ? 'bg-green-50 text-green-700 border-green-200/50' 

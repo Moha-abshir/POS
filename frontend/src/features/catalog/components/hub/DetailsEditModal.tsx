@@ -18,6 +18,7 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
     name: '',
     categoryId: '',
     description: '',
+    imageUrl: '',
   });
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -27,6 +28,7 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
         name: product.name || '',
         categoryId: product.categoryId || '',
         description: product.description || '',
+        imageUrl: product.imageUrl || '',
       });
       setErrorMsg('');
     }
@@ -91,6 +93,17 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
               onChange={handleChange}
               rows={3}
               className="w-full p-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Product Image URL</label>
+            <input
+              name="imageUrl"
+              type="text"
+              value={formData.imageUrl}
+              onChange={handleChange}
+              placeholder="https://example.com/image.jpg"
+              className="w-full h-10 px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all"
             />
           </div>
 

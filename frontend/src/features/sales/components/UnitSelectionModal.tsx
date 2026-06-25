@@ -66,6 +66,15 @@ export const UnitSelectionModal: React.FC<UnitSelectionModalProps> = ({
 
         {/* Body */}
         <div className="p-5">
+          {(() => {
+            const previewImage = variant.imageUrl || product.imageUrl || product.variants?.[0]?.imageUrl;
+            if (!previewImage) return null;
+            return (
+              <div className="w-full h-36 bg-gray-50 rounded-lg overflow-hidden mb-4 border border-gray-100 flex items-center justify-center">
+                <img src={previewImage} className="w-full h-full object-cover" alt={variant.name} />
+              </div>
+            );
+          })()}
           <h3 className="text-xs font-medium uppercase tracking-wide text-gray-400 mb-3">Select Unit</h3>
           <div className="space-y-3">
             {variant.units.map((unit: any) => (

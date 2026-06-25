@@ -33,6 +33,7 @@ export interface Product {
   name: string;
   categoryName?: string;
   description?: string;
+  imageUrl?: string;
   isActive: boolean;
   variants: Variant[];
 }
@@ -76,6 +77,7 @@ export interface CreateProductInput {
   categoryId: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   variants: {
     name: string;
     sku?: string;
@@ -183,6 +185,7 @@ export interface UpdateProductInput {
   categoryId?: string;
   name?: string;
   description?: string;
+  imageUrl?: string;
   isActive?: boolean;
 }
 

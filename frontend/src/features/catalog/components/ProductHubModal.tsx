@@ -26,6 +26,9 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
   const [isEditingLowStock, setIsEditingLowStock] = useState(false);
   const [lowStockValue, setLowStockValue] = useState('');
+  const [isEditingVarImage, setIsEditingVarImage] = useState(false);
+  const [varImageUrl, setVarImageUrl] = useState('');
+  const [varImageError, setVarImageError] = useState('');
 
   useEffect(() => {
     if (isOpen && product && product.variants && product.variants.length > 0) {
@@ -38,6 +41,9 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
       setSelectedUnit(null);
       setIsEditingLowStock(false);
       setLowStockValue('');
+      setIsEditingVarImage(false);
+      setVarImageUrl('');
+      setVarImageError('');
     }
   }, [isOpen, product, selectedVariantId]);
 
@@ -71,6 +77,21 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
       setIsEditingLowStock(false);
     } catch (err) {
       setLowStockError((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to update threshold');
+    }
+  };
+
+  const handleVarImageSave = async () => {
+    if (!selectedVariant) return;
+    setVarImageError('');
+    try {
+      await updateVariant.mutateAsync({
+        id: product.id,
+        variantId: selectedVariant.id,
+        data: { imageUrl: varImageUrl }
+      });
+      setIsEditingVarImage(false);
+    } catch (err) {
+      setVarImageError((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to update variant image');
     }
   };
 
@@ -126,6 +147,14 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
 
                 <div className="text-[var(--color-text-muted)] font-medium pt-2">Description</div>
                 <div className="font-semibold text-[var(--color-text-primary)] bg-[var(--color-bg-sunken)] px-4 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)]/50 min-h-[40px] leading-relaxed">{product.description || '-'}</div>
+
+                <div className="text-[var(--color-text-muted)] font-medium pt-2">Image URL</div>
+                <div className="font-semibold text-[var(--color-text-primary)] bg-[var(--color-bg-sunken)] px-4 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)]/50 break-all leading-normal flex items-center justify-between gap-4">
+                  <span className="truncate max-w-[320px]">{product.imageUrl || '-'}</span>
+                  {product.imageUrl && (
+                    <img src={product.imageUrl} className="w-8 h-8 object-cover rounded border border-gray-100/50 shrink-0" alt={product.name} />
+                  )}
+                </div>
               </div>
             </section>
 
@@ -267,6 +296,57 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
                         <div className="flex items-end gap-2">
                           <span className="text-xl font-bold text-[var(--color-text-primary)]">{Number(selectedVariant.lowStockThreshold)}</span>
                           <span className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-0.5">{selectedVariant.baseUnitName}s</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </section>
+
+                {/* VARIANT CONFIGURATION SECTION */}
+                <section className="bg-[var(--color-bg-surface)] rounded-[var(--radius-lg)] p-5 shadow-sm border border-[var(--color-border)]">
+                  <div className="flex items-center gap-2 text-[var(--color-text-primary)] mb-5">
+                    <Edit2 className="w-5 h-5 text-[var(--color-primary)]" />
+                    <h3 className="text-[var(--text-sm)] font-bold uppercase tracking-wider">Variant Info</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)]">
+                          Variant Image URL
+                        </label>
+                        {!isEditingVarImage && (
+                          <button onClick={() => { setVarImageUrl(selectedVariant.imageUrl || ''); setVarImageError(''); setIsEditingVarImage(true); }} className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors">
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      
+                      {isEditingVarImage ? (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="text" 
+                              value={varImageUrl} 
+                              onChange={e => setVarImageUrl(e.target.value)}
+                              placeholder="https://example.com/variant.jpg"
+                              className="w-full h-10 px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all"
+                            />
+                            <button onClick={handleVarImageSave} disabled={updateVariant.isPending} className="p-2.5 bg-green-100 text-green-700 hover:bg-green-200 rounded transition-colors shadow-sm cursor-pointer">
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => setIsEditingVarImage(false)} className="p-2.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded transition-colors shadow-sm cursor-pointer">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          {varImageError && <span className="text-[12px] font-medium text-red-500">{varImageError}</span>}
+                        </div>
+                      ) : (
+                        <div className="font-semibold text-[var(--color-text-primary)] bg-[var(--color-bg-sunken)] px-4 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)]/50 break-all min-h-[40px] leading-normal flex items-center justify-between gap-4">
+                          <span className="truncate max-w-[320px]">{selectedVariant.imageUrl || '-'}</span>
+                          {selectedVariant.imageUrl && (
+                            <img src={selectedVariant.imageUrl} className="w-8 h-8 object-cover rounded border border-gray-100/50 shrink-0" alt={selectedVariant.name} />
+                          )}
                         </div>
                       )}
                     </div>

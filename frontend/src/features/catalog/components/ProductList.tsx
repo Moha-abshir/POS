@@ -223,10 +223,17 @@ export const ProductList: React.FC<ProductListProps> = ({
                   className={`border-b border-[var(--color-border)] h-12 transition-colors duration-150 hover:bg-[var(--color-bg-sunken)] cursor-pointer ${index % 2 === 0 ? 'bg-white' : 'bg-[var(--color-bg-base)]'}`}
                 >
                   <td className="px-6 py-0 w-16">
-                    <div className="h-8 w-8 bg-gray-200 rounded-[var(--radius-sm)] flex items-center justify-center text-gray-400 text-[10px] font-medium uppercase relative">
-                      Img
+                    <div className="h-8 w-8 bg-gray-100 rounded-[var(--radius-sm)] flex items-center justify-center text-gray-400 text-[10px] font-medium uppercase relative overflow-hidden border border-gray-100/50">
+                      {(() => {
+                        const displayImage = product.imageUrl || product.variants?.[0]?.imageUrl;
+                        return displayImage ? (
+                          <img src={displayImage} className="h-full w-full object-cover" alt={product.name} />
+                        ) : (
+                          <Package size={14} className="text-gray-300" />
+                        );
+                      })()}
                       {(isLow || isOut) && (
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-white">
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-white z-10">
                           <div className="absolute inset-0 bg-amber-500 rounded-full animate-ping opacity-75"></div>
                         </div>
                       )}

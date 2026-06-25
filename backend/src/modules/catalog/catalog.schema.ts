@@ -8,10 +8,11 @@ export const createProductSchema = z.object({
   categoryId: z.string().uuid('Invalid Category ID'),
   name: z.string().min(2, 'Name must be at least 2 characters'),
   description: z.string().optional(),
+  imageUrl: z.string().url('Invalid URL').or(z.literal('')).optional(),
   variants: z.array(z.object({
     name: z.string().min(1, 'Variant name is required'),
     sku: z.string().optional(),
-    imageUrl: z.string().url('Invalid URL').optional(),
+    imageUrl: z.string().url('Invalid URL').or(z.literal('')).optional(),
     costPrice: z.number().min(0, 'Cost price must be non-negative'),
     baseUnitName: z.string().min(1).default('Piece'),
     initialStock: z.number().min(0, 'Initial stock cannot be negative').default(0),
@@ -29,7 +30,7 @@ export const createVariantSchema = z.object({
   productId: z.string().uuid('Invalid Product ID'),
   name: z.string().min(1, 'Variant name is required'),
   sku: z.string().optional(),
-  imageUrl: z.string().url('Invalid URL').optional(),
+  imageUrl: z.string().url('Invalid URL').or(z.literal('')).optional(),
   costPrice: z.number().min(0, 'Cost price must be non-negative'),
   baseUnitName: z.string().min(1).default('Piece'),
   initialStock: z.number().min(0, 'Initial stock cannot be negative').default(0),
@@ -54,13 +55,14 @@ export const updateProductSchema = z.object({
   categoryId: z.string().uuid('Invalid Category ID'),
   name: z.string().min(2, 'Name must be at least 2 characters'),
   description: z.string().optional(),
+  imageUrl: z.string().url('Invalid URL').or(z.literal('')).optional(),
   isActive: z.boolean(),
 }).partial();
 
 export const updateVariantSchema = z.object({
   name: z.string().min(1, 'Variant name is required'),
   sku: z.string().optional(),
-  imageUrl: z.string().url('Invalid URL').optional(),
+  imageUrl: z.string().url('Invalid URL').or(z.literal('')).optional(),
   costPrice: z.number().min(0, 'Cost price must be non-negative'),
   baseUnitName: z.string().min(1),
   lowStockThreshold: z.number().min(0),
