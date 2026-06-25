@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useUpdateProduct, useCategories, type Product } from '../../api/catalog.api';
 import { CustomSelect } from '../../../../components/ui/CustomSelect';
+import { ImageUploader } from '../../../../components/ui/ImageUploader';
 import { AxiosError } from 'axios';
 
 interface DetailsEditModalProps {
@@ -96,14 +97,10 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
             />
           </div>
           <div>
-            <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Product Image URL</label>
-            <input
-              name="imageUrl"
-              type="text"
+            <ImageUploader
+              label="Product Image (Optional)"
               value={formData.imageUrl}
-              onChange={handleChange}
-              placeholder="https://example.com/image.jpg"
-              className="w-full h-10 px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all"
+              onChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
             />
           </div>
 

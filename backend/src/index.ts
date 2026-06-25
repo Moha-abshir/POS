@@ -20,6 +20,7 @@ import notificationsRoutes from './modules/notifications/notifications.routes';
 import cashSessionsRoutes from './modules/cash-sessions/cash-sessions.routes';
 import importRoutes from './modules/import/import.routes';
 import exportRoutes from './modules/export/export.routes';
+import uploadRoutes from './modules/upload/upload.routes';
 import { errorHandler } from './core/middleware/errorHandler';
 
 import { z } from 'zod';
@@ -30,6 +31,11 @@ const envSchema = z.object({
   PORT: z.string().optional(),
   FRONTEND_URL: z.string().optional(),
   BREVO_API_KEY: z.string().optional(),
+  R2_ACCOUNT_ID: z.string().optional(),
+  R2_ACCESS_KEY_ID: z.string().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_BUCKET_NAME: z.string().optional(),
+  R2_PUBLIC_URL: z.string().optional(),
 });
 
 envSchema.parse(process.env);
@@ -72,6 +78,7 @@ app.use('/notifications', notificationsRoutes);
 app.use('/cash-sessions', cashSessionsRoutes);
 app.use('/import', importRoutes);
 app.use('/export', exportRoutes);
+app.use('/upload', uploadRoutes);
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, Plus, Trash2, Info } from 'lucide-react';
 import { useCreateProduct, useCategories } from '../api/catalog.api';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
+import { ImageUploader } from '../../../components/ui/ImageUploader';
 import { AxiosError } from 'axios';
 
 interface AddProductModalProps {
@@ -230,16 +231,10 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                   />
                 </div>
                 <div>
-                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
-                    Product Image URL (Optional)
-                  </label>
-                  <input
-                    name="imageUrl"
-                    type="text"
+                  <ImageUploader
+                    label="Product Image (Optional)"
                     value={formData.imageUrl}
-                    onChange={handleChange}
-                    placeholder="https://example.com/image.jpg"
-                    className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                    onChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
                   />
                 </div>
               </div>
