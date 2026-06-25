@@ -53,10 +53,14 @@ export const ProductRestockModal: React.FC<ProductRestockModalProps> = ({ produc
               
               const variantImage = variant.imageUrl || product.imageUrl || product.variants?.[0]?.imageUrl;
 
+              const cardBorderColor = status.isLow
+                ? 'border-amber-200/80 bg-amber-50/5'
+                : 'border-gray-200';
+
               return (
                 <div 
                   key={variant.id} 
-                  className="flex flex-col bg-white border border-gray-200 rounded-xl hover:border-amber-300 transition-colors shadow-sm overflow-hidden h-[300px]"
+                  className={`flex flex-col bg-white border ${cardBorderColor} rounded-xl hover:border-amber-400 transition-colors shadow-sm overflow-hidden min-h-[290px] h-full`}
                 >
                   {/* Image: exactly 50% height */}
                   <div className="w-full h-[150px] bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 relative shrink-0">
@@ -76,7 +80,7 @@ export const ProductRestockModal: React.FC<ProductRestockModalProps> = ({ produc
                   </div>
 
                   {/* Content details & action: remaining height */}
-                  <div className="p-4 flex-1 flex flex-col justify-between">
+                  <div className="p-5 flex-1 flex flex-col justify-between gap-4">
                     <div>
                       <h4 className="font-bold text-gray-900 text-sm truncate">{variant.name}</h4>
                       <p className="text-xs text-gray-500 mt-1 font-medium">
@@ -84,24 +88,24 @@ export const ProductRestockModal: React.FC<ProductRestockModalProps> = ({ produc
                       </p>
                     </div>
 
-                    <div className="mt-4">
+                    <div className="mt-auto">
                       {isAdded ? (
-                        <div className="w-full h-9 flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 rounded-lg border border-emerald-200">
+                        <div className="w-full h-9 flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 rounded-lg border border-emerald-200 shadow-sm">
                           <Check className="w-3.5 h-3.5" /> Added to Queue
                         </div>
-                      ) : status.isLow ? (
+                      ) : (
                         <button
                           onClick={() => addToRestock.mutate(variant.id)}
                           disabled={addToRestock.isPending}
-                          className="w-full h-9 flex items-center justify-center gap-1.5 text-xs font-bold rounded-lg transition-all bg-amber-500 hover:bg-amber-600 text-white shadow-sm hover:shadow cursor-pointer"
+                          className={`w-full h-9 flex items-center justify-center gap-1.5 text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer ${
+                            status.isLow
+                              ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                              : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200'
+                          }`}
                         >
                           <ListPlus className="w-3.5 h-3.5" />
-                          Restock
+                          {status.isLow ? 'Restock' : 'Order More'}
                         </button>
-                      ) : (
-                        <div className="w-full h-9 flex items-center justify-center text-xs font-bold text-gray-400 bg-gray-50 rounded-lg border border-gray-100">
-                          Stock Level Adequate
-                        </div>
                       )}
                     </div>
                   </div>
