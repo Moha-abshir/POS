@@ -1,25 +1,26 @@
 import { Router } from 'express';
 import { MpesaSettingsController } from './mpesa.controller';
 import { MpesaCheckoutController } from './mpesa-checkout.controller';
-import { authenticate, authorize } from '../../core/middleware/auth';
+import { authenticate, authorize, requireActiveBusiness } from '../../core/middleware/auth';
 
 const router = Router();
 
 // Only OWNER should be able to manage M-Pesa credentials
-router.use(authenticate, authorize(['OWNER']));
+router.use(authenticate, requireActiveBusiness, authorize(['OWNER']));
 
-router.get('/settings', MpesaSettingsController.getAccounts);
-router.post('/settings', MpesaSettingsController.createAccount);
-router.put('/settings/:id', MpesaSettingsController.updateAccount);
-router.delete('/settings/:id', MpesaSettingsController.deleteAccount);
-router.get('/settings/:id/reveal', MpesaSettingsController.revealCredentials);
-router.patch('/settings/:id/default', MpesaSettingsController.setDefaultAccount);
+const settingsController = MpesaSettingsController;
+router.get('/settings', settingsController.getAccounts);
+router.post('/settings', settingsController.createAccount);
+router.put('/settings/:id', settingsController.updateAccount);
+router.delete('/settings/:id', settingsController.deleteAccount);
+router.get('/settings/:id/reveal', settingsController.revealCredentials);
+router.patch('/settings/:id/default', settingsController.setDefaultAccount);
 
 // Checkout and Webhook (Does not require OWNER role)
 const checkoutRouter = Router();
-checkoutRouter.post('/push', authenticate, MpesaCheckoutController.initiatePush);
-checkoutRouter.get('/status/:id', authenticate, MpesaCheckoutController.checkStatus);
-checkoutRouter.post('/query/:id', authenticate, MpesaCheckoutController.queryStatus);
+checkoutRouter.post('/push', authenticate, requireActiveBusiness, MpesaCheckoutController.initiatePush);
+checkoutRouter.get('/status/:id', authenticate, requireActiveBusiness, MpesaCheckoutController.checkStatus);
+checkoutRouter.post('/query/:id', authenticate, requireActiveBusiness, MpesaCheckoutController.queryStatus);
 
 // Webhook is public (Safaricom hits this)
 const webhookRouter = Router();

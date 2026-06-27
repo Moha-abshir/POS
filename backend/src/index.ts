@@ -21,7 +21,9 @@ import cashSessionsRoutes from './modules/cash-sessions/cash-sessions.routes';
 import importRoutes from './modules/import/import.routes';
 import exportRoutes from './modules/export/export.routes';
 import uploadRoutes from './modules/upload/upload.routes';
+import adminRoutes from './modules/admin/admin.routes';
 import { errorHandler } from './core/middleware/errorHandler';
+import { authenticate, requireActiveBusiness } from './core/middleware/auth';
 
 import { z } from 'zod';
 
@@ -64,21 +66,22 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use('/auth', authRoutes);
-app.use('/catalog', catalogRoutes);
-app.use('/users', usersRoutes);
-app.use('/suppliers', suppliersRoutes);
-app.use('/inventory', inventoryRoutes);
-app.use('/purchases', purchasingRoutes);
-app.use('/customers', customersRoutes);
-app.use('/sales', salesRoutes);
+app.use('/admin', adminRoutes);
+app.use('/catalog', authenticate, requireActiveBusiness, catalogRoutes);
+app.use('/users', authenticate, requireActiveBusiness, usersRoutes);
+app.use('/suppliers', authenticate, requireActiveBusiness, suppliersRoutes);
+app.use('/inventory', authenticate, requireActiveBusiness, inventoryRoutes);
+app.use('/purchases', authenticate, requireActiveBusiness, purchasingRoutes);
+app.use('/customers', authenticate, requireActiveBusiness, customersRoutes);
+app.use('/sales', authenticate, requireActiveBusiness, salesRoutes);
 app.use('/mpesa', mpesaRoutes);
-app.use('/reports', reportsRoutes);
-app.use('/dashboard', dashboardRoutes);
-app.use('/notifications', notificationsRoutes);
-app.use('/cash-sessions', cashSessionsRoutes);
-app.use('/import', importRoutes);
-app.use('/export', exportRoutes);
-app.use('/upload', uploadRoutes);
+app.use('/reports', authenticate, requireActiveBusiness, reportsRoutes);
+app.use('/dashboard', authenticate, requireActiveBusiness, dashboardRoutes);
+app.use('/notifications', authenticate, requireActiveBusiness, notificationsRoutes);
+app.use('/cash-sessions', authenticate, requireActiveBusiness, cashSessionsRoutes);
+app.use('/import', authenticate, requireActiveBusiness, importRoutes);
+app.use('/export', authenticate, requireActiveBusiness, exportRoutes);
+app.use('/upload', authenticate, requireActiveBusiness, uploadRoutes);
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });

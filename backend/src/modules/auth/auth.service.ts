@@ -83,6 +83,7 @@ export class AuthService {
       let businessId: string;
       let isSetupComplete = false;
       let businessName = 'Smart Store POS';
+      let businessStatus = 'pending';
 
       if (!user) {
         const [newBusiness] = await tx.insert(businesses).values({
@@ -91,6 +92,7 @@ export class AuthService {
 
         businessId = newBusiness.id;
         isSetupComplete = newBusiness.isSetupComplete;
+        businessStatus = newBusiness.status;
 
         const [newUser] = await tx.insert(users).values({
           email,
@@ -108,6 +110,7 @@ export class AuthService {
         if (business) {
           isSetupComplete = business.isSetupComplete;
           businessName = business.name;
+          businessStatus = business.status;
         }
       }
 
@@ -142,7 +145,8 @@ export class AuthService {
           role: user.role,
           businessId: user.businessId,
           businessName,
-          isSetupComplete
+          isSetupComplete,
+          businessStatus
         }
       };
     });
