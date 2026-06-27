@@ -1,6 +1,19 @@
 import { pgTable, uuid, varchar, timestamp, integer, boolean, decimal, text, index, uniqueIndex, unique, check, pgEnum, jsonb } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
+export const admins = pgTable('admins', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  passwordHash: varchar('password_hash', { length: 255 }),
+  role: varchar('role', { length: 50 }).notNull().default('super_admin'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
+  lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+}, (table) => ({
+  emailIdx: index('admins_email_idx').on(table.email)
+}));
+
 export const businesses = pgTable('businesses', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 255 }).notNull(),
@@ -8,6 +21,9 @@ export const businesses = pgTable('businesses', {
   phone: varchar('phone', { length: 50 }),
   location: text('location'),
   isSetupComplete: boolean('is_setup_complete').notNull().default(false),
+  status: varchar('status', { length: 50 }).notNull().default('pending'),
+  approvedAt: timestamp('approved_at', { withTimezone: true }),
+  approvedBy: uuid('approved_by').references(() => admins.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
 });
