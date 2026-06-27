@@ -48,11 +48,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(helmet());
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 3000, // limit each IP to 3000 requests per windowMs
-});
-app.use(limiter);
+import { globalLimiter } from './core/middleware/rate-limiter';
 
 app.use(cors({
   origin: [
@@ -67,21 +63,21 @@ app.use(cookieParser());
 
 app.use('/auth', authRoutes);
 app.use('/admin', adminRoutes);
-app.use('/catalog', authenticate, requireActiveBusiness, catalogRoutes);
-app.use('/users', authenticate, requireActiveBusiness, usersRoutes);
-app.use('/suppliers', authenticate, requireActiveBusiness, suppliersRoutes);
-app.use('/inventory', authenticate, requireActiveBusiness, inventoryRoutes);
-app.use('/purchases', authenticate, requireActiveBusiness, purchasingRoutes);
-app.use('/customers', authenticate, requireActiveBusiness, customersRoutes);
-app.use('/sales', authenticate, requireActiveBusiness, salesRoutes);
+app.use('/catalog', authenticate, requireActiveBusiness, globalLimiter, catalogRoutes);
+app.use('/users', authenticate, requireActiveBusiness, globalLimiter, usersRoutes);
+app.use('/suppliers', authenticate, requireActiveBusiness, globalLimiter, suppliersRoutes);
+app.use('/inventory', authenticate, requireActiveBusiness, globalLimiter, inventoryRoutes);
+app.use('/purchases', authenticate, requireActiveBusiness, globalLimiter, purchasingRoutes);
+app.use('/customers', authenticate, requireActiveBusiness, globalLimiter, customersRoutes);
+app.use('/sales', authenticate, requireActiveBusiness, globalLimiter, salesRoutes);
 app.use('/mpesa', mpesaRoutes);
-app.use('/reports', authenticate, requireActiveBusiness, reportsRoutes);
-app.use('/dashboard', authenticate, requireActiveBusiness, dashboardRoutes);
-app.use('/notifications', authenticate, requireActiveBusiness, notificationsRoutes);
-app.use('/cash-sessions', authenticate, requireActiveBusiness, cashSessionsRoutes);
-app.use('/import', authenticate, requireActiveBusiness, importRoutes);
-app.use('/export', authenticate, requireActiveBusiness, exportRoutes);
-app.use('/upload', authenticate, requireActiveBusiness, uploadRoutes);
+app.use('/reports', authenticate, requireActiveBusiness, globalLimiter, reportsRoutes);
+app.use('/dashboard', authenticate, requireActiveBusiness, globalLimiter, dashboardRoutes);
+app.use('/notifications', authenticate, requireActiveBusiness, globalLimiter, notificationsRoutes);
+app.use('/cash-sessions', authenticate, requireActiveBusiness, globalLimiter, cashSessionsRoutes);
+app.use('/import', authenticate, requireActiveBusiness, globalLimiter, importRoutes);
+app.use('/export', authenticate, requireActiveBusiness, globalLimiter, exportRoutes);
+app.use('/upload', authenticate, requireActiveBusiness, globalLimiter, uploadRoutes);
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });

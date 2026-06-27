@@ -2,11 +2,13 @@ import { Router } from 'express';
 import { AdminController } from './admin.controller';
 import { authenticate, requireAdmin } from '../../core/middleware/auth';
 
+import { authLimiter } from '../../core/middleware/rate-limiter';
+
 const router = Router();
 
 // Public routes for admin auth
-router.post('/request-otp', AdminController.requestOtp);
-router.post('/verify-otp', AdminController.verifyOtp);
+router.post('/request-otp', authLimiter, AdminController.requestOtp);
+router.post('/verify-otp', authLimiter, AdminController.verifyOtp);
 
 // Protected routes (require valid admin session)
 router.get('/metrics', authenticate, requireAdmin, AdminController.getMetrics);

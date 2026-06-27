@@ -16,11 +16,13 @@ router.delete('/settings/:id', settingsController.deleteAccount);
 router.get('/settings/:id/reveal', settingsController.revealCredentials);
 router.patch('/settings/:id/default', settingsController.setDefaultAccount);
 
+import { mpesaCustomerLimiter, mpesaTenantLimiter } from '../../core/middleware/rate-limiter';
+
 // Checkout and Webhook (Does not require OWNER role)
 const checkoutRouter = Router();
-checkoutRouter.post('/push', authenticate, requireActiveBusiness, MpesaCheckoutController.initiatePush);
+checkoutRouter.post('/push', authenticate, requireActiveBusiness, mpesaCustomerLimiter, mpesaTenantLimiter, MpesaCheckoutController.initiatePush);
 checkoutRouter.get('/status/:id', authenticate, requireActiveBusiness, MpesaCheckoutController.checkStatus);
-checkoutRouter.post('/query/:id', authenticate, requireActiveBusiness, MpesaCheckoutController.queryStatus);
+checkoutRouter.post('/query/:id', authenticate, requireActiveBusiness, mpesaTenantLimiter, MpesaCheckoutController.queryStatus);
 
 // Webhook is public (Safaricom hits this)
 const webhookRouter = Router();

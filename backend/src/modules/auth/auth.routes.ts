@@ -1,13 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from './auth.controller';
 import { authenticate } from '../../core/middleware/auth';
-import rateLimit from 'express-rate-limit';
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 requests per windowMs
-  message: { success: false, message: 'Too many requests, please try again later.' }
-});
+import { authLimiter } from '../../core/middleware/rate-limiter';
 
 const router = Router();
 

@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import { MpesaCheckoutService } from './mpesa-checkout.service';
 import { z } from 'zod';
 import { SalesService } from '../sales/sales.service';
+import { db } from '../../db';
+import { payments, mpesaTransactions } from '../../db/schema';
+import { eq, and } from 'drizzle-orm';
 
 const pushSchema = z.object({
   saleId: z.string().uuid().optional(),
@@ -21,6 +24,23 @@ export class MpesaCheckoutController {
 
       const referenceType = validatedData.saleId ? 'SALE' : 'CUSTOMER_DEBT';
       const referenceId = (validatedData.saleId || validatedData.customerId)!;
+
+      // Layer 3: The Logic Lock
+      const existingPending = await db
+        .select({ id: mpesaTransactions.id })
+        .from(mpesaTransactions)
+        .innerJoin(payments, eq(mpesaTransactions.paymentId, payments.id))
+        .where(
+          and(
+            eq(payments.referenceId, referenceId),
+            eq(mpesaTransactions.status, 'PENDING')
+          )
+        )
+        .limit(1);
+
+      if (existingPending.length > 0) {
+        return res.status(409).json({ message: "An STK push is already pending for this order. Please wait or check your phone." });
+      }
 
       const result = await MpesaCheckoutService.initiateSTKPush(
         req.user!.businessId, 
