@@ -66,6 +66,7 @@ export const PosPage = () => {
         unitName: unit.name,
         quantity: 1,
         sellingPrice: Number(unit.sellingPrice),
+        maxStock: Number(variant.baseStockQuantity) || 0,
       }];
     });
   };
@@ -88,6 +89,13 @@ export const PosPage = () => {
 
   const cartSubtotal = cart.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
   const cartTotal = Math.max(0, cartSubtotal - discount);
+
+  const hasStockError = cart.some(item => {
+    const product = products.find((p: any) => p.id === item.productId);
+    const variant = product?.variants?.find((v: any) => v.id === item.variantId);
+    const maxStock = variant ? (Number(variant.baseStockQuantity) || 0) : (item.maxStock ?? Infinity);
+    return item.quantity > maxStock;
+  });
 
   const handleApplyDiscount = () => {
     const val = Number(discountInput);
@@ -258,10 +266,16 @@ export const PosPage = () => {
               </div>
             ) : (
               <div className="flex flex-col gap-3">
-                {cart.map((item) => (
+                {cart.map((item) => {
+                  const product = products.find((p: any) => p.id === item.productId);
+                  const variant = product?.variants?.find((v: any) => v.id === item.variantId);
+                  const maxStock = variant ? (Number(variant.baseStockQuantity) || 0) : (item.maxStock ?? Infinity);
+                  const isOverStock = item.quantity > maxStock;
+
+                  return (
                   <div 
                     key={item.unitId} 
-                    className="flex flex-col p-4 bg-white/5 border border-white/5 rounded-2xl transition-all hover:bg-white/8 group"
+                    className={`flex flex-col p-4 border rounded-2xl transition-all group ${isOverStock ? 'bg-red-500/10 border-red-500/50 hover:bg-red-500/20' : 'bg-white/5 border-white/5 hover:bg-white/8'}`}
                   >
                     <div className="flex justify-between items-start">
                       <div className="pr-3 flex-1 min-w-0">
@@ -271,6 +285,11 @@ export const PosPage = () => {
                         <div className="text-xs text-zinc-400 mt-1 font-medium">
                           {variantNameText(item)}
                         </div>
+                        {isOverStock && (
+                          <div className="text-red-400 text-xs mt-1.5 font-semibold">
+                            Exceeds stock limit ({maxStock} available)
+                          </div>
+                        )}
                       </div>
                       <div className="font-bold text-[#D97706] text-sm shrink-0">
                         KSh {(item.quantity * item.sellingPrice).toLocaleString()}
@@ -304,7 +323,8 @@ export const PosPage = () => {
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -365,12 +385,12 @@ export const PosPage = () => {
             
             {/* Pay Button */}
             <button 
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || hasStockError}
               onClick={() => setIsCheckoutOpen(true)}
               className="w-full h-13.5 bg-gradient-to-r from-[#D97706] to-[#B45309] disabled:from-zinc-800 disabled:to-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-2xl transition-all shadow-md shadow-[#D97706]/10 flex justify-center items-center gap-1.5 cursor-pointer"
             >
-              <span>Proceed To Payment</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>{hasStockError ? 'Stock Exceeded' : 'Proceed To Payment'}</span>
+              {!hasStockError && <ArrowRight className="w-4 h-4" />}
             </button>
           </div>
         </div>
