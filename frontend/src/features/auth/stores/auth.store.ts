@@ -69,7 +69,8 @@ export const useAuthStore = create<AuthState>()(
       name: 'pos-auth-storage-v2',
       partialize: (state) => ({
         user: state.user,
-        isAuthenticated: state.isAuthenticated
+        isAuthenticated: state.isAuthenticated,
+        accessToken: state.accessToken
       }),
     }
   )
