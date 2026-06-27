@@ -1,30 +1,32 @@
 import React, { useState } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
-import { useUpdateProduct, type Product } from '../../api/catalog.api';
+import { useUpdateVariant, type Product, type Variant } from '../../api/catalog.api';
 import { AxiosError } from 'axios';
 
 interface DeactivateConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
   product: Product;
+  variant: Variant;
 }
 
-export const DeactivateConfirmModal: React.FC<DeactivateConfirmModalProps> = ({ isOpen, onClose, product }) => {
-  const updateProduct = useUpdateProduct();
+export const DeactivateConfirmModal: React.FC<DeactivateConfirmModalProps> = ({ isOpen, onClose, product, variant }) => {
+  const updateVariant = useUpdateVariant();
   const [errorMsg, setErrorMsg] = useState('');
 
-  const isActive = product.isActive;
+  const isActive = variant.isActive;
 
   const handleConfirm = async () => {
     setErrorMsg('');
     try {
-      await updateProduct.mutateAsync({
+      await updateVariant.mutateAsync({
         id: product.id,
+        variantId: variant.id,
         data: { isActive: !isActive }
       });
       onClose();
     } catch (err) {
-      setErrorMsg((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || `Failed to ${isActive ? 'deactivate' : 'reactivate'} product`);
+      setErrorMsg((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || `Failed to ${isActive ? 'deactivate' : 'reactivate'} variant`);
     }
   };
 
@@ -34,7 +36,7 @@ export const DeactivateConfirmModal: React.FC<DeactivateConfirmModalProps> = ({ 
       <div className={`relative bg-[var(--color-bg-surface)] rounded-[var(--radius-lg)] shadow-[var(--shadow-modal)] w-full max-w-[400px] m-4 flex flex-col transition-all duration-300 ${isOpen ? 'translate-y-0 scale-100' : 'translate-y-4 scale-[0.97]'}`}>
         <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
           <h2 className={`text-[var(--text-lg)] font-semibold ${isActive ? 'text-red-500' : 'text-green-600'}`}>
-            {isActive ? 'Deactivate Product?' : 'Reactivate Product?'}
+            {isActive ? 'Deactivate Variant?' : 'Reactivate Variant?'}
           </h2>
           <button onClick={onClose} className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
             <X className="w-5 h-5" />
@@ -43,15 +45,15 @@ export const DeactivateConfirmModal: React.FC<DeactivateConfirmModalProps> = ({ 
 
         <div className="p-6 space-y-4">
           <p className="text-[var(--text-md)] font-medium text-[var(--color-text-primary)]">
-            {isActive ? `Deactivate ${product.name}?` : `Reactivate ${product.name}?`}
+            {isActive ? `Deactivate ${variant.name}?` : `Reactivate ${variant.name}?`}
           </p>
 
           <div className="flex gap-3 text-[13px] text-[var(--color-text-muted)] leading-relaxed bg-[var(--color-bg-inset)] p-3 rounded-[var(--radius-md)] border border-[var(--color-border)]">
             <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${isActive ? 'text-amber-500' : 'text-blue-500'}`} />
             <p>
               {isActive 
-                ? "This product will no longer appear in the POS or catalog. All historical records are preserved."
-                : "This product will become available again in the POS and catalog."}
+                ? "This variant will no longer appear in the POS checkout. All historical records are preserved."
+                : "This variant will become available again in the POS for sale."}
             </p>
           </div>
 
@@ -63,10 +65,10 @@ export const DeactivateConfirmModal: React.FC<DeactivateConfirmModalProps> = ({ 
             </button>
             <button 
               onClick={handleConfirm}
-              disabled={updateProduct.isPending} 
+              disabled={updateVariant.isPending} 
               className={`h-10 px-6 text-white text-[var(--text-sm)] font-medium rounded-[var(--radius-md)] transition-colors disabled:opacity-50 ${isActive ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700'}`}
             >
-              {updateProduct.isPending ? 'Processing...' : (isActive ? 'Deactivate' : 'Reactivate')}
+              {updateVariant.isPending ? 'Processing...' : (isActive ? 'Deactivate' : 'Reactivate')}
             </button>
           </div>
         </div>

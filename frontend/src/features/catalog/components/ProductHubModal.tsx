@@ -322,18 +322,20 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
             )}
 
             {/* DANGER SECTION */}
-            <section className="bg-red-50/50 rounded-[var(--radius-lg)] p-5 border border-red-100">
-              <div className="flex items-center gap-2 text-red-600 mb-4">
-                <AlertTriangle className="w-5 h-5" />
-                <h3 className="text-[var(--text-sm)] font-bold uppercase tracking-wider">Danger Zone</h3>
-              </div>
-              <button 
-                onClick={() => setActiveModal('deactivate')}
-                className="w-full py-3 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-[var(--radius-md)] text-[14px] font-bold shadow-sm transition-all"
-              >
-                {product.isActive ? 'Deactivate Product' : 'Reactivate Product'}
-              </button>
-            </section>
+            {selectedVariant && (
+              <section className="bg-red-50/50 rounded-[var(--radius-lg)] p-5 border border-red-100">
+                <div className="flex items-center gap-2 text-red-600 mb-4">
+                  <AlertTriangle className="w-5 h-5" />
+                  <h3 className="text-[var(--text-sm)] font-bold uppercase tracking-wider">Danger Zone</h3>
+                </div>
+                <button 
+                  onClick={() => setActiveModal('deactivate')}
+                  className="w-full py-3 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-[var(--radius-md)] text-[14px] font-bold shadow-sm transition-all"
+                >
+                  {selectedVariant.isActive ? 'Deactivate Variant' : 'Reactivate Variant'}
+                </button>
+              </section>
+            )}
 
           </div>
         </div>
@@ -379,11 +381,12 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
         />
       )}
 
-      {activeModal === 'deactivate' && (
+      {activeModal === 'deactivate' && selectedVariant && (
         <DeactivateConfirmModal 
           isOpen={true} 
           onClose={() => setActiveModal(null)} 
           product={product} 
+          variant={selectedVariant}
         />
       )}
     </>

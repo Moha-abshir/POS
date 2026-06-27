@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useProducts, useCategories } from '../api/catalog.api';
-import { Package, Plus, Search, Loader2, MoreHorizontal, Upload, Download } from 'lucide-react';
+import { Package, Plus, Search, Loader2, Upload, Download } from 'lucide-react';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
 import { TableSkeleton } from '../../../components/ui/Loading';
 import { ProductRestockModal } from './ProductRestockModal';
@@ -27,7 +27,6 @@ export const ProductList: React.FC<ProductListProps> = ({
   const { data: products, isLoading, isError } = useProducts();
   const { data: categories, isError: isCategoriesError } = useCategories();
   
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [restockProduct, setRestockProduct] = useState<any | null>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,9 +47,9 @@ export const ProductList: React.FC<ProductListProps> = ({
     if (selectedStatus === 'low_stock') {
       matchesStatus = p.variants?.some(v => parseFloat(v.baseStockQuantity as string) <= parseFloat(v.lowStockThreshold as string)) || false;
     } else if (selectedStatus === 'active') {
-      matchesStatus = p.isActive === true;
+      matchesStatus = p.variants?.some(v => v.isActive === true) || p.isActive === true;
     } else if (selectedStatus === 'inactive') {
-      matchesStatus = p.isActive === false;
+      matchesStatus = p.variants?.some(v => v.isActive === false) || p.isActive === false;
     }
     
     return matchesSearch && matchesCategory && matchesStatus;
@@ -203,8 +202,12 @@ export const ProductList: React.FC<ProductListProps> = ({
               
               const isOut = product.variants?.some(v => parseFloat(v.baseStockQuantity as string) <= 0);
               const isLow = product.variants?.some(v => parseFloat(v.baseStockQuantity as string) <= parseFloat(v.lowStockThreshold as string));
+              const hasInactiveVariant = product.variants?.some(v => v.isActive === false);
 
-              if (isOut) {
+              if (hasInactiveVariant) {
+                stockStatus = 'Inactive Var';
+                badgeColor = 'bg-gray-100 text-gray-500 border-gray-200';
+              } else if (isOut) {
                 stockStatus = 'Out';
                 badgeColor = 'bg-[var(--color-danger-bg)] text-[var(--color-danger)]';
               } else if (isLow) {
@@ -266,36 +269,10 @@ export const ProductList: React.FC<ProductListProps> = ({
                     <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-auto gap-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => onEditProduct(product)}
-                        className="flex-1 h-9 flex items-center justify-center text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors border border-amber-200/50 cursor-pointer"
+                        className="w-full h-9 flex items-center justify-center text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors border border-amber-200/50 cursor-pointer"
                       >
                         Edit Details
                       </button>
-                      
-                      <div className="relative">
-                        <button
-                          onClick={() => setActiveDropdown(activeDropdown === product.id ? null : product.id)}
-                          className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 border border-gray-200 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
-                        
-                        {activeDropdown === product.id && (
-                          <>
-                            <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
-                            <div className="absolute right-0 bottom-full mb-2 w-32 bg-white border border-[var(--color-border)] rounded-lg shadow-lg z-20 py-1">
-                              <button
-                                onClick={() => {
-                                  setActiveDropdown(null);
-                                  onToggleStatus(product);
-                                }}
-                                className="w-full text-left px-4 py-2 text-xs font-semibold text-[var(--color-text-primary)] hover:bg-gray-50 transition-colors cursor-pointer"
-                              >
-                                {product.isActive ? 'Deactivate' : 'Activate'}
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
                     </div>
                   </div>
                 </div>

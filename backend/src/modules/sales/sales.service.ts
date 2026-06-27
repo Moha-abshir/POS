@@ -243,8 +243,17 @@ export class SalesService {
         .from(variantUnits)
         .where(and(eq(variantUnits.businessId, businessId), inArray(variantUnits.id, unitIds)));
 
+      const variantIds = data.items.map(item => item.variantId);
+      const variantsList = await tx.select({ id: productVariants.id, isActive: productVariants.isActive, name: productVariants.name })
+        .from(productVariants)
+        .where(and(eq(productVariants.businessId, businessId), inArray(productVariants.id, variantIds)));
+
       // 2. Create Sale Items & Deduct Inventory
       for (const item of data.items) {
+        const variant = variantsList.find(v => v.id === item.variantId);
+        if (!variant) throw new Error(`Variant not found for id ${item.variantId}`);
+        if (!variant.isActive) throw new Error(`Variant ${variant.name} is deactivated and cannot be sold.`);
+
         const unit = unitsList.find(u => u.id === item.unitId);
           
         if (!unit) {
