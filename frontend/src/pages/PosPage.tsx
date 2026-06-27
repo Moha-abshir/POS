@@ -109,7 +109,10 @@ export const PosPage = () => {
   const categories = ['All', ...(fetchedCategories?.map(c => c.name) || Array.from(new Set<string>(products.map((p: any) => p.categoryName || 'Uncategorized'))))];
 
   const filteredProducts = products.filter((p: any) => {
+    if (p.isActive === false) return false;
     if (selectedCategory !== 'All' && p.categoryName !== selectedCategory && (p.categoryName || 'Uncategorized') !== selectedCategory) return false;
+    // Check if the product has at least one active variant
+    if (!p.variants?.some((v: any) => v.isActive !== false)) return false;
     return true;
   });
 
@@ -165,7 +168,7 @@ export const PosPage = () => {
             ) : (
               <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {filteredProducts.map((product: any) => (
-                  product.variants.map((variant: any) => {
+                  product.variants.filter((v: any) => v.isActive !== false).map((variant: any) => {
                     const basePriceUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
                     const priceToDisplay = basePriceUnit ? Number(basePriceUnit.sellingPrice) : 0;
                     const stock = Number(variant.baseStockQuantity) || 0;
