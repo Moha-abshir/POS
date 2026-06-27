@@ -36,6 +36,13 @@ export const setupInterceptors = (getAccessToken: () => string | null, setAccess
           logout();
         }
       }
+      if (error.response?.status === 403 && error.response?.data?.error?.code === 'INACTIVE_BUSINESS') {
+        const redirectUrl = error.response?.data?.error?.redirect;
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
+          return new Promise(() => {});
+        }
+      }
       return Promise.reject(error);
     }
   );

@@ -10,9 +10,11 @@ interface User {
   lastName?: string;
   mobileNumber?: string;
   role: string;
-  businessId: string;
+  businessId?: string;
   businessName?: string;
   isSetupComplete?: boolean;
+  businessStatus?: string;
+  type?: 'user' | 'admin';
 }
 
 interface AuthState {
