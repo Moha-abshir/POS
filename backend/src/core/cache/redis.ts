@@ -1,6 +1,17 @@
 import { createClient } from 'redis';
 
-const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+let redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+
+// Proactively sanitize if the terminal CLI connection command was accidentally pasted
+if (redisUrl.startsWith('redis-cli -u ')) {
+  redisUrl = redisUrl.replace('redis-cli -u ', '').trim();
+} else if (redisUrl.includes('redis-cli')) {
+  // Catch any quotes or slightly different formats
+  const match = redisUrl.match(/redis(?:s)?:\/\/.*$/);
+  if (match) {
+    redisUrl = match[0].trim();
+  }
+}
 
 export const redisClient = createClient({
   url: redisUrl,
