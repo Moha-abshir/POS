@@ -1,29 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useCategories } from '../features/catalog/api/catalog.api';
+import { useCategories, useProducts } from '../features/catalog/api/catalog.api';
 import { ShoppingCart, Search, Plus, Minus, Trash2, Tag, ArrowRight, Package, ShoppingBag } from 'lucide-react';
 import { api } from '../lib/api';
 import { CheckoutModal } from '../features/sales/components/CheckoutModal';
 import { UnitSelectionModal } from '../features/sales/components/UnitSelectionModal';
 import { CardSkeleton } from '../components/ui/Loading';
 
-// POS Catalog API hook
-const usePosCatalog = (search?: string) => {
-  return useQuery({
-    queryKey: ['pos-catalog', search],
-    queryFn: async () => {
-      const { data } = await api.get('/catalog/products', { params: { search, limit: 100 } });
-      return data;
-    }
-  });
-};
-
 export const PosPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const { data: catalogData, isLoading } = usePosCatalog(searchTerm);
+  const { data: products = [], isLoading } = useProducts();
   const { data: fetchedCategories } = useCategories();
-  const products = catalogData?.data || [];
 
   const [cart, setCart] = useState<any[]>(() => {
     const saved = localStorage.getItem('pos_cart');
@@ -111,6 +98,15 @@ export const PosPage = () => {
   const filteredProducts = products.filter((p: any) => {
     if (p.isActive === false) return false;
     if (selectedCategory !== 'All' && p.categoryName !== selectedCategory && (p.categoryName || 'Uncategorized') !== selectedCategory) return false;
+    
+    // Client-side search matching by product name, variant name, or SKU
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.variants?.some((v: any) => 
+        v.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        v.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    if (!matchesSearch) return false;
+
     // Check if the product has at least one active variant
     if (!p.variants?.some((v: any) => v.isActive !== false)) return false;
     return true;

@@ -1,6 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import { CatalogService } from './catalog.service';
 import { createCategorySchema, createProductSchema, updateProductSchema, createVariantSchema, updateVariantSchema, createVariantUnitSchema, updateVariantUnitSchema } from './catalog.schema';
+import { flushPattern } from '../../core/cache/redis';
+
+async function invalidateCatalogCache(businessId: string) {
+  try {
+    await flushPattern(`cache:${businessId}:/catalog*`);
+  } catch (error) {
+    console.error('Failed to invalidate catalog cache:', error);
+  }
+}
 
 export class CatalogController {
   // Categories
@@ -9,6 +18,7 @@ export class CatalogController {
       const data = createCategorySchema.parse(req.body);
       const businessId = req.user!.businessId;
       const category = await CatalogService.createCategory(data, businessId);
+      await invalidateCatalogCache(businessId);
       res.status(201).json({ success: true, data: category });
     } catch (error) {
       next(error);
@@ -34,6 +44,7 @@ export class CatalogController {
       const userId = req.user!.id; // Available because of authenticate middleware
       const businessId = req.user!.businessId;
       const product = await CatalogService.createProduct(data, businessId, userId);
+      await invalidateCatalogCache(businessId);
       res.status(201).json({ success: true, data: product });
     } catch (error) {
       next(error);
@@ -74,6 +85,7 @@ export class CatalogController {
       const data = updateProductSchema.parse(req.body);
       const businessId = req.user!.businessId;
       const product = await CatalogService.updateProduct(id, data, businessId);
+      await invalidateCatalogCache(businessId);
       res.json({ success: true, data: product });
     } catch (error) {
       next(error);
@@ -90,6 +102,7 @@ export class CatalogController {
       const userId = req.user!.id;
       const businessId = req.user!.businessId;
       const variant = await CatalogService.createVariant(productId, data, businessId, userId);
+      await invalidateCatalogCache(businessId);
       res.status(201).json({ success: true, data: variant });
     } catch (error) {
       next(error);
@@ -102,6 +115,7 @@ export class CatalogController {
       const data = updateVariantSchema.parse(req.body);
       const businessId = req.user!.businessId;
       const variant = await CatalogService.updateVariant(variantId, data, businessId);
+      await invalidateCatalogCache(businessId);
       res.json({ success: true, data: variant });
     } catch (error) {
       next(error);
@@ -116,6 +130,7 @@ export class CatalogController {
       });
       const businessId = req.user!.businessId;
       const unit = await CatalogService.createVariantUnit(data, businessId);
+      await invalidateCatalogCache(businessId);
       res.status(201).json({ success: true, data: unit });
     } catch (error) {
       next(error);
@@ -129,6 +144,7 @@ export class CatalogController {
       const data = updateVariantUnitSchema.parse(req.body);
       const businessId = req.user!.businessId;
       const unit = await CatalogService.updateVariantUnit(unitId, variantId, data, businessId);
+      await invalidateCatalogCache(businessId);
       res.json({ success: true, data: unit });
     } catch (error) {
       next(error);

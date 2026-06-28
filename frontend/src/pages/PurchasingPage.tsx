@@ -49,11 +49,13 @@ export function PurchasingPage() {
   const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery({
     queryKey: ['suppliers', debouncedSearch],
     queryFn: () => suppliersApi.getSuppliers(debouncedSearch),
+    staleTime: 15 * 60 * 1000, // 15 minutes
   });
 
   const { data: allSuppliers = [] } = useQuery({
     queryKey: ['suppliers', 'all'],
     queryFn: () => suppliersApi.getSuppliers(),
+    staleTime: 15 * 60 * 1000, // 15 minutes
   });
 
   const { data: movements = [], isLoading: isLoadingMovements } = useQuery({

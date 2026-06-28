@@ -62,6 +62,7 @@ export const useCustomers = (filters?: { page?: number; limit?: number; search?:
   return useQuery({
     queryKey: ['customers', filters],
     queryFn: () => customersApi.getCustomers(filters),
+    staleTime: 15 * 60 * 1000, // 15 minutes
   });
 };
 

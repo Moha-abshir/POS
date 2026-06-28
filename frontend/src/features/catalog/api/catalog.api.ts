@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
+import { IndexedDBCache } from '../utils/indexedDb';
 
 export interface Category {
   id: string;
@@ -40,22 +41,74 @@ export interface Product {
 
 // --- QUERIES ---
 export const useCategories = () => {
+  const queryClient = useQueryClient();
+
+  // Prime query cache from IndexedDB on startup
+  useQuery({
+    queryKey: ['categories-db-prime'],
+    queryFn: async () => {
+      const cached = await IndexedDBCache.get('catalog_categories');
+      if (cached && cached.categories) {
+        queryClient.setQueryData(['categories'], cached.categories);
+      }
+      return null;
+    },
+    staleTime: Infinity,
+  });
+
   return useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const response = await api.get<{ data: Category[] }>('/catalog/categories');
-      return response.data.data;
+      try {
+        const response = await api.get<{ data: Category[] }>('/catalog/categories');
+        const data = response.data.data;
+        await IndexedDBCache.set('catalog_categories', { categories: data, timestamp: Date.now() });
+        return data;
+      } catch (error) {
+        const cached = await IndexedDBCache.get('catalog_categories');
+        if (cached && cached.categories) {
+          return cached.categories;
+        }
+        throw error;
+      }
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
 export const useProducts = () => {
+  const queryClient = useQueryClient();
+
+  // Prime query cache from IndexedDB on startup
+  useQuery({
+    queryKey: ['products-db-prime'],
+    queryFn: async () => {
+      const cached = await IndexedDBCache.get('catalog_products');
+      if (cached && cached.products) {
+        queryClient.setQueryData(['products'], cached.products);
+      }
+      return null;
+    },
+    staleTime: Infinity,
+  });
+
   return useQuery({
     queryKey: ['products'],
     queryFn: async () => {
-      const response = await api.get<{ data: Product[] }>('/catalog/products');
-      return response.data.data;
+      try {
+        const response = await api.get<{ data: Product[] }>('/catalog/products');
+        const data = response.data.data;
+        await IndexedDBCache.set('catalog_products', { products: data, timestamp: Date.now() });
+        return data;
+      } catch (error) {
+        const cached = await IndexedDBCache.get('catalog_products');
+        if (cached && cached.products) {
+          return cached.products;
+        }
+        throw error;
+      }
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 

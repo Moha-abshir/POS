@@ -1,8 +1,21 @@
 import rateLimit from 'express-rate-limit';
+import { RedisStore } from 'rate-limit-redis';
+import { redisClient } from '../cache/redis';
 import { Request } from 'express';
+
+// Shared RedisStore helper for rate limiters
+const createRedisStore = (prefix: string) => {
+  return new RedisStore({
+    sendCommand: async (...args: string[]) => {
+      return await redisClient.sendCommand(args);
+    },
+    prefix: `rl:${prefix}:`,
+  });
+};
 
 // 1. Email-Based Limiting for Auth APIs
 export const authLimiter = rateLimit({
+  store: createRedisStore('auth'),
   windowMs: 15 * 60 * 1000, // 15 minutes
   limit: 5,
   message: {
@@ -27,6 +40,7 @@ export const authLimiter = rateLimit({
 // 2. M-Pesa STK Push Limiters
 // Layer 1: The Shield (Customer Level) - Max 2 per 5 minutes per phone number
 export const mpesaCustomerLimiter = rateLimit({
+  store: createRedisStore('mpesa_customer'),
   windowMs: 5 * 60 * 1000, // 5 minutes
   limit: 2,
   message: {
@@ -48,6 +62,7 @@ export const mpesaCustomerLimiter = rateLimit({
 
 // Layer 2: The Cost Guard (Tenant Level) - Max 10 per minute per business_id
 export const mpesaTenantLimiter = rateLimit({
+  store: createRedisStore('mpesa_tenant'),
   windowMs: 1 * 60 * 1000, // 1 minute
   limit: 10,
   message: {
@@ -70,6 +85,7 @@ export const mpesaTenantLimiter = rateLimit({
 
 // 3. Global API Limiter (Smart Context Limiting)
 export const globalLimiter = rateLimit({
+  store: createRedisStore('global'),
   windowMs: 15 * 60 * 1000, // 15 minutes
   limit: 600, // ~40 req/min
   message: {

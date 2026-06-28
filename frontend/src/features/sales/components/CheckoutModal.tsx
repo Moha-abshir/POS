@@ -90,6 +90,36 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
 
   const createSaleMutation = useMutation({
     mutationFn: salesApi.createSale,
+    onMutate: async () => {
+      // Cancel outgoing catalog queries so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['products'] });
+
+      // Snapshot the previous products catalog list
+      const previousProducts = queryClient.getQueryData(['products']);
+
+      // Optimistically update stock levels in the UI immediately
+      if (previousProducts) {
+        const updatedProducts = (previousProducts as any[]).map((product: any) => {
+          const updatedVariants = product.variants?.map((variant: any) => {
+            const cartItem = cart.find(item => item.variantId === variant.id);
+            if (cartItem) {
+              const unit = variant.units?.find((u: any) => u.id === cartItem.unitId) || variant.units?.[0];
+              const conversionFactor = Number(unit?.conversionFactor || 1);
+              const deduction = cartItem.quantity * conversionFactor;
+              return {
+                ...variant,
+                baseStockQuantity: Math.max(0, Number(variant.baseStockQuantity) - deduction)
+              };
+            }
+            return variant;
+          });
+          return { ...product, variants: updatedVariants };
+        });
+        queryClient.setQueryData(['products'], updatedProducts);
+      }
+
+      return { previousProducts };
+    },
     onSuccess: async (data: any) => {
       const needsStkPush = (paymentMethod === 'MPESA' && isStkPush) || (paymentMethod === 'SPLIT' && isStkPush && Number(mpesaAmount) > 0);
       if (needsStkPush) {
@@ -106,22 +136,26 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
           toast.success('STK Push sent to customer phone. Waiting for PIN...');
         } catch (e: any) {
           toast.error(e.response?.data?.message || 'Failed to send STK push');
-          // Backend already rolled back the sale — refresh the UI to reflect it
-          queryClient.invalidateQueries({ queryKey: ['pos-catalog'] });
+          // Invalidate to sync backend state on failure
+          queryClient.invalidateQueries({ queryKey: ['products'] });
           queryClient.invalidateQueries({ queryKey: ['sales'] });
         } finally {
           setIsInitiatingPush(false);
         }
       } else {
         toast.success('Sale completed successfully!');
-        queryClient.invalidateQueries({ queryKey: ['pos-catalog'] });
+        queryClient.invalidateQueries({ queryKey: ['products'] });
         queryClient.invalidateQueries({ queryKey: ['customers'] });
         queryClient.invalidateQueries({ queryKey: ['sales'] });
         onSuccessRef.current();
         handleClose();
       }
     },
-    onError: (error: any) => {
+    onError: (error: any, _, context) => {
+      // Rollback to the previous snapshot state if checkout fails
+      if (context?.previousProducts) {
+        queryClient.setQueryData(['products'], context.previousProducts);
+      }
       toast.error(error.response?.data?.message || 'Failed to complete sale');
       setIsPolling(false);
       setIsInitiatingPush(false);

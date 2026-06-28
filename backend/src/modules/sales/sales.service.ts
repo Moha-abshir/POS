@@ -222,7 +222,7 @@ export class SalesService {
       ? data.splitDetails.cashAmount
       : data.amountPaid;
 
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       // 1. Create Sale Record
       const [newSale] = await tx.insert(sales).values({
         businessId,
@@ -350,6 +350,15 @@ export class SalesService {
 
       return newSale;
     });
+
+    try {
+      const { flushPattern } = await import('../../core/cache/redis.js');
+      await flushPattern(`cache:${businessId}:/catalog*`);
+    } catch (err) {
+      console.error('Failed to flush catalog cache on sale:', err);
+    }
+
+    return result;
   }
 
   static async deleteFailedSale(saleId: string) {

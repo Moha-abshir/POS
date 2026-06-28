@@ -26,6 +26,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
   const { data: suppliers = [] } = useQuery({
     queryKey: ['suppliers'],
     queryFn: () => suppliersApi.getSuppliers(),
+    staleTime: 15 * 60 * 1000, // 15 minutes
   });
 
   const { data: products = [] } = useProducts();

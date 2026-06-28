@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { CatalogController } from './catalog.controller';
 import { authenticate } from '../../core/middleware/auth';
+import { cacheMiddleware } from '../../core/middleware/cache';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ router.post('/categories', CatalogController.createCategory);
 router.get('/categories', CatalogController.getCategories);
 
 router.post('/products', CatalogController.createProduct);
-router.get('/products', CatalogController.getProducts);
+router.get('/products', cacheMiddleware(600), CatalogController.getProducts);
 router.get('/products/:id', CatalogController.getProductDetails);
 router.patch('/products/:id', CatalogController.updateProduct);
 
