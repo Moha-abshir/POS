@@ -315,7 +315,7 @@ export class ReportsController {
                   body {
                     padding: 1.5cm;
                   }
-                  .no-print { display: none; }
+                  .no-print { display: none !important; }
                 }
               </style>
             </head>
