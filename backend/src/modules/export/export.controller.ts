@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { db } from '../../db';
-import { products, productVariants, variantUnits, categories, customers, suppliers } from '../../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { pool } from '../../db';
+import QueryStream from 'pg-query-stream';
+import { Transform } from 'stream';
 
 function formatCSVCell(val: any): string {
   if (val === null || val === undefined) return '';
@@ -13,129 +13,167 @@ function formatCSVCell(val: any): string {
   return str;
 }
 
+class CSVTransformStream extends Transform {
+  private isHeaderWritten = false;
+  constructor(private headers: string[], private columns: string[]) {
+    super({ objectMode: true });
+  }
+
+  _transform(row: any, encoding: string, callback: Function) {
+    let chunk = '';
+    if (!this.isHeaderWritten) {
+      chunk += this.headers.join(',') + '\r\n';
+      this.isHeaderWritten = true;
+    }
+    const csvRow = this.columns.map(col => formatCSVCell(row[col])).join(',');
+    chunk += csvRow + '\r\n';
+    callback(null, chunk);
+  }
+}
+
 export class ExportController {
   static async exportProducts(req: Request, res: Response, next: NextFunction) {
+    const businessId = req.user!.businessId;
+    let client: any;
     try {
-      const businessId = req.user!.businessId;
-
-      // 1. Fetch all products with categories
-      const allProducts = await db.select({
-        id: products.id,
-        name: products.name,
-        description: products.description,
-        categoryName: categories.name,
-      })
-      .from(products)
-      .leftJoin(categories, eq(products.categoryId, categories.id))
-      .where(eq(products.businessId, businessId))
-      .orderBy(products.name);
-
-      const productIds = allProducts.map(p => p.id);
-      let variants: any[] = [];
-      let units: any[] = [];
-
-      if (productIds.length > 0) {
-        variants = await db.select().from(productVariants).where(eq(productVariants.businessId, businessId));
-        const variantIds = variants.map(v => v.id);
-        if (variantIds.length > 0) {
-          units = await db.select().from(variantUnits).where(eq(variantUnits.businessId, businessId));
-        }
-      }
-
-      // 2. Format CSV lines
-      const headers = ['Name', 'Description', 'Category', 'SKU', 'Cost Price', 'Base Unit Name', 'Selling Price', 'Low Stock Threshold', 'Initial Stock'];
-      const rows: string[][] = [];
-
-      allProducts.forEach(p => {
-        const pVariants = variants.filter(v => v.productId === p.id);
-        pVariants.forEach(v => {
-          const defaultUnit = units.find(u => u.variantId === v.id && u.isDefault) || units.find(u => u.variantId === v.id);
-          const sellingPrice = defaultUnit ? defaultUnit.sellingPrice : '0';
-
-          rows.push([
-            p.name,
-            p.description || '',
-            p.categoryName || '',
-            v.sku || '',
-            v.costPrice,
-            v.baseUnitName,
-            sellingPrice,
-            v.lowStockThreshold,
-            v.baseStockQuantity
-          ]);
-        });
-      });
-
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(r => r.map(formatCSVCell).join(','))
-      ].join('\r\n');
-
+      client = await pool.connect();
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="products_export_${new Date().toISOString().split('T')[0]}.csv"`);
-      res.status(200).send(csvContent);
+
+      const queryText = `
+        SELECT 
+          p.name AS "productName",
+          p.description AS "productDescription",
+          c.name AS "categoryName",
+          v.sku AS "sku",
+          v.cost_price AS "costPrice",
+          v.base_unit_name AS "baseUnitName",
+          v.low_stock_threshold AS "lowStockThreshold",
+          v.base_stock_quantity AS "baseStockQuantity",
+          u.selling_price AS "sellingPrice"
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.id
+        INNER JOIN product_variants v ON v.product_id = p.id
+        LEFT JOIN variant_units u ON u.id = (
+          SELECT id FROM variant_units 
+          WHERE variant_id = v.id 
+          ORDER BY is_default DESC, created_at ASC 
+          LIMIT 1
+        )
+        WHERE p.business_id = $1
+        ORDER BY p.name;
+      `;
+
+      const headers = ['Name', 'Description', 'Category', 'SKU', 'Cost Price', 'Base Unit Name', 'Selling Price', 'Low Stock Threshold', 'Initial Stock'];
+      const columns = ['productName', 'productDescription', 'categoryName', 'sku', 'costPrice', 'baseUnitName', 'sellingPrice', 'lowStockThreshold', 'baseStockQuantity'];
+
+      const query = new QueryStream(queryText, [businessId]);
+      const dbStream = client.query(query);
+
+      const csvTransform = new CSVTransformStream(headers, columns);
+
+      dbStream.pipe(csvTransform).pipe(res);
+
+      dbStream.on('end', () => {
+        client.release();
+      });
+
+      dbStream.on('error', (err: any) => {
+        client.release();
+        if (!res.headersSent) {
+          next(err);
+        }
+      });
     } catch (error) {
+      if (client) {
+        client.release();
+      }
       next(error);
     }
   }
 
   static async exportCustomers(req: Request, res: Response, next: NextFunction) {
+    const businessId = req.user!.businessId;
+    let client: any;
     try {
-      const businessId = req.user!.businessId;
-
-      const allCustomers = await db.select()
-        .from(customers)
-        .where(eq(customers.businessId, businessId))
-        .orderBy(customers.name);
-
-      const headers = ['Name', 'Phone', 'National ID', 'Address', 'Notes', 'Type'];
-      const rows = allCustomers.map(c => [
-        c.name,
-        c.phone || '',
-        c.nationalId || '',
-        c.address || '',
-        c.notes || '',
-        c.type
-      ]);
-
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(r => r.map(formatCSVCell).join(','))
-      ].join('\r\n');
-
+      client = await pool.connect();
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="customers_export_${new Date().toISOString().split('T')[0]}.csv"`);
-      res.status(200).send(csvContent);
+
+      const queryText = `
+        SELECT name, phone, national_id AS "nationalId", address, notes, type 
+        FROM customers 
+        WHERE business_id = $1 
+        ORDER BY name;
+      `;
+
+      const headers = ['Name', 'Phone', 'National ID', 'Address', 'Notes', 'Type'];
+      const columns = ['name', 'phone', 'nationalId', 'address', 'notes', 'type'];
+
+      const query = new QueryStream(queryText, [businessId]);
+      const dbStream = client.query(query);
+
+      const csvTransform = new CSVTransformStream(headers, columns);
+
+      dbStream.pipe(csvTransform).pipe(res);
+
+      dbStream.on('end', () => {
+        client.release();
+      });
+
+      dbStream.on('error', (err: any) => {
+        client.release();
+        if (!res.headersSent) {
+          next(err);
+        }
+      });
     } catch (error) {
+      if (client) {
+        client.release();
+      }
       next(error);
     }
   }
 
   static async exportSuppliers(req: Request, res: Response, next: NextFunction) {
+    const businessId = req.user!.businessId;
+    let client: any;
     try {
-      const businessId = req.user!.businessId;
-
-      const allSuppliers = await db.select()
-        .from(suppliers)
-        .where(eq(suppliers.businessId, businessId))
-        .orderBy(suppliers.name);
-
-      const headers = ['Name', 'Phone', 'Email'];
-      const rows = allSuppliers.map(s => [
-        s.name,
-        s.phone || '',
-        s.email || ''
-      ]);
-
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(r => r.map(formatCSVCell).join(','))
-      ].join('\r\n');
-
+      client = await pool.connect();
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="suppliers_export_${new Date().toISOString().split('T')[0]}.csv"`);
-      res.status(200).send(csvContent);
+
+      const queryText = `
+        SELECT name, phone, email 
+        FROM suppliers 
+        WHERE business_id = $1 
+        ORDER BY name;
+      `;
+
+      const headers = ['Name', 'Phone', 'Email'];
+      const columns = ['name', 'phone', 'email'];
+
+      const query = new QueryStream(queryText, [businessId]);
+      const dbStream = client.query(query);
+
+      const csvTransform = new CSVTransformStream(headers, columns);
+
+      dbStream.pipe(csvTransform).pipe(res);
+
+      dbStream.on('end', () => {
+        client.release();
+      });
+
+      dbStream.on('error', (err: any) => {
+        client.release();
+        if (!res.headersSent) {
+          next(err);
+        }
+      });
     } catch (error) {
+      if (client) {
+        client.release();
+      }
       next(error);
     }
   }
