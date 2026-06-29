@@ -1551,7 +1551,12 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                             th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
                             th { background-color: #f5f5f5; }
                             @media print {
-                              body { padding: 0; }
+                              @page {
+                                margin: 0;
+                              }
+                              body {
+                                padding: 1.5cm;
+                              }
                             }
                           </style>
                         </head>

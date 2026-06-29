@@ -309,7 +309,12 @@ export class ReportsController {
                 table { width: 100%; border-collapse: collapse; margin-top: 20px; }
                 .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #8d6e63; }
                 @media print {
-                  body { padding: 0; }
+                  @page {
+                    margin: 0;
+                  }
+                  body {
+                    padding: 1.5cm;
+                  }
                   .no-print { display: none; }
                 }
               </style>
