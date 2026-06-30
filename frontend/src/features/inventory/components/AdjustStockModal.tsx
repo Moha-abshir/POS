@@ -7,11 +7,12 @@ import { CustomSelect } from '../../../components/ui/CustomSelect';
 
 interface AdjustStockModalProps {
   onClose: () => void;
+  initialVariantId?: string;
 }
 
-export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
+export function AdjustStockModal({ onClose, initialVariantId }: AdjustStockModalProps) {
   const queryClient = useQueryClient();
-  const [variantId, setVariantId] = useState('');
+  const [variantId, setVariantId] = useState(initialVariantId || '');
   const [unitId, setUnitId] = useState('');
   const [quantity, setQuantity] = useState<number | ''>('');
   const [notes, setNotes] = useState('');
@@ -31,8 +32,6 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
     }
   });
 
-
-
   const variantOptions = products.flatMap(p => 
     (p.variants || []).map(v => ({
       id: v.id,
@@ -41,6 +40,17 @@ export function AdjustStockModal({ onClose }: AdjustStockModalProps) {
       units: v.units || []
     }))
   );
+
+  React.useEffect(() => {
+    if (initialVariantId && variantOptions.length > 0) {
+      const v = variantOptions.find(x => x.id === initialVariantId);
+      if (v) {
+        const defaultUnit = v.units?.find((u: any) => u.isDefault) || v.units?.[0];
+        setUnitId(defaultUnit?.id || '');
+        setQuantity(Number(v.baseStockQuantity) / Number(defaultUnit?.conversionFactor || 1));
+      }
+    }
+  }, [initialVariantId, products]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -6,12 +6,13 @@ import { AdjustStockModal } from '../features/inventory/components/AdjustStockMo
 import { RestockListTable } from '../features/inventory/components/RestockListTable';
 import { ReportDamageModal } from '../features/inventory/components/ReportDamageModal';
 import { DamagesLogTable } from '../features/inventory/components/DamagesLogTable';
+import { NegativeStockTable } from '../features/inventory/components/NegativeStockTable';
 import { TableSkeleton } from '../components/ui/Loading';
 import { useAuthStore } from '../features/auth/stores/auth.store';
 
 export function InventoryPage() {
   const currentUser = useAuthStore((state) => state.user);
-  const [view, setView] = useState<'ledger' | 'restock' | 'damages'>('ledger');
+  const [view, setView] = useState<'ledger' | 'restock' | 'damages' | 'negative'>('ledger');
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [isDamageModalOpen, setIsDamageModalOpen] = useState(false);
 
@@ -36,10 +37,10 @@ export function InventoryPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">
-            {view === 'ledger' ? 'Inventory Ledger' : view === 'restock' ? 'Restock List' : 'Damages Log'}
+            {view === 'ledger' ? 'Inventory Ledger' : view === 'restock' ? 'Restock List' : view === 'damages' ? 'Damages Log' : 'Negative Stock'}
           </h1>
           <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-            {view === 'ledger' ? 'Track every stock movement across your business' : view === 'restock' ? 'Manage items that need to be reordered' : 'Track lost, damaged, or expired items'}
+            {view === 'ledger' ? 'Track every stock movement across your business' : view === 'restock' ? 'Manage items that need to be reordered' : view === 'damages' ? 'Track lost, damaged, or expired items' : 'Quickly resolve items that have negative inventory levels'}
           </p>
         </div>
         <div className="flex gap-4 items-center">
@@ -62,6 +63,14 @@ export function InventoryPage() {
             >
               Damages Log
             </button>
+            {currentUser?.role !== 'CASHIER' && (
+              <button 
+                onClick={() => setView('negative')} 
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${view === 'negative' ? 'bg-white shadow-sm text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
+              >
+                Negative Stock
+              </button>
+            )}
           </div>
           
           <div className="flex gap-2 items-center">
@@ -183,8 +192,10 @@ export function InventoryPage() {
         </div>
       ) : view === 'restock' ? (
         <RestockListTable />
-      ) : (
+      ) : view === 'damages' ? (
         <DamagesLogTable />
+      ) : (
+        <NegativeStockTable />
       )}
 
       {isAdjustModalOpen && (

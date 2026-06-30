@@ -8,14 +8,17 @@ import { CustomSelect } from '../../../components/ui/CustomSelect';
 
 interface PurchaseModalProps {
   onClose: () => void;
+  initialVariantId?: string;
 }
 
-export function PurchaseModal({ onClose }: PurchaseModalProps) {
+export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps) {
   const queryClient = useQueryClient();
   const [supplierId, setSupplierId] = useState('');
-  const [items, setItems] = useState<{ productId?: string; variantId: string; unitId: string; quantity: number | ''; costPrice: number | '' }[]>([
-    { productId: '', variantId: '', unitId: '', quantity: 1, costPrice: '' }
-  ]);
+  const [items, setItems] = useState<{ productId?: string; variantId: string; unitId: string; quantity: number | ''; costPrice: number | '' }[]>(
+    initialVariantId 
+      ? [{ productId: '', variantId: initialVariantId, unitId: '', quantity: 1, costPrice: '' }]
+      : [{ productId: '', variantId: '', unitId: '', quantity: 1, costPrice: '' }]
+  );
   const [paymentStatus, setPaymentStatus] = useState<'FULL' | 'PARTIAL' | 'UNPAID'>('FULL');
   const [amountPaid, setAmountPaid] = useState<number | ''>('');
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>('CASH');
@@ -30,6 +33,26 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
   });
 
   const { data: products = [] } = useProducts();
+
+  React.useEffect(() => {
+    if (initialVariantId && products.length > 0 && items.length === 1 && items[0].variantId === initialVariantId && !items[0].productId) {
+      const parentProduct = products.find(p => (p.variants || []).some(v => v.id === initialVariantId));
+      if (parentProduct) {
+        const variant = parentProduct.variants.find(v => v.id === initialVariantId);
+        if (variant) {
+          const defaultUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
+          const factor = Number(defaultUnit?.conversionFactor || 1);
+          setItems([{
+            productId: parentProduct.id,
+            variantId: initialVariantId,
+            unitId: defaultUnit?.id || '',
+            quantity: 1,
+            costPrice: Number(variant.costPrice) * factor
+          }]);
+        }
+      }
+    }
+  }, [initialVariantId, products]);
 
   const purchaseMutation = useMutation({
     mutationFn: inventoryApi.createPurchase,
