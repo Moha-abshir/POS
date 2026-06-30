@@ -3,6 +3,7 @@ import { db, transactionWithRetry } from '../../db';
 import { sales, saleItems, stockMovements, productVariants, customers, payments, variantUnits, products, refunds, refundItems } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 import { InventoryService } from '../inventory/inventory.service';
+import { flushPattern } from '../../core/cache/redis';
 
 
 export class SalesService {
@@ -355,7 +356,6 @@ export class SalesService {
     });
 
     try {
-      const { flushPattern } = await import('../../core/cache/redis.js');
       await flushPattern(`cache:${businessId}:/catalog*`);
     } catch (err) {
       console.error('Failed to flush catalog cache on sale:', err);

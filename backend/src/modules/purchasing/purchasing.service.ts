@@ -3,6 +3,7 @@ import { db, transactionWithRetry } from '../../db';
 import { purchases, purchaseItems, suppliers, payments, productVariants, variantUnits } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 import { InventoryService } from '../inventory/inventory.service';
+import { flushPattern } from '../../core/cache/redis';
 
 export class PurchasingService {
   static async createPurchase(
@@ -20,7 +21,7 @@ export class PurchasingService {
     // Sort items by variantId to guarantee consistent locking order and prevent deadlocks
     const sortedItems = [...data.items].sort((a, b) => a.variantId.localeCompare(b.variantId));
 
-    return await transactionWithRetry(async (tx) => {
+    const result = await transactionWithRetry(async (tx) => {
       // 0. Cross-tenant validation
       const [supplier] = await tx.select().from(suppliers).where(and(eq(suppliers.id, data.supplierId), eq(suppliers.businessId, businessId)));
       if (!supplier) throw new AppError('Supplier not found or unauthorized', 404);
@@ -120,6 +121,14 @@ export class PurchasingService {
 
       return purchase;
     });
+
+    try {
+      await flushPattern(`cache:${businessId}:/catalog*`);
+    } catch (err) {
+      console.error('Failed to flush catalog cache on purchase:', err);
+    }
+
+    return result;
   }
 
   static async getPurchases(businessId: string, limit = 50, offset = 0) {

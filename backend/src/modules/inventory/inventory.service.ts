@@ -2,6 +2,7 @@ import { eq, and, sql, desc } from 'drizzle-orm';
 import { db } from '../../db';
 import { productVariants, stockMovements, damagedGoods, purchases, products, users, suppliers } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
+import { flushPattern } from '../../core/cache/redis';
 
 export class InventoryService {
   /**
@@ -120,7 +121,7 @@ export class InventoryService {
   }
 
   static async manualAdjustment(businessId: string, userId: string, data: { variantId: string, newQuantity: number, notes?: string }) {
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       const [variant] = await tx.select().from(productVariants).where(and(eq(productVariants.id, data.variantId), eq(productVariants.businessId, businessId))).for('update');
       if (!variant) throw new AppError('Variant not found', 404);
 
@@ -139,6 +140,14 @@ export class InventoryService {
 
       return await tx.select().from(productVariants).where(eq(productVariants.id, data.variantId));
     });
+
+    try {
+      await flushPattern(`cache:${businessId}:/catalog*`);
+    } catch (err) {
+      console.error('Failed to flush catalog cache on stock adjustment:', err);
+    }
+
+    return result;
   }
 
   static async recordDamage(businessId: string, userId: string, data: { variantId: string, quantity: number, reason?: string }) {
@@ -153,7 +162,7 @@ export class InventoryService {
       throw new AppError(`Insufficient stock. Current stock is ${Number(variant.stock)}, but you tried to deduct ${data.quantity}.`, 400);
     }
 
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       await this.recordMovement(tx, businessId, {
         variantId: data.variantId,
         type: 'DAMAGE',
@@ -169,7 +178,17 @@ export class InventoryService {
         reason: data.reason,
         createdBy: userId,
       }).returning();
+
+      return damage;
     });
+
+    try {
+      await flushPattern(`cache:${businessId}:/catalog*`);
+    } catch (err) {
+      console.error('Failed to flush catalog cache on damage report:', err);
+    }
+
+    return result;
   }
 
   static async getDamages(businessId: string, limit = 50, offset = 0) {
