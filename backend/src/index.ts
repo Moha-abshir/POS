@@ -1,5 +1,25 @@
 import * as dotenv from "dotenv";
 dotenv.config();
+import * as Sentry from '@sentry/node';
+
+// Initialize Sentry before importing any other modules for auto-instrumentation
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    tracesSampleRate: 1.0,
+    beforeSend(event, hint) {
+      const error = hint.originalException as any;
+      if (error) {
+        // Ignore client warnings, zod validation errors, and DB constraint conflicts
+        if (error.statusCode && error.statusCode < 500) return null;
+        if (error.name === 'ZodError') return null;
+        if (error.code && typeof error.code === 'string' && error.code.startsWith('23')) return null;
+      }
+      return event;
+    },
+  });
+}
+
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -90,6 +110,10 @@ app.use('/upload', authenticate, requireActiveBusiness, globalLimiter, uploadRou
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+if (process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
+}
 
 app.use(errorHandler);
 
