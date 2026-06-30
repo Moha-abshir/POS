@@ -4,6 +4,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet'; 
+import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './modules/auth/auth.routes';
 import catalogRoutes from './modules/catalog/catalog.routes';
@@ -51,6 +52,7 @@ const app = express();
 app.set('trust proxy', 1); // Trust the first proxy (Railway's load balancer)
 const PORT = process.env.PORT || 5000;
 
+app.use(compression());
 app.use(helmet());
 
 import { globalLimiter } from './core/middleware/rate-limiter';
