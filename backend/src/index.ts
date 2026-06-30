@@ -111,6 +111,10 @@ app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.get("/debug-sentry", function mainHandler(req, res) {
+  throw new Error("My first Sentry error!");
+});
+
 if (process.env.SENTRY_DSN) {
   Sentry.setupExpressErrorHandler(app);
 }
