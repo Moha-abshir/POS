@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/AppError';
 import { ZodError } from 'zod';
+import { logger } from '../utils/logger';
 
 export const errorHandler = (
   err: any,
@@ -9,6 +10,7 @@ export const errorHandler = (
   next: NextFunction
 ) => {
   if (err instanceof AppError) {
+    logger.warn({ url: req.url, message: err.message }, 'Application Warning');
     return res.status(err.statusCode).json({
       success: false,
       message: err.message,
@@ -16,6 +18,7 @@ export const errorHandler = (
   }
 
   if (err instanceof ZodError) {
+    logger.warn({ url: req.url, errors: err.issues }, 'Validation Error');
     return res.status(400).json({
       success: false,
       message: 'Validation Error',
@@ -31,13 +34,15 @@ export const errorHandler = (
     else if (err.code === '23514') message = 'Invalid data provided that violates system constraints.';
     else if (err.code === '23502') message = 'Required information is missing.';
 
+    logger.warn({ url: req.url, code: err.code, pgMessage: err.message }, 'Database Constraint Violation');
+
     return res.status(400).json({
       success: false,
       message,
     });
   }
 
-  console.error('Unexpected Error:', err);
+  logger.error(err, 'Unexpected Server Error');
   return res.status(500).json({
     success: false,
     message: 'Internal Server Error',

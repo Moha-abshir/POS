@@ -44,9 +44,10 @@ const envSchema = z.object({
 envSchema.parse(process.env);
 
 import { getRedisClient } from './core/cache/redis';
+import { logger } from './core/utils/logger';
 
 // Initialize Redis connection on server startup
-getRedisClient().catch(err => console.error('Failed to initialize Redis on startup:', err));
+getRedisClient().catch(err => logger.error(err, 'Failed to initialize Redis on startup'));
 
 const app = express();
 app.set('trust proxy', 1); // Trust the first proxy (Railway's load balancer)
@@ -93,5 +94,5 @@ app.get('/health', (req: Request, res: Response) => {
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT}`);
 });
