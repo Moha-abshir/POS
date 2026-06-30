@@ -18,3 +18,25 @@ pool.on('error', (err) => {
 });
 
 export const db = drizzle(pool, { schema });
+
+export async function transactionWithRetry<T>(
+  transactionFn: (tx: any) => Promise<T>,
+  maxRetries = 3,
+  delayMs = 50
+): Promise<T> {
+  let attempts = 0;
+  while (true) {
+    attempts++;
+    try {
+      return await db.transaction(transactionFn);
+    } catch (error: any) {
+      const isDeadlock = error.code === '40P01' || error.code === '40001';
+      if (isDeadlock && attempts < maxRetries) {
+        console.warn(`[DB RETRY] Serialization conflict/deadlock (attempt ${attempts}/${maxRetries}). Retrying in ${delayMs}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        continue;
+      }
+      throw error;
+    }
+  }
+}

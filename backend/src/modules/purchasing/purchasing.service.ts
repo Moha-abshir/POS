@@ -1,5 +1,5 @@
 import { eq, and, sql, inArray } from 'drizzle-orm';
-import { db } from '../../db';
+import { db, transactionWithRetry } from '../../db';
 import { purchases, purchaseItems, suppliers, payments, productVariants, variantUnits } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 import { InventoryService } from '../inventory/inventory.service';
@@ -17,18 +17,21 @@ export class PurchasingService {
       mpesaRef?: string;
     }
   ) {
-    return await db.transaction(async (tx) => {
+    // Sort items by variantId to guarantee consistent locking order and prevent deadlocks
+    const sortedItems = [...data.items].sort((a, b) => a.variantId.localeCompare(b.variantId));
+
+    return await transactionWithRetry(async (tx) => {
       // 0. Cross-tenant validation
       const [supplier] = await tx.select().from(suppliers).where(and(eq(suppliers.id, data.supplierId), eq(suppliers.businessId, businessId)));
       if (!supplier) throw new AppError('Supplier not found or unauthorized', 404);
 
-      const variantIds = Array.from(new Set(data.items.map(item => item.variantId)));
+      const variantIds = Array.from(new Set(sortedItems.map(item => item.variantId)));
       const foundVariants = await tx.select().from(productVariants).where(and(inArray(productVariants.id, variantIds), eq(productVariants.businessId, businessId)));
       if (foundVariants.length !== variantIds.length) {
         throw new AppError('One or more variants not found or unauthorized', 404);
       }
 
-      const unitIds = Array.from(new Set(data.items.map(item => item.unitId)));
+      const unitIds = Array.from(new Set(sortedItems.map(item => item.unitId)));
       const foundUnits = await tx.select().from(variantUnits).where(and(inArray(variantUnits.id, unitIds), eq(variantUnits.businessId, businessId)));
       if (foundUnits.length !== unitIds.length) {
         throw new AppError('One or more units not found or unauthorized', 404);
@@ -38,7 +41,7 @@ export class PurchasingService {
 
       // 1. Calculate totals
       let totalAmount = 0;
-      data.items.forEach(item => {
+      sortedItems.forEach(item => {
         totalAmount += item.quantity * item.costPrice;
       });
 
@@ -57,7 +60,7 @@ export class PurchasingService {
       }).returning();
 
       // 3. Create Purchase Items & Update Inventory
-      const purchaseItemsData = data.items.map(item => {
+      const purchaseItemsData = sortedItems.map(item => {
         const subtotal = item.quantity * item.costPrice;
         return {
           businessId,
@@ -73,7 +76,7 @@ export class PurchasingService {
         await tx.insert(purchaseItems).values(purchaseItemsData);
       }
 
-      for (const item of data.items) {
+      for (const item of sortedItems) {
         const conversionFactor = unitMap.get(item.unitId) || 1;
         const baseQuantity = item.quantity * conversionFactor;
 

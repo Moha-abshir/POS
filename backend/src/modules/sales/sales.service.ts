@@ -1,5 +1,5 @@
 import { eq, and, sql, desc, gte, lte, ilike, inArray, or } from 'drizzle-orm';
-import { db } from '../../db';
+import { db, transactionWithRetry } from '../../db';
 import { sales, saleItems, stockMovements, productVariants, customers, payments, variantUnits, products, refunds, refundItems } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 import { InventoryService } from '../inventory/inventory.service';
@@ -191,8 +191,11 @@ export class SalesService {
       };
     }
   ) {
+    // Sort items by variantId to guarantee consistent locking order and prevent deadlocks
+    const sortedItems = [...data.items].sort((a, b) => a.variantId.localeCompare(b.variantId));
+
     // Calculate totals
-    const subtotal = data.items.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
+    const subtotal = sortedItems.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
     const discountAmount = data.discountAmount || 0;
     const totalAmount = Math.max(0, subtotal - discountAmount);
 
@@ -222,7 +225,7 @@ export class SalesService {
       ? data.splitDetails.cashAmount
       : data.amountPaid;
 
-    const result = await db.transaction(async (tx) => {
+    const result = await transactionWithRetry(async (tx) => {
       // 1. Create Sale Record
       const [newSale] = await tx.insert(sales).values({
         businessId,
@@ -238,18 +241,18 @@ export class SalesService {
       }).returning();
 
       // Fetch all units in a single batch query to prevent query-in-loop transaction overhead
-      const unitIds = data.items.map(item => item.unitId);
+      const unitIds = sortedItems.map(item => item.unitId);
       const unitsList = await tx.select({ id: variantUnits.id, conversionFactor: variantUnits.conversionFactor })
         .from(variantUnits)
         .where(and(eq(variantUnits.businessId, businessId), inArray(variantUnits.id, unitIds)));
 
-      const variantIds = data.items.map(item => item.variantId);
+      const variantIds = sortedItems.map(item => item.variantId);
       const variantsList = await tx.select({ id: productVariants.id, isActive: productVariants.isActive, name: productVariants.name })
         .from(productVariants)
         .where(and(eq(productVariants.businessId, businessId), inArray(productVariants.id, variantIds)));
 
       // 2. Create Sale Items & Deduct Inventory
-      for (const item of data.items) {
+      for (const item of sortedItems) {
         const variant = variantsList.find(v => v.id === item.variantId);
         if (!variant) throw new Error(`Variant not found for id ${item.variantId}`);
         if (!variant.isActive) throw new Error(`Variant ${variant.name} is deactivated and cannot be sold.`);
