@@ -20,16 +20,26 @@ export const redisClient = createClient({
 redisClient.on('error', (err) => console.error('Redis Client Error:', err));
 redisClient.on('connect', () => console.log('Redis Client Connected'));
 
-let isConnected = false;
+let connectionPromise: Promise<any> | null = null;
+
 export async function getRedisClient() {
-  if (!isConnected) {
-    try {
-      await redisClient.connect();
-      isConnected = true;
-    } catch (error) {
-      console.error('Failed to connect to Redis:', error);
-    }
+  if (redisClient.isOpen) {
+    return redisClient;
   }
+
+  if (!connectionPromise) {
+    connectionPromise = (async () => {
+      try {
+        await redisClient.connect();
+      } catch (error) {
+        console.error('Failed to connect to Redis:', error);
+        connectionPromise = null; // Reset on failure to allow retry
+        throw error;
+      }
+    })();
+  }
+
+  await connectionPromise;
   return redisClient;
 }
 
