@@ -4,14 +4,15 @@ import { sql } from 'drizzle-orm';
 export const admins = pgTable('admins', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 255 }).notNull(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
+  email: varchar('email', { length: 255 }).notNull(),
   passwordHash: varchar('password_hash', { length: 255 }),
   role: varchar('role', { length: 50 }).notNull().default('super_admin'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
 }, (table) => ({
-  emailIdx: index('admins_email_idx').on(table.email)
+  emailIdx: index('admins_email_idx').on(table.email),
+  uniqueEmailIdx: uniqueIndex('admins_email_lower_idx').on(sql`LOWER(${table.email})`)
 }));
 
 export const businesses = pgTable('businesses', {
@@ -31,7 +32,7 @@ export const businesses = pgTable('businesses', {
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
-  email: varchar('email', { length: 255 }).notNull().unique(),
+  email: varchar('email', { length: 255 }).notNull(),
   firstName: varchar('first_name', { length: 100 }),
   lastName: varchar('last_name', { length: 100 }),
   mobileNumber: varchar('mobile_number', { length: 50 }),
@@ -41,7 +42,8 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
 }, (table) => ({
   businessIdx: index('users_business_idx').on(table.businessId),
-  emailIdx: index('users_email_idx').on(table.email)
+  emailIdx: index('users_email_idx').on(table.email),
+  uniqueEmailIdx: uniqueIndex('users_email_lower_idx').on(sql`LOWER(${table.email})`)
 }));
 
 export const otps = pgTable('otps', {
@@ -115,6 +117,7 @@ export const productVariants = pgTable('product_variants', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
 }, (table) => ({
   productIdx: index('variants_product_idx').on(table.productId),
+  businessIdx: index('variants_business_idx').on(table.businessId),
   uniqueNamePerProduct: unique('variants_name_product_unique').on(table.productId, table.name),
   costPriceCheck: check('variant_cost_price_check', sql`${table.costPrice} >= 0`),
   stockCheck: check('variant_stock_check', sql`${table.baseStockQuantity} >= 0`)
@@ -133,6 +136,7 @@ export const variantUnits = pgTable('variant_units', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
 }, (table) => ({
   variantIdx: index('units_variant_idx').on(table.variantId),
+  businessIdx: index('units_business_idx').on(table.businessId),
   uniqueNamePerVariant: unique('units_name_variant_unique').on(table.variantId, table.name),
   sellingPriceCheck: check('units_price_check', sql`${table.sellingPrice} >= 0`),
   conversionFactorCheck: check('units_factor_check', sql`${table.conversionFactor} > 0`)
@@ -379,9 +383,9 @@ export const mpesaTransactions = pgTable('mpesa_transactions', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
 }, (table) => ({
   paymentIdx: index('mpesa_trans_payment_idx').on(table.paymentId),
-  checkoutIdx: index('mpesa_trans_checkout_idx').on(table.checkoutRequestId)
+  checkoutIdx: index('mpesa_trans_checkout_idx').on(table.checkoutRequestId),
+  mpesaAccountIdx: index('mpesa_trans_account_idx').on(table.mpesaAccountId)
 }));
-
 
 export const refunds = pgTable('refunds', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -459,6 +463,8 @@ export const cashDrawerSessions = pgTable('cash_drawer_sessions', {
 }, (table) => ({
   businessIdx: index('cash_drawer_sessions_business_idx').on(table.businessId),
   openedByIdx: index('cash_drawer_sessions_opened_by_idx').on(table.openedById),
+  closedByIdx: index('cash_drawer_sessions_closed_by_idx').on(table.closedById),
+  resolvedByIdx: index('cash_drawer_sessions_resolved_by_idx').on(table.resolvedById),
   statusIdx: index('cash_drawer_sessions_status_idx').on(table.status),
 }));
 
