@@ -99,6 +99,13 @@
       "when": 1782823943999,
       "tag": "0013_mute_nekra",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1782825055360,
+      "tag": "0014_regular_meteorite",
+      "breakpoints": true
     }
   ]
 }

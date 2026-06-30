@@ -119,8 +119,7 @@ export const productVariants = pgTable('product_variants', {
   productIdx: index('variants_product_idx').on(table.productId),
   businessIdx: index('variants_business_idx').on(table.businessId),
   uniqueNamePerProduct: unique('variants_name_product_unique').on(table.productId, table.name),
-  costPriceCheck: check('variant_cost_price_check', sql`${table.costPrice} >= 0`),
-  stockCheck: check('variant_stock_check', sql`${table.baseStockQuantity} >= 0`)
+  costPriceCheck: check('variant_cost_price_check', sql`${table.costPrice} >= 0`)
 }));
 
 export const variantUnits = pgTable('variant_units', {
