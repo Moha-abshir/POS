@@ -22,6 +22,12 @@ import { AdminLoginPage } from './pages/AdminLoginPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminBusinessesPage } from './pages/AdminBusinessesPage';
 
+import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-hot-toast';
+import { IndexedDBCache } from './features/catalog/utils/indexedDb';
+import { salesApi } from './features/sales/api/sales.api';
+
 const NotFound = () => (
   <div className="flex flex-col items-center justify-center h-full p-6 text-center">
     <h1 className="text-4xl font-bold text-[var(--color-text-primary)] mb-4">404</h1>
@@ -36,6 +42,51 @@ import { Toaster } from 'react-hot-toast';
 
 function App() {
   const { isAuthenticated, user } = useAuthStore();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const handleOnline = async () => {
+      const queue = await IndexedDBCache.getQueue();
+      if (queue.length === 0) return;
+
+      toast.loading(`Syncing ${queue.length} offline sale(s)...`, { id: 'offline-sync' });
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const item of queue) {
+        try {
+          const { id, isOffline, ...cleanData } = item;
+          await salesApi.createSale(cleanData);
+          await IndexedDBCache.removeFromQueue(id);
+          successCount++;
+        } catch (err) {
+          console.error('Failed to sync offline sale:', err);
+          failCount++;
+        }
+      }
+
+      toast.dismiss('offline-sync');
+      if (successCount > 0) {
+        toast.success(`Successfully synced ${successCount} offline sale(s)!`);
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+        queryClient.invalidateQueries({ queryKey: ['inventory'] });
+        queryClient.invalidateQueries({ queryKey: ['sales'] });
+      }
+      if (failCount > 0) {
+        toast.error(`Failed to sync ${failCount} offline sale(s). Will retry next time.`);
+      }
+    };
+
+    if (navigator.onLine) {
+      handleOnline();
+    }
+
+    window.addEventListener('online', handleOnline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [queryClient]);
 
   const isAdmin = isAuthenticated && user?.type === 'admin';
   const isUser = isAuthenticated && user?.type !== 'admin';

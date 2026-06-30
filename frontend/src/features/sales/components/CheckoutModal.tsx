@@ -30,6 +30,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
   const [isInitiatingPush, setIsInitiatingPush] = useState(false);
 
+  useEffect(() => {
+    if (!navigator.onLine && isStkPush) {
+      setIsStkPush(false);
+    }
+  }, [isStkPush]);
+
   const { data: customersData } = useCustomers({ limit: 1000 });
   const customers = customersData?.data || [];
   const queryClient = useQueryClient();
@@ -637,6 +643,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
             {/* M-Pesa Settings View */}
             {(paymentMethod === 'MPESA' || (paymentMethod === 'SPLIT' && Number(mpesaAmount) > 0)) && (
               <div className="p-5 bg-green-50/40 rounded-2xl border border-green-200/50 space-y-4 shadow-inner">
+                {!navigator.onLine && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium">
+                    ⚠️ Offline Mode: Automated STK Push is unavailable. Please ask the customer to pay directly via USSD/Paybill and manually enter their transaction reference below.
+                  </div>
+                )}
                 <div className="flex gap-5 mb-2 border-b border-green-200 pb-3">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input 
@@ -648,12 +659,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
                     />
                     <span className="text-sm font-semibold text-green-800">Manual Reference Entry</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
+                  <label className={`flex items-center gap-2 ${!navigator.onLine ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                     <input 
                       type="radio" 
                       name="mpesaType" 
                       checked={isStkPush} 
-                      onChange={() => setIsStkPush(true)} 
+                      onChange={() => {
+                        if (navigator.onLine) {
+                          setIsStkPush(true);
+                        }
+                      }} 
+                      disabled={!navigator.onLine}
                       className="text-green-600 focus:ring-green-500 h-4 w-4" 
                     />
                     <span className="text-sm font-semibold text-green-800">Send STK Push Request</span>
