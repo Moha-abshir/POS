@@ -37,7 +37,7 @@ export class PurchasingService {
         throw new AppError('One or more units not found or unauthorized', 404);
       }
 
-      const unitMap = new Map(foundUnits.map(u => [u.id, Number(u.conversionFactor)]));
+      const unitMap = new Map<string, number>(foundUnits.map((u: any) => [u.id as string, Number(u.conversionFactor)]));
 
       // 1. Calculate totals
       let totalAmount = 0;

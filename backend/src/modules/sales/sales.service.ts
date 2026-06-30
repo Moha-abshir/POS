@@ -253,11 +253,11 @@ export class SalesService {
 
       // 2. Create Sale Items & Deduct Inventory
       for (const item of sortedItems) {
-        const variant = variantsList.find(v => v.id === item.variantId);
+        const variant = variantsList.find((v: any) => v.id === item.variantId);
         if (!variant) throw new Error(`Variant not found for id ${item.variantId}`);
         if (!variant.isActive) throw new Error(`Variant ${variant.name} is deactivated and cannot be sold.`);
 
-        const unit = unitsList.find(u => u.id === item.unitId);
+        const unit = unitsList.find((u: any) => u.id === item.unitId);
           
         if (!unit) {
           throw new Error(`Unit not found for id ${item.unitId}`);
