@@ -77,12 +77,7 @@ export const PosPage = () => {
   const cartSubtotal = cart.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
   const cartTotal = Math.max(0, cartSubtotal - discount);
 
-  const hasStockError = cart.some(item => {
-    const product = products.find((p: any) => p.id === item.productId);
-    const variant = product?.variants?.find((v: any) => v.id === item.variantId);
-    const maxStock = variant ? (Number(variant.baseStockQuantity) || 0) : (item.maxStock ?? Infinity);
-    return item.quantity > maxStock;
-  });
+  const hasStockError = false;
 
   const handleApplyDiscount = () => {
     const val = Number(discountInput);
@@ -269,12 +264,12 @@ export const PosPage = () => {
                   const product = products.find((p: any) => p.id === item.productId);
                   const variant = product?.variants?.find((v: any) => v.id === item.variantId);
                   const maxStock = variant ? (Number(variant.baseStockQuantity) || 0) : (item.maxStock ?? Infinity);
-                  const isOverStock = item.quantity > maxStock;
+                  const isOverStock = false;
 
                   return (
                   <div 
                     key={item.unitId} 
-                    className={`flex flex-col p-4 border rounded-2xl transition-all group ${isOverStock ? 'bg-red-500/10 border-red-500/50 hover:bg-red-500/20' : 'bg-white/5 border-white/5 hover:bg-white/8'}`}
+                    className="flex flex-col p-4 border rounded-2xl transition-all group bg-white/5 border-white/5 hover:bg-white/8"
                   >
                     <div className="flex justify-between items-start">
                       <div className="pr-3 flex-1 min-w-0">
@@ -284,11 +279,6 @@ export const PosPage = () => {
                         <div className="text-xs text-zinc-400 mt-1 font-medium">
                           {variantNameText(item)}
                         </div>
-                        {isOverStock && (
-                          <div className="text-red-400 text-xs mt-1.5 font-semibold">
-                            Exceeds stock limit ({maxStock} available)
-                          </div>
-                        )}
                       </div>
                       <div className="font-bold text-[#D97706] text-sm shrink-0">
                         KSh {(item.quantity * item.sellingPrice).toLocaleString()}
