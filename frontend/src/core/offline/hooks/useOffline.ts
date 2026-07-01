@@ -109,4 +109,3 @@ export function useSync() {
     clearLogs
   };
 }
-export default useOffline;
