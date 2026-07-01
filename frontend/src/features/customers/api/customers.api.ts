@@ -1,5 +1,6 @@
 import { api } from '../../../lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { db } from '../../../core/offline/offlineDatabase';
 
 export interface Customer {
   id: string;
@@ -15,6 +16,7 @@ export interface Customer {
   type?: 'INDIVIDUAL' | 'BUSINESS';
   hasActiveCredit?: boolean;
   purchaseCount?: number;
+  email?: string;
 }
 
 export interface CustomerPayment {
@@ -28,8 +30,44 @@ export interface CustomerPayment {
 
 export const customersApi = {
   getCustomers: async (filters?: { page?: number; limit?: number; search?: string }) => {
-    const { data } = await api.get('/customers', { params: filters });
-    return data;
+    try {
+      if (!navigator.onLine) {
+        throw new Error('Offline');
+      }
+      const { data } = await api.get('/customers', { params: filters });
+      
+      if (data && Array.isArray(data.data)) {
+        await db.customers.clear();
+        for (const c of data.data) {
+          await db.customers.put({
+            id: c.id,
+            name: c.name,
+            phoneNumber: c.phone || '',
+            email: c.email || '',
+            address: c.address || '',
+            balance: (c.balance || 0).toString()
+          });
+        }
+      }
+      return data;
+    } catch (error) {
+      const localCustomers = await db.customers.toArray();
+      if (localCustomers.length > 0) {
+        return {
+          data: localCustomers.map(c => ({
+            id: c.id,
+            name: c.name,
+            phone: c.phoneNumber,
+            address: c.address,
+            balance: Number(c.balance) || 0,
+            isActive: true,
+            createdAt: new Date().toISOString()
+          })),
+          meta: { total: localCustomers.length, limit: filters?.limit || 50, offset: 0 }
+        };
+      }
+      throw error;
+    }
   },
   
   createCustomer: async (customerData: { name: string; phone?: string; nationalId?: string; address?: string; notes?: string; type?: 'INDIVIDUAL' | 'BUSINESS' }) => {

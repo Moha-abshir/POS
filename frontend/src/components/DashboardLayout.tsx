@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '../features/auth/stores/auth.store';
 import { OnboardingModal } from '../features/auth/components/OnboardingModal';
+import SyncIndicator from './SyncIndicator';
 import { 
   Package, 
   LayoutDashboard, 
@@ -248,6 +249,8 @@ export const DashboardLayout: React.FC = () => {
             <span className="text-sm font-medium text-[var(--color-text-muted)] tracking-wide uppercase">
               {today}
             </span>
+
+            <SyncIndicator />
 
             {/* Cash Drawer Shift Widget */}
             <button 

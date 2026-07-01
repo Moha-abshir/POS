@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
 import { IndexedDBCache } from '../utils/indexedDb';
+import { db } from '../../../core/offline/offlineDatabase';
 
 export interface Category {
   id: string;
@@ -60,11 +61,26 @@ export const useCategories = () => {
     queryKey: ['categories'],
     queryFn: async () => {
       try {
+        if (!navigator.onLine) {
+          throw new Error('Offline');
+        }
         const response = await api.get<{ data: Category[] }>('/catalog/categories');
         const data = response.data.data;
         await IndexedDBCache.set('catalog_categories', { categories: data, timestamp: Date.now() });
+
+        // Save to Dexie
+        await db.categories.clear();
+        await db.categories.bulkAdd(data.map(c => ({
+          id: c.id,
+          name: c.name
+        })));
+
         return data;
       } catch (error) {
+        const localCategories = await db.categories.toArray();
+        if (localCategories.length > 0) {
+          return localCategories;
+        }
         const cached = await IndexedDBCache.get('catalog_categories');
         if (cached && cached.categories) {
           return cached.categories;
@@ -96,11 +112,77 @@ export const useProducts = () => {
     queryKey: ['products'],
     queryFn: async () => {
       try {
+        if (!navigator.onLine) {
+          throw new Error('Offline');
+        }
         const response = await api.get<{ data: Product[] }>('/catalog/products');
         const data = response.data.data;
         await IndexedDBCache.set('catalog_products', { products: data, timestamp: Date.now() });
+
+        // Save to Dexie
+        await db.products.clear();
+        await db.variants.clear();
+        await db.variantUnits.clear();
+
+        for (const p of data) {
+          await db.products.put({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            categoryId: p.categoryId,
+            categoryName: p.categoryName,
+            imageUrl: p.imageUrl,
+            isActive: p.isActive
+          });
+
+          if (p.variants) {
+            for (const v of p.variants) {
+              await db.variants.put({
+                id: v.id,
+                productId: p.id,
+                name: v.name,
+                sku: v.sku,
+                imageUrl: v.imageUrl,
+                costPrice: v.costPrice,
+                baseUnitName: v.baseUnitName,
+                baseStockQuantity: v.baseStockQuantity,
+                lowStockThreshold: v.lowStockThreshold,
+                isActive: v.isActive ?? true
+              });
+
+              if (v.units) {
+                for (const u of v.units) {
+                  await db.variantUnits.put({
+                    id: u.id,
+                    variantId: v.id,
+                    name: u.name,
+                    sellingPrice: u.sellingPrice,
+                    conversionFactor: u.conversionFactor,
+                    isDefault: u.isDefault
+                  });
+                }
+              }
+            }
+          }
+        }
+
         return data;
       } catch (error) {
+        const localProducts = await db.products.toArray();
+        if (localProducts.length > 0) {
+          const formatted = [];
+          for (const p of localProducts) {
+            const variants = await db.variants.where('productId').equals(p.id).toArray();
+            const formattedVariants = [];
+            for (const v of variants) {
+              const units = await db.variantUnits.where('variantId').equals(v.id).toArray();
+              formattedVariants.push({ ...v, units });
+            }
+            formatted.push({ ...p, variants: formattedVariants });
+          }
+          return formatted;
+        }
+
         const cached = await IndexedDBCache.get('catalog_products');
         if (cached && cached.products) {
           return cached.products;

@@ -1,6 +1,9 @@
 import { api } from '../../../lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { db } from '../../../core/offline/offlineDatabase';
+import { queueManager } from '../../../core/offline/queueManager';
 import { IndexedDBCache } from '../../catalog/utils/indexedDb';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface Sale {
   id: string;
@@ -69,15 +72,30 @@ export const salesApi = {
         error.message === 'Network Error';
 
       if (isNetworkError) {
-        console.warn('Network/offline state detected. Queueing transaction in IndexedDB...', error);
+        console.warn('Network/offline state detected. Queueing transaction in Dexie...', error);
 
-        // 1. Queue the transaction in IndexedDB
-        await IndexedDBCache.pushToQueue({
+        const localId = uuidv4();
+
+        // 1. Queue the transaction in Dexie syncQueue
+        await queueManager.addToQueue('SALE', {
           ...saleData,
+          localId,
           soldAt: new Date().toISOString()
-        });
+        }, localId);
 
-        // 2. Perform client-side stock deduction in the cached catalog products
+        // 2. Perform client-side stock deduction in Dexie variants table
+        for (const item of saleData.items) {
+          const variant = await db.variants.get(item.variantId);
+          if (variant) {
+            const currentStock = Number(variant.baseStockQuantity) || 0;
+            const newStock = Math.max(0, currentStock - item.quantity);
+            await db.variants.update(item.variantId, {
+              baseStockQuantity: newStock.toString()
+            });
+          }
+        }
+
+        // Also update legacy catalog_products for compatibility
         const cached = await IndexedDBCache.get('catalog_products');
         if (cached && cached.products) {
           saleData.items.forEach(soldItem => {
@@ -85,7 +103,7 @@ export const salesApi = {
               const variant = product.variants?.find((v: any) => v.id === soldItem.variantId);
               if (variant) {
                 const currentStock = Number(variant.baseStockQuantity) || 0;
-                variant.baseStockQuantity = (currentStock - soldItem.quantity).toString();
+                variant.baseStockQuantity = Math.max(0, currentStock - soldItem.quantity).toString();
                 break;
               }
             }
@@ -102,14 +120,15 @@ export const salesApi = {
         const totalAmount = Math.max(0, subtotal - discount);
 
         return {
-          id: `offline-${Date.now()}`,
+          id: localId,
           totalAmount,
           amountPaid: saleData.amountPaid,
           paymentStatus: saleData.amountPaid >= totalAmount ? 'PAID' : (saleData.amountPaid > 0 ? 'PARTIAL' : 'UNPAID'),
           paymentMethod: saleData.paymentMethod,
           mpesaRef: saleData.mpesaRef,
           soldAt: new Date().toISOString(),
-          isOffline: true
+          isOffline: true,
+          localId
         };
       }
 

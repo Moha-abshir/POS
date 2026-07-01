@@ -27,6 +27,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { IndexedDBCache } from './features/catalog/utils/indexedDb';
 import { salesApi } from './features/sales/api/sales.api';
+import OfflineBanner from './components/OfflineBanner';
+import { syncService } from './core/offline/syncService';
 
 const NotFound = () => (
   <div className="flex flex-col items-center justify-center h-full p-6 text-center">
@@ -45,37 +47,8 @@ function App() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const handleOnline = async () => {
-      const queue = await IndexedDBCache.getQueue();
-      if (queue.length === 0) return;
-
-      toast.loading(`Syncing ${queue.length} offline sale(s)...`, { id: 'offline-sync' });
-
-      let successCount = 0;
-      let failCount = 0;
-
-      for (const item of queue) {
-        try {
-          const { id, isOffline, ...cleanData } = item;
-          await salesApi.createSale(cleanData);
-          await IndexedDBCache.removeFromQueue(id);
-          successCount++;
-        } catch (err) {
-          console.error('Failed to sync offline sale:', err);
-          failCount++;
-        }
-      }
-
-      toast.dismiss('offline-sync');
-      if (successCount > 0) {
-        toast.success(`Successfully synced ${successCount} offline sale(s)!`);
-        queryClient.invalidateQueries({ queryKey: ['products'] });
-        queryClient.invalidateQueries({ queryKey: ['inventory'] });
-        queryClient.invalidateQueries({ queryKey: ['sales'] });
-      }
-      if (failCount > 0) {
-        toast.error(`Failed to sync ${failCount} offline sale(s). Will retry next time.`);
-      }
+    const handleOnline = () => {
+      syncService.startSync(queryClient);
     };
 
     if (navigator.onLine) {
@@ -98,9 +71,11 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
-        <Toaster position="top-right" />
-        <Routes>
+      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+        <OfflineBanner />
+        <div className="flex-1 min-h-0 flex flex-col">
+          <Toaster position="top-right" />
+          <Routes>
           {/* Public Routes */}
           <Route 
             path="/login" 
@@ -190,6 +165,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
+        </div>
       </div>
     </BrowserRouter>
   );
