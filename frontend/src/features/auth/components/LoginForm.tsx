@@ -21,7 +21,13 @@ export const LoginForm: React.FC = () => {
       await requestOtpMutation.mutateAsync(email);
       setStep('verify');
     } catch (err) {
-      setErrorMsg((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to send OTP');
+      const axiosErr = err as AxiosError<any>;
+      const message = 
+        axiosErr.response?.data?.error?.message || 
+        axiosErr.response?.data?.message || 
+        axiosErr.message || 
+        'Failed to send OTP';
+      setErrorMsg(message);
     }
   };
 
@@ -32,7 +38,13 @@ export const LoginForm: React.FC = () => {
       const res = await verifyOtpMutation.mutateAsync({ email, otp });
       setAuth(res.data.user, res.data.accessToken);
     } catch (err) {
-      setErrorMsg((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Invalid OTP');
+      const axiosErr = err as AxiosError<any>;
+      const message = 
+        axiosErr.response?.data?.error?.message || 
+        axiosErr.response?.data?.message || 
+        axiosErr.message || 
+        'Invalid OTP';
+      setErrorMsg(message);
     }
   };
 
