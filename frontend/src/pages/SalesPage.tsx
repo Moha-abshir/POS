@@ -122,60 +122,7 @@ export function SalesPage() {
         </button>
       </div>
 
-      {/* Metrics Cards (Glassmorphism & Gradients) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
-        <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-             <TrendingUp size={80} />
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mb-4 shadow-inner">
-            <CreditCard size={24} />
-          </div>
-          <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Total Sales (Period)</p>
-          <h3 className="text-3xl font-extrabold text-gray-900 mt-1 tracking-tight">
-            KSh {totalRevenue.toLocaleString()}
-          </h3>
-        </div>
 
-        <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-             <Receipt size={80} />
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4 shadow-inner">
-            <Receipt size={24} />
-          </div>
-          <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Transactions</p>
-          <h3 className="text-3xl font-extrabold text-gray-900 mt-1 tracking-tight">
-            {sales.length}
-          </h3>
-        </div>
-
-        <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-             <Smartphone size={80} />
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center mb-4 shadow-inner">
-            <Smartphone size={24} />
-          </div>
-          <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">M-Pesa Revenue</p>
-          <h3 className="text-3xl font-extrabold text-gray-900 mt-1 tracking-tight">
-            KSh {mpesaRevenue.toLocaleString()}
-          </h3>
-        </div>
-
-        <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-             <Banknote size={80} />
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center mb-4 shadow-inner">
-            <Banknote size={24} />
-          </div>
-          <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Avg Order Value</p>
-          <h3 className="text-3xl font-extrabold text-gray-900 mt-1 tracking-tight">
-            KSh {avgOrderValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-          </h3>
-        </div>
-      </div>
 
       {/* Main Content Area */}
       <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/40 border border-gray-100 flex flex-col flex-1 overflow-hidden relative">
@@ -401,7 +348,7 @@ export function SalesPage() {
                     <td className="px-6 py-4 text-right">
                       <button 
                         onClick={() => setSelectedSaleId(sale.id)}
-                        className="inline-flex items-center justify-center w-10 h-10 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100 scale-95 hover:scale-100" 
+                        className="inline-flex items-center justify-center w-10 h-10 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all cursor-pointer opacity-100 focus:outline-none scale-95 hover:scale-100" 
                         title="View Receipt Details"
                       >
                         <ArrowUpRight size={20} strokeWidth={2.5} />
