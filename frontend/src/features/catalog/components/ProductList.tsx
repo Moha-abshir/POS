@@ -56,7 +56,7 @@ export const ProductList: React.FC<ProductListProps> = ({
   });
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-[var(--color-border)] overflow-hidden flex flex-col h-full flex-1">
+    <div className="bg-white rounded-xl shadow-sm border border-[var(--color-border)] overflow-visible md:overflow-hidden flex flex-col h-auto md:h-full flex-1">
       
       {/* Toolbar Row */}
       <div className="p-4 border-b border-[var(--color-border)] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
@@ -141,11 +141,11 @@ export const ProductList: React.FC<ProductListProps> = ({
       </div>
 
       {/* Data Table */}
-      <div className="overflow-y-auto flex-1 p-4 md:p-6">
+      <div className="overflow-visible md:overflow-y-auto flex-1 p-4 md:p-6">
         {isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="animate-pulse bg-white border border-[var(--color-border)] rounded-2xl overflow-hidden h-[380px] flex flex-col">
+              <div key={i} className="animate-pulse bg-white border border-[var(--color-border)] rounded-2xl overflow-hidden h-[260px] md:h-[380px] flex flex-col">
                 <div className="bg-gray-100 h-1/2 w-full animate-pulse"></div>
                 <div className="p-5 flex-1 flex flex-col justify-between">
                   <div className="space-y-3">
@@ -193,7 +193,7 @@ export const ProductList: React.FC<ProductListProps> = ({
         )}
 
         {!isLoading && !isError && filteredProducts && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
             {filteredProducts.map((product) => {
               const primaryVariant = product.variants?.[0];
               const totalStock = product.variants?.reduce((sum, v) => sum + parseFloat(v.baseStockQuantity as string), 0) || 0;
@@ -226,7 +226,7 @@ export const ProductList: React.FC<ProductListProps> = ({
                 <div 
                   key={product.id}
                   onClick={() => setRestockProduct(product)}
-                  className="group bg-white rounded-2xl border border-[var(--color-border)] shadow-sm hover:shadow-md hover:border-amber-500/50 transition-all duration-200 flex flex-col overflow-hidden h-[380px] relative cursor-pointer"
+                  className="group bg-white rounded-2xl border border-[var(--color-border)] shadow-sm hover:shadow-md hover:border-amber-500/50 transition-all duration-200 flex flex-col overflow-hidden h-[280px] md:h-[380px] relative cursor-pointer"
                 >
                   {/* Image: exactly 50% height */}
                   <div className="w-full h-1/2 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 relative shrink-0">
@@ -254,26 +254,26 @@ export const ProductList: React.FC<ProductListProps> = ({
                   </div>
 
                   {/* Details: 50% height */}
-                  <div className="p-5 flex-1 flex flex-col justify-between">
+                  <div className="p-3 md:p-5 flex-1 flex flex-col justify-between">
                     <div>
                       <div className="flex items-start justify-between gap-2">
-                        <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        <span className="text-[9px] md:text-[11px] font-bold text-amber-600 bg-amber-50 px-1.5 md:px-2 py-0.5 rounded-full uppercase tracking-wider line-clamp-1">
                           {product.categoryName || 'Unclassified'}
                         </span>
                       </div>
-                      <h4 className="text-sm font-bold text-[var(--color-text-primary)] mt-2 group-hover:text-amber-600 transition-colors line-clamp-2" title={product.name}>
+                      <h4 className="text-xs md:text-sm font-bold text-[var(--color-text-primary)] mt-1.5 md:mt-2 group-hover:text-amber-600 transition-colors line-clamp-2" title={product.name}>
                         {product.name}
                       </h4>
-                      <p className="text-xs text-gray-400 mt-1 font-semibold">
+                      <p className="text-[10px] md:text-xs text-gray-400 mt-1 font-semibold">
                         {priceLabel}
                       </p>
                     </div>
 
                     {/* Action buttons at the bottom of the card */}
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-auto gap-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-between pt-2.5 md:pt-3 border-t border-gray-100 mt-auto gap-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => onEditProduct(product)}
-                        className="w-full h-9 flex items-center justify-center text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors border border-amber-200/50 cursor-pointer"
+                        className="w-full h-8 md:h-9 flex items-center justify-center text-[10px] md:text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors border border-amber-200/50 cursor-pointer"
                       >
                         Edit Details
                       </button>
