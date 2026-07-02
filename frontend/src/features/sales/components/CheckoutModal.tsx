@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useCustomers } from '../../customers/api/customers.api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { salesApi } from '../api/sales.api';
+import { db } from '../../../core/offline/offlineDatabase';
 import { api } from '../../../lib/api';
 import { X, CreditCard, User, AlertCircle, Building2, Smartphone, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -260,8 +261,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
     isBusinessSale ? c.type === 'BUSINESS' : (c.type === 'INDIVIDUAL' || !c.type)
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!navigator.onLine) {
+      const cachedSession = await db.settings.get('active_session');
+      if (!cachedSession || !cachedSession.value) {
+        toast.error('Checkout is blocked. Please open the cash register session (input an opening float) before processing sales.');
+        return;
+      }
+    }
 
     if (isCustomerRequired && !customerId) {
       toast.error('Customer/Business must be selected for this type of sale');

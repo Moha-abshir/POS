@@ -23,6 +23,7 @@ import {
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { api } from '../lib/api';
 import { toast } from 'react-hot-toast';
+import { db } from '../core/offline/offlineDatabase';
 
 export const DashboardLayout: React.FC = () => {
   const { user, logout } = useAuthStore();
@@ -87,18 +88,38 @@ export const DashboardLayout: React.FC = () => {
 
   // Fetch alerts and register session
   const fetchData = useCallback(async () => {
+    // 1. Fetch notifications
     try {
-      // Fetch notifications
       const notifRes = await api.get('/notifications');
       setNotificationsList(notifRes.data.data);
       const unreadRes = await api.get('/notifications/unread-count');
       setUnreadCount(unreadRes.data.count);
-
-      // Fetch active cash register session
-      const sessionRes = await api.get('/cash-sessions/active');
-      setActiveSession(sessionRes.data.data);
     } catch (err) {
-      console.error('Error fetching header widgets data:', err);
+      console.warn('Error fetching notifications (possibly offline):', err);
+    }
+
+    // 2. Fetch active cash register session
+    try {
+      if (navigator.onLine) {
+        const sessionRes = await api.get('/cash-sessions/active');
+        const active = sessionRes.data.data;
+        setActiveSession(active);
+        await db.settings.put({ key: 'active_session', value: active });
+      } else {
+        throw new Error('Offline');
+      }
+    } catch (err) {
+      console.warn('Error fetching active register session (using local offline cache):', err);
+      try {
+        const cachedSession = await db.settings.get('active_session');
+        if (cachedSession) {
+          setActiveSession(cachedSession.value);
+        } else {
+          setActiveSession(null);
+        }
+      } catch (dbErr) {
+        console.error('Error reading cached session:', dbErr);
+      }
     }
   }, []);
 
@@ -115,7 +136,9 @@ export const DashboardLayout: React.FC = () => {
       return;
     }
     try {
-      await api.post('/cash-sessions/open', { openingFloat: Number(openingFloat) });
+      const res = await api.post('/cash-sessions/open', { openingFloat: Number(openingFloat) });
+      const newSession = res.data.data;
+      await db.settings.put({ key: 'active_session', value: newSession });
       toast.success('Cash register opened successfully');
       setOpeningFloat('');
       setIsRegisterModalOpen(false);
@@ -126,7 +149,7 @@ export const DashboardLayout: React.FC = () => {
   };
 
   const handleCloseRegister = async () => {
-    const expected = Number(activeSession.expectedCash);
+    const expected = Number(activeSession?.expectedCash || 0);
     const targetCash = Math.abs(expected);
     const variance = totalCounted - targetCash;
     if (Math.abs(variance) > 0.01 && !notes.trim()) {
@@ -140,6 +163,7 @@ export const DashboardLayout: React.FC = () => {
         actualCash: totalCounted,
         notes: notes.trim(),
       });
+      await db.settings.put({ key: 'active_session', value: null });
       toast.success('Cash register closed successfully');
       setNotes('');
       setCounts({ 1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0, 5: 0, 1: 0 });
