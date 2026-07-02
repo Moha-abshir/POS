@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { salesApi } from '../features/sales/api/sales.api';
 import { format } from 'date-fns';
-import { Search, Receipt, ArrowUpRight, Filter, Download, X } from 'lucide-react';
+import { Search, Receipt, ArrowUpRight, Filter, Download, X, TrendingUp, CreditCard, Banknote, Smartphone, CalendarDays } from 'lucide-react';
 import { ReceiptModal } from '../features/sales/components/ReceiptModal';
 import { TableSkeleton } from '../components/ui/Loading';
 
@@ -98,107 +98,174 @@ export function SalesPage() {
     }
   };
 
+  // Derive some top-level metrics from the currently fetched page (or mock them for the dashboard feel)
+  const totalRevenue = sales.reduce((acc: number, sale: any) => acc + Number(sale.totalAmount), 0);
+  const mpesaRevenue = sales.filter((s: any) => s.paymentMethod === 'MPESA').reduce((acc: number, sale: any) => acc + Number(sale.totalAmount), 0);
+  const cashRevenue = sales.filter((s: any) => s.paymentMethod === 'CASH').reduce((acc: number, sale: any) => acc + Number(sale.totalAmount), 0);
+  const avgOrderValue = sales.length > 0 ? totalRevenue / sales.length : 0;
+
   return (
-    <div className="p-6 max-w-[1400px] mx-auto h-full flex flex-col space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto min-h-[calc(100vh-64px)] flex flex-col space-y-8 pb-32 md:pb-8">
+      
+      {/* Header Area */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Sales History</h1>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-1">Audit and review all past transactions</p>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Sales Overview</h1>
+          <p className="text-sm text-gray-500 mt-1 font-medium">Monitor your financial performance and transaction history</p>
         </div>
         <button
           onClick={handleExportCSV}
-          className="flex items-center gap-2 px-5 py-2.5 h-10 bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm font-semibold cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1 select-none"
+          className="flex items-center justify-center gap-2 px-6 py-3 bg-[#1C1F24] text-white rounded-2xl hover:bg-black transition-all shadow-xl shadow-black/10 font-bold text-sm cursor-pointer active:scale-95"
         >
-          <Download size={18} />
-          <span>Export All</span>
+          <Download size={18} className="text-amber-500" />
+          <span>Export CSV</span>
         </button>
       </div>
 
+      {/* Metrics Cards (Glassmorphism & Gradients) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
+        <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+             <TrendingUp size={80} />
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mb-4 shadow-inner">
+            <CreditCard size={24} />
+          </div>
+          <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Total Sales (Period)</p>
+          <h3 className="text-3xl font-extrabold text-gray-900 mt-1 tracking-tight">
+            KSh {totalRevenue.toLocaleString()}
+          </h3>
+        </div>
+
+        <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+             <Receipt size={80} />
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4 shadow-inner">
+            <Receipt size={24} />
+          </div>
+          <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Transactions</p>
+          <h3 className="text-3xl font-extrabold text-gray-900 mt-1 tracking-tight">
+            {sales.length}
+          </h3>
+        </div>
+
+        <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+             <Smartphone size={80} />
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center mb-4 shadow-inner">
+            <Smartphone size={24} />
+          </div>
+          <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">M-Pesa Revenue</p>
+          <h3 className="text-3xl font-extrabold text-gray-900 mt-1 tracking-tight">
+            KSh {mpesaRevenue.toLocaleString()}
+          </h3>
+        </div>
+
+        <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+             <Banknote size={80} />
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center mb-4 shadow-inner">
+            <Banknote size={24} />
+          </div>
+          <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Avg Order Value</p>
+          <h3 className="text-3xl font-extrabold text-gray-900 mt-1 tracking-tight">
+            KSh {avgOrderValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </h3>
+        </div>
+      </div>
+
       {/* Main Content Area */}
-      <div className="bg-white rounded-xl shadow-[var(--shadow-sm)] border border-[var(--color-border)] overflow-hidden flex flex-col flex-1">
-        {/* Toolbar */}
-        <div className="p-4 border-b border-[var(--color-border)] flex flex-wrap gap-4 items-center justify-between bg-white/50">
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={18} />
+      <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/40 border border-gray-100 flex flex-col flex-1 overflow-hidden relative">
+        
+        {/* Floating Toolbar (Glass Pill) */}
+        <div className="p-4 sm:p-6 border-b border-gray-50 flex flex-wrap gap-4 items-center justify-between bg-white z-20">
+          <div className="relative w-full sm:w-96 group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-amber-500 transition-colors" size={20} />
             <input
               type="text"
-              placeholder="Search receipts or customers..."
+              placeholder="Search receipts, customers, or amounts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-10 pr-4 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm placeholder:text-[var(--color-text-muted)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
+              className="w-full h-12 pl-12 pr-4 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium placeholder:text-gray-400 text-gray-900 outline-none focus:bg-white focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition-all shadow-sm"
             />
           </div>
+          
           <div className="relative">
             <button 
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-[var(--radius-md)] transition-all cursor-pointer border ${
+              className={`flex items-center gap-2.5 px-6 py-3 text-sm font-bold rounded-2xl transition-all cursor-pointer border shadow-sm active:scale-95 ${
                 isFilterOpen || Object.values(filters).some(v => v !== '') 
-                  ? 'bg-[var(--color-accent-subtle)] border-[var(--color-accent)]/30 text-[var(--color-accent-hover)]' 
-                  : 'bg-white border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-base)]'
+                  ? 'bg-amber-50 border-amber-200 text-amber-700 shadow-amber-500/10' 
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
-              <Filter size={16} />
-              Filter
+              <Filter size={18} className={isFilterOpen || Object.values(filters).some(v => v !== '') ? 'text-amber-600' : 'text-gray-400'} />
+              Filters
               {Object.values(filters).filter(v => v !== '').length > 0 && (
-                <span className="ml-1 flex items-center justify-center w-5 h-5 bg-[var(--color-accent)] text-white rounded-full text-[10px] font-bold">
+                <span className="ml-1 flex items-center justify-center w-5 h-5 bg-amber-500 text-white rounded-full text-[10px] font-extrabold shadow-sm">
                   {Object.values(filters).filter(v => v !== '').length}
                 </span>
               )}
             </button>
 
-            {/* Filter Dropdown */}
+            {/* Filter Dropdown (Glassmorphism Context Menu) */}
             {isFilterOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] border border-[var(--color-border)] z-50 p-5">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-sm text-[var(--color-text-primary)]">Filter Sales</h3>
-                  <button onClick={() => setIsFilterOpen(false)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] cursor-pointer">
+              <div className="absolute right-0 mt-3 w-[340px] bg-white/95 backdrop-blur-xl rounded-[24px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 z-50 p-6 animate-in slide-in-from-top-2 fade-in duration-200">
+                <div className="flex justify-between items-center mb-5">
+                  <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
+                    <Filter size={18} className="text-amber-500" />
+                    Filter Sales
+                  </h3>
+                  <button onClick={() => setIsFilterOpen(false)} className="text-gray-400 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-all cursor-pointer">
                     <X size={16} />
                   </button>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-5">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">Start Date</label>
+                      <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">Start Date</label>
                       <input 
                         type="date" 
                         value={tempFilters.startDate}
                         onChange={(e) => setTempFilters({...tempFilters, startDate: e.target.value})}
-                        className="w-full px-3 py-2 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
+                        className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">End Date</label>
+                      <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">End Date</label>
                       <input 
                         type="date" 
                         value={tempFilters.endDate}
                         onChange={(e) => setTempFilters({...tempFilters, endDate: e.target.value})}
-                        className="w-full px-3 py-2 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
+                        className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">Payment Status</label>
+                    <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">Payment Status</label>
                     <select 
                       value={tempFilters.paymentStatus}
                       onChange={(e) => setTempFilters({...tempFilters, paymentStatus: e.target.value as any})}
-                      className="w-full px-3 py-2 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
+                      className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
                     >
                       <option value="">All Statuses</option>
-                      <option value="PAID">Paid</option>
-                      <option value="PARTIAL">Partial</option>
-                      <option value="UNPAID">Unpaid</option>
+                      <option value="PAID">Paid in Full</option>
+                      <option value="PARTIAL">Partial Payment</option>
+                      <option value="UNPAID">Unpaid / Credit</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">Payment Method</label>
+                    <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">Payment Method</label>
                     <select 
                       value={tempFilters.paymentMethod}
                       onChange={(e) => setTempFilters({...tempFilters, paymentMethod: e.target.value as any})}
-                      className="w-full px-3 py-2 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
+                      className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
                     >
                       <option value="">All Methods</option>
                       <option value="CASH">Cash</option>
@@ -209,17 +276,17 @@ export function SalesPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">M-Pesa Reference</label>
+                    <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">M-Pesa Reference</label>
                     <input 
                       type="text" 
                       placeholder="e.g. SGT8WQ12A"
                       value={tempFilters.mpesaRef}
                       onChange={(e) => setTempFilters({...tempFilters, mpesaRef: e.target.value})}
-                      className="w-full px-3 py-2 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
+                      className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all uppercase"
                     />
                   </div>
 
-                  <div className="flex gap-2 pt-3 border-t border-[var(--color-border)]">
+                  <div className="flex gap-3 pt-2">
                     <button 
                       onClick={() => {
                         const empty = { startDate: '', endDate: '', paymentStatus: '' as any, paymentMethod: '' as any, mpesaRef: '' };
@@ -227,18 +294,18 @@ export function SalesPage() {
                         setFilters(empty);
                         setIsFilterOpen(false);
                       }}
-                      className="flex-1 px-4 py-2 text-sm font-semibold text-[var(--color-text-secondary)] bg-[var(--color-bg-sunken)] hover:bg-[var(--color-border)] rounded-[var(--radius-md)] transition-all cursor-pointer"
+                      className="flex-1 px-4 py-3 text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all cursor-pointer"
                     >
-                      Clear
+                      Clear All
                     </button>
                     <button 
                       onClick={() => {
                         setFilters(tempFilters);
                         setIsFilterOpen(false);
                       }}
-                      className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] rounded-[var(--radius-md)] transition-all cursor-pointer"
+                      className="flex-1 px-4 py-3 text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-500/20 rounded-xl transition-all cursor-pointer"
                     >
-                      Apply
+                      Apply Filters
                     </button>
                   </div>
                 </div>
@@ -247,79 +314,97 @@ export function SalesPage() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto flex-1">
+        {/* Edge-to-Edge Data Table */}
+        <div className="overflow-x-auto flex-1 relative bg-white">
           <table className="w-full text-left border-collapse min-w-[1000px]">
-            <thead>
-              <tr className="bg-white border-b border-[var(--color-border)]">
-                <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase">Date & Time</th>
-                <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase">Receipt No.</th>
-                <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase">Customer</th>
-                <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase text-right">Amount</th>
-                <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase text-center">Status</th>
-                <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase text-center">Payment Method</th>
-                <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase text-right">Actions</th>
+            <thead className="bg-gray-50/80 sticky top-0 z-10 backdrop-blur-md">
+              <tr>
+                <th scope="col" className="px-6 py-4 text-[10px] font-extrabold tracking-widest text-gray-400 uppercase">Transaction Info</th>
+                <th scope="col" className="px-6 py-4 text-[10px] font-extrabold tracking-widest text-gray-400 uppercase">Customer</th>
+                <th scope="col" className="px-6 py-4 text-[10px] font-extrabold tracking-widest text-gray-400 uppercase text-right">Amount</th>
+                <th scope="col" className="px-6 py-4 text-[10px] font-extrabold tracking-widest text-gray-400 uppercase text-center">Status</th>
+                <th scope="col" className="px-6 py-4 text-[10px] font-extrabold tracking-widest text-gray-400 uppercase text-center">Method</th>
+                <th scope="col" className="px-6 py-4 text-[10px] font-extrabold tracking-widest text-gray-400 uppercase text-right">Action</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="p-0">
-                    <TableSkeleton rows={5} cols={7} />
+                  <td colSpan={6} className="p-0">
+                    <TableSkeleton rows={5} cols={6} />
                   </td>
                 </tr>
               ) : sales.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-16 text-center">
+                  <td colSpan={6} className="p-20 text-center">
                     <div className="flex flex-col items-center justify-center max-w-sm mx-auto text-center">
-                      <Receipt className="h-12 w-12 text-[var(--color-text-muted)] mb-4" />
-                      <p className="text-lg font-semibold text-[var(--color-text-secondary)] mb-1">No sales found</p>
-                      <p className="text-sm text-[var(--color-text-muted)]">There are no sales records matching your criteria.</p>
+                      <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-5 border border-gray-100">
+                        <Receipt className="h-10 w-10 text-gray-300" />
+                      </div>
+                      <p className="text-xl font-bold text-gray-900 mb-2 tracking-tight">No sales records found</p>
+                      <p className="text-sm text-gray-500 leading-relaxed">Adjust your filters or date range to see past transactions.</p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                sales.map((sale: any, index: number) => (
-                  <tr key={sale.id} className={`border-b border-[var(--color-border)] h-14 transition-colors hover:bg-[var(--color-bg-base)] ${index % 2 === 0 ? 'bg-white' : 'bg-[var(--color-bg-base)]/20'}`}>
-                    <td className="px-6 py-2 text-sm text-[var(--color-text-primary)] font-medium">
-                      {format(new Date(sale.soldAt), 'MMM d, yyyy h:mm a')}
-                    </td>
-                    <td className="px-6 py-2 text-sm text-[var(--color-text-secondary)] font-mono">
-                      {sale.id.slice(0, 8).toUpperCase()}
-                    </td>
-                    <td className="px-6 py-2 text-sm text-[var(--color-text-primary)]">
-                      <div className="font-semibold">{sale.customerName || <span className="text-[var(--color-text-muted)] italic font-normal">Walk-in Customer</span>}</div>
-                      {sale.mpesaRef && (
-                        <span className="block text-[11px] text-[var(--color-text-muted)] font-medium font-mono mt-0.5">
-                          Ref: {sale.mpesaRef}
+                sales.map((sale: any) => (
+                  <tr key={sale.id} className="group hover:bg-amber-50/30 transition-colors duration-200">
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-sm text-gray-900 font-bold font-mono tracking-tight">
+                          #{sale.id.slice(0, 8).toUpperCase()}
                         </span>
-                      )}
+                        <span className="text-xs text-gray-500 font-medium mt-1 flex items-center gap-1.5">
+                          <CalendarDays size={12} className="text-gray-400" />
+                          {format(new Date(sale.soldAt), 'MMM d, yyyy · h:mm a')}
+                        </span>
+                      </div>
                     </td>
-                    <td className="px-6 py-2 text-sm text-right font-bold text-[var(--color-text-primary)]">
-                      KSH {Number(sale.totalAmount).toLocaleString()}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-xs border border-gray-200">
+                          {sale.customerName ? sale.customerName.charAt(0).toUpperCase() : 'W'}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-gray-900">
+                            {sale.customerName || <span className="text-gray-400 font-medium">Walk-in</span>}
+                          </span>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-6 py-2 text-center">
-                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                        sale.paymentStatus === 'PAID' ? 'bg-green-50 text-green-800 border border-green-200' :
-                        sale.paymentStatus === 'PARTIAL' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
-                        'bg-red-50 text-red-800 border border-red-200'
+                    <td className="px-6 py-4 text-right">
+                      <span className="text-[15px] font-extrabold text-gray-900 tracking-tight block">
+                        KSh {Number(sale.totalAmount).toLocaleString()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest shadow-sm ${
+                        sale.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700 border border-green-200' :
+                        sale.paymentStatus === 'PARTIAL' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                        'bg-red-100 text-red-700 border border-red-200'
                       }`}>
                         {sale.paymentStatus}
                       </span>
                     </td>
-                    <td className="px-6 py-2 text-center">
-                      <span className="text-xs font-semibold text-[var(--color-text-secondary)]">
-                        {sale.paymentMethod === 'SPLIT' ? 'CASH & MPESA' : sale.paymentMethod}
-                        {sale.mpesaRef && <span className="block text-[10px] text-[var(--color-text-muted)] font-mono mt-0.5">{sale.mpesaRef}</span>}
-                      </span>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex flex-col items-center">
+                        <span className="text-[11px] font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
+                          {sale.paymentMethod === 'SPLIT' ? 'CASH & MPESA' : sale.paymentMethod}
+                        </span>
+                        {sale.mpesaRef && (
+                          <span className="text-[10px] text-gray-400 font-mono mt-1 font-semibold tracking-wider">
+                            {sale.mpesaRef}
+                          </span>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-6 py-2 text-right">
+                    <td className="px-6 py-4 text-right">
                       <button 
                         onClick={() => setSelectedSaleId(sale.id)}
-                        className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] rounded-md transition-all cursor-pointer" 
+                        className="inline-flex items-center justify-center w-10 h-10 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100 scale-95 hover:scale-100" 
                         title="View Receipt Details"
                       >
-                        <ArrowUpRight size={18} />
+                        <ArrowUpRight size={20} strokeWidth={2.5} />
                       </button>
                     </td>
                   </tr>
@@ -329,24 +414,24 @@ export function SalesPage() {
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* Pagination (Glass Footer) */}
         {!isLoading && totalPages > 1 && (
-          <div className="p-4 border-t border-[var(--color-border)] flex items-center justify-between bg-[var(--color-bg-base)]/50">
-            <span className="text-sm text-[var(--color-text-secondary)]">
-              Showing {(page - 1) * limit + 1} to {Math.min(page * limit, meta.total)} of {meta.total} records
+          <div className="p-4 sm:p-5 border-t border-gray-100 flex items-center justify-between bg-white z-20">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              Showing {(page - 1) * limit + 1} to {Math.min(page * limit, meta.total)} of {meta.total}
             </span>
             <div className="flex space-x-2">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm font-semibold text-[var(--color-text-secondary)] bg-white hover:bg-[var(--color-bg-base)] disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer select-none"
+                className="px-5 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-600 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer active:scale-95"
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-4 py-2 border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm font-semibold text-[var(--color-text-secondary)] bg-white hover:bg-[var(--color-bg-base)] disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer select-none"
+                className="px-5 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-600 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer active:scale-95"
               >
                 Next
               </button>
