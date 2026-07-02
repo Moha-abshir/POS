@@ -275,6 +275,7 @@ export class SalesService {
           unitId: item.unitId,
           quantity: item.quantity.toString(),
           sellingPrice: item.sellingPrice.toString(),
+          costPrice: (Number(variant.costPrice || 0) * conversionFactor).toString(),
           subtotal: (item.quantity * item.sellingPrice).toString(),
         });
 
