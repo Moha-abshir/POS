@@ -685,9 +685,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
                   </label>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-4">
                   {!isStkPush && (
-                    <div className="col-span-1">
+                    <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">M-Pesa Ref (Optional)</label>
                       <input
                         type="text"
@@ -698,7 +698,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
                       />
                     </div>
                   )}
-                  <div className={isStkPush ? "col-span-2" : "col-span-1"}>
+                  <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">
                       Phone Number {isStkPush ? '*' : '(Optional)'}
                     </label>
