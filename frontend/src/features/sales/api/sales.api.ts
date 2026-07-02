@@ -76,42 +76,50 @@ export const salesApi = {
 
         const localId = uuidv4();
 
-        // 1. Queue the transaction in Dexie syncQueue
-        await queueManager.addToQueue('SALE', {
-          ...saleData,
-          localId,
-          soldAt: new Date().toISOString()
-        }, localId);
+        try {
+          // Remove undefined values to prevent DataCloneError in IndexedDB
+          const cleanSaleData = JSON.parse(JSON.stringify(saleData));
 
-        // 2. Perform client-side stock deduction in Dexie variants table
-        for (const item of saleData.items) {
-          const variant = await db.variants.get(item.variantId);
-          if (variant) {
-            const currentStock = Number(variant.baseStockQuantity) || 0;
-            const newStock = Math.max(0, currentStock - item.quantity);
-            await db.variants.update(item.variantId, {
-              baseStockQuantity: newStock.toString()
+          // 1. Queue the transaction in Dexie syncQueue
+          await queueManager.addToQueue('SALE', {
+            ...cleanSaleData,
+            localId,
+            soldAt: new Date().toISOString()
+          }, localId);
+
+          // 2. Perform client-side stock deduction in Dexie variants table
+          for (const item of saleData.items) {
+            const variant = await db.variants.get(item.variantId);
+            if (variant) {
+              const currentStock = Number(variant.baseStockQuantity) || 0;
+              const newStock = Math.max(0, currentStock - item.quantity);
+              await db.variants.update(item.variantId, {
+                baseStockQuantity: newStock.toString()
+              });
+            }
+          }
+
+          // Also update legacy catalog_products for compatibility
+          const cached = await IndexedDBCache.get('catalog_products');
+          if (cached && cached.products) {
+            saleData.items.forEach(soldItem => {
+              for (const product of cached.products) {
+                const variant = product.variants?.find((v: any) => v.id === soldItem.variantId);
+                if (variant) {
+                  const currentStock = Number(variant.baseStockQuantity) || 0;
+                  variant.baseStockQuantity = Math.max(0, currentStock - soldItem.quantity).toString();
+                  break;
+                }
+              }
+            });
+            await IndexedDBCache.set('catalog_products', {
+              products: cached.products,
+              timestamp: Date.now()
             });
           }
-        }
-
-        // Also update legacy catalog_products for compatibility
-        const cached = await IndexedDBCache.get('catalog_products');
-        if (cached && cached.products) {
-          saleData.items.forEach(soldItem => {
-            for (const product of cached.products) {
-              const variant = product.variants?.find((v: any) => v.id === soldItem.variantId);
-              if (variant) {
-                const currentStock = Number(variant.baseStockQuantity) || 0;
-                variant.baseStockQuantity = Math.max(0, currentStock - soldItem.quantity).toString();
-                break;
-              }
-            }
-          });
-          await IndexedDBCache.set('catalog_products', {
-            products: cached.products,
-            timestamp: Date.now()
-          });
+        } catch (writeError) {
+          console.error('Failed to write offline sale transaction to Dexie/IndexedDB:', writeError);
+          throw writeError;
         }
 
         // 3. Return mock success payload
