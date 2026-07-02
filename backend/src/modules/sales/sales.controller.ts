@@ -25,7 +25,7 @@ export class SalesController {
 
   static async createSale(req: Request, res: Response, next: NextFunction) {
     try {
-      const activeSession = await CashSessionsService.getActiveSession(req.user!.businessId);
+      const activeSession = await CashSessionsService.getActiveSession(req.user!.businessId, req.user!.id);
       if (!activeSession) {
         return res.status(400).json({ 
           status: 'error', 
@@ -57,7 +57,7 @@ export class SalesController {
 
   static async refundSale(req: Request, res: Response, next: NextFunction) {
     try {
-      const activeSession = await CashSessionsService.getActiveSession(req.user!.businessId);
+      const activeSession = await CashSessionsService.getActiveSession(req.user!.businessId, req.user!.id);
       if (!activeSession) {
         return res.status(400).json({ 
           status: 'error', 

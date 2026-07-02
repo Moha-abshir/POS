@@ -8,7 +8,7 @@ export class CashSessionsService {
   /**
    * Get active open session for a business
    */
-  static async getActiveSession(businessId: string) {
+  static async getActiveSession(businessId: string, userId: string) {
     const [session] = await db.select({
       id: cashDrawerSessions.id,
       businessId: cashDrawerSessions.businessId,
@@ -31,6 +31,7 @@ export class CashSessionsService {
     .where(
       and(
         eq(cashDrawerSessions.businessId, businessId),
+        eq(cashDrawerSessions.openedById, userId),
         eq(cashDrawerSessions.status, 'OPEN')
       )
     )
@@ -39,7 +40,7 @@ export class CashSessionsService {
     if (!session) return null;
 
     // Calculate current expected cash in real-time
-    const currentExpected = await this.calculateExpectedCash(businessId, session.openedAt, Number(session.openingFloat));
+    const currentExpected = await this.calculateExpectedCash(businessId, session.openedAt, Number(session.openingFloat), userId);
     return {
       ...session,
       expectedCash: currentExpected,
@@ -51,7 +52,7 @@ export class CashSessionsService {
    */
   static async openSession(businessId: string, userId: string, openingFloat: number) {
     // Check if there is already an open session
-    const active = await this.getActiveSession(businessId);
+    const active = await this.getActiveSession(businessId, userId);
     if (active) {
       throw new Error('A cash register session is already active');
     }
@@ -79,12 +80,12 @@ export class CashSessionsService {
     actualCash: number,
     notes?: string
   ) {
-    const active = await this.getActiveSession(businessId);
+    const active = await this.getActiveSession(businessId, userId);
     if (!active) {
       throw new Error('No active cash register session found');
     }
 
-    const expectedCash = await this.calculateExpectedCash(businessId, active.openedAt, Number(active.openingFloat));
+    const expectedCash = await this.calculateExpectedCash(businessId, active.openedAt, Number(active.openingFloat), userId);
     const difference = actualCash - Math.abs(expectedCash);
 
     const [closedSession] = await db.update(cashDrawerSessions)
@@ -171,7 +172,7 @@ export class CashSessionsService {
   /**
    * Calculate expected cash in drawer dynamically
    */
-  private static async calculateExpectedCash(businessId: string, openedAt: Date, openingFloat: number): Promise<number> {
+  private static async calculateExpectedCash(businessId: string, openedAt: Date, openingFloat: number, userId: string): Promise<number> {
     // 1. CASH payments received (Sales & customer debt payments)
     const [cashIn] = await db.select({
       total: sql<string>`COALESCE(SUM(${payments.amount}), 0)`
@@ -183,6 +184,7 @@ export class CashSessionsService {
         eq(payments.method, 'CASH'),
         eq(payments.status, 'COMPLETED'),
         gte(payments.paidAt, openedAt),
+        eq(payments.createdBy, userId),
         or(
           eq(payments.referenceType, 'SALE'),
           eq(payments.referenceType, 'CUSTOMER_DEBT')
@@ -201,6 +203,7 @@ export class CashSessionsService {
         eq(payments.method, 'CASH'),
         eq(payments.status, 'COMPLETED'),
         gte(payments.paidAt, openedAt),
+        eq(payments.createdBy, userId),
         or(
           eq(payments.referenceType, 'PURCHASE'),
           eq(payments.referenceType, 'SUPPLIER_DEBT')
@@ -218,6 +221,7 @@ export class CashSessionsService {
       and(
         eq(refunds.businessId, businessId),
         gte(refunds.refundedAt, openedAt),
+        eq(refunds.createdBy, userId),
         eq(sales.paymentMethod, 'CASH')
       )
     );

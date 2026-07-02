@@ -4,7 +4,7 @@ import { CashSessionsService } from './cash-sessions.service';
 export class CashSessionsController {
   static async getActive(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await CashSessionsService.getActiveSession(req.user!.businessId);
+      const data = await CashSessionsService.getActiveSession(req.user!.businessId, req.user!.id);
       res.status(200).json({ status: 'success', data });
     } catch (error) {
       next(error);
