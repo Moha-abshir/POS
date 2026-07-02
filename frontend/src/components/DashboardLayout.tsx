@@ -280,12 +280,14 @@ export const DashboardLayout: React.FC = () => {
             </h1>
           </div>
           
-          <div className="flex items-center gap-6">
-            <span className="text-sm font-medium text-[var(--color-text-muted)] tracking-wide uppercase">
+          <div className="flex items-center gap-4 md:gap-6">
+            <span className="hidden md:inline text-sm font-medium text-[var(--color-text-muted)] tracking-wide uppercase">
               {today}
             </span>
 
-            <SyncIndicator />
+            <div className="hidden md:block">
+              <SyncIndicator />
+            </div>
 
             {/* Cash Drawer Shift Widget */}
             <button 
@@ -293,7 +295,7 @@ export const DashboardLayout: React.FC = () => {
                 setIsClosingStep(false);
                 setIsRegisterModalOpen(true);
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+              className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
                 activeSession 
                   ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' 
                   : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
@@ -370,7 +372,7 @@ export const DashboardLayout: React.FC = () => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto bg-[var(--color-bg-base)]">
+        <main className="flex-1 overflow-auto bg-[var(--color-bg-base)] pb-16 md:pb-0">
           <Outlet />
         </main>
       </div>
@@ -662,6 +664,46 @@ export const DashboardLayout: React.FC = () => {
           </div>
         </>
       )}
+
+      {/* Mobile Bottom Navigation & Status Bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#111317] border-t border-white/5 flex items-center justify-around z-40 px-3">
+        <Link
+          to="/"
+          className={`flex flex-col items-center justify-center gap-1 w-16 h-full text-[10px] font-bold transition-all hover:scale-105 active:scale-95 ${
+            location.pathname === '/' ? 'text-[var(--color-accent)]' : 'text-gray-400'
+          }`}
+        >
+          <LayoutDashboard className="w-5 h-5" />
+          <span>Dashboard</span>
+        </Link>
+
+        <Link
+          to="/pos"
+          className={`flex flex-col items-center justify-center gap-1 w-16 h-full text-[10px] font-bold transition-all hover:scale-105 active:scale-95 ${
+            location.pathname === '/pos' ? 'text-[var(--color-accent)]' : 'text-gray-400'
+          }`}
+        >
+          <ShoppingCart className="w-5 h-5" />
+          <span>POS</span>
+        </Link>
+
+        <div className="flex flex-col items-center justify-center w-16 h-full">
+          <SyncIndicator variant="button" />
+        </div>
+
+        <button
+          onClick={() => {
+            setIsClosingStep(false);
+            setIsRegisterModalOpen(true);
+          }}
+          className={`flex flex-col items-center justify-center gap-1 w-16 h-full text-[10px] font-bold transition-all hover:scale-105 active:scale-95 ${
+            activeSession ? 'text-green-500' : 'text-amber-500 animate-pulse'
+          }`}
+        >
+          <Calculator className="w-5 h-5" />
+          <span>{activeSession ? 'Shift: OPEN' : 'Shift: CLOSED'}</span>
+        </button>
+      </div>
 
     </div>
   );
