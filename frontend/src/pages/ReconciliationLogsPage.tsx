@@ -106,17 +106,17 @@ export const ReconciliationLogsPage: React.FC = () => {
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Calculator className="w-6 h-6 text-[var(--color-accent)]" /> Cash Register Reconciliations
+          <h2 className="text-xl lg:text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Calculator className="w-5 h-5 lg:w-6 lg:h-6 text-[var(--color-accent)]" /> Cash Register Reconciliations
           </h2>
-          <p className="text-xs text-gray-500 mt-0.5">Audits of register floats, counted cash, and drawer variances</p>
+          <p className="text-[10px] lg:text-xs text-gray-500 mt-0.5">Audits of register floats, counted cash, and drawer variances</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
         {/* Left Column: Historical Shifts Table */}
-        <div className="bg-white rounded-lg border border-[var(--color-border)] shadow-sm xl:col-span-2 overflow-hidden">
+        <div className="bg-white rounded-lg border border-[var(--color-border)] shadow-sm lg:col-span-2 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 bg-gray-50 font-bold uppercase tracking-wider text-xs text-gray-500 flex justify-between items-center">
             <span>Historical Reconciliation Sessions</span>
             <button 
@@ -129,7 +129,7 @@ export const ReconciliationLogsPage: React.FC = () => {
 
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-100 text-xs text-left">
-              <thead className="bg-gray-50 font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100">
+              <thead className="hidden lg:table-header-group bg-gray-50 font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100">
                 <tr>
                   <th className="px-5 py-3">Duration / Date</th>
                   <th className="px-5 py-3">Cashier Details</th>
@@ -140,9 +140,9 @@ export const ReconciliationLogsPage: React.FC = () => {
                   <th className="px-5 py-3 text-center">Details</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 bg-white font-medium text-gray-800">
+              <tbody className="divide-y divide-gray-100 bg-white font-medium text-gray-800 flex flex-col lg:table-row-group">
                 {sessions.length === 0 ? (
-                  <tr>
+                  <tr className="flex flex-col lg:table-row">
                     <td colSpan={7} className="px-5 py-12 text-center text-gray-400">
                       No register reconciliation sessions found. Open/close a shift register to begin logs.
                     </td>
@@ -157,58 +157,136 @@ export const ReconciliationLogsPage: React.FC = () => {
                     const isSelected = selectedSession?.id === sess.id;
 
                     return (
-                      <tr key={sess.id} className={`hover:bg-gray-50/50 ${isSelected ? 'bg-amber-50/15' : ''}`}>
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-1 font-bold text-gray-900">
-                            <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                            {startStr}
-                          </div>
-                          <div className="text-[10px] text-gray-400 mt-0.5">{startHrs} to {endHrs}</div>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-1">
-                            <User className="w-3.5 h-3.5 text-gray-400" />
-                            {sess.openedByName}
-                          </div>
-                          {sess.closedByName !== 'N/A' && sess.closedByName !== sess.openedByName && (
-                            <div className="text-[10px] text-gray-400 mt-0.5">Closed by: {sess.closedByName}</div>
-                          )}
-                        </td>
-                        <td className="px-5 py-3.5 text-right font-bold">{formatKES(Number(sess.openingFloat))}</td>
-                        <td className="px-5 py-3.5 text-right font-bold text-gray-700">{formatKES(Number(sess.expectedCash))}</td>
-                        <td className="px-5 py-3.5 text-right font-bold text-gray-900">
-                          {sess.status === 'OPEN' ? 'Active...' : formatKES(Number(sess.actualCash))}
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <div className="flex justify-center">
-                            {sess.status === 'OPEN' ? (
-                              <span className="px-2 py-0.5 rounded bg-green-50 text-green-700 text-[10px] border border-green-100 font-bold tracking-wide uppercase">Open Shift</span>
-                            ) : (
-                              <div className="flex flex-col items-center gap-1">
-                                {renderVarianceBadge(Number(sess.actualCash) - Math.abs(Number(sess.expectedCash)))}
-                                {sess.resolutionStatus === 'RESOLVED' && (
-                                  <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 text-[8px] font-bold uppercase tracking-wider">
-                                    Resolved
-                                  </span>
-                                )}
+                      <React.Fragment key={sess.id}>
+                        {/* Mobile Card View */}
+                        <tr className={`lg:hidden flex flex-col p-4 border-b border-gray-50 hover:bg-gray-50/50 ${isSelected ? 'bg-amber-50/15' : ''}`}>
+                          <td>
+                            <div className="flex justify-between items-start mb-3">
+                              <div>
+                                <div className="flex items-center gap-1.5 font-bold text-gray-900 text-sm">
+                                  <Calendar className="w-4 h-4 text-gray-400" />
+                                  {startStr}
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">{startHrs} to {endHrs}</div>
                               </div>
+                              <button
+                                onClick={() => setSelectedSession(isSelected ? null : sess)}
+                                className={`p-2 rounded-lg border transition-colors flex items-center justify-center gap-1 text-xs font-bold ${
+                                  isSelected 
+                                    ? 'bg-amber-100 border-amber-300 text-amber-800' 
+                                    : 'bg-white border-gray-200 text-gray-600 shadow-sm hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]'
+                                }`}
+                              >
+                                {isSelected ? (
+                                  <>
+                                    <EyeOff className="w-3.5 h-3.5" /> Close Details
+                                  </>
+                                ) : (
+                                  <>
+                                    <Eye className="w-3.5 h-3.5" /> View Details
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-xs mb-3">
+                              <div>
+                                <span className="text-gray-500 block mb-0.5">Cashier</span>
+                                <div className="flex items-center gap-1 font-medium text-gray-800">
+                                  <User className="w-3.5 h-3.5 text-gray-400" />
+                                  <span className="truncate">{sess.openedByName}</span>
+                                </div>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 block mb-0.5">Variance Status</span>
+                                <div className="flex flex-col items-start">
+                                  {sess.status === 'OPEN' ? (
+                                    <span className="px-2 py-0.5 rounded bg-green-50 text-green-700 text-[10px] border border-green-100 font-bold tracking-wide uppercase">Open Shift</span>
+                                  ) : (
+                                    <div className="flex flex-col gap-1 items-start">
+                                      {renderVarianceBadge(Number(sess.actualCash) - Math.abs(Number(sess.expectedCash)))}
+                                      {sess.resolutionStatus === 'RESOLVED' && (
+                                        <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 text-[8px] font-bold uppercase tracking-wider">
+                                          Resolved
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="bg-gray-50 rounded-lg p-3 grid grid-cols-3 gap-2 text-center divide-x divide-gray-200 border border-gray-100">
+                              <div>
+                                <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Float</span>
+                                <span className="font-bold text-gray-700 text-xs">{formatKES(Number(sess.openingFloat))}</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Expected</span>
+                                <span className="font-bold text-gray-700 text-xs">{formatKES(Number(sess.expectedCash))}</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Actual</span>
+                                <span className="font-bold text-gray-900 text-xs">{sess.status === 'OPEN' ? '...' : formatKES(Number(sess.actualCash))}</span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* Desktop Table Row */}
+                        <tr className={`hidden lg:table-row hover:bg-gray-50/50 ${isSelected ? 'bg-amber-50/15' : ''}`}>
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-1 font-bold text-gray-900">
+                              <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                              {startStr}
+                            </div>
+                            <div className="text-[10px] text-gray-400 mt-0.5">{startHrs} to {endHrs}</div>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-1">
+                              <User className="w-3.5 h-3.5 text-gray-400" />
+                              {sess.openedByName}
+                            </div>
+                            {sess.closedByName !== 'N/A' && sess.closedByName !== sess.openedByName && (
+                              <div className="text-[10px] text-gray-400 mt-0.5">Closed by: {sess.closedByName}</div>
                             )}
-                          </div>
-                        </td>
-                        <td className="px-5 py-3.5 text-center">
-                          <button
-                            onClick={() => setSelectedSession(isSelected ? null : sess)}
-                            className={`p-1.5 rounded-lg border transition-colors ${
-                              isSelected 
-                                ? 'bg-amber-100 border-amber-300 text-amber-800' 
-                                : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50'
-                            }`}
-                            title={isSelected ? 'Hide Details' : 'View Denominations breakdown'}
-                          >
-                            {isSelected ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                          </button>
-                        </td>
-                      </tr>
+                          </td>
+                          <td className="px-5 py-3.5 text-right font-bold">{formatKES(Number(sess.openingFloat))}</td>
+                          <td className="px-5 py-3.5 text-right font-bold text-gray-700">{formatKES(Number(sess.expectedCash))}</td>
+                          <td className="px-5 py-3.5 text-right font-bold text-gray-900">
+                            {sess.status === 'OPEN' ? 'Active...' : formatKES(Number(sess.actualCash))}
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <div className="flex justify-center">
+                              {sess.status === 'OPEN' ? (
+                                <span className="px-2 py-0.5 rounded bg-green-50 text-green-700 text-[10px] border border-green-100 font-bold tracking-wide uppercase">Open Shift</span>
+                              ) : (
+                                <div className="flex flex-col items-center gap-1">
+                                  {renderVarianceBadge(Number(sess.actualCash) - Math.abs(Number(sess.expectedCash)))}
+                                  {sess.resolutionStatus === 'RESOLVED' && (
+                                    <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 text-[8px] font-bold uppercase tracking-wider">
+                                      Resolved
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-5 py-3.5 text-center">
+                            <button
+                              onClick={() => setSelectedSession(isSelected ? null : sess)}
+                              className={`p-1.5 rounded-lg border transition-colors ${
+                                isSelected 
+                                  ? 'bg-amber-100 border-amber-300 text-amber-800' 
+                                  : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                              }`}
+                              title={isSelected ? 'Hide Details' : 'View Denominations breakdown'}
+                            >
+                              {isSelected ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </td>
+                        </tr>
+                      </React.Fragment>
                     );
                   })
                 )}
@@ -218,9 +296,20 @@ export const ReconciliationLogsPage: React.FC = () => {
         </div>
 
         {/* Right Column: Count Details Drawer */}
-        <div className="bg-white rounded-lg border border-[var(--color-border)] shadow-sm overflow-hidden sticky top-6">
-          <div className="px-5 py-4 border-b border-gray-100 bg-gray-50 font-bold uppercase tracking-wider text-xs text-gray-500">
-            Session Details &amp; Denominations
+        <div className={`
+          ${selectedSession ? 'fixed inset-0 z-50 flex flex-col lg:relative lg:inset-auto lg:z-auto' : 'hidden lg:block'} 
+          bg-gray-50 lg:bg-white lg:rounded-lg lg:border border-[var(--color-border)] lg:shadow-sm overflow-y-auto lg:sticky lg:top-6
+        `}>
+          <div className="sticky top-0 z-10 px-5 py-4 border-b border-gray-100 bg-white lg:bg-gray-50 font-bold uppercase tracking-wider text-xs text-gray-500 flex justify-between items-center shadow-sm lg:shadow-none">
+            <span>Session Details &amp; Denominations</span>
+            {selectedSession && (
+              <button 
+                onClick={() => setSelectedSession(null)}
+                className="lg:hidden p-1.5 text-gray-500 hover:bg-gray-100 rounded-md border border-gray-200 flex items-center justify-center bg-white"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           <div className="p-5 text-sm">
