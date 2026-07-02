@@ -18,7 +18,8 @@ import {
   X,
   RefreshCw,
   Calculator,
-  AlertTriangle
+  AlertTriangle,
+  Menu
 } from 'lucide-react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { api } from '../lib/api';
@@ -45,6 +46,7 @@ export const DashboardLayout: React.FC = () => {
 
   // Helper for tooltip
   const [hoveredNav, setHoveredNav] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const today = new Date().toLocaleDateString('en-GB', { 
     weekday: 'short', 
@@ -202,7 +204,7 @@ export const DashboardLayout: React.FC = () => {
       {showOnboarding && <OnboardingModal />}
       
       {/* Sidebar (56px wide, dark) */}
-      <div className="w-14 bg-[var(--color-bg-sidebar)] flex flex-col items-center py-4 relative z-20">
+      <div className="w-14 bg-[var(--color-bg-sidebar)] hidden md:flex flex-col items-center py-4 relative z-20">
         <div className="h-10 w-10 bg-[var(--color-accent)]/20 rounded flex items-center justify-center mb-6">
           <Store className="text-[var(--color-accent)] w-5 h-5" />
         </div>
@@ -264,10 +266,19 @@ export const DashboardLayout: React.FC = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         
         {/* Top Bar */}
-        <header className="h-16 border-b border-[var(--color-border)] bg-[var(--color-bg-surface)] flex items-center justify-between px-6 shrink-0 z-30">
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            {navItems.find(i => location.pathname === i.path || (location.pathname.startsWith(i.path) && i.path !== '/'))?.name || 'Dashboard'}
-          </h1>
+        <header className="h-16 border-b border-[var(--color-border)] bg-[var(--color-bg-surface)] flex items-center justify-between px-4 md:px-6 shrink-0 z-30">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="md:hidden p-1.5 -ml-1 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              title="Open Navigation"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <h1 className="text-lg md:text-xl font-semibold text-[var(--color-text-primary)]">
+              {navItems.find(i => location.pathname === i.path || (location.pathname.startsWith(i.path) && i.path !== '/'))?.name || 'Dashboard'}
+            </h1>
+          </div>
           
           <div className="flex items-center gap-6">
             <span className="text-sm font-medium text-[var(--color-text-muted)] tracking-wide uppercase">
@@ -578,6 +589,78 @@ export const DashboardLayout: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Mobile Drawer Navigation overlay */}
+      {isMobileMenuOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/40 z-40 md:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          {/* Drawer Sidebar */}
+          <div className="fixed inset-y-0 left-0 w-64 bg-[var(--color-bg-sidebar)] z-50 md:hidden flex flex-col p-5 shadow-2xl animate-in slide-in-from-left duration-250">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-2.5">
+                <div className="h-9 w-9 bg-[var(--color-accent)]/20 rounded flex items-center justify-center">
+                  <Store className="text-[var(--color-accent)] w-4.5 h-4.5" />
+                </div>
+                <span className="font-bold text-white text-sm tracking-wide">Smart Store POS</span>
+              </div>
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-[var(--color-text-inverse)]/60 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <nav className="flex-1 w-full flex flex-col space-y-1.5 overflow-y-auto pr-1">
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.path || (location.pathname.startsWith(item.path) && item.path !== '/');
+                const Icon = item.icon;
+                
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center gap-3.5 px-4.5 py-3 rounded-xl font-semibold text-sm transition-all duration-150 ${
+                      isActive 
+                        ? 'text-[var(--color-accent)] bg-white/5 shadow-inner' 
+                        : 'text-[var(--color-text-inverse)]/70 hover:text-[var(--color-text-inverse)] hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="pt-4 border-t border-white/5 flex flex-col gap-2 mt-auto">
+              <Link 
+                to="/settings" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-3.5 px-4.5 py-3 rounded-xl text-[var(--color-text-inverse)]/70 hover:text-[var(--color-text-inverse)] hover:bg-white/5 transition-all font-semibold text-sm"
+              >
+                <Settings className="h-5 w-5" />
+                <span>Settings</span>
+              </Link>
+              <button 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  logout();
+                }}
+                className="flex items-center gap-3.5 px-4.5 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-white/5 transition-all font-semibold text-sm cursor-pointer text-left w-full"
+              >
+                <LogOut className="h-5 w-5" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
     </div>

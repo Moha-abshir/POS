@@ -82,7 +82,7 @@ export const DashboardPage: React.FC = () => {
   const { kpis, charts, lowStockList, recentSales, debtSummary, recentMovements } = data;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-6">
       
       {/* Welcome banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
