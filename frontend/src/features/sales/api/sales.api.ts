@@ -77,31 +77,42 @@ export const salesApi = {
         const localId = uuidv4();
 
         try {
+          console.log('[Offline Sync] Starting offline checkout sequence...');
           // Remove undefined values to prevent DataCloneError in IndexedDB
           const cleanSaleData = JSON.parse(JSON.stringify(saleData));
 
           // 1. Queue the transaction in Dexie syncQueue
+          console.log('[Offline Sync] Writing checkout details to Dexie queue...');
           await queueManager.addToQueue('SALE', {
             ...cleanSaleData,
             localId,
             soldAt: new Date().toISOString()
           }, localId);
+          console.log('[Offline Sync] Successfully wrote to Dexie queue');
 
           // 2. Perform client-side stock deduction in Dexie variants table
+          console.log('[Offline Sync] Executing client-side stock deductions on variants table...');
           for (const item of saleData.items) {
+            console.log(`[Offline Sync] Reading variant details for ID: ${item.variantId}`);
             const variant = await db.variants.get(item.variantId);
             if (variant) {
               const currentStock = Number(variant.baseStockQuantity) || 0;
               const newStock = Math.max(0, currentStock - item.quantity);
+              console.log(`[Offline Sync] Deducting stock for variant: ${variant.name} (SKU: ${variant.sku}). Old stock: ${currentStock}, New stock: ${newStock}`);
               await db.variants.update(item.variantId, {
                 baseStockQuantity: newStock.toString()
               });
+            } else {
+              console.log(`[Offline Sync] Variant ID ${item.variantId} not found in local Dexie store. Skipping stock deduction.`);
             }
           }
+          console.log('[Offline Sync] Deducted local variant stocks successfully');
 
           // Also update legacy catalog_products for compatibility
+          console.log('[Offline Sync] Querying legacy catalog_products IndexedDB cache...');
           const cached = await IndexedDBCache.get('catalog_products');
           if (cached && cached.products) {
+            console.log('[Offline Sync] Updating legacy catalog cache quantities...');
             saleData.items.forEach(soldItem => {
               for (const product of cached.products) {
                 const variant = product.variants?.find((v: any) => v.id === soldItem.variantId);
@@ -112,15 +123,21 @@ export const salesApi = {
                 }
               }
             });
+            console.log('[Offline Sync] Saving updated legacy catalog cache...');
             await IndexedDBCache.set('catalog_products', {
               products: cached.products,
               timestamp: Date.now()
             });
+            console.log('[Offline Sync] Saved legacy catalog cache successfully');
+          } else {
+            console.log('[Offline Sync] Legacy catalog cache is empty or unavailable');
           }
         } catch (writeError) {
-          console.error('Failed to write offline sale transaction to Dexie/IndexedDB:', writeError);
+          console.error('[Offline Sync] CRITICAL ERROR writing offline sale transaction to Dexie/IndexedDB:', writeError);
           throw writeError;
         }
+
+        console.log('[Offline Sync] Completed offline checkout sequence. Returning mock response.');
 
         // 3. Return mock success payload
         const subtotal = saleData.items.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
