@@ -286,14 +286,14 @@ export const DashboardPage: React.FC = () => {
 
           <div className="p-5 flex-1 min-h-[300px]">
             {activeFeedTab === 'sales' && (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-xs text-left">
+              <div className="overflow-x-auto scrollbar-hide">
+                <table className="min-w-[500px] w-full text-xs text-left">
                   <thead>
                     <tr className="text-gray-400 uppercase tracking-wider border-b border-gray-100 font-semibold">
-                      <th className="pb-2.5">Sold At</th>
-                      <th className="pb-2.5">Customer</th>
-                      <th className="pb-2.5">Amount</th>
-                      <th className="pb-2.5">Method</th>
+                      <th className="pb-2.5 pr-4">Sold At</th>
+                      <th className="pb-2.5 pr-4">Customer</th>
+                      <th className="pb-2.5 pr-4">Amount</th>
+                      <th className="pb-2.5 pr-4">Method</th>
                       <th className="pb-2.5">Status</th>
                     </tr>
                   </thead>
@@ -305,12 +305,12 @@ export const DashboardPage: React.FC = () => {
                     ) : (
                       recentSales.map((sale: any) => (
                         <tr key={sale.id} className="hover:bg-gray-50/50">
-                          <td className="py-2.5">
+                          <td className="py-2.5 pr-4">
                             {new Date(sale.soldAt).toLocaleDateString([], { day: '2-digit', month: 'short' })}, {new Date(sale.soldAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </td>
-                          <td className="py-2.5">{sale.customerName}</td>
-                          <td className="py-2.5 font-bold">{formatKES(Number(sale.totalAmount))}</td>
-                          <td className="py-2.5 uppercase text-[10px] tracking-wide text-gray-500">{sale.paymentMethod}</td>
+                          <td className="py-2.5 pr-4">{sale.customerName}</td>
+                          <td className="py-2.5 pr-4 font-bold">{formatKES(Number(sale.totalAmount))}</td>
+                          <td className="py-2.5 pr-4 uppercase text-[10px] tracking-wide text-gray-500">{sale.paymentMethod}</td>
                           <td className="py-2.5">
                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
                               sale.paymentStatus === 'PAID' ? 'bg-green-50 text-green-700 border border-green-100' :
