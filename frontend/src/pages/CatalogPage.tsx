@@ -64,7 +64,7 @@ export const CatalogPage: React.FC = () => {
   ];
 
   return (
-    <div className="p-6 max-w-[1400px] mx-auto h-full flex flex-col">
+    <div className="p-4 md:p-6 max-w-[1400px] mx-auto h-full flex flex-col space-y-4">
       <ProductList 
         onAddProduct={() => setIsProductModalOpen(true)}
         onAddCategory={() => setIsCategoryModalOpen(true)}

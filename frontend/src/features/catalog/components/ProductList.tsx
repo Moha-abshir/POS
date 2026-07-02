@@ -74,60 +74,64 @@ export const ProductList: React.FC<ProductListProps> = ({
         </div>
 
         {/* Filters and Actions */}
-        <div className="flex items-center gap-3 w-full xl:w-auto shrink-0 flex-wrap sm:flex-nowrap">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto shrink-0">
           
-          <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
-            <span className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] whitespace-nowrap">Category:</span>
-            <div className="flex-1 min-w-[160px]">
-              <CustomSelect 
-                label="Category" 
-                options={isCategoriesError ? [{ id: '', name: 'Error loading categories' }] : categories ? [{ id: '', name: 'All' }, ...categories.map(c => ({ id: c.id, name: c.name }))] : [{ id: '', name: 'All' }]} 
-                value={selectedCategory} 
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                onActionClick={onAddCategory}
-                actionLabel="New Category"
-                className="w-full bg-white"
-              />
+          <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+              <span className="text-xs sm:text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] whitespace-nowrap">Category:</span>
+              <div className="w-full sm:w-40 min-w-[120px]">
+                <CustomSelect 
+                  label="Category" 
+                  options={isCategoriesError ? [{ id: '', name: 'Error' }] : categories ? [{ id: '', name: 'All' }, ...categories.map(c => ({ id: c.id, name: c.name }))] : [{ id: '', name: 'All' }]} 
+                  value={selectedCategory} 
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  onActionClick={onAddCategory}
+                  actionLabel="New Category"
+                  className="w-full bg-white text-xs sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+              <span className="text-xs sm:text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] whitespace-nowrap">Status:</span>
+              <div className="w-full sm:w-32 min-w-[100px]">
+                <CustomSelect 
+                  label="Status" 
+                  options={[{ id: '', name: 'All' }, ...statusOptions]} 
+                  value={selectedStatus} 
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="w-full bg-white text-xs sm:text-sm"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
-            <span className="text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] whitespace-nowrap">Status:</span>
-            <div className="flex-1 min-w-[140px]">
-              <CustomSelect 
-                label="Status" 
-                options={[{ id: '', name: 'All' }, ...statusOptions]} 
-                value={selectedStatus} 
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full bg-white"
-              />
-            </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+            {currentUser?.role !== 'CASHIER' && onImportProducts && (
+              <button 
+                onClick={onImportProducts}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 px-3 h-10 rounded-[var(--radius-md)] text-sm font-semibold transition-all select-none cursor-pointer"
+              >
+                <Download size={16} />
+                <span>Import</span>
+              </button>
+            )}
+
+            {onExportProducts && (
+              <button 
+                onClick={onExportProducts}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-3 h-10 rounded-[var(--radius-md)] text-sm font-semibold transition-all select-none cursor-pointer"
+              >
+                <Upload size={16} />
+                <span>Export</span>
+              </button>
+            )}
           </div>
-
-          {currentUser?.role !== 'CASHIER' && onImportProducts && (
-            <button 
-              onClick={onImportProducts}
-              className="flex items-center justify-center gap-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 px-4 h-10 rounded-[var(--radius-md)] font-semibold transition-all shrink-0 select-none cursor-pointer"
-            >
-              <Download size={16} />
-              <span>Import</span>
-            </button>
-          )}
-
-          {onExportProducts && (
-            <button 
-              onClick={onExportProducts}
-              className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-4 h-10 rounded-[var(--radius-md)] font-semibold transition-all shrink-0 select-none cursor-pointer"
-            >
-              <Upload size={16} />
-              <span>Export</span>
-            </button>
-          )}
 
           {currentUser?.role !== 'CASHIER' && (
             <button 
               onClick={onAddProduct}
-              className="flex items-center justify-center gap-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-5 h-10 rounded-[var(--radius-md)] font-semibold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 shrink-0 select-none cursor-pointer"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-5 h-10 rounded-[var(--radius-md)] text-sm font-semibold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 select-none cursor-pointer mt-2 sm:mt-0"
             >
               <Plus size={18} />
               <span>Add Product</span>
@@ -137,7 +141,7 @@ export const ProductList: React.FC<ProductListProps> = ({
       </div>
 
       {/* Data Table */}
-      <div className="overflow-y-auto flex-1 p-6">
+      <div className="overflow-y-auto flex-1 p-4 md:p-6">
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-8">
             {[...Array(8)].map((_, i) => (
