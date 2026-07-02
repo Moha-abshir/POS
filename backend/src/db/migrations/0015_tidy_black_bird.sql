@@ -1,0 +1,2 @@
+CREATE INDEX "variants_business_active_idx" ON "product_variants" USING btree ("business_id") WHERE "product_variants"."is_active" = true;--> statement-breakpoint
+CREATE INDEX "products_business_active_idx" ON "products" USING btree ("business_id") WHERE "products"."is_active" = true;

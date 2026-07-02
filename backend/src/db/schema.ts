@@ -98,6 +98,7 @@ export const products = pgTable('products', {
 }, (table) => ({
   businessIdx: index('products_business_idx').on(table.businessId),
   categoryIdx: index('products_category_idx').on(table.categoryId),
+  businessActiveIdx: index('products_business_active_idx').on(table.businessId).where(sql`${table.isActive} = true`),
   uniqueNamePerBusiness: unique('products_name_business_unique').on(table.businessId, table.name)
 }));
 
@@ -118,6 +119,7 @@ export const productVariants = pgTable('product_variants', {
 }, (table) => ({
   productIdx: index('variants_product_idx').on(table.productId),
   businessIdx: index('variants_business_idx').on(table.businessId),
+  businessActiveIdx: index('variants_business_active_idx').on(table.businessId).where(sql`${table.isActive} = true`),
   uniqueNamePerProduct: unique('variants_name_product_unique').on(table.productId, table.name),
   costPriceCheck: check('variant_cost_price_check', sql`${table.costPrice} >= 0`)
 }));
