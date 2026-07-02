@@ -28,25 +28,25 @@ export const ProductRestockModal: React.FC<ProductRestockModalProps> = ({ produc
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-white rounded-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
-        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50/50 shrink-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-100 bg-gray-50/50 shrink-0 gap-2">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <Package className="w-5 h-5 text-amber-500" />
-              Restock: {product.name}
+            <h2 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-1.5 md:gap-2">
+              <Package className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
+              <span className="line-clamp-1">Restock: {product.name}</span>
             </h2>
-            <p className="text-sm text-gray-500 mt-1">Review variants and add them to the restock queue</p>
+            <p className="text-xs md:text-sm text-gray-500 mt-0.5 md:mt-1 line-clamp-1">Review variants and add them to the restock queue</p>
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-full transition-colors shadow-sm border border-transparent hover:border-gray-200">
+          <button onClick={onClose} className="p-1.5 md:p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-full transition-colors shadow-sm border border-transparent hover:border-gray-200 shrink-0">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
             {product.variants?.map((variant) => {
               const status = getStockStatus(variant);
               const isAdded = isVariantInRestockList(variant.id);
@@ -60,10 +60,10 @@ export const ProductRestockModal: React.FC<ProductRestockModalProps> = ({ produc
               return (
                 <div 
                   key={variant.id} 
-                  className={`flex flex-col bg-white border ${cardBorderColor} rounded-xl hover:border-amber-400 transition-colors shadow-sm overflow-hidden min-h-[290px] h-full`}
+                  className={`flex flex-col bg-white border ${cardBorderColor} rounded-xl hover:border-amber-400 transition-colors shadow-sm overflow-hidden h-[240px] md:h-full md:min-h-[290px]`}
                 >
                   {/* Image: exactly 50% height */}
-                  <div className="w-full h-[150px] bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 relative shrink-0">
+                  <div className="w-full h-[100px] md:h-[150px] bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 relative shrink-0">
                     {variantImage ? (
                       <img src={variantImage} className="w-full h-full object-cover" alt={variant.name} />
                     ) : (
@@ -80,30 +80,30 @@ export const ProductRestockModal: React.FC<ProductRestockModalProps> = ({ produc
                   </div>
 
                   {/* Content details & action: remaining height */}
-                  <div className="p-5 flex-1 flex flex-col justify-between gap-4">
+                  <div className="p-3 md:p-5 flex-1 flex flex-col justify-between gap-3 md:gap-4">
                     <div>
-                      <h4 className="font-bold text-gray-900 text-sm truncate">{variant.name}</h4>
-                      <p className="text-xs text-gray-500 mt-1 font-medium">
+                      <h4 className="font-bold text-gray-900 text-xs md:text-sm line-clamp-2" title={variant.name}>{variant.name}</h4>
+                      <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 md:mt-1 font-medium">
                         Stock: <span className="font-bold text-gray-800">{Number(variant.baseStockQuantity)}</span> {variant.baseUnitName}s
                       </p>
                     </div>
 
                     <div className="mt-auto">
                       {isAdded ? (
-                        <div className="w-full h-9 flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 rounded-lg border border-emerald-200 shadow-sm">
-                          <Check className="w-3.5 h-3.5" /> Added to Queue
+                        <div className="w-full h-8 md:h-9 flex items-center justify-center gap-1.5 text-[10px] md:text-xs font-bold text-emerald-600 bg-emerald-50 rounded-lg border border-emerald-200 shadow-sm">
+                          <Check className="w-3.5 h-3.5 md:w-4 md:h-4" /> Added
                         </div>
                       ) : (
                         <button
                           onClick={() => addToRestock.mutate(variant.id)}
                           disabled={addToRestock.isPending}
-                          className={`w-full h-9 flex items-center justify-center gap-1.5 text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer ${
+                          className={`w-full h-8 md:h-9 flex items-center justify-center gap-1 md:gap-1.5 text-[10px] md:text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer ${
                             status.isLow
                               ? 'bg-amber-500 hover:bg-amber-600 text-white'
                               : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200'
                           }`}
                         >
-                          <ListPlus className="w-3.5 h-3.5" />
+                          <ListPlus className="w-3 h-3 md:w-3.5 md:h-3.5" />
                           {status.isLow ? 'Restock' : 'Order More'}
                         </button>
                       )}
@@ -115,10 +115,10 @@ export const ProductRestockModal: React.FC<ProductRestockModalProps> = ({ produc
           </div>
         </div>
 
-        <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex justify-end shrink-0">
+        <div className="p-4 md:p-6 border-t border-gray-100 bg-gray-50/50 flex justify-end shrink-0">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-200 bg-gray-100 rounded-xl transition-colors"
+            className="px-5 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-bold text-gray-700 hover:bg-gray-200 bg-gray-100 rounded-lg md:rounded-xl transition-colors"
           >
             Done
           </button>
