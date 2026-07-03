@@ -26,9 +26,10 @@ export class EmailService {
           subject: 'Your Login Code',
           htmlContent: `
             <div style="font-family: sans-serif; padding: 20px;">
-              <h2>Hardware Store POS Login</h2>
+              <p>Dear User</p>
+              <p>Please use the following One time password to verify your email address</p>
               <p>Your one-time password is:</p>
-              <h1 style="font-size: 32px; letter-spacing: 4px; color: #d97706;">${otp}</h1>
+              <h1>OTP: ${otp}</h1>
               <p>This code will expire in 5 minutes.</p>
               <p>If you did not request this, please ignore this email.</p>
             </div>
