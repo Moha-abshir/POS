@@ -11,17 +11,17 @@ export const TeamList: React.FC = () => {
   const currentUser = useAuthStore((state) => state.user);
 
   return (
-    <div className="flex flex-col flex-1 p-6 bg-[var(--color-bg-base)]">
+    <div className="flex flex-col flex-1 p-4 md:p-6 bg-[var(--color-bg-base)]">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 md:mb-8 gap-4 sm:gap-0">
         <div>
-          <h1 className="text-[var(--text-xl)] font-bold text-[var(--color-text-primary)] tracking-tight">Team Management</h1>
-          <p className="text-[var(--color-text-secondary)] mt-1">Manage owners and cashiers for your business</p>
+          <h1 className="text-xl md:text-[var(--text-xl)] font-bold text-[var(--color-text-primary)] tracking-tight">Team Management</h1>
+          <p className="text-sm text-[var(--color-text-secondary)] mt-1">Manage owners and cashiers for your business</p>
         </div>
         {currentUser?.role === 'OWNER' && (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="h-10 px-4 flex items-center justify-center rounded-[var(--radius-md)] text-[var(--text-base)] font-semibold text-white bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-colors cursor-pointer select-none"
+            className="w-full sm:w-auto h-10 px-4 flex items-center justify-center rounded-[var(--radius-md)] text-sm md:text-[var(--text-base)] font-semibold text-white bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-colors cursor-pointer select-none"
           >
             + Add Cashier
           </button>
@@ -44,10 +44,10 @@ export const TeamList: React.FC = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[var(--color-border-strong)] bg-[var(--color-bg-surface)]">
-                  <th scope="col" className="px-6 py-4 text-[var(--text-sm)] font-medium text-[var(--color-text-muted)]">Email</th>
-                  <th scope="col" className="px-6 py-4 text-[var(--text-sm)] font-medium text-[var(--color-text-muted)]">Role</th>
-                  <th scope="col" className="px-6 py-4 text-[var(--text-sm)] font-medium text-[var(--color-text-muted)]">Status</th>
-                  <th scope="col" className="px-6 py-4 text-[var(--text-sm)] font-medium text-[var(--color-text-muted)]">Added</th>
+                  <th scope="col" className="px-4 md:px-6 py-3 md:py-4 text-xs md:text-[var(--text-sm)] font-medium text-[var(--color-text-muted)] whitespace-nowrap">Email</th>
+                  <th scope="col" className="px-4 md:px-6 py-3 md:py-4 text-xs md:text-[var(--text-sm)] font-medium text-[var(--color-text-muted)] whitespace-nowrap">Role</th>
+                  <th scope="col" className="px-4 md:px-6 py-3 md:py-4 text-xs md:text-[var(--text-sm)] font-medium text-[var(--color-text-muted)] whitespace-nowrap">Status</th>
+                  <th scope="col" className="px-4 md:px-6 py-3 md:py-4 text-xs md:text-[var(--text-sm)] font-medium text-[var(--color-text-muted)] whitespace-nowrap">Added</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border)]">
@@ -56,37 +56,37 @@ export const TeamList: React.FC = () => {
                     key={member.id} 
                     className={`hover:bg-[var(--color-bg-sunken)] transition-colors ${idx % 2 !== 0 ? 'bg-[var(--color-bg-sunken)]' : 'bg-[var(--color-bg-surface)]'}`}
                   >
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-[var(--color-text-primary)]">
+                    <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                      <div className="font-medium text-sm text-[var(--color-text-primary)]">
                         {member.email}
                         {currentUser?.id === member.id && (
-                          <span className="ml-2 text-[var(--text-xs)] text-[var(--color-text-muted)]">(You)</span>
+                          <span className="ml-2 text-[10px] md:text-[var(--text-xs)] text-[var(--color-text-muted)]">(You)</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap">
                       {member.role === 'OWNER' ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-[var(--radius-full)] text-[var(--text-xs)] font-medium bg-[var(--color-info-bg)] text-[var(--color-info)]">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-[var(--radius-full)] text-[10px] md:text-[var(--text-xs)] font-medium bg-[var(--color-info-bg)] text-[var(--color-info)]">
                           Owner
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-[var(--radius-full)] text-[var(--text-xs)] font-medium bg-[var(--color-bg-sunken)] text-[var(--color-text-secondary)]">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-[var(--radius-full)] text-[10px] md:text-[var(--text-xs)] font-medium bg-[var(--color-bg-sunken)] text-[var(--color-text-secondary)]">
                           Cashier
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap">
                       {member.isActive ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-[var(--radius-full)] text-[var(--text-xs)] font-medium bg-[var(--color-success-bg)] text-[var(--color-success)]">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-[var(--radius-full)] text-[10px] md:text-[var(--text-xs)] font-medium bg-[var(--color-success-bg)] text-[var(--color-success)]">
                           Active
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-[var(--radius-full)] text-[var(--text-xs)] font-medium bg-[var(--color-danger-bg)] text-[var(--color-danger)]">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-[var(--radius-full)] text-[10px] md:text-[var(--text-xs)] font-medium bg-[var(--color-danger-bg)] text-[var(--color-danger)]">
                           Inactive
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-[var(--text-sm)] text-[var(--color-text-secondary)]">
+                    <td className="px-4 md:px-6 py-3 md:py-4 text-xs md:text-[var(--text-sm)] text-[var(--color-text-secondary)] whitespace-nowrap">
                       {new Date(member.createdAt).toLocaleDateString()}
                     </td>
                   </tr>
