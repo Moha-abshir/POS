@@ -33,8 +33,11 @@ export const setupInterceptors = (getAccessToken: () => string | null, setAccess
           setAccessToken(newAccessToken);
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           return api(originalRequest);
-        } catch (refreshError) {
-          logout();
+        } catch (refreshError: any) {
+          if (refreshError.response?.status === 401) {
+            logout();
+          }
+          return Promise.reject(refreshError);
         }
       }
       if (error.response?.status === 403 && error.response?.data?.error?.code === 'INACTIVE_BUSINESS') {

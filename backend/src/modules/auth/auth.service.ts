@@ -118,7 +118,7 @@ export class AuthService {
       const accessToken = jwt.sign(
         { sub: user.id, email: user.email, role: user.role, businessId: user.businessId },
         JWT_SECRET,
-        { expiresIn: '15m' }
+        { expiresIn: '7d' }
       );
 
       // 6. Generate Refresh Token - 7 days
@@ -211,7 +211,7 @@ export class AuthService {
     const accessToken = jwt.sign(
       { sub: user.id, email: user.email, role: user.role, businessId: user.businessId },
       JWT_SECRET,
-      { expiresIn: '15m' }
+      { expiresIn: '7d' }
     );
 
     return accessToken;
