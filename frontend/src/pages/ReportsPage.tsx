@@ -251,14 +251,14 @@ Need support? Contact Smart POS Customer Support at +254714731331.
   }
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-[var(--color-bg-base)]">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-64px)] overflow-hidden bg-[var(--color-bg-base)]">
       
       {/* 1. Reports Navigation Sidebar */}
-      <div className="w-64 bg-white border-r border-[var(--color-border)] shrink-0 flex flex-col">
+      <div className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-[var(--color-border)] shrink-0 flex flex-col">
         <div className="p-4 border-b border-[var(--color-border)]">
           <h2 className="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">Reports Module</h2>
         </div>
-        <nav className="flex-1 overflow-y-auto p-2 space-y-1">
+        <nav className="flex md:flex-col overflow-x-auto md:overflow-y-auto p-2 gap-2 md:gap-0 md:space-y-1 hide-scrollbar">
           {menuItems.map(item => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -269,7 +269,7 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                   setActiveTab(item.id);
                   if (item.id === 'export') setPreset('30days');
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
                   isActive 
                     ? 'bg-[var(--color-accent-subtle)] text-[var(--color-accent)]' 
                     : 'text-[var(--color-text-secondary)] hover:bg-gray-100 hover:text-[var(--color-text-primary)]'
@@ -316,19 +316,19 @@ Need support? Contact Smart POS Customer Support at +254714731331.
             </div>
 
             {preset === 'custom' && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="border border-[var(--color-border-strong)] rounded-md px-2 py-1 text-xs outline-none bg-white focus:border-[var(--color-accent)]"
+                  className="w-full sm:w-auto border border-[var(--color-border-strong)] rounded-md px-2 py-1 text-xs outline-none bg-white focus:border-[var(--color-accent)]"
                 />
-                <span className="text-gray-400 text-xs">to</span>
+                <span className="text-gray-400 text-xs hidden sm:inline">to</span>
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="border border-[var(--color-border-strong)] rounded-md px-2 py-1 text-xs outline-none bg-white focus:border-[var(--color-accent)]"
+                  className="w-full sm:w-auto border border-[var(--color-border-strong)] rounded-md px-2 py-1 text-xs outline-none bg-white focus:border-[var(--color-accent)]"
                 />
               </div>
             )}
@@ -621,7 +621,7 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                       <h3 className="text-sm font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">Tabular sales breakdown</h3>
                     </div>
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
+                      <table className="w-full text-left border-collapse whitespace-nowrap">
                         <thead>
                           <tr className="bg-gray-50 border-b border-[var(--color-border)] text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             <th className="p-4">Grouping Field</th>
@@ -854,7 +854,7 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                         </h3>
                       </div>
                       <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full text-left border-collapse whitespace-nowrap">
                           <thead>
                             <tr className="border-b border-[var(--color-border)] bg-gray-50 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                               <th className="p-3">Product Name</th>
@@ -890,7 +890,7 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                         </h3>
                       </div>
                       <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full text-left border-collapse whitespace-nowrap">
                           <thead>
                             <tr className="border-b border-[var(--color-border)] bg-gray-50 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                               <th className="p-3">Product Name</th>
@@ -948,7 +948,7 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                       <h3 className="text-xs font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">Customer Rankings by Sales Volume</h3>
                     </div>
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
+                      <table className="w-full text-left border-collapse whitespace-nowrap">
                         <thead>
                           <tr className="border-b border-[var(--color-border)] bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             <th className="p-4">Customer Name</th>
@@ -1063,7 +1063,7 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                       <h3 className="text-xs font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">Credit Aging Analysis per Customer</h3>
                     </div>
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
+                      <table className="w-full text-left border-collapse whitespace-nowrap">
                         <thead>
                           <tr className="border-b border-[var(--color-border)] bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             <th className="p-4">Customer Name</th>
@@ -1119,7 +1119,7 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                       <h3 className="text-xs font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">Supplier Purchases &amp; Payables Ledger</h3>
                     </div>
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
+                      <table className="w-full text-left border-collapse whitespace-nowrap">
                         <thead>
                           <tr className="border-b border-[var(--color-border)] bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             <th className="p-4">Supplier Name</th>
@@ -1193,7 +1193,7 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                       <h3 className="text-xs font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">Collections breakdown per shortcode / account</h3>
                     </div>
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
+                      <table className="w-full text-left border-collapse whitespace-nowrap">
                         <thead>
                           <tr className="border-b border-[var(--color-border)] bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             <th className="p-4">Account Name</th>
@@ -1255,7 +1255,7 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                       <h3 className="text-xs font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">Returned Products detail log</h3>
                     </div>
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
+                      <table className="w-full text-left border-collapse whitespace-nowrap">
                         <thead>
                           <tr className="border-b border-[var(--color-border)] bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             <th className="p-4">Product / Item Description</th>
@@ -1315,7 +1315,7 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                       <h3 className="text-xs font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">Damaged Goods Waste ledger</h3>
                     </div>
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
+                      <table className="w-full text-left border-collapse whitespace-nowrap">
                         <thead>
                           <tr className="border-b border-[var(--color-border)] bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             <th className="p-4">Product Name (Variant)</th>
