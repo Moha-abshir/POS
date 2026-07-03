@@ -207,11 +207,11 @@ export function PurchasingPage() {
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   <tr className="bg-white border-b border-[var(--color-border)]">
-                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Name</th>
-                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Contact</th>
-                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase text-right">Balance</th>
-                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase text-right">Status</th>
-                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase text-right">Actions</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Name</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Contact</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase text-right whitespace-nowrap">Balance</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase text-right whitespace-nowrap">Status</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -234,24 +234,24 @@ export function PurchasingPage() {
                   ) : (
                     suppliers.map((supplier: Supplier, index: number) => (
                       <tr key={supplier.id} className={`border-b border-[var(--color-border)] h-12 transition-colors duration-150 hover:bg-[var(--color-bg-sunken)] ${index % 2 === 0 ? 'bg-white' : 'bg-[var(--color-bg-base)]'}`}>
-                        <td className="px-6 py-0 font-medium text-[var(--color-text-primary)]">{supplier.name}</td>
-                        <td className="px-6 py-0 text-[var(--color-text-secondary)]">
+                        <td className="px-4 md:px-6 py-2 font-medium text-sm text-[var(--color-text-primary)] whitespace-nowrap">{supplier.name}</td>
+                        <td className="px-4 md:px-6 py-2 text-sm text-[var(--color-text-secondary)] whitespace-nowrap">
                           <div>{supplier.phone || '-'}</div>
                           <div className="text-xs">{supplier.email || '-'}</div>
                         </td>
-                        <td className="px-6 py-0 text-right">
+                        <td className="px-4 md:px-6 py-2 text-sm text-right whitespace-nowrap">
                           <span className={Number(supplier.balance) > 0 ? 'text-[var(--color-danger)] font-medium' : 'text-[var(--color-success)] font-medium'}>
                             KSH {Number(supplier.balance).toLocaleString()}
                           </span>
                         </td>
-                        <td className="px-6 py-0 text-right">
+                        <td className="px-4 md:px-6 py-2 text-right whitespace-nowrap">
                           <span className={`inline-flex items-center justify-center min-w-[48px] px-1.5 py-0.5 rounded-[var(--radius-sm)] text-[10px] font-bold uppercase tracking-wider ${
                             supplier.isActive ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' : 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]'
                           }`}>
                             {supplier.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td className="px-6 py-0 text-right space-x-2">
+                        <td className="px-4 md:px-6 py-2 text-right space-x-2 whitespace-nowrap">
                           {Number(supplier.balance) > 0 && currentUser?.role !== 'CASHIER' && (
                             <button
                               onClick={() => {
@@ -383,13 +383,13 @@ export function PurchasingPage() {
               <table className="w-full text-left border-collapse min-w-[900px]">
                 <thead>
                   <tr className="bg-white border-b border-[var(--color-border)]">
-                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Date & Time</th>
-                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Product</th>
-                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Supplier</th>
-                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Type</th>
-                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Quantity</th>
-                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">Invoice Ref</th>
-                    <th scope="col" className="px-6 py-3 text-xs font-semibold tracking-widest text-gray-400 uppercase">M-Pesa Ref</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Date & Time</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Product</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Supplier</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Type</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Quantity</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Invoice Ref</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">M-Pesa Ref</th>
                   </tr>
                 </thead>
               <tbody>
@@ -414,26 +414,26 @@ export function PurchasingPage() {
                     const qty = Number(movement.quantityChange);
                     return (
                       <tr key={movement.id} className={`border-b border-[var(--color-border)] h-12 transition-colors duration-150 hover:bg-[var(--color-bg-sunken)] ${index % 2 === 0 ? 'bg-white' : 'bg-[var(--color-bg-base)]'}`}>
-                        <td className="px-6 py-0 text-[var(--color-text-secondary)]">
+                        <td className="px-4 md:px-6 py-2 text-sm text-[var(--color-text-secondary)] whitespace-nowrap">
                           {new Date(movement.createdAt).toLocaleString()}
                         </td>
-                        <td className="px-6 py-0 font-medium text-[var(--color-text-primary)]">{movement.productName}</td>
-                        <td className="px-6 py-0 text-[var(--color-text-secondary)]">{movement.supplierName || '-'}</td>
-                        <td className="px-6 py-0">
+                        <td className="px-4 md:px-6 py-2 text-sm font-medium text-[var(--color-text-primary)] whitespace-nowrap">{movement.productName}</td>
+                        <td className="px-4 md:px-6 py-2 text-sm text-[var(--color-text-secondary)] whitespace-nowrap">{movement.supplierName || '-'}</td>
+                        <td className="px-4 md:px-6 py-2 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <ArrowDownRight className="text-emerald-500" size={18} />
                             <span className="text-[var(--color-text-secondary)] font-medium text-xs tracking-wider uppercase">{movement.type}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-0">
+                        <td className="px-4 md:px-6 py-2 whitespace-nowrap">
                           <span className="inline-flex items-center justify-center min-w-[48px] px-1.5 py-0.5 rounded-[var(--radius-sm)] text-[11px] font-bold tracking-wider bg-[var(--color-success-bg)] text-[var(--color-success)]">
                             +{qty}
                           </span>
                         </td>
-                        <td className="px-6 py-0 text-[var(--color-text-muted)] truncate max-w-[150px]" title={movement.invoiceRef || ''}>
+                        <td className="px-4 md:px-6 py-2 text-sm text-[var(--color-text-muted)] truncate max-w-[150px] whitespace-nowrap" title={movement.invoiceRef || ''}>
                           {movement.invoiceRef || '-'}
                         </td>
-                        <td className="px-6 py-0 font-medium text-[var(--color-text-primary)] truncate max-w-[150px]" title={movement.mpesaRef || ''}>
+                        <td className="px-4 md:px-6 py-2 text-sm font-medium text-[var(--color-text-primary)] truncate max-w-[150px] whitespace-nowrap" title={movement.mpesaRef || ''}>
                           {movement.mpesaRef || '-'}
                         </td>
                       </tr>
