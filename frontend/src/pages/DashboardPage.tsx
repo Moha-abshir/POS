@@ -4,6 +4,7 @@ import {
   Percent, AlertTriangle, ArrowUpRight, CreditCard, 
   Activity, ArrowRight, Info
 } from 'lucide-react';
+import { useAuthStore } from '../features/auth/stores/auth.store';
 import { api } from '../lib/api';
 import { 
   BarChart, Bar, PieChart, Pie, Cell, 
@@ -21,6 +22,7 @@ const COLORS = {
 };
 
 export const DashboardPage: React.FC = () => {
+  const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [activeFeedTab, setActiveFeedTab] = useState<'sales' | 'movements'>('sales');
@@ -97,12 +99,14 @@ export const DashboardPage: React.FC = () => {
           >
             Open POS Register <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
-          <Link 
-            to="/cash-reconciliation" 
-            className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-bold rounded-lg shadow-sm transition-colors"
-          >
-            Register Audits <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+          {user?.role === 'OWNER' && (
+            <Link 
+              to="/cash-reconciliation" 
+              className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-bold rounded-lg shadow-sm transition-colors"
+            >
+              Register Audits <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          )}
         </div>
       </div>
 

@@ -150,7 +150,7 @@ function App() {
             }
           >
             <Route path="/" element={<DashboardPage />} />
-            <Route path="/cash-reconciliation" element={<ReconciliationLogsPage />} />
+            <Route path="/cash-reconciliation" element={user?.role === 'OWNER' ? <ReconciliationLogsPage /> : <Navigate to="/" replace />} />
             <Route path="/catalog" element={<CatalogPage />} />
             <Route path="/team" element={<TeamPage />} />
             <Route path="/settings" element={<SettingsPage />} />
