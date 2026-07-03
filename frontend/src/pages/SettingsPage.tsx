@@ -95,11 +95,11 @@ export const SettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Settings</h1>
+    <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4 md:space-y-6">
+      <h1 className="text-xl md:text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Settings</h1>
       
-      <div className="bg-white rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] border border-[var(--color-border)] p-8">
-        <h2 className="text-lg font-semibold mb-6 text-[var(--color-text-primary)] border-b border-[var(--color-border)] pb-3">Profile & Business Setup</h2>
+      <div className="bg-white rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] border border-[var(--color-border)] p-5 md:p-8">
+        <h2 className="text-base md:text-lg font-semibold mb-4 md:mb-6 text-[var(--color-text-primary)] border-b border-[var(--color-border)] pb-2 md:pb-3">Profile & Business Setup</h2>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-2 gap-6">
@@ -139,8 +139,8 @@ export const SettingsPage: React.FC = () => {
 
             {user?.role === 'OWNER' && (
               <>
-                <div className="col-span-2 mt-6">
-                  <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-4 border-b border-[var(--color-border)] pb-2">Business Details</h3>
+                <div className="col-span-2 mt-4 md:mt-6">
+                  <h3 className="text-sm md:text-base font-semibold text-[var(--color-text-primary)] mb-3 md:mb-4 border-b border-[var(--color-border)] pb-2">Business Details</h3>
                 </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Organization Name *</label>

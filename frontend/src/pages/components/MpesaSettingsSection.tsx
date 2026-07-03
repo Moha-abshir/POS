@@ -137,12 +137,12 @@ export const MpesaSettingsSection: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6">
-      <div className="flex justify-between items-center mb-4 border-b pb-2">
-        <h2 className="text-xl font-semibold text-gray-800">M-Pesa Integration</h2>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 md:p-6 mt-4 md:mt-6">
+      <div className="flex justify-between items-center mb-3 md:mb-4 border-b pb-2">
+        <h2 className="text-lg md:text-xl font-semibold text-gray-800">M-Pesa Integration</h2>
         <button
           onClick={() => handleOpenModal()}
-          className="flex items-center px-3 py-1.5 bg-[var(--color-accent)] text-white rounded hover:opacity-90 transition-opacity text-sm font-medium"
+          className="flex items-center px-3 py-1.5 bg-[var(--color-accent)] text-white rounded hover:opacity-90 transition-opacity text-xs md:text-sm font-medium"
         >
           <Plus className="w-4 h-4 mr-1" /> Add Account
         </button>
@@ -157,8 +157,8 @@ export const MpesaSettingsSection: React.FC = () => {
       ) : (
         <div className="space-y-4 mt-4">
           {accounts.map(acc => (
-            <div key={acc.id} className={`flex items-center justify-between p-4 border rounded-lg ${acc.isDefault ? 'border-[var(--color-accent)] bg-orange-50/30' : 'border-gray-200'}`}>
-              <div className="flex items-center gap-4">
+            <div key={acc.id} className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-4 sm:gap-0 ${acc.isDefault ? 'border-[var(--color-accent)] bg-orange-50/30' : 'border-gray-200'}`}>
+              <div className="flex items-center gap-3 md:gap-4">
                 <button 
                   onClick={() => handleSetDefault(acc.id)}
                   className="focus:outline-none"
@@ -178,10 +178,10 @@ export const MpesaSettingsSection: React.FC = () => {
                       {acc.environment}
                     </span>
                   </h3>
-                  <p className="text-sm text-gray-500">Shortcode: {acc.shortcode}</p>
+                  <p className="text-xs md:text-sm text-gray-500 mt-1 sm:mt-0">Shortcode: {acc.shortcode}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 self-end sm:self-auto w-full sm:w-auto justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-200">
                 <button onClick={() => handleOpenModal(acc)} className="p-2 text-gray-400 hover:text-[var(--color-accent)] transition-colors">
                   <Edit2 className="w-4 h-4" />
                 </button>
