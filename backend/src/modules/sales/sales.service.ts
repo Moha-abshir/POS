@@ -3,6 +3,8 @@ import { db, transactionWithRetry } from '../../db';
 import { sales, saleItems, stockMovements, productVariants, customers, payments, variantUnits, products, refunds, refundItems } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 import { InventoryService } from '../inventory/inventory.service';
+import { MpesaService } from '../mpesa/mpesa.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { flushPattern } from '../../core/cache/redis';
 
 
@@ -248,7 +250,13 @@ export class SalesService {
         .where(and(eq(variantUnits.businessId, businessId), inArray(variantUnits.id, unitIds)));
 
       const variantIds = sortedItems.map(item => item.variantId);
-      const variantsList = await tx.select({ id: productVariants.id, isActive: productVariants.isActive, name: productVariants.name })
+      const variantsList = await tx.select({ 
+        id: productVariants.id, 
+        isActive: productVariants.isActive, 
+        name: productVariants.name,
+        baseStockQuantity: productVariants.baseStockQuantity,
+        lowStockThreshold: productVariants.lowStockThreshold
+      })
         .from(productVariants)
         .where(and(eq(productVariants.businessId, businessId), inArray(productVariants.id, variantIds)));
 
@@ -278,6 +286,20 @@ export class SalesService {
           costPrice: (Number(variant.costPrice || 0) * conversionFactor).toString(),
           subtotal: (item.quantity * item.sellingPrice).toString(),
         });
+
+        // Trigger LOW_STOCK notification
+        const oldStock = Number(variant.baseStockQuantity);
+        const newStock = oldStock - deductionAmount;
+        const lowStockThreshold = Number(variant.lowStockThreshold);
+
+        if (oldStock > lowStockThreshold && newStock <= lowStockThreshold) {
+          await NotificationsService.createNotification(
+            businessId,
+            'LOW_STOCK',
+            `Low Stock Alert: ${variant.name}`,
+            `The stock for ${variant.name} has fallen to ${newStock} (below threshold of ${lowStockThreshold}).`
+          );
+        }
 
         // Insert stock movement
         await tx.insert(stockMovements).values({

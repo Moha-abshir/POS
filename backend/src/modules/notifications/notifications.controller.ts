@@ -4,7 +4,7 @@ import { NotificationsService } from './notifications.service';
 export class NotificationsController {
   static async getNotifications(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await NotificationsService.getNotifications(req.user!.businessId);
+      const data = await NotificationsService.getNotifications(req.user!.businessId, req.user!.role);
       res.status(200).json({ status: 'success', data });
     } catch (error) {
       next(error);
@@ -13,7 +13,7 @@ export class NotificationsController {
 
   static async getUnreadCount(req: Request, res: Response, next: NextFunction) {
     try {
-      const count = await NotificationsService.getUnreadCount(req.user!.businessId);
+      const count = await NotificationsService.getUnreadCount(req.user!.businessId, req.user!.role);
       res.status(200).json({ status: 'success', count });
     } catch (error) {
       next(error);
@@ -35,7 +35,7 @@ export class NotificationsController {
 
   static async markAllAsRead(req: Request, res: Response, next: NextFunction) {
     try {
-      await NotificationsService.markAllAsRead(req.user!.businessId);
+      await NotificationsService.markAllAsRead(req.user!.businessId, req.user!.role);
       res.status(200).json({ status: 'success', message: 'All notifications marked as read' });
     } catch (error) {
       next(error);

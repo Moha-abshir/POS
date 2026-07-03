@@ -455,13 +455,6 @@ export const DashboardLayout: React.FC = () => {
                       <span>Opening Float</span>
                       <span className="text-gray-900">{formatKES(Number(activeSession.openingFloat))}</span>
                     </div>
-                    <div className="flex justify-between font-bold text-gray-900 pt-1 border-t border-dashed">
-                      <span className="flex items-center gap-1">
-                        Expected Drawer Cash
-                        <span className="text-[10px] text-gray-400 font-normal hover:underline cursor-help" title="Opening Float + Cash Sales - Cash Refunds - Cash Purchases">?</span>
-                      </span>
-                      <span className="text-amber-700 underline decoration-double">{formatKES(Number(activeSession.expectedCash))}</span>
-                    </div>
                   </div>
 
                   <button 
@@ -525,50 +518,17 @@ export const DashboardLayout: React.FC = () => {
                       <span className="text-gray-500">Total Counted Cash</span>
                       <span className="font-bold text-gray-900 text-sm">{formatKES(totalCounted)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">System Expected Cash</span>
-                      <span className="font-bold text-gray-900 text-sm">{formatKES(Number(activeSession.expectedCash))}</span>
+
+                    <div className="mt-4 border-t border-gray-100 pt-3">
+                      <label className="text-xs text-gray-500 font-medium mb-1 block">Closing Notes (Optional)</label>
+                      <textarea
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Add any notes about this shift close..."
+                        className="w-full p-2 border border-gray-300 rounded-lg text-xs font-normal focus:outline-none text-gray-900 bg-white"
+                        rows={2}
+                      />
                     </div>
-
-                    {/* Discrepancy feedback block */}
-                    {(() => {
-                      const expectedVal = Number(activeSession.expectedCash);
-                      const targetCash = Math.abs(expectedVal);
-                      const diff = totalCounted - targetCash;
-                      const hasDiscrepancy = Math.abs(diff) > 0.01;
-
-                      if (!hasDiscrepancy) {
-                        return (
-                          <div className="p-3 rounded-lg border bg-green-50 border-green-200 text-green-800 flex items-center gap-1.5 mt-2">
-                            <span>✓ Drawer count matches expectation perfectly!</span>
-                          </div>
-                        );
-                      }
-
-                      const isSurplus = diff > 0;
-                      return (
-                        <div className={`p-3 rounded-lg border flex flex-col gap-1 mt-2 ${
-                          isSurplus
-                            ? 'bg-blue-50 border-blue-200 text-blue-800'
-                            : 'bg-red-50 border-red-200 text-red-800'
-                        }`}>
-                          <div className="flex items-center gap-1">
-                            <AlertTriangle className="w-4 h-4 shrink-0" />
-                            <span>
-                              Discrepancy: {isSurplus ? 'Surplus' : 'Shortage'} of{' '}
-                              {formatKES(Math.abs(diff))}
-                            </span>
-                          </div>
-                          <textarea
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Please document the reason for the discrepancy (required)..."
-                            className="w-full mt-2 p-2 border border-gray-300 rounded-lg text-xs font-normal focus:outline-none text-gray-900 bg-white"
-                            rows={2}
-                          />
-                        </div>
-                      );
-                    })()}
                   </div>
 
                   <div className="flex gap-3 pt-2">

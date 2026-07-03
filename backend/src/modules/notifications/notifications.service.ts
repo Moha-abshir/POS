@@ -1,6 +1,6 @@
 import { db } from '../../db';
 import { notifications } from '../../db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, not } from 'drizzle-orm';
 
 export class NotificationsService {
   /**
@@ -25,10 +25,15 @@ export class NotificationsService {
   /**
    * Get latest 10 notifications
    */
-  static async getNotifications(businessId: string) {
+  static async getNotifications(businessId: string, role: string) {
+    const filters = [eq(notifications.businessId, businessId)];
+    if (role !== 'OWNER') {
+      filters.push(not(eq(notifications.type, 'CASH_DISCREPANCY')));
+    }
+    
     return await db.select()
       .from(notifications)
-      .where(eq(notifications.businessId, businessId))
+      .where(and(...filters))
       .orderBy(desc(notifications.createdAt))
       .limit(10);
   }
@@ -36,15 +41,18 @@ export class NotificationsService {
   /**
    * Get count of unread notifications
    */
-  static async getUnreadCount(businessId: string) {
+  static async getUnreadCount(businessId: string, role: string) {
+    const filters = [
+      eq(notifications.businessId, businessId),
+      eq(notifications.isRead, false)
+    ];
+    if (role !== 'OWNER') {
+      filters.push(not(eq(notifications.type, 'CASH_DISCREPANCY')));
+    }
+    
     const result = await db.select()
       .from(notifications)
-      .where(
-        and(
-          eq(notifications.businessId, businessId),
-          eq(notifications.isRead, false)
-        )
-      );
+      .where(and(...filters));
     return result.length;
   }
 
@@ -67,15 +75,18 @@ export class NotificationsService {
   /**
    * Mark all notifications for the business as read
    */
-  static async markAllAsRead(businessId: string) {
+  static async markAllAsRead(businessId: string, role: string) {
+    const filters = [
+      eq(notifications.businessId, businessId),
+      eq(notifications.isRead, false)
+    ];
+    if (role !== 'OWNER') {
+      filters.push(not(eq(notifications.type, 'CASH_DISCREPANCY')));
+    }
+    
     return await db.update(notifications)
       .set({ isRead: true })
-      .where(
-        and(
-          eq(notifications.businessId, businessId),
-          eq(notifications.isRead, false)
-        )
-      )
+      .where(and(...filters))
       .returning();
   }
 }
