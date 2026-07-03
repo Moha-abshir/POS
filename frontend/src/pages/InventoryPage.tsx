@@ -33,8 +33,8 @@ export function InventoryPage() {
   };
 
   return (
-    <div className="p-6 max-w-[1400px] mx-auto h-full flex flex-col space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-4 md:p-6 max-w-[1400px] mx-auto h-full flex flex-col space-y-4 md:space-y-6">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 md:gap-6">
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">
             {view === 'ledger' ? 'Inventory Ledger' : view === 'restock' ? 'Restock List' : view === 'damages' ? 'Damages Log' : 'Negative Stock'}
@@ -43,40 +43,40 @@ export function InventoryPage() {
             {view === 'ledger' ? 'Track every stock movement across your business' : view === 'restock' ? 'Manage items that need to be reordered' : view === 'damages' ? 'Track lost, damaged, or expired items' : 'Quickly resolve items that have negative inventory levels'}
           </p>
         </div>
-        <div className="flex gap-4 items-center">
-          <div className="bg-[var(--color-bg-sunken)] p-1 rounded-lg flex border border-[var(--color-border)]">
+        <div className="flex flex-col sm:flex-row xl:flex-row gap-3 sm:gap-4 items-stretch sm:items-center w-full xl:w-auto">
+          <div className="bg-[var(--color-bg-sunken)] p-1 rounded-lg flex overflow-x-auto border border-[var(--color-border)] hide-scrollbar w-full sm:w-auto shrink-0">
             <button 
               onClick={() => setView('ledger')} 
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${view === 'ledger' ? 'bg-white shadow-sm text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
+              className={`px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${view === 'ledger' ? 'bg-white shadow-sm text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
             >
               Ledger
             </button>
             <button 
               onClick={() => setView('restock')} 
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${view === 'restock' ? 'bg-white shadow-sm text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
+              className={`px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${view === 'restock' ? 'bg-white shadow-sm text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
             >
               Restock List
             </button>
             <button 
               onClick={() => setView('damages')} 
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${view === 'damages' ? 'bg-white shadow-sm text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
+              className={`px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${view === 'damages' ? 'bg-white shadow-sm text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
             >
               Damages Log
             </button>
             {currentUser?.role !== 'CASHIER' && (
               <button 
                 onClick={() => setView('negative')} 
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${view === 'negative' ? 'bg-white shadow-sm text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
+                className={`px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${view === 'negative' ? 'bg-white shadow-sm text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
               >
                 Negative Stock
               </button>
             )}
           </div>
           
-          <div className="flex gap-2 items-center">
+          <div className="flex flex-row gap-2 items-center w-full sm:w-auto shrink-0">
             <button
               onClick={() => setIsDamageModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 h-10 bg-red-50 border border-red-100 text-red-600 rounded-[var(--radius-md)] hover:bg-red-100 transition-colors shadow-sm font-semibold select-none cursor-pointer"
+              className="flex-1 sm:flex-none flex justify-center items-center gap-1.5 px-3 sm:px-4 py-2 h-10 bg-red-50 border border-red-100 text-red-600 rounded-[var(--radius-md)] hover:bg-red-100 transition-colors shadow-sm text-sm font-semibold select-none cursor-pointer"
             >
               <AlertTriangle size={18} />
               <span>Report Damage</span>
@@ -84,7 +84,7 @@ export function InventoryPage() {
             {currentUser?.role !== 'CASHIER' && (
               <button
                 onClick={() => setIsAdjustModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 h-10 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[var(--radius-md)] hover:bg-[var(--color-bg-surface)] transition-colors shadow-sm font-semibold select-none cursor-pointer"
+                className="flex-1 sm:flex-none flex justify-center items-center gap-1.5 px-3 sm:px-4 py-2 h-10 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[var(--radius-md)] hover:bg-[var(--color-bg-surface)] transition-colors shadow-sm text-sm font-semibold select-none cursor-pointer"
               >
                 <Wrench size={18} />
                 <span>Adjust Stock</span>
