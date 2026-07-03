@@ -169,13 +169,14 @@ export const CustomersPage = () => {
   ];
 
   return (
-    <div className="p-6 max-w-[1400px] mx-auto h-full flex flex-col w-full space-y-6">
+    <div className="p-4 md:p-6 max-w-[1400px] mx-auto h-full flex flex-col w-full space-y-4 md:space-y-6">
       
       {/* Top Section */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 md:gap-4">
         {/* Toolbar Row */}
-        <div className="flex items-center gap-3 w-full">
-          <div className="relative flex-1">
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-3 w-full">
+          <div className="flex flex-row gap-2 w-full xl:w-auto xl:flex-1">
+            <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--color-text-muted)]" />
             <input
               type="text"
@@ -186,51 +187,54 @@ export const CustomersPage = () => {
             />
           </div>
           
-          <button
-            onClick={() => setOwingOnly(!owingOnly)}
-            className={`h-10 px-4 rounded-[var(--radius-md)] text-sm transition-all border shrink-0 select-none cursor-pointer font-medium ${
-              owingOnly 
-                ? 'bg-[var(--color-accent-subtle)] border-[var(--color-accent)]/30 text-[var(--color-accent-hover)]' 
-                : 'bg-white border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-base)]'
-            }`}
-          >
-            Owing only
-          </button>
-
-          {currentUser?.role !== 'CASHIER' && (
             <button
-              onClick={() => setIsImportModalOpen(true)}
-              className="flex items-center justify-center gap-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 px-4 h-10 rounded-[var(--radius-md)] font-semibold text-sm transition-all shrink-0 select-none cursor-pointer"
+              onClick={() => setOwingOnly(!owingOnly)}
+              className={`h-10 px-3 sm:px-4 rounded-[var(--radius-md)] text-xs sm:text-sm transition-all border shrink-0 select-none cursor-pointer font-medium whitespace-nowrap ${
+                owingOnly 
+                  ? 'bg-[var(--color-accent-subtle)] border-[var(--color-accent)]/30 text-[var(--color-accent-hover)]' 
+                  : 'bg-white border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-base)]'
+              }`}
             >
-              <Download size={16} />
-              <span>Import</span>
+              Owing only
             </button>
-          )}
+          </div>
 
-          <button
-            onClick={handleExportCustomers}
-            className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-4 h-10 rounded-[var(--radius-md)] font-semibold text-sm transition-all shrink-0 select-none cursor-pointer"
-          >
-            <Upload size={16} />
-            <span>Export</span>
-          </button>
+          <div className="flex flex-row gap-2 w-full xl:w-auto shrink-0">
+            {currentUser?.role !== 'CASHIER' && (
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex-1 xl:flex-none flex items-center justify-center gap-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 px-3 sm:px-4 h-10 rounded-[var(--radius-md)] font-semibold text-xs sm:text-sm transition-all shrink-0 select-none cursor-pointer"
+              >
+                <Download size={16} className="w-4 h-4" />
+                <span>Import</span>
+              </button>
+            )}
 
-          <button
-            onClick={handleOpenAddModal}
-            className="flex items-center justify-center gap-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-5 h-10 rounded-[var(--radius-md)] font-semibold text-sm transition-all shrink-0 cursor-pointer shadow-sm"
-          >
-            <Plus className="h-4 w-4" />
-            Add Customer
-          </button>
+            <button
+              onClick={handleExportCustomers}
+              className="flex-1 xl:flex-none flex items-center justify-center gap-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-3 sm:px-4 h-10 rounded-[var(--radius-md)] font-semibold text-xs sm:text-sm transition-all shrink-0 select-none cursor-pointer"
+            >
+              <Upload size={16} className="w-4 h-4" />
+              <span>Export</span>
+            </button>
+
+            <button
+              onClick={handleOpenAddModal}
+              className="flex-1 xl:flex-none flex items-center justify-center gap-1.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-3 sm:px-5 h-10 rounded-[var(--radius-md)] font-semibold text-xs sm:text-sm transition-all shrink-0 cursor-pointer shadow-sm whitespace-nowrap"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Customer</span>
+            </button>
+          </div>
         </div>
 
         {/* Filter Tab Bar */}
-        <div className="flex items-center border-b border-[var(--color-border)]">
+        <div className="flex items-center border-b border-[var(--color-border)] overflow-x-auto hide-scrollbar w-full">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 text-sm border-b-2 transition-colors cursor-pointer ${
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm border-b-2 transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'border-[var(--color-accent)] text-[var(--color-accent)] font-semibold'
                   : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
@@ -252,21 +256,21 @@ export const CustomersPage = () => {
       </div>
 
       {/* Stat Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 shrink-0">
-        <div className="bg-white border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-4">
-          <h3 className="text-xs uppercase tracking-wide text-[var(--color-text-muted)] mb-2">Total customers</h3>
-          <p className="text-2xl font-semibold text-[var(--color-text-primary)]">{totalCustomers}</p>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 shrink-0">
+        <div className="bg-white border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-3 md:p-4">
+          <h3 className="text-[10px] md:text-xs uppercase tracking-wide text-[var(--color-text-muted)] mb-1 md:mb-2 line-clamp-1">Total customers</h3>
+          <p className="text-lg md:text-2xl font-semibold text-[var(--color-text-primary)]">{totalCustomers}</p>
         </div>
-        <div className="bg-white border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-4">
-          <h3 className="text-xs uppercase tracking-wide text-[var(--color-text-muted)] mb-2">Outstanding debt</h3>
-          <p className={`text-2xl font-semibold ${outstandingDebt > 0 ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]'}`}>
-            KSH {outstandingDebt.toLocaleString()}
+        <div className="bg-white border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-3 md:p-4">
+          <h3 className="text-[10px] md:text-xs uppercase tracking-wide text-[var(--color-text-muted)] mb-1 md:mb-2 line-clamp-1">Outstanding debt</h3>
+          <p className={`text-lg md:text-2xl font-semibold ${outstandingDebt > 0 ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]'}`}>
+            <span className="text-sm md:text-xl">KSH </span>{outstandingDebt.toLocaleString()}
           </p>
         </div>
-        <div className="bg-white border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-4">
-          <h3 className="text-xs uppercase tracking-wide text-[var(--color-text-muted)] mb-2">Overdue (&gt;30 days)</h3>
-          <p className={`text-2xl font-semibold ${overdueDebt > 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-primary)]'}`}>
-            KSH {overdueDebt.toLocaleString()}
+        <div className="bg-white border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-3 md:p-4 col-span-2 md:col-span-1">
+          <h3 className="text-[10px] md:text-xs uppercase tracking-wide text-[var(--color-text-muted)] mb-1 md:mb-2 line-clamp-1">Overdue (&gt;30 days)</h3>
+          <p className={`text-lg md:text-2xl font-semibold ${overdueDebt > 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-primary)]'}`}>
+            <span className="text-sm md:text-xl">KSH </span>{overdueDebt.toLocaleString()}
           </p>
         </div>
       </div>
