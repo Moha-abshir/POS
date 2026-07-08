@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, TrendingDown, DollarSign, ShoppingBag, 
   Percent, AlertTriangle, ArrowUpRight, CreditCard, 
-  Activity, ArrowRight, Info
+  Activity, ArrowRight, Info, Printer
 } from 'lucide-react';
 import { useAuthStore } from '../features/auth/stores/auth.store';
 import { api } from '../lib/api';
@@ -26,6 +26,268 @@ export const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [activeFeedTab, setActiveFeedTab] = useState<'sales' | 'movements'>('sales');
+  const [printingDailyReport, setPrintingDailyReport] = useState(false);
+
+  const handlePrintDailySalesReport = async () => {
+    setPrintingDailyReport(true);
+    try {
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+
+      // Fetch all of today's sales (up to 1000)
+      const res = await api.get('/sales', {
+        params: {
+          startDate: startOfToday.toISOString(),
+          endDate: endOfToday.toISOString(),
+          limit: 1000
+        }
+      });
+      
+      const sales = res.data.data || [];
+      
+      // Calculate payment method breakdown
+      let cashTotal = 0;
+      let mpesaTotal = 0;
+      let splitTotal = 0;
+      let totalSalesAmt = 0;
+
+      sales.forEach((s: any) => {
+        const amt = Number(s.totalAmount) || 0;
+        totalSalesAmt += amt;
+        if (s.paymentMethod === 'CASH') cashTotal += amt;
+        else if (s.paymentMethod === 'MPESA') mpesaTotal += amt;
+        else if (s.paymentMethod === 'SPLIT') splitTotal += amt;
+      });
+
+      const todayFormatted = new Date().toLocaleDateString('en-KE', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      // Construct printable HTML
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        alert('Please allow popups to download/print the PDF report.');
+        return;
+      }
+
+      const rowsHtml = sales.map((sale: any) => {
+        const time = new Date(sale.soldAt).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' });
+        const receiptNo = sale.id.slice(0, 8).toUpperCase();
+        const customer = sale.customerName || 'Walk-in Customer';
+        const method = sale.paymentMethod;
+        const status = sale.paymentStatus;
+        const total = formatKES(Number(sale.totalAmount));
+        const paid = formatKES(Number(sale.amountPaid));
+        const ref = sale.mpesaRef || '-';
+
+        return `
+          <tr>
+            <td>${time}</td>
+            <td style="font-family: monospace; font-weight: bold;">${receiptNo}</td>
+            <td>${customer}</td>
+            <td style="text-align: center;">
+              <span class="badge badge-${method.toLowerCase()}">${method}</span>
+            </td>
+            <td style="text-align: center;">
+              <span class="badge badge-${status.toLowerCase()}">${status}</span>
+            </td>
+            <td style="text-align: right; font-weight: bold;">${total}</td>
+            <td style="text-align: right;">${paid}</td>
+            <td style="font-family: monospace; text-align: center;">${ref}</td>
+          </tr>
+        `;
+      }).join('');
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Daily Sales Report - ${new Date().toISOString().split('T')[0]}</title>
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                color: #1f2937;
+                padding: 40px;
+                margin: 0;
+                line-height: 1.5;
+              }
+              .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                border-bottom: 2px solid #e5e7eb;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+              }
+              .header h1 {
+                margin: 0;
+                font-size: 24px;
+                font-weight: 800;
+                color: #111827;
+              }
+              .header p {
+                margin: 5px 0 0 0;
+                font-size: 14px;
+                color: #6b7280;
+              }
+              .meta-info {
+                text-align: right;
+                font-size: 14px;
+                color: #4b5563;
+              }
+              .summary-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 15px;
+                margin-bottom: 30px;
+              }
+              .summary-card {
+                background: #f9fafb;
+                border: 1px solid #f3f4f6;
+                border-radius: 12px;
+                padding: 15px;
+                text-align: left;
+              }
+              .summary-card p {
+                margin: 0;
+                font-size: 11px;
+                font-weight: 700;
+                color: #9ca3af;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+              }
+              .summary-card h3 {
+                margin: 5px 0 0 0;
+                font-size: 18px;
+                font-weight: 800;
+                color: #111827;
+              }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 12px;
+                margin-bottom: 30px;
+              }
+              th {
+                background: #f3f4f6;
+                color: #374151;
+                font-weight: 700;
+                text-transform: uppercase;
+                font-size: 10px;
+                letter-spacing: 0.05em;
+                padding: 10px 12px;
+                border-bottom: 2px solid #e5e7eb;
+                text-align: left;
+              }
+              td {
+                padding: 10px 12px;
+                border-bottom: 1px solid #f3f4f6;
+                color: #4b5563;
+              }
+              .badge {
+                display: inline-block;
+                padding: 2px 6px;
+                font-size: 9px;
+                font-weight: 700;
+                border-radius: 4px;
+                text-transform: uppercase;
+              }
+              .badge-cash { background: #e0f2fe; color: #0369a1; }
+              .badge-mpesa { background: #fef3c7; color: #b45309; }
+              .badge-split { background: #f3e8ff; color: #6b21a8; }
+              .badge-paid { background: #dcfce7; color: #15803d; }
+              .badge-partial { background: #ffedd5; color: #c2410c; }
+              .badge-unpaid { background: #fee2e2; color: #b91c1c; }
+              
+              @media print {
+                body { padding: 0; }
+                .no-print { display: none; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div>
+                <h1>Daily Sales Report</h1>
+                <p>${todayFormatted}</p>
+              </div>
+              <div class="meta-info">
+                <strong>Business:</strong> ${user?.businessName || 'My Store'}<br>
+                <strong>Generated by:</strong> ${user?.firstName} ${user?.lastName || ''}
+              </div>
+            </div>
+
+            <div class="summary-grid">
+              <div class="summary-card">
+                <p>Total Revenue</p>
+                <h3>${formatKES(totalSalesAmt)}</h3>
+              </div>
+              <div class="summary-card">
+                <p>Cash Payments</p>
+                <h3>${formatKES(cashTotal)}</h3>
+              </div>
+              <div class="summary-card">
+                <p>M-Pesa Payments</p>
+                <h3>${formatKES(mpesaTotal)}</h3>
+              </div>
+              <div class="summary-card">
+                <p>Split Payments</p>
+                <h3>${formatKES(splitTotal)}</h3>
+              </div>
+            </div>
+
+            <div class="summary-card" style="margin-bottom: 30px; display: inline-block; width: auto; min-width: 200px;">
+              <p>Total Transactions</p>
+              <h3 style="font-size: 24px;">${sales.length}</h3>
+            </div>
+
+            <h2 style="font-size: 16px; font-weight: 800; color: #111827; margin-bottom: 15px;">Transactions Ledger</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 80px;">Time</th>
+                  <th style="width: 100px;">Receipt No.</th>
+                  <th>Customer</th>
+                  <th style="width: 80px; text-align: center;">Method</th>
+                  <th style="width: 80px; text-align: center;">Status</th>
+                  <th style="width: 110px; text-align: right;">Total Amount</th>
+                  <th style="width: 110px; text-align: right;">Amount Paid</th>
+                  <th style="width: 120px; text-align: center;">M-PESA Ref</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml || '<tr><td colspan="8" style="text-align: center; color: #9ca3af; padding: 30px;">No sales processed today.</td></tr>'}
+              </tbody>
+            </table>
+
+            <div class="no-print" style="margin-top: 40px; text-align: center;">
+              <button onclick="window.print()" style="background: #D97706; color: white; border: none; padding: 12px 24px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer;">
+                Print / Save as PDF
+              </button>
+            </div>
+            
+            <script>
+              window.onload = function() {
+                // Auto trigger print dialog after rendering
+                setTimeout(function() {
+                  window.print();
+                }, 500);
+              }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } catch (err) {
+      console.error('Error generating daily sales report:', err);
+    } finally {
+      setPrintingDailyReport(false);
+    }
+  };
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -100,12 +362,22 @@ export const DashboardPage: React.FC = () => {
             Open POS Register <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
           {user?.role === 'OWNER' && (
-            <Link 
-              to="/cash-reconciliation" 
-              className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-bold rounded-lg shadow-sm transition-colors"
-            >
-              Register Audits <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            <>
+              <button 
+                onClick={handlePrintDailySalesReport}
+                disabled={printingDailyReport}
+                className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-bold rounded-lg shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <Printer className="w-3.5 h-3.5 text-amber-600" />
+                <span>{printingDailyReport ? 'Generating...' : 'Daily Sales PDF'}</span>
+              </button>
+              <Link 
+                to="/cash-reconciliation" 
+                className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-bold rounded-lg shadow-sm transition-colors"
+              >
+                Register Audits <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </>
           )}
         </div>
       </div>
