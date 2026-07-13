@@ -143,24 +143,7 @@ export const ProductList: React.FC<ProductListProps> = ({
       {/* Data Table */}
       <div className="overflow-visible md:overflow-y-auto flex-1 p-4 md:p-6">
         {isLoading && (
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="animate-pulse bg-white border border-[var(--color-border)] rounded-2xl overflow-hidden h-[260px] md:h-[380px] flex flex-col">
-                <div className="bg-gray-100 h-1/2 w-full animate-pulse"></div>
-                <div className="p-5 flex-1 flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="h-4 bg-gray-100 rounded w-1/4"></div>
-                    <div className="h-5 bg-gray-100 rounded w-2/3"></div>
-                    <div className="h-4 bg-gray-100 rounded w-1/3"></div>
-                  </div>
-                  <div className="flex gap-3 mt-auto">
-                    <div className="h-9 bg-gray-100 rounded-lg flex-1"></div>
-                    <div className="h-9 bg-gray-100 rounded-lg w-9"></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <TableSkeleton rows={8} cols={7} />
         )}
         
         {isError && (
@@ -193,95 +176,105 @@ export const ProductList: React.FC<ProductListProps> = ({
         )}
 
         {!isLoading && !isError && filteredProducts && (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
-            {filteredProducts.map((product) => {
-              const primaryVariant = product.variants?.[0];
-              const totalStock = product.variants?.reduce((sum, v) => sum + parseFloat(v.baseStockQuantity as string), 0) || 0;
-              const hasMultipleVariants = (product.variants?.length || 0) > 1;
-              const defaultUnit = primaryVariant?.units?.find((u: any) => u.isDefault) || primaryVariant?.units?.[0];
-              const priceLabel = hasMultipleVariants ? 'Multiple Variants' : `KSH ${parseFloat(defaultUnit?.sellingPrice as string || '0').toLocaleString()}`;
-              
-              let stockStatus = 'Good';
-              let badgeColor = 'bg-[var(--color-success-bg)] text-[var(--color-success)]';
-              
-              const isOut = product.variants?.some(v => parseFloat(v.baseStockQuantity as string) <= 0);
-              const isLow = product.variants?.some(v => parseFloat(v.baseStockQuantity as string) <= parseFloat(v.lowStockThreshold as string));
-              const hasInactiveVariant = product.variants?.some(v => v.isActive === false);
-
-              if (hasInactiveVariant) {
-                stockStatus = 'Inactive Var';
-                badgeColor = 'bg-gray-100 text-gray-500 border-gray-200';
-              } else if (isOut) {
-                stockStatus = 'Out';
-                badgeColor = 'bg-[var(--color-danger-bg)] text-[var(--color-danger)]';
-              } else if (isLow) {
-                stockStatus = 'Low';
-                badgeColor = 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]';
-              }
-
-              const variantWithImage = product.variants?.find((v: any) => v.imageUrl);
-              const displayImage = product.imageUrl || variantWithImage?.imageUrl || product.variants?.[0]?.imageUrl;
-
-              return (
-                <div 
-                  key={product.id}
-                  onClick={() => setRestockProduct(product)}
-                  className="group bg-white rounded-2xl border border-[var(--color-border)] shadow-sm hover:shadow-md hover:border-amber-500/50 transition-all duration-200 flex flex-col overflow-hidden h-[280px] md:h-[380px] relative cursor-pointer"
-                >
-                  {/* Image: exactly 50% height */}
-                  <div className="w-full h-1/2 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 relative shrink-0">
-                    {displayImage ? (
-                      <img 
-                        src={displayImage} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300" 
-                        alt={product.name} 
-                      />
-                    ) : (
-                      <Package className="w-12 h-12 text-gray-300 group-hover:scale-105 transition-all duration-300" />
-                    )}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-100 text-xs text-left">
+                <thead className="bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100">
+                  <tr>
+                    <th className="px-5 py-4">Product Info</th>
+                    <th className="px-5 py-4">Category</th>
+                    <th className="px-5 py-4 text-center">Variants</th>
+                    <th className="px-5 py-4 text-right">Price / Range</th>
+                    <th className="px-5 py-4 text-right">Total Stock</th>
+                    <th className="px-5 py-4 text-center">Status</th>
+                    <th className="px-5 py-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 bg-white font-medium text-gray-700">
+                  {filteredProducts.map((product) => {
+                    const primaryVariant = product.variants?.[0];
+                    const totalStock = product.variants?.reduce((sum, v) => sum + parseFloat(v.baseStockQuantity as string), 0) || 0;
+                    const hasMultipleVariants = (product.variants?.length || 0) > 1;
+                    const defaultUnit = primaryVariant?.units?.find((u: any) => u.isDefault) || primaryVariant?.units?.[0];
+                    const priceLabel = hasMultipleVariants ? 'Multiple Variants' : `KSH ${parseFloat(defaultUnit?.sellingPrice as string || '0').toLocaleString()}`;
                     
-                    {/* Status badge overlaid on image */}
-                    <div className="absolute top-3 left-3">
-                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm border border-white/20 ${badgeColor}`}>
-                        {stockStatus}
-                      </span>
-                    </div>
+                    let stockStatus = 'Good';
+                    let badgeColor = 'bg-green-50 text-green-700 border-green-100';
+                    
+                    const isOut = product.variants?.some(v => parseFloat(v.baseStockQuantity as string) <= 0);
+                    const isLow = product.variants?.some(v => parseFloat(v.baseStockQuantity as string) <= parseFloat(v.lowStockThreshold as string));
+                    const hasInactiveVariant = product.variants?.some(v => v.isActive === false);
 
-                    {/* Stock count overlaid on bottom right of the image */}
-                    <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-md text-[11px] font-mono font-bold">
-                      {totalStock} in stock
-                    </div>
-                  </div>
+                    if (hasInactiveVariant) {
+                      stockStatus = 'Inactive';
+                      badgeColor = 'bg-gray-50 text-gray-500 border-gray-100';
+                    } else if (isOut) {
+                      stockStatus = 'Out of Stock';
+                      badgeColor = 'bg-red-50 text-red-700 border-red-100';
+                    } else if (isLow) {
+                      stockStatus = 'Low Stock';
+                      badgeColor = 'bg-amber-50 text-amber-700 border-amber-100';
+                    }
 
-                  {/* Details: 50% height */}
-                  <div className="p-3 md:p-5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-[9px] md:text-[11px] font-bold text-amber-600 bg-amber-50 px-1.5 md:px-2 py-0.5 rounded-full uppercase tracking-wider line-clamp-1">
-                          {product.categoryName || 'Unclassified'}
-                        </span>
-                      </div>
-                      <h4 className="text-xs md:text-sm font-bold text-[var(--color-text-primary)] mt-1.5 md:mt-2 group-hover:text-amber-600 transition-colors line-clamp-2" title={product.name}>
-                        {product.name}
-                      </h4>
-                      <p className="text-[10px] md:text-xs text-gray-400 mt-1 font-semibold">
-                        {priceLabel}
-                      </p>
-                    </div>
+                    const variantWithImage = product.variants?.find((v: any) => v.imageUrl);
+                    const displayImage = product.imageUrl || variantWithImage?.imageUrl || product.variants?.[0]?.imageUrl;
 
-                    {/* Action buttons at the bottom of the card */}
-                    <div className="flex items-center justify-between pt-2.5 md:pt-3 border-t border-gray-100 mt-auto gap-2" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => onEditProduct(product)}
-                        className="w-full h-8 md:h-9 flex items-center justify-center text-[10px] md:text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors border border-amber-200/50 cursor-pointer"
+                    return (
+                      <tr 
+                        key={product.id}
+                        onClick={() => setRestockProduct(product)}
+                        className="hover:bg-gray-50/50 transition-colors cursor-pointer"
                       >
-                        Edit Details
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                        <td className="px-5 py-3 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100 shrink-0">
+                            {displayImage ? (
+                              <img src={displayImage} className="w-full h-full object-cover" alt={product.name} />
+                            ) : (
+                              <Package className="w-5 h-5 text-gray-400" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-bold text-gray-900 text-sm">{product.name}</div>
+                            {primaryVariant?.sku && <div className="text-[10px] text-gray-400 font-semibold mt-0.5">SKU: {primaryVariant.sku}</div>}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3">
+                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 uppercase tracking-wider">
+                            {product.categoryName || 'Unclassified'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-center font-semibold text-gray-800">
+                          {product.variants?.length || 0}
+                        </td>
+                        <td className="px-5 py-3 text-right font-bold text-gray-900">
+                          {priceLabel}
+                        </td>
+                        <td className="px-5 py-3 text-right font-mono font-bold text-gray-900">
+                          {totalStock.toLocaleString()}
+                        </td>
+                        <td className="px-5 py-3">
+                          <div className="flex justify-center">
+                            <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badgeColor}`}>
+                              {stockStatus}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex justify-center gap-2">
+                            <button
+                              onClick={() => onEditProduct(product)}
+                              className="px-3 py-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md transition-colors border border-amber-200/50 cursor-pointer"
+                            >
+                              Edit Details
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
