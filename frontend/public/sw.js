@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smartpos-runtime-v1';
+const CACHE_NAME = 'smartpos-runtime-v2';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
