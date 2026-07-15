@@ -221,29 +221,7 @@ export const DashboardPage: React.FC = () => {
               </div>
             </div>
 
-            <div class="summary-grid">
-              <div class="summary-card">
-                <p>Total Revenue</p>
-                <h3>${formatKES(totalSalesAmt)}</h3>
-              </div>
-              <div class="summary-card">
-                <p>Cash Payments</p>
-                <h3>${formatKES(cashTotal)}</h3>
-              </div>
-              <div class="summary-card">
-                <p>M-Pesa Payments</p>
-                <h3>${formatKES(mpesaTotal)}</h3>
-              </div>
-              <div class="summary-card">
-                <p>Split Payments</p>
-                <h3>${formatKES(splitTotal)}</h3>
-              </div>
-            </div>
 
-            <div class="summary-card" style="margin-bottom: 30px; display: inline-block; width: auto; min-width: 200px;">
-              <p>Total Transactions</p>
-              <h3 style="font-size: 24px;">${sales.length}</h3>
-            </div>
 
             <h2 style="font-size: 16px; font-weight: 800; color: #111827; margin-bottom: 15px;">Transactions Ledger</h2>
             <table>
