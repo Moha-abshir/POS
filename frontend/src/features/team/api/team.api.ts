@@ -7,7 +7,7 @@ export interface TeamMember {
   firstName?: string;
   lastName?: string;
   mobileNumber?: string;
-  role: 'OWNER' | 'CASHIER';
+  role: 'OWNER' | 'MANAGER' | 'CASHIER';
   isActive: boolean;
   createdAt: string;
 }
@@ -26,8 +26,22 @@ export const useAddTeamMember = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { email: string; firstName: string; lastName: string; mobileNumber: string; }) => {
+    mutationFn: async (data: { email: string; firstName: string; lastName: string; mobileNumber: string; role: 'CASHIER' | 'MANAGER'; }) => {
       const response = await api.post<{ success: boolean; data: TeamMember }>('/users/cashiers', data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['team'] });
+    },
+  });
+};
+
+export const useUpdateUserRole = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, role }: { id: string; role: 'OWNER' | 'MANAGER' | 'CASHIER' }) => {
+      const response = await api.patch<{ success: boolean; data: TeamMember }>(`/users/${id}/role`, { role });
       return response.data.data;
     },
     onSuccess: () => {

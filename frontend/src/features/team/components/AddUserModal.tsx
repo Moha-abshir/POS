@@ -14,6 +14,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) =
     firstName: '',
     lastName: '',
     mobileNumber: '',
+    role: 'CASHIER' as 'CASHIER' | 'MANAGER',
   });
   const [errorMsg, setErrorMsg] = useState('');
   const addTeamMember = useAddTeamMember();
@@ -21,14 +22,14 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) =
   // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
-      setFormData({ email: '', firstName: '', lastName: '', mobileNumber: '' });
+      setFormData({ email: '', firstName: '', lastName: '', mobileNumber: '', role: 'CASHIER' });
       setErrorMsg('');
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -42,7 +43,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) =
       onClose();
     } catch (err: any) {
       const responseData = err.response?.data;
-      let msg = 'Failed to add cashier';
+      let msg = 'Failed to add team member';
       if (responseData?.errors && responseData.errors.length > 0) {
         msg = responseData.errors[0].message;
       } else if (responseData?.message) {
@@ -64,7 +65,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) =
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
           <h2 className="text-[var(--text-lg)] font-semibold text-[var(--color-text-primary)]">
-            Add Cashier
+            Add Team Member
           </h2>
           <button 
             onClick={onClose}
@@ -138,6 +139,21 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) =
               />
             </div>
 
+            <div>
+              <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                System Role *
+              </label>
+              <select
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+              >
+                <option value="CASHIER">Cashier (Standard Access)</option>
+                <option value="MANAGER">Store Manager (Admin Access)</option>
+              </select>
+            </div>
+
             {errorMsg && (
               <div className="mt-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-[var(--radius-sm)]">
                 <div className="text-red-500 mt-0.5">
@@ -167,7 +183,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) =
               {addTeamMember.isPending ? (
                 <Loader2 className="animate-spin w-5 h-5" />
               ) : (
-                'Add Cashier'
+                'Add Member'
               )}
             </button>
           </div>

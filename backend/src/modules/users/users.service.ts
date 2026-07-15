@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '../../db';
 import { users } from '../../db/schema';
 import { AddUserInput } from './users.schema';
@@ -36,7 +36,7 @@ export class UsersService {
       lastName: data.lastName,
       mobileNumber: data.mobileNumber,
       businessId,
-      role: 'CASHIER',
+      role: data.role || 'CASHIER',
     }).returning({
       id: users.id,
       email: users.email,
@@ -49,5 +49,19 @@ export class UsersService {
     });
     
     return newUser;
+  }
+
+  static async updateUserRole(businessId: string, id: string, role: 'CASHIER' | 'MANAGER' | 'OWNER') {
+    const [updated] = await db
+      .update(users)
+      .set({ role })
+      .where(and(eq(users.id, id), eq(users.businessId, businessId)))
+      .returning({
+        id: users.id,
+        email: users.email,
+        role: users.role,
+      });
+
+    return updated;
   }
 }

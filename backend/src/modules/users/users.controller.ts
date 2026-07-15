@@ -30,4 +30,29 @@ export class UsersController {
       next(error);
     }
   }
+
+  static async updateRole(req: Request, res: Response, next: NextFunction) {
+    try {
+      // Only OWNER can update roles
+      if (req.user!.role !== 'OWNER') {
+        return res.status(403).json({ success: false, error: { message: 'Only owners can change user roles.' } });
+      }
+
+      const id = req.params.id as string;
+      const { role } = req.body;
+
+      if (!['CASHIER', 'MANAGER', 'OWNER'].includes(role)) {
+        return res.status(400).json({ success: false, error: { message: 'Invalid role. Must be CASHIER, MANAGER, or OWNER.' } });
+      }
+
+      const updated = await UsersService.updateUserRole(req.user!.businessId, id, role);
+      if (!updated) {
+        return res.status(404).json({ success: false, error: { message: 'User not found.' } });
+      }
+
+      res.json({ success: true, data: updated });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
