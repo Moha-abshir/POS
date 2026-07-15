@@ -7,7 +7,7 @@ import { TableSkeleton } from '../../../components/ui/Loading';
 import { toast } from 'react-hot-toast';
 
 export const TeamList: React.FC = () => {
-  const { data: team, isLoading } = useTeamMembers();
+  const { data: team, isLoading, isError, error } = useTeamMembers();
   const updateRoleMutation = useUpdateUserRole();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const currentUser = useAuthStore((state) => state.user);
@@ -57,6 +57,14 @@ export const TeamList: React.FC = () => {
         
         {isLoading ? (
           <TableSkeleton rows={4} cols={5} />
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center flex-1 py-16">
+            <ShieldAlert className="w-12 h-12 text-red-500 mb-4" />
+            <h3 className="text-lg font-semibold text-red-600">Failed to load team</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              {(error as any)?.response?.data?.message || (error as any)?.response?.data?.error?.message || (error as any)?.message || 'An unexpected error occurred'}
+            </p>
+          </div>
         ) : (!team || team.length === 0) ? (
           <div className="flex flex-col items-center justify-center flex-1 py-16">
             <Users className="w-12 h-12 text-[var(--color-text-muted)] mb-4" />
