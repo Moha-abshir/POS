@@ -2,20 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { suppliersApi, type Supplier } from '../features/suppliers/api/suppliers.api';
 import { inventoryApi } from '../features/inventory/api/inventory.api';
-import { Plus, Search, Truck, Edit, Package, ArrowDownRight, DollarSign, Filter, X, Eye, Upload, Download } from 'lucide-react';
+import { Plus, Search, Truck, Edit, Package, ArrowDownRight, DollarSign, Filter, X, Eye, Upload, Download, Trash2 } from 'lucide-react';
 import { SupplierModal } from '../features/suppliers/components/SupplierModal';
 import { SupplierDetailsModal } from '../features/suppliers/components/SupplierDetailsModal';
 import { PurchaseModal } from '../features/inventory/components/PurchaseModal';
 import { RecordPaymentModal } from '../features/suppliers/components/RecordPaymentModal';
+import { AddExpenseModal } from '../features/expenses/components/AddExpenseModal';
 import { TableSkeleton, LoadingSpinner } from '../components/ui/Loading';
 import { useAuthStore } from '../features/auth/stores/auth.store';
 import { ImportModal } from '../components/ui/ImportModal';
+import { useExpenses, useDeleteExpense, type Expense } from '../features/expenses/api/expenses.api';
 import { api } from '../lib/api';
 import { toast } from 'react-hot-toast';
 
 export function PurchasingPage() {
   const currentUser = useAuthStore((state) => state.user);
-  const [activeTab, setActiveTab] = useState<'suppliers' | 'purchases'>('suppliers');
+  const [activeTab, setActiveTab] = useState<'suppliers' | 'purchases' | 'expenses'>('suppliers');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
@@ -26,6 +28,7 @@ export function PurchasingPage() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedDetailsSupplier, setSelectedDetailsSupplier] = useState<Supplier | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   
   const queryClient = useQueryClient();
 
@@ -62,6 +65,20 @@ export function PurchasingPage() {
     queryKey: ['inventory', 'movements', purchaseFilters],
     queryFn: () => inventoryApi.getMovements({ type: 'PURCHASE', ...purchaseFilters }),
   });
+
+  const { data: expenses = [], isLoading: isLoadingExpenses } = useExpenses();
+  const deleteExpenseMutation = useDeleteExpense();
+
+  const handleDeleteExpense = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this expense? This action cannot be undone.')) {
+      try {
+        await deleteExpenseMutation.mutateAsync(id);
+        toast.success('Expense deleted successfully');
+      } catch (err) {
+        toast.error('Failed to delete expense');
+      }
+    }
+  };
 
   const handleOpenFilters = () => {
     setTempPurchaseFilters(purchaseFilters);
@@ -161,6 +178,15 @@ export function PurchasingPage() {
               <span>Record Purchase</span>
             </button>
           )}
+          {activeTab === 'expenses' && currentUser?.role !== 'CASHIER' && (
+            <button
+              onClick={() => setIsExpenseModalOpen(true)}
+              className="w-full md:w-auto flex items-center justify-center gap-1.5 px-5 py-2 h-10 bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 select-none cursor-pointer whitespace-nowrap text-sm"
+            >
+              <Plus size={18} className="w-[18px] h-[18px]" />
+              <span>Record Expense</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -184,6 +210,16 @@ export function PurchasingPage() {
           }`}
         >
           Purchases
+        </button>
+        <button
+          onClick={() => setActiveTab('expenses')}
+          className={`px-4 py-2 font-semibold text-sm transition-colors border-b-2 ${
+            activeTab === 'expenses' 
+            ? 'border-[var(--color-accent)] text-[var(--color-accent)]' 
+            : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+          }`}
+        >
+          Expenses
         </button>
       </div>
 
@@ -445,6 +481,84 @@ export function PurchasingPage() {
           </div>
           </div>
         )}
+
+        {activeTab === 'expenses' && (
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <div className="p-3 md:p-4 border-b border-[var(--color-border)] bg-white flex justify-between items-center gap-2">
+              <h2 className="text-base md:text-lg font-semibold text-[var(--color-text-primary)] whitespace-nowrap truncate">Operational Expenses</h2>
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 font-bold px-3 py-1 rounded-lg text-xs md:text-sm shadow-xs whitespace-nowrap">
+                Total: KSH {expenses.reduce((sum: number, exp: any) => sum + Number(exp.amount), 0).toLocaleString()}
+              </div>
+            </div>
+
+            <div className="overflow-x-auto flex-1">
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                  <tr className="bg-white border-b border-[var(--color-border)]">
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Date</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Category</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Description</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Recorded By</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase text-right whitespace-nowrap">Amount</th>
+                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase text-right whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoadingExpenses ? (
+                    <tr>
+                      <td colSpan={6} className="p-0">
+                        <TableSkeleton rows={5} cols={6} />
+                      </td>
+                    </tr>
+                  ) : expenses.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-16 text-center">
+                        <div className="flex flex-col items-center justify-center max-w-sm mx-auto text-center">
+                          <DollarSign className="h-12 w-12 text-gray-300 mb-4" />
+                          <p className="text-lg font-semibold text-gray-500 mb-1">No expenses found</p>
+                          <p className="text-sm text-gray-400">Add operational costs and bills for your business here.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    expenses.map((expense: any, index: number) => (
+                      <tr key={expense.id} className={`border-b border-[var(--color-border)] h-12 transition-colors duration-150 hover:bg-[var(--color-bg-sunken)] ${index % 2 === 0 ? 'bg-white' : 'bg-[var(--color-bg-base)]'}`}>
+                        <td className="px-4 md:px-6 py-2 text-sm text-[var(--color-text-secondary)] whitespace-nowrap">
+                          {new Date(expense.expenseDate).toLocaleDateString('en-KE')}
+                        </td>
+                        <td className="px-4 md:px-6 py-2 whitespace-nowrap">
+                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 uppercase tracking-wider">
+                            {expense.category}
+                          </span>
+                        </td>
+                        <td className="px-4 md:px-6 py-2 text-sm text-[var(--color-text-secondary)] truncate max-w-[200px] whitespace-nowrap" title={expense.description || ''}>
+                          {expense.description || '-'}
+                        </td>
+                        <td className="px-4 md:px-6 py-2 text-sm text-[var(--color-text-secondary)] whitespace-nowrap">
+                          {expense.createdByName || 'System'}
+                        </td>
+                        <td className="px-4 md:px-6 py-2 text-sm font-bold text-right text-[var(--color-text-primary)] whitespace-nowrap">
+                          KSH {Number(expense.amount).toLocaleString()}
+                        </td>
+                        <td className="px-4 md:px-6 py-2 text-right whitespace-nowrap">
+                          {currentUser?.role !== 'CASHIER' && (
+                            <button
+                              onClick={() => handleDeleteExpense(expense.id)}
+                              className="p-2 text-gray-400 hover:text-[var(--color-danger)] transition-colors inline-flex items-center justify-center cursor-pointer"
+                              title="Delete Expense"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       <SupplierModal
@@ -483,6 +597,11 @@ export function PurchasingPage() {
         sampleRow={sampleRow}
         importUrl="/import/suppliers"
         onSuccess={handleImportSuccess}
+      />
+
+      <AddExpenseModal
+        isOpen={isExpenseModalOpen}
+        onClose={() => setIsExpenseModalOpen(false)}
       />
     </div>
   );

@@ -41,6 +41,7 @@ import notificationsRoutes from './modules/notifications/notifications.routes';
 import cashSessionsRoutes from './modules/cash-sessions/cash-sessions.routes';
 import importRoutes from './modules/import/import.routes';
 import exportRoutes from './modules/export/export.routes';
+import expensesRoutes from './modules/expenses/expenses.routes';
 import uploadRoutes from './modules/upload/upload.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import { errorHandler } from './core/middleware/errorHandler';
@@ -105,6 +106,7 @@ app.use('/notifications', authenticate, requireActiveBusiness, globalLimiter, no
 app.use('/cash-sessions', authenticate, requireActiveBusiness, globalLimiter, cashSessionsRoutes);
 app.use('/import', authenticate, requireActiveBusiness, globalLimiter, importRoutes);
 app.use('/export', authenticate, requireActiveBusiness, globalLimiter, exportRoutes);
+app.use('/expenses', authenticate, requireActiveBusiness, globalLimiter, expensesRoutes);
 app.use('/upload', authenticate, requireActiveBusiness, globalLimiter, uploadRoutes);
 
 app.get('/health', (req: Request, res: Response) => {
