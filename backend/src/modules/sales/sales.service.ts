@@ -254,6 +254,7 @@ export class SalesService {
         id: productVariants.id, 
         isActive: productVariants.isActive, 
         name: productVariants.name,
+        costPrice: productVariants.costPrice,
         baseStockQuantity: productVariants.baseStockQuantity,
         lowStockThreshold: productVariants.lowStockThreshold
       })
