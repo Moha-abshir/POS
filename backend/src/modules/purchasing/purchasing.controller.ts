@@ -19,8 +19,27 @@ export class PurchasingController {
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = (page - 1) * limit;
 
-      const result = await PurchasingService.getPurchases(req.user!.businessId, limit, offset);
+      const filters = {
+        startDate: req.query.startDate as string,
+        endDate: req.query.endDate as string,
+        supplier: req.query.supplier as string,
+        invoiceRef: req.query.invoiceRef as string,
+        mpesaRef: req.query.mpesaRef as string,
+        paymentMethod: req.query.paymentMethod as 'CASH' | 'MPESA' | undefined,
+      };
+
+      const result = await PurchasingService.getPurchases(req.user!.businessId, filters, limit, offset);
       res.json({ success: true, data: result.data, meta: result.meta });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getPurchaseDetails(req: Request, res: Response, next: NextFunction) {
+    try {
+      const purchaseId = req.params.id as string;
+      const purchase = await PurchasingService.getPurchaseDetails(req.user!.businessId, purchaseId);
+      res.json({ success: true, data: purchase });
     } catch (error) {
       next(error);
     }

@@ -1,6 +1,6 @@
 import { eq, and, sql, inArray } from 'drizzle-orm';
 import { db, transactionWithRetry } from '../../db';
-import { purchases, purchaseItems, suppliers, payments, productVariants, variantUnits } from '../../db/schema';
+import { purchases, purchaseItems, suppliers, payments, productVariants, variantUnits, products } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 import { InventoryService } from '../inventory/inventory.service';
 import { flushPattern } from '../../core/cache/redis';
@@ -101,7 +101,10 @@ export class PurchasingService {
           referenceId: purchase.id,
           amount: data.amountPaid.toString(),
           method: data.paymentMethod,
-          mpesaReceiptNumber: data.paymentMethod === 'MPESA' && data.mpesaRef ? data.mpesaRef.toUpperCase() : null,
+          status: 'COMPLETED',
+          mpesaReceiptNumber: data.paymentMethod === 'MPESA' ? data.mpesaRef?.toUpperCase() : null,
+          notes: `Initial payment for purchase ${purchase.id}`,
+          paidAt: new Date(),
           createdBy: userId,
         });
       }
@@ -131,20 +134,99 @@ export class PurchasingService {
     return result;
   }
 
-  static async getPurchases(businessId: string, limit = 50, offset = 0) {
-    const data = await db.select()
-      .from(purchases)
-      .where(eq(purchases.businessId, businessId))
-      .limit(limit)
-      .offset(offset);
+  static async getPurchases(businessId: string, filters: any = {}, limit = 50, offset = 0) {
+    const conditions = [eq(purchases.businessId, businessId)];
+
+    if (filters.startDate) {
+      conditions.push(sql`${purchases.purchasedAt} >= ${new Date(filters.startDate).toISOString()}`);
+    }
+    if (filters.endDate) {
+      conditions.push(sql`${purchases.purchasedAt} <= ${new Date(filters.endDate).toISOString()}`);
+    }
+    if (filters.supplier) {
+      conditions.push(sql`${suppliers.name} ILIKE ${`%${filters.supplier}%`}`);
+    }
+    if (filters.invoiceRef) {
+      conditions.push(sql`${purchases.invoiceRef} ILIKE ${`%${filters.invoiceRef}%`}`);
+    }
+    if (filters.mpesaRef) {
+      conditions.push(sql`${purchases.mpesaRef} ILIKE ${`%${filters.mpesaRef}%`}`);
+    }
+    if (filters.paymentMethod) {
+      conditions.push(sql`EXISTS (SELECT 1 FROM payments p WHERE p.reference_id = purchases.id AND p.reference_type = 'PURCHASE' AND p.method = ${filters.paymentMethod})`);
+    }
+
+    const data = await db.select({
+      id: purchases.id,
+      supplierId: purchases.supplierId,
+      supplierName: suppliers.name,
+      totalAmount: purchases.totalAmount,
+      amountPaid: purchases.amountPaid,
+      paymentStatus: purchases.paymentStatus,
+      invoiceRef: purchases.invoiceRef,
+      mpesaRef: purchases.mpesaRef,
+      purchasedAt: purchases.purchasedAt,
+      createdAt: purchases.createdAt,
+    })
+    .from(purchases)
+    .leftJoin(suppliers, eq(purchases.supplierId, suppliers.id))
+    .where(and(...conditions))
+    .orderBy(sql`${purchases.purchasedAt} DESC`)
+    .limit(limit)
+    .offset(offset);
 
     const [{ count }] = await db.select({ count: sql`count(*)`.mapWith(Number) })
       .from(purchases)
-      .where(eq(purchases.businessId, businessId));
+      .leftJoin(suppliers, eq(purchases.supplierId, suppliers.id))
+      .where(and(...conditions));
 
     return {
       data,
       meta: { total: count, limit, offset }
+    };
+  }
+
+  static async getPurchaseDetails(businessId: string, purchaseId: string) {
+    const [purchase] = await db.select({
+      id: purchases.id,
+      supplierId: purchases.supplierId,
+      supplierName: suppliers.name,
+      totalAmount: purchases.totalAmount,
+      amountPaid: purchases.amountPaid,
+      paymentStatus: purchases.paymentStatus,
+      invoiceRef: purchases.invoiceRef,
+      mpesaRef: purchases.mpesaRef,
+      purchasedAt: purchases.purchasedAt,
+      createdAt: purchases.createdAt,
+    })
+    .from(purchases)
+    .leftJoin(suppliers, eq(purchases.supplierId, suppliers.id))
+    .where(and(eq(purchases.id, purchaseId), eq(purchases.businessId, businessId)));
+
+    if (!purchase) {
+      throw new AppError('Purchase not found', 404);
+    }
+
+    const items = await db.select({
+      id: purchaseItems.id,
+      variantId: purchaseItems.variantId,
+      variantName: productVariants.name,
+      productName: products.name,
+      unitId: purchaseItems.unitId,
+      unitName: variantUnits.name,
+      quantity: purchaseItems.quantity,
+      costPrice: purchaseItems.costPrice,
+      subtotal: purchaseItems.subtotal,
+    })
+    .from(purchaseItems)
+    .leftJoin(productVariants, eq(purchaseItems.variantId, productVariants.id))
+    .leftJoin(products, eq(productVariants.productId, products.id))
+    .leftJoin(variantUnits, eq(purchaseItems.unitId, variantUnits.id))
+    .where(and(eq(purchaseItems.purchaseId, purchaseId), eq(purchaseItems.businessId, businessId)));
+
+    return {
+      ...purchase,
+      items
     };
   }
 }

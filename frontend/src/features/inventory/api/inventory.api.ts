@@ -18,12 +18,29 @@ export interface StockMovement {
 export interface Purchase {
   id: string;
   supplierId: string;
+  supplierName?: string;
   totalAmount: string;
   amountPaid: string;
   paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID';
   invoiceRef?: string;
   mpesaRef?: string;
   purchasedAt: string;
+}
+
+export interface PurchaseItem {
+  id: string;
+  variantId: string;
+  variantName: string;
+  productName: string;
+  unitId: string;
+  unitName: string;
+  quantity: string;
+  costPrice: string;
+  subtotal: string;
+}
+
+export interface PurchaseDetails extends Purchase {
+  items: PurchaseItem[];
 }
 
 export const inventoryApi = {
@@ -54,9 +71,14 @@ export const inventoryApi = {
     return res.data.data as Purchase;
   },
 
-  getPurchases: async () => {
-    const res = await api.get('/purchases');
+  getPurchases: async (filters?: { startDate?: string; endDate?: string; supplier?: string; invoiceRef?: string; mpesaRef?: string; paymentMethod?: string }) => {
+    const res = await api.get('/purchases', { params: filters });
     return res.data.data as Purchase[];
+  },
+
+  getPurchaseDetails: async (purchaseId: string) => {
+    const res = await api.get(`/purchases/${purchaseId}`);
+    return res.data.data as PurchaseDetails;
   },
 
   getDamages: async () => {

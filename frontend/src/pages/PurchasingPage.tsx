@@ -6,6 +6,7 @@ import { Plus, Search, Truck, Edit, Package, ArrowDownRight, DollarSign, Filter,
 import { SupplierModal } from '../features/suppliers/components/SupplierModal';
 import { SupplierDetailsModal } from '../features/suppliers/components/SupplierDetailsModal';
 import { PurchaseModal } from '../features/inventory/components/PurchaseModal';
+import { PurchaseDetailsModal } from '../features/inventory/components/PurchaseDetailsModal';
 import { RecordPaymentModal } from '../features/suppliers/components/RecordPaymentModal';
 import { AddExpenseModal } from '../features/expenses/components/AddExpenseModal';
 import { TableSkeleton, LoadingSpinner } from '../components/ui/Loading';
@@ -29,13 +30,14 @@ export function PurchasingPage() {
   const [selectedDetailsSupplier, setSelectedDetailsSupplier] = useState<Supplier | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [isPurchaseDetailsOpen, setIsPurchaseDetailsOpen] = useState(false);
+  const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null);
   
   const queryClient = useQueryClient();
 
   const [purchaseFilters, setPurchaseFilters] = useState({
     startDate: '',
     endDate: '',
-    product: '',
     supplier: '',
     invoiceRef: '',
     mpesaRef: '',
@@ -61,9 +63,10 @@ export function PurchasingPage() {
     staleTime: 15 * 60 * 1000, // 15 minutes
   });
 
-  const { data: movements = [], isLoading: isLoadingMovements } = useQuery({
-    queryKey: ['inventory', 'movements', purchaseFilters],
-    queryFn: () => inventoryApi.getMovements({ type: 'PURCHASE', ...purchaseFilters }),
+  const { data: purchases = [], isLoading: isLoadingPurchases } = useQuery({
+    queryKey: ['purchases', purchaseFilters],
+    queryFn: () => inventoryApi.getPurchases(purchaseFilters),
+    enabled: activeTab === 'purchases',
   });
 
   const { data: expenses = [], isLoading: isLoadingExpenses } = useExpenses();
@@ -91,7 +94,7 @@ export function PurchasingPage() {
   };
 
   const handleClearFilters = () => {
-    const emptyFilters = { startDate: '', endDate: '', product: '', supplier: '', invoiceRef: '', mpesaRef: '', paymentMethod: '' };
+    const emptyFilters = { startDate: '', endDate: '', supplier: '', invoiceRef: '', mpesaRef: '', paymentMethod: '', product: '' };
     setTempPurchaseFilters(emptyFilters);
     setPurchaseFilters(emptyFilters);
     setIsFilterOpen(false);
@@ -416,28 +419,25 @@ export function PurchasingPage() {
               </div>
             )}
             <div className="overflow-x-auto flex-1">
-              <table className="w-full text-left border-collapse min-w-[900px]">
+              <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
                   <tr className="bg-white border-b border-[var(--color-border)]">
                     <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Date & Time</th>
-                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Product</th>
                     <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Supplier</th>
-                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Type</th>
-                    <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Quantity</th>
                     <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">Invoice Ref</th>
                     <th scope="col" className="px-4 md:px-6 py-3 text-xs font-semibold tracking-widest text-[var(--color-text-muted)] uppercase whitespace-nowrap">M-Pesa Ref</th>
                   </tr>
                 </thead>
               <tbody>
-                {isLoadingMovements ? (
+                {isLoadingPurchases ? (
                   <tr>
-                    <td colSpan={7} className="p-0">
-                      <TableSkeleton rows={5} cols={7} />
+                    <td colSpan={4} className="p-0">
+                      <TableSkeleton rows={5} cols={4} />
                     </td>
                   </tr>
-                ) : movements.length === 0 ? (
+                ) : purchases.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-16 text-center">
+                    <td colSpan={4} className="p-16 text-center">
                       <div className="flex flex-col items-center justify-center max-w-sm mx-auto text-center">
                         <Package className="h-12 w-12 text-gray-300 mb-4" />
                         <p className="text-lg font-semibold text-gray-500 mb-1">No purchases found</p>
@@ -446,31 +446,25 @@ export function PurchasingPage() {
                     </td>
                   </tr>
                 ) : (
-                  movements.map((movement: any, index: number) => {
-                    const qty = Number(movement.quantityChange);
+                  purchases.map((purchase: any, index: number) => {
                     return (
-                      <tr key={movement.id} className={`border-b border-[var(--color-border)] h-12 transition-colors duration-150 hover:bg-[var(--color-bg-sunken)] ${index % 2 === 0 ? 'bg-white' : 'bg-[var(--color-bg-base)]'}`}>
+                      <tr 
+                        key={purchase.id} 
+                        onClick={() => {
+                          setSelectedPurchaseId(purchase.id);
+                          setIsPurchaseDetailsOpen(true);
+                        }}
+                        className={`border-b border-[var(--color-border)] h-12 transition-colors duration-150 hover:bg-[var(--color-bg-sunken)] cursor-pointer ${index % 2 === 0 ? 'bg-white' : 'bg-[var(--color-bg-base)]'}`}
+                      >
                         <td className="px-4 md:px-6 py-2 text-sm text-[var(--color-text-secondary)] whitespace-nowrap">
-                          {new Date(movement.createdAt).toLocaleString()}
+                          {new Date(purchase.purchasedAt).toLocaleString()}
                         </td>
-                        <td className="px-4 md:px-6 py-2 text-sm font-medium text-[var(--color-text-primary)] whitespace-nowrap">{movement.productName}</td>
-                        <td className="px-4 md:px-6 py-2 text-sm text-[var(--color-text-secondary)] whitespace-nowrap">{movement.supplierName || '-'}</td>
-                        <td className="px-4 md:px-6 py-2 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <ArrowDownRight className="text-emerald-500" size={18} />
-                            <span className="text-[var(--color-text-secondary)] font-medium text-xs tracking-wider uppercase">{movement.type}</span>
-                          </div>
+                        <td className="px-4 md:px-6 py-2 text-sm text-[var(--color-text-secondary)] whitespace-nowrap">{purchase.supplierName || '-'}</td>
+                        <td className="px-4 md:px-6 py-2 text-sm text-[var(--color-text-muted)] truncate max-w-[150px] whitespace-nowrap" title={purchase.invoiceRef || ''}>
+                          {purchase.invoiceRef || '-'}
                         </td>
-                        <td className="px-4 md:px-6 py-2 whitespace-nowrap">
-                          <span className="inline-flex items-center justify-center min-w-[48px] px-1.5 py-0.5 rounded-[var(--radius-sm)] text-[11px] font-bold tracking-wider bg-[var(--color-success-bg)] text-[var(--color-success)]">
-                            +{qty}
-                          </span>
-                        </td>
-                        <td className="px-4 md:px-6 py-2 text-sm text-[var(--color-text-muted)] truncate max-w-[150px] whitespace-nowrap" title={movement.invoiceRef || ''}>
-                          {movement.invoiceRef || '-'}
-                        </td>
-                        <td className="px-4 md:px-6 py-2 text-sm font-medium text-[var(--color-text-primary)] truncate max-w-[150px] whitespace-nowrap" title={movement.mpesaRef || ''}>
-                          {movement.mpesaRef || '-'}
+                        <td className="px-4 md:px-6 py-2 text-sm font-medium text-[var(--color-text-primary)] truncate max-w-[150px] whitespace-nowrap" title={purchase.mpesaRef || ''}>
+                          {purchase.mpesaRef || '-'}
                         </td>
                       </tr>
                     )
@@ -571,15 +565,15 @@ export function PurchasingPage() {
         <PurchaseModal onClose={() => setIsPurchaseModalOpen(false)} />
       )}
 
-      {isPaymentModalOpen && selectedPaymentSupplier && (
-        <RecordPaymentModal
-          supplier={selectedPaymentSupplier}
-          onClose={() => {
-            setIsPaymentModalOpen(false);
-            setSelectedPaymentSupplier(null);
-          }}
-        />
-      )}
+      <RecordPaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => {
+          setIsPaymentModalOpen(false);
+          setSelectedPaymentSupplier(null);
+        }}
+        supplier={selectedPaymentSupplier}
+      />
+
       <SupplierDetailsModal
         isOpen={isDetailsModalOpen}
         onClose={() => {
@@ -602,6 +596,15 @@ export function PurchasingPage() {
       <AddExpenseModal
         isOpen={isExpenseModalOpen}
         onClose={() => setIsExpenseModalOpen(false)}
+      />
+
+      <PurchaseDetailsModal
+        isOpen={isPurchaseDetailsOpen}
+        onClose={() => {
+          setIsPurchaseDetailsOpen(false);
+          setSelectedPurchaseId(null);
+        }}
+        purchaseId={selectedPurchaseId}
       />
     </div>
   );

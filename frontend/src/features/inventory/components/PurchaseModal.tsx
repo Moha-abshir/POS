@@ -165,8 +165,8 @@ export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps)
             </div>
             <div className="p-4 space-y-3">
               {items.map((item, index) => (
-                <div key={index} className="flex gap-3 items-end">
-                  <div className="w-[20%]">
+                <div key={index} className="flex flex-col sm:flex-row gap-3 sm:gap-3 items-stretch sm:items-end border-b border-gray-100 sm:border-0 pb-4 sm:pb-0">
+                  <div className="w-full sm:w-[20%]">
                     <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Product</label>
                     <CustomSelect
                       required
@@ -183,7 +183,7 @@ export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps)
                       }}
                     />
                   </div>
-                  <div className="w-[20%]">
+                  <div className="w-full sm:w-[20%]">
                     <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Variant</label>
                     <CustomSelect
                       required
@@ -209,7 +209,7 @@ export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps)
                       }}
                     />
                   </div>
-                  <div className="w-[15%]">
+                  <div className="w-full sm:w-[15%]">
                     <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Unit</label>
                     <CustomSelect
                       required
@@ -233,7 +233,7 @@ export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps)
                       }}
                     />
                   </div>
-                  <div className="w-[10%] min-w-[60px]">
+                  <div className="w-full sm:w-[10%] sm:min-w-[60px]">
                     <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Qty</label>
                     <input
                       type="number"
@@ -246,10 +246,10 @@ export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps)
                         newItems[index].quantity = e.target.value === '' ? '' : Number(e.target.value);
                         setItems(newItems);
                       }}
-                      className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-sm text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
+                      className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-sm text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all font-mono"
                     />
                   </div>
-                  <div className="w-[20%] min-w-[80px]">
+                  <div className="w-full sm:w-[20%] sm:min-w-[80px]">
                     <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Unit Cost</label>
                     <input
                       type="number"
@@ -263,16 +263,16 @@ export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps)
                         newItems[index].costPrice = e.target.value === '' ? '' : Number(e.target.value);
                         setItems(newItems);
                       }}
-                      className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-sm text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
+                      className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-sm text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all font-mono"
                     />
                   </div>
-                  <div className="w-[20%] min-w-[80px]">
+                  <div className="w-full sm:w-[20%] sm:min-w-[80px]">
                     <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Subtotal</label>
-                    <div className="px-3 h-10 flex items-center bg-[var(--color-bg-base)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm text-[var(--color-text-primary)] font-medium overflow-hidden text-ellipsis whitespace-nowrap">
+                    <div className="px-3 h-10 flex items-center bg-[var(--color-bg-base)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm text-[var(--color-text-primary)] font-medium font-mono overflow-hidden text-ellipsis whitespace-nowrap">
                       {((typeof item.quantity === 'number' ? item.quantity : 0) * (typeof item.costPrice === 'number' ? item.costPrice : 0)).toFixed(2)}
                     </div>
                   </div>
-                  <div className="w-[5%] min-w-[40px] flex justify-end">
+                  <div className="w-full sm:w-[5%] sm:min-w-[40px] flex justify-end pt-2 sm:pt-0">
                     <button 
                       type="button" 
                       onClick={() => {
@@ -280,9 +280,10 @@ export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps)
                           setItems(items.filter((_, i) => i !== index));
                         }
                       }}
-                      className="p-2 h-10 w-10 flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-bg)] rounded-[var(--radius-sm)] transition-colors cursor-pointer"
+                      className="w-full sm:w-10 h-10 flex items-center justify-center gap-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-bg)] border border-gray-200 sm:border-0 rounded-[var(--radius-sm)] transition-colors cursor-pointer"
                     >
                       <Trash2 size={18} />
+                      <span className="text-xs font-semibold sm:hidden text-gray-500">Remove Item</span>
                     </button>
                   </div>
                 </div>
