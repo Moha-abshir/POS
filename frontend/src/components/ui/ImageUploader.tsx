@@ -108,11 +108,10 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ value, onChange, l
       ) : (
         // Upload / Input State
         <div className="space-y-2">
-          <div
+          <label
             onDragOver={handleDragOver}
             onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className="border border-dashed border-[var(--color-border)] hover:border-[var(--color-primary)] rounded-[var(--radius-md)] p-6 bg-[var(--color-bg-sunken)]/30 hover:bg-[var(--color-bg-sunken)]/80 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200"
+            className="border border-dashed border-[var(--color-border)] hover:border-[var(--color-primary)] rounded-[var(--radius-md)] p-6 bg-[var(--color-bg-sunken)]/30 hover:bg-[var(--color-bg-sunken)]/80 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 block"
           >
             <UploadCloud className="w-8 h-8 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors" />
             <div className="text-center">
@@ -130,7 +129,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ value, onChange, l
               accept="image/*"
               className="hidden"
             />
-          </div>
+          </label>
           
           <div className="flex items-center gap-2">
             <span className="text-[var(--text-xs)] text-[var(--color-text-secondary)] whitespace-nowrap">Or paste URL:</span>

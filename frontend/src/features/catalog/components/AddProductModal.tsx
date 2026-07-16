@@ -203,7 +203,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
                     Category *
@@ -230,13 +230,13 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                     className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                   />
                 </div>
-                <div>
-                  <ImageUploader
-                    label="Product Image (Optional)"
-                    value={formData.imageUrl}
-                    onChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
-                  />
-                </div>
+              </div>
+              <div>
+                <ImageUploader
+                  label="Product Image (Optional)"
+                  value={formData.imageUrl}
+                  onChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
+                />
               </div>
             </div>
 
