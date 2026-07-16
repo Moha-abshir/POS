@@ -565,14 +565,15 @@ export function PurchasingPage() {
         <PurchaseModal onClose={() => setIsPurchaseModalOpen(false)} />
       )}
 
-      <RecordPaymentModal
-        isOpen={isPaymentModalOpen}
-        onClose={() => {
-          setIsPaymentModalOpen(false);
-          setSelectedPaymentSupplier(null);
-        }}
-        supplier={selectedPaymentSupplier}
-      />
+      {isPaymentModalOpen && selectedPaymentSupplier && (
+        <RecordPaymentModal
+          supplier={selectedPaymentSupplier}
+          onClose={() => {
+            setIsPaymentModalOpen(false);
+            setSelectedPaymentSupplier(null);
+          }}
+        />
+      )}
 
       <SupplierDetailsModal
         isOpen={isDetailsModalOpen}
