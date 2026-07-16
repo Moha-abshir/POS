@@ -26,14 +26,24 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
   const [selectedUnit, setSelectedUnit] = useState<any>(null);
   
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
+  const [variantNameInput, setVariantNameInput] = useState('');
   const [isEditingLowStock, setIsEditingLowStock] = useState(false);
   const [lowStockValue, setLowStockValue] = useState('');
   const [varImageError, setVarImageError] = useState('');
 
   useEffect(() => {
     if (isOpen && product && product.variants && product.variants.length > 0) {
-      if (!selectedVariantId || !product.variants.find(v => v.id === selectedVariantId)) {
-        setSelectedVariantId(product.variants[0].id);
+      const activeId = selectedVariantId && product.variants.find(v => v.id === selectedVariantId)
+        ? selectedVariantId
+        : product.variants[0].id;
+
+      if (selectedVariantId !== activeId) {
+        setSelectedVariantId(activeId);
+      }
+
+      const activeVar = product.variants.find(v => v.id === activeId);
+      if (activeVar) {
+        setVariantNameInput(activeVar.name);
       }
     }
     if (!isOpen) {
@@ -42,6 +52,7 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
       setIsEditingLowStock(false);
       setLowStockValue('');
       setVarImageError('');
+      setVariantNameInput('');
     }
   }, [isOpen, product, selectedVariantId]);
 
@@ -90,6 +101,20 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
       toast.success(url ? 'Variant image uploaded' : 'Variant image removed');
     } catch (err) {
       setVarImageError((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to update variant image');
+    }
+  };
+
+  const handleUpdateVariantName = async () => {
+    if (!selectedVariant || !product || !variantNameInput.trim()) return;
+    try {
+      await updateVariant.mutateAsync({
+        id: product.id,
+        variantId: selectedVariant.id,
+        data: { name: variantNameInput.trim() }
+      });
+      toast.success('Variant renamed successfully');
+    } catch (err) {
+      toast.error((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to rename variant');
     }
   };
 
@@ -158,28 +183,56 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
 
             {/* VARIANT SELECTOR */}
             {product.variants && (
-              <section className="bg-gradient-to-r from-[var(--color-bg-surface)] to-[var(--color-bg-sunken)] rounded-[var(--radius-lg)] p-4 md:p-5 shadow-sm border border-[var(--color-border)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 md:gap-4">
-                <div className="flex flex-col">
-                  <span className="text-xs md:text-[var(--text-sm)] font-bold text-[var(--color-text-primary)]">Variant Profile</span>
-                  <span className="text-[11px] md:text-[12px] text-[var(--color-text-secondary)] font-medium mt-0.5">Select a variant to configure pricing & stock</span>
-                </div>
-                <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto">
-                  <div className="flex-1 sm:w-[220px]">
-                    <CustomSelect 
-                      options={product.variants.map(v => ({ id: v.id, name: v.name }))} 
-                      value={selectedVariantId} 
-                      onChange={(e) => setSelectedVariantId(e.target.value)}
-                      className="w-full text-xs md:text-sm"
-                    />
+              <section className="bg-gradient-to-r from-[var(--color-bg-surface)] to-[var(--color-bg-sunken)] rounded-[var(--radius-lg)] p-4 md:p-5 shadow-sm border border-[var(--color-border)] flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 md:gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-xs md:text-[var(--text-sm)] font-bold text-[var(--color-text-primary)]">Variant Profile</span>
+                    <span className="text-[11px] md:text-[12px] text-[var(--color-text-secondary)] font-medium mt-0.5">Select a variant to configure pricing & stock</span>
                   </div>
-                  <button 
-                    onClick={() => setActiveModal('addVariant')}
-                    className="flex items-center justify-center p-2 md:p-2.5 text-[var(--color-primary)] bg-[var(--color-primary)]/10 hover:bg-[var(--color-primary)]/20 rounded-[var(--radius-md)] transition-colors border border-transparent hover:border-[var(--color-primary)]/30 shrink-0"
-                    title="Add new variant"
-                  >
-                    <Plus className="w-4 h-4 md:w-5 md:h-5" />
-                  </button>
+                  <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto">
+                    <div className="flex-1 sm:w-[220px]">
+                      <CustomSelect 
+                        options={product.variants.map(v => ({ id: v.id, name: v.name }))} 
+                        value={selectedVariantId} 
+                        onChange={(e) => setSelectedVariantId(e.target.value)}
+                        className="w-full text-xs md:text-sm"
+                      />
+                    </div>
+                    <button 
+                      onClick={() => setActiveModal('addVariant')}
+                      className="flex items-center justify-center p-2 md:p-2.5 text-[var(--color-primary)] bg-[var(--color-primary)]/10 hover:bg-[var(--color-primary)]/20 rounded-[var(--radius-md)] transition-colors border border-transparent hover:border-[var(--color-primary)]/30 shrink-0"
+                      title="Add new variant"
+                    >
+                      <Plus className="w-4 h-4 md:w-5 md:h-5" />
+                    </button>
+                  </div>
                 </div>
+
+                {/* Inline Variant Name Editor */}
+                {selectedVariant && (
+                  <div className="flex items-end gap-3 bg-white p-3 rounded-lg border border-gray-100 shadow-2xs mt-1">
+                    <div className="flex-1">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Variant Name</label>
+                      <input 
+                        type="text"
+                        value={variantNameInput}
+                        onChange={(e) => setVariantNameInput(e.target.value)}
+                        placeholder="e.g. Size L, Blue"
+                        className="w-full h-9 bg-white border border-gray-200 text-gray-900 text-xs md:text-sm rounded-lg px-3 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                    {variantNameInput !== selectedVariant.name && (
+                      <button 
+                        type="button"
+                        onClick={handleUpdateVariantName}
+                        disabled={updateVariant.isPending || !variantNameInput.trim()}
+                        className="px-4 h-9 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all shadow-sm shrink-0 flex items-center justify-center cursor-pointer"
+                      >
+                        {updateVariant.isPending ? 'Saving...' : 'Rename'}
+                      </button>
+                    )}
+                  </div>
+                )}
               </section>
             )}
 

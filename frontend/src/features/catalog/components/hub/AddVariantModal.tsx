@@ -160,8 +160,8 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                 <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs">1</span>
                 Variant Profile
               </h3>
-              <div className="grid grid-cols-3 gap-5 pl-8">
-                <div className="col-span-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 pl-0 sm:pl-8">
+                <div className="col-span-1 sm:col-span-3">
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Variant Name *</label>
                   <input
                     type="text"
@@ -201,7 +201,7 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                     placeholder="0"
                   />
                 </div>
-
+ 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Low Stock Alert</label>
                   <input
@@ -216,9 +216,9 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                 </div>
               </div>
             </div>
-
+ 
             <div className="h-px bg-gray-100" />
-
+ 
             {/* Units & Pricing */}
             <div className="space-y-5">
               <div className="flex items-center justify-between">
@@ -227,15 +227,15 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                   Units & Pricing
                 </h3>
               </div>
-
-              <div className="pl-8 space-y-4">
+ 
+              <div className="pl-0 sm:pl-8 space-y-4">
                 <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-4 mb-4 text-sm text-amber-800">
                   <p className="font-semibold mb-1">How units work</p>
                   <p className="text-amber-700/80">Every variant needs at least one base unit (e.g. Piece). If you sell in bulk, add larger units (e.g. Dozen = 12 Pieces). The default unit is used when adding the product to a sale.</p>
                 </div>
-
+ 
                 <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
-                  <div className="grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-4 p-3 bg-gray-100/50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider items-center">
+                  <div className="hidden sm:grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-4 p-3 bg-gray-100/50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider items-center">
                     <div className="w-8 text-center">Def</div>
                     <div>Unit Name</div>
                     <div>Selling Price</div>
@@ -243,17 +243,17 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                     <div className="w-8"></div>
                   </div>
                   
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-gray-150">
                     {units.map((unit, index) => {
                       const sp = parseFloat(unit.sellingPrice) || 0;
                       const cf = parseFloat(unit.conversionFactor) || 1;
                       const unitCost = cost * cf;
                       const margin = sp > 0 ? ((sp - unitCost) / sp) * 100 : 0;
                       const isNegative = margin < 0 && cost > 0;
-
+ 
                       return (
-                        <div key={unit.id} className={`grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-4 p-3 items-start transition-colors ${isNegative ? 'bg-red-50/50' : 'hover:bg-gray-50/50'}`}>
-                          <div className="w-8 flex justify-center pt-2.5">
+                        <div key={unit.id} className={`flex flex-col sm:grid sm:grid-cols-[auto_1fr_1fr_1fr_auto] gap-3 sm:gap-4 p-4 sm:p-3 items-stretch sm:items-start transition-colors border-b border-gray-100 sm:border-b-0 hover:bg-gray-50/50 ${isNegative ? 'bg-red-50/50' : 'bg-white'}`}>
+                          <div className="w-auto sm:w-8 flex sm:justify-center items-center gap-2 pt-0 sm:pt-2.5">
                             <input 
                               type="radio" 
                               name="defaultUnit" 
@@ -261,9 +261,11 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                               onChange={() => handleSetDefaultUnit(unit.id)}
                               className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                             />
+                            <span className="text-xs font-bold text-gray-500 sm:hidden">Default Selling Unit</span>
                           </div>
                           
                           <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 sm:hidden">Unit Name</label>
                             <input
                               type="text"
                               value={unit.name}
@@ -279,6 +281,7 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                           </div>
                           
                           <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 sm:hidden">Selling Price (KES)</label>
                             <input
                               type="number"
                               min="0"
@@ -297,6 +300,7 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                           </div>
                           
                           <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 sm:hidden">Qty per Base</label>
                             <input
                               type="number"
                               min="1"
@@ -310,14 +314,15 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                             {index > 0 && <span className="text-[10px] text-gray-400 mt-1 block truncate">1 {unit.name || 'Unit'} = {unit.conversionFactor || '?'} {units[0].name || 'Base'}</span>}
                           </div>
                           
-                          <div className="w-8 flex justify-center pt-1.5">
+                          <div className="w-full sm:w-8 flex justify-end sm:justify-center pt-2 sm:pt-1.5 border-t border-gray-100 sm:border-t-0">
                             <button
                               type="button"
                               onClick={() => removeUnitRow(unit.id)}
                               disabled={units.length === 1}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400"
+                              className="w-full sm:w-auto h-9 sm:h-auto flex items-center justify-center gap-1.5 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-gray-100 sm:border-0 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 cursor-pointer"
                             >
                               <Trash2 className="w-4 h-4" />
+                              <span className="text-xs font-semibold sm:hidden text-gray-500">Delete Unit</span>
                             </button>
                           </div>
                         </div>
