@@ -255,26 +255,6 @@ export const CustomersPage = () => {
         </div>
       </div>
 
-      {/* Stat Cards Row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 shrink-0">
-        <div className="bg-white border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-3 md:p-4">
-          <h3 className="text-[10px] md:text-xs uppercase tracking-wide text-[var(--color-text-muted)] mb-1 md:mb-2 line-clamp-1">Total customers</h3>
-          <p className="text-lg md:text-2xl font-semibold text-[var(--color-text-primary)]">{totalCustomers}</p>
-        </div>
-        <div className="bg-white border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-3 md:p-4">
-          <h3 className="text-[10px] md:text-xs uppercase tracking-wide text-[var(--color-text-muted)] mb-1 md:mb-2 line-clamp-1">Outstanding debt</h3>
-          <p className={`text-lg md:text-2xl font-semibold ${outstandingDebt > 0 ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]'}`}>
-            <span className="text-sm md:text-xl">KSH </span>{outstandingDebt.toLocaleString()}
-          </p>
-        </div>
-        <div className="bg-white border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-3 md:p-4 col-span-2 md:col-span-1">
-          <h3 className="text-[10px] md:text-xs uppercase tracking-wide text-[var(--color-text-muted)] mb-1 md:mb-2 line-clamp-1">Overdue (&gt;30 days)</h3>
-          <p className={`text-lg md:text-2xl font-semibold ${overdueDebt > 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-primary)]'}`}>
-            <span className="text-sm md:text-xl">KSH </span>{overdueDebt.toLocaleString()}
-          </p>
-        </div>
-      </div>
-
       {/* Customer Table */}
       <div className="flex-1 bg-white border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] overflow-hidden flex flex-col">
         <div className="flex-1 overflow-x-auto overflow-y-auto">

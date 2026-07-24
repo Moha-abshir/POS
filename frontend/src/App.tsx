@@ -156,7 +156,7 @@ function App() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/pos" element={<PosPage />} />
             <Route path="/inventory" element={<InventoryPage />} />
-            <Route path="/customers" element={<CustomersPage />} />
+            <Route path="/customers" element={user?.role === 'OWNER' ? <CustomersPage /> : <Navigate to="/" replace />} />
             <Route path="/purchasing" element={<PurchasingPage />} />
             <Route path="/sales" element={<SalesPage />} />
             <Route path="/reports" element={<ReportsPage />} />

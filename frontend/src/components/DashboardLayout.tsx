@@ -36,9 +36,9 @@ export const DashboardLayout: React.FC = () => {
     { name: 'Sales', path: '/sales', icon: Receipt },
     { name: 'Catalog', path: '/catalog', icon: Package },
     { name: 'Inventory', path: '/inventory', icon: Boxes },
-    { name: 'Customers', path: '/customers', icon: Users },
     { name: 'Purchasing', path: '/purchasing', icon: Truck },
     ...(user?.role === 'OWNER' ? [
+      { name: 'Customers', path: '/customers', icon: Users },
       { name: 'Team', path: '/team', icon: Contact },
       { name: 'Reports', path: '/reports', icon: FileText }
     ] : [])

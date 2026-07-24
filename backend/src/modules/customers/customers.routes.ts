@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { CustomersController } from './customers.controller';
-import { authenticate } from '../../core/middleware/auth';
+import { authenticate, authorize } from '../../core/middleware/auth';
 
 const router = Router();
 
-router.use(authenticate);
+router.use(authenticate, authorize(['OWNER']));
 
 router.get('/', CustomersController.getCustomers);
 router.post('/', CustomersController.createCustomer);

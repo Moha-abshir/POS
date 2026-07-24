@@ -7,6 +7,7 @@ import { api } from '../lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { MpesaSettingsSection } from './components/MpesaSettingsSection';
+import { AppearanceSettingsSection } from './components/AppearanceSettingsSection';
 
 export const SettingsPage: React.FC = () => {
   const { user, accessToken, setAuth } = useAuthStore();
@@ -213,6 +214,8 @@ export const SettingsPage: React.FC = () => {
           </div>
         </form>
       </div>
+
+      <AppearanceSettingsSection />
 
       {user?.role === 'OWNER' && (
         <MpesaSettingsSection />
