@@ -2,6 +2,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import { db } from '../../db';
 import { categories, products, productVariants, variantUnits, customers, suppliers } from '../../db/schema';
 import { InventoryService } from '../inventory/inventory.service';
+import { AppError } from '../../core/utils/AppError';
 
 export interface ImportResult {
   successCount: number;
@@ -11,17 +12,18 @@ export interface ImportResult {
 
 export class ImportService {
   /**
-   * Simple state-machine CSV parser that handles commas, quoted text, and escaped quotes.
+   * State-machine CSV parser that handles commas, quoted text, escaped quotes, and BOM headers.
    */
   static parseCSV(text: string): string[][] {
+    const cleanText = (text || '').replace(/^\uFEFF/, '');
     const result: string[][] = [];
     let row: string[] = [];
     let inQuotes = false;
     let currentVal = '';
 
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
-      const nextChar = text[i + 1];
+    for (let i = 0; i < cleanText.length; i++) {
+      const char = cleanText[i];
+      const nextChar = cleanText[i + 1];
 
       if (char === '"') {
         if (inQuotes && nextChar === '"') {
@@ -38,7 +40,9 @@ export class ImportService {
           i++; // skip \n
         }
         row.push(currentVal.trim());
-        result.push(row);
+        if (row.some(cell => cell.length > 0)) {
+          result.push(row);
+        }
         row = [];
         currentVal = '';
       } else {
@@ -48,46 +52,53 @@ export class ImportService {
 
     if (currentVal || row.length > 0) {
       row.push(currentVal.trim());
-      result.push(row);
+      if (row.some(cell => cell.length > 0)) {
+        result.push(row);
+      }
     }
 
-    return result.filter(r => r.length > 0 && r.some(cell => cell !== ''));
+    return result;
   }
 
   static async importProducts(businessId: string, userId: string, csvText: string): Promise<ImportResult> {
     const rows = this.parseCSV(csvText);
     if (rows.length <= 1) {
-      throw new Error('CSV file is empty or contains only headers');
+      throw new AppError('CSV file is empty or contains only headers', 400);
     }
 
-    const headers = rows[0].map(h => h.toLowerCase());
-    const nameIdx = headers.indexOf('name');
-    const descIdx = headers.indexOf('description');
-    const catIdx = headers.indexOf('category');
-    const skuIdx = headers.indexOf('sku');
-    const costPriceIdx = headers.indexOf('cost price');
-    const baseUnitIdx = headers.indexOf('base unit name');
-    const sellingPriceIdx = headers.indexOf('selling price');
-    const thresholdIdx = headers.indexOf('low stock threshold');
-    const stockIdx = headers.indexOf('initial stock');
+    const headers = rows[0].map(h => h.replace(/^\uFEFF/, '').toLowerCase().trim());
+    const findHeaderIdx = (patterns: string[]) => {
+      return headers.findIndex(h => patterns.some(p => h === p || h.includes(p)));
+    };
+
+    const nameIdx = findHeaderIdx(['name', 'product']);
+    const descIdx = findHeaderIdx(['description', 'desc']);
+    const catIdx = findHeaderIdx(['category', 'cat']);
+    const skuIdx = findHeaderIdx(['sku', 'code', 'barcode']);
+    const costPriceIdx = findHeaderIdx(['cost price', 'cost_price', 'cost']);
+    const baseUnitIdx = findHeaderIdx(['base unit name', 'unit name', 'unit']);
+    const sellingPriceIdx = findHeaderIdx(['selling price', 'selling_price', 'price']);
+    const thresholdIdx = findHeaderIdx(['low stock threshold', 'threshold', 'reorder level']);
+    const stockIdx = findHeaderIdx(['initial stock', 'stock', 'qty', 'quantity']);
 
     if (nameIdx === -1 || catIdx === -1 || sellingPriceIdx === -1) {
-      throw new Error('CSV must contain at least "Name", "Category", and "Selling Price" columns');
+      throw new AppError('CSV must contain at least "Name", "Category", and "Selling Price" columns', 400);
     }
 
     let successCount = 0;
     let failureCount = 0;
     const errors: { row: number; name: string; message: string }[] = [];
 
-    // Skip header row
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       const rowNum = i + 1;
 
+      if (!row || row.every(cell => !cell.trim())) continue;
+
       try {
-        const name = row[nameIdx];
-        const categoryName = row[catIdx];
-        const sellingPriceStr = row[sellingPriceIdx];
+        const name = row[nameIdx]?.trim();
+        const categoryName = row[catIdx]?.trim();
+        const sellingPriceStr = row[sellingPriceIdx]?.trim();
 
         if (!name || !categoryName || !sellingPriceStr) {
           throw new Error('Missing required fields (Name, Category, or Selling Price)');
@@ -98,18 +109,17 @@ export class ImportService {
           throw new Error('Selling Price must be a positive number');
         }
 
-        const description = descIdx !== -1 ? row[descIdx] : '';
-        const sku = skuIdx !== -1 ? row[skuIdx] : undefined;
-        const costPrice = costPriceIdx !== -1 ? Number(row[costPriceIdx] || 0) : 0;
-        const baseUnitName = baseUnitIdx !== -1 ? (row[baseUnitIdx] || 'Piece') : 'Piece';
-        const lowStockThreshold = thresholdIdx !== -1 ? Number(row[thresholdIdx] || 0) : 0;
-        const initialStock = stockIdx !== -1 ? Number(row[stockIdx] || 0) : 0;
+        const description = descIdx !== -1 ? row[descIdx]?.trim() || '' : '';
+        const sku = skuIdx !== -1 ? row[skuIdx]?.trim() || undefined : undefined;
+        const costPrice = costPriceIdx !== -1 ? Number(row[costPriceIdx]?.trim() || 0) : 0;
+        const baseUnitName = baseUnitIdx !== -1 ? (row[baseUnitIdx]?.trim() || 'Piece') : 'Piece';
+        const lowStockThreshold = thresholdIdx !== -1 ? Number(row[thresholdIdx]?.trim() || 0) : 0;
+        const initialStock = stockIdx !== -1 ? Number(row[stockIdx]?.trim() || 0) : 0;
 
         if (isNaN(costPrice) || costPrice < 0) throw new Error('Cost Price must be non-negative');
         if (isNaN(lowStockThreshold) || lowStockThreshold < 0) throw new Error('Low Stock Threshold must be non-negative');
         if (isNaN(initialStock) || initialStock < 0) throw new Error('Initial Stock must be non-negative');
 
-        // Check if SKU exists already in this business
         if (sku) {
           const [existingSku] = await db.select()
             .from(productVariants)
@@ -120,67 +130,52 @@ export class ImportService {
           }
         }
 
-        // Run as single transaction
-        await db.transaction(async (tx) => {
-          // 1. Get or create category
-          let [category] = await tx.select()
-            .from(categories)
-            .where(and(eq(categories.name, categoryName), eq(categories.businessId, businessId)))
-            .limit(1);
-          
-          let categoryId;
-          if (!category) {
-            const [newCat] = await tx.insert(categories).values({
-              name: categoryName,
-              businessId,
-            }).returning();
-            categoryId = newCat.id;
-          } else {
-            categoryId = category.id;
-          }
+        let [category] = await db.select()
+          .from(categories)
+          .where(and(eq(sql`LOWER(${categories.name})`, categoryName.toLowerCase()), eq(categories.businessId, businessId)))
+          .limit(1);
 
-          // 2. Insert product
-          const [product] = await tx.insert(products).values({
-            name,
-            description,
-            categoryId,
+        if (!category) {
+          [category] = await db.insert(categories).values({
             businessId,
-            createdBy: userId,
+            name: categoryName,
           }).returning();
+        }
 
-          // 3. Insert variant
-          const [variant] = await tx.insert(productVariants).values({
-            businessId,
-            productId: product.id,
-            name: 'Standard',
-            sku,
-            costPrice: costPrice.toString(),
-            baseUnitName,
-            baseStockQuantity: '0.000',
-            lowStockThreshold: lowStockThreshold.toString(),
-          }).returning();
+        const [product] = await db.insert(products).values({
+          businessId,
+          categoryId: category.id,
+          name,
+          description: description || null,
+        }).returning();
 
-          // 4. Insert unit
-          await tx.insert(variantUnits).values({
-            businessId,
-            variantId: variant.id,
-            name: baseUnitName,
-            sellingPrice: sellingPrice.toString(),
-            conversionFactor: '1.0000',
-            isDefault: true,
-          });
+        const [variant] = await db.insert(productVariants).values({
+          productId: product.id,
+          businessId,
+          name: 'Standard',
+          sku: sku || null,
+          baseUnitName: baseUnitName || 'Piece',
+        }).returning();
 
-          // 5. Stock movement
-          if (initialStock > 0) {
-            await InventoryService.recordMovement(tx, businessId, {
-              variantId: variant.id,
-              type: 'ADJUSTMENT',
-              quantityChange: initialStock,
-              notes: 'CSV Bulk Import',
-              userId,
-            });
-          }
+        await db.insert(variantUnits).values({
+          variantId: variant.id,
+          unitName: baseUnitName || 'Piece',
+          conversionFactor: '1',
+          costPrice: costPrice.toString(),
+          sellingPrice: sellingPrice.toString(),
+          isBaseUnit: true,
         });
+
+        if (initialStock > 0) {
+          await InventoryService.adjustStock(
+            businessId,
+            userId,
+            variant.id,
+            initialStock,
+            'INITIAL_STOCK',
+            'CSV Bulk Import Initial Stock'
+          );
+        }
 
         successCount++;
       } catch (err: any) {
@@ -199,21 +194,25 @@ export class ImportService {
   static async importCustomers(businessId: string, userId: string, csvText: string): Promise<ImportResult> {
     const rows = this.parseCSV(csvText);
     if (rows.length <= 1) {
-      throw new Error('CSV file is empty or contains only headers');
+      throw new AppError('CSV file is empty or contains only headers', 400);
     }
 
-    const headers = rows[0].map(h => h.toLowerCase().trim());
-    const nameIdx = headers.indexOf('name');
-    const phoneIdx = headers.indexOf('phone');
-    const idIdx = headers.indexOf('national id');
-    const addressIdx = headers.indexOf('address');
-    const notesIdx = headers.indexOf('notes');
-    const typeIdx = headers.indexOf('type');
-    const amountOwedIdx = headers.indexOf('amount owed') !== -1 ? headers.indexOf('amount owed') : headers.indexOf('balance');
-    const periodOwedIdx = headers.indexOf('period owed') !== -1 ? headers.indexOf('period owed') : headers.indexOf('period');
+    const headers = rows[0].map(h => h.replace(/^\uFEFF/, '').toLowerCase().trim());
+    const findHeaderIdx = (patterns: string[]) => {
+      return headers.findIndex(h => patterns.some(p => h === p || h.includes(p)));
+    };
+
+    const nameIdx = findHeaderIdx(['name', 'customer', 'client']);
+    const phoneIdx = findHeaderIdx(['phone', 'mobile', 'contact', 'tel']);
+    const idIdx = findHeaderIdx(['national id', 'id number', 'id', 'nationalid']);
+    const addressIdx = findHeaderIdx(['address', 'location']);
+    const notesIdx = findHeaderIdx(['notes', 'note', 'comment']);
+    const typeIdx = findHeaderIdx(['type']);
+    const amountOwedIdx = findHeaderIdx(['amount owed', 'balance', 'debt', 'amount_owed', 'owed']);
+    const periodOwedIdx = findHeaderIdx(['period owed', 'period', 'period_owed']);
 
     if (nameIdx === -1) {
-      throw new Error('CSV must contain at least a "Name" column');
+      throw new AppError('CSV must contain at least a "Name" or "Customer" column', 400);
     }
 
     let successCount = 0;
@@ -224,20 +223,30 @@ export class ImportService {
       const row = rows[i];
       const rowNum = i + 1;
 
-      try {
-        const name = row[nameIdx];
-        if (!name) throw new Error('Name is required');
+      if (!row || row.every(cell => !cell.trim())) continue;
 
-        const phone = phoneIdx !== -1 ? row[phoneIdx] : undefined;
-        const nationalId = idIdx !== -1 ? row[idIdx] : undefined;
-        const address = addressIdx !== -1 ? row[addressIdx] : undefined;
-        const notes = notesIdx !== -1 ? row[notesIdx] : undefined;
-        let type = typeIdx !== -1 ? row[typeIdx]?.toUpperCase() : 'INDIVIDUAL';
+      try {
+        const name = row[nameIdx]?.trim();
+        if (!name) throw new Error('Customer name is required');
+
+        const rawPhone = phoneIdx !== -1 ? row[phoneIdx]?.trim() : undefined;
+        const phone = rawPhone ? rawPhone : undefined;
+
+        const rawId = idIdx !== -1 ? row[idIdx]?.trim() : undefined;
+        const nationalId = rawId ? rawId : undefined;
+
+        const rawAddress = addressIdx !== -1 ? row[addressIdx]?.trim() : undefined;
+        const address = rawAddress ? rawAddress : undefined;
+
+        const rawNotes = notesIdx !== -1 ? row[notesIdx]?.trim() : undefined;
+        const notes = rawNotes ? rawNotes : undefined;
+
+        let type = typeIdx !== -1 ? row[typeIdx]?.trim()?.toUpperCase() : 'INDIVIDUAL';
         if (type !== 'BUSINESS') type = 'INDIVIDUAL';
 
-        const amountOwedRaw = amountOwedIdx !== -1 ? row[amountOwedIdx] : undefined;
+        const amountOwedRaw = amountOwedIdx !== -1 ? row[amountOwedIdx]?.trim() : undefined;
         const amountOwed = amountOwedRaw ? Number(amountOwedRaw) : 0;
-        const periodOwed = periodOwedIdx !== -1 ? row[periodOwedIdx] : undefined;
+        const rawPeriod = periodOwedIdx !== -1 ? row[periodOwedIdx]?.trim() : undefined;
 
         if (phone) {
           const [existingCustomer] = await db.select()
@@ -254,13 +263,13 @@ export class ImportService {
         await db.insert(customers).values({
           businessId,
           name,
-          phone,
-          nationalId,
-          address,
-          notes,
+          phone: phone || null,
+          nationalId: nationalId || null,
+          address: address || null,
+          notes: notes || null,
           type: type as 'INDIVIDUAL' | 'BUSINESS',
           balance: validAmount > 0 ? validAmount.toString() : '0',
-          periodOwed: validAmount > 0 ? (periodOwed || null) : null,
+          periodOwed: validAmount > 0 ? (rawPeriod || null) : null,
           hasActiveCredit: validAmount > 0,
           createdBy: userId,
         });
@@ -282,16 +291,20 @@ export class ImportService {
   static async importSuppliers(businessId: string, userId: string, csvText: string): Promise<ImportResult> {
     const rows = this.parseCSV(csvText);
     if (rows.length <= 1) {
-      throw new Error('CSV file is empty or contains only headers');
+      throw new AppError('CSV file is empty or contains only headers', 400);
     }
 
-    const headers = rows[0].map(h => h.toLowerCase());
-    const nameIdx = headers.indexOf('name');
-    const phoneIdx = headers.indexOf('phone');
-    const emailIdx = headers.indexOf('email');
+    const headers = rows[0].map(h => h.replace(/^\uFEFF/, '').toLowerCase().trim());
+    const findHeaderIdx = (patterns: string[]) => {
+      return headers.findIndex(h => patterns.some(p => h === p || h.includes(p)));
+    };
+
+    const nameIdx = findHeaderIdx(['name', 'supplier']);
+    const phoneIdx = findHeaderIdx(['phone', 'mobile', 'contact', 'tel']);
+    const emailIdx = findHeaderIdx(['email']);
 
     if (nameIdx === -1) {
-      throw new Error('CSV must contain at least a "Name" column');
+      throw new AppError('CSV must contain at least a "Name" or "Supplier" column', 400);
     }
 
     let successCount = 0;
@@ -302,12 +315,17 @@ export class ImportService {
       const row = rows[i];
       const rowNum = i + 1;
 
-      try {
-        const name = row[nameIdx];
-        if (!name) throw new Error('Name is required');
+      if (!row || row.every(cell => !cell.trim())) continue;
 
-        const phone = phoneIdx !== -1 ? row[phoneIdx] : undefined;
-        const email = emailIdx !== -1 ? row[emailIdx] : undefined;
+      try {
+        const name = row[nameIdx]?.trim();
+        if (!name) throw new Error('Supplier name is required');
+
+        const rawPhone = phoneIdx !== -1 ? row[phoneIdx]?.trim() : undefined;
+        const phone = rawPhone ? rawPhone : undefined;
+
+        const rawEmail = emailIdx !== -1 ? row[emailIdx]?.trim() : undefined;
+        const email = rawEmail ? rawEmail : undefined;
 
         if (email) {
           const [existingSupplier] = await db.select()
@@ -322,8 +340,8 @@ export class ImportService {
         await db.insert(suppliers).values({
           businessId,
           name,
-          phone,
-          email,
+          phone: phone || null,
+          email: email || null,
           createdBy: userId,
         });
 

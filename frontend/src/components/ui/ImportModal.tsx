@@ -101,7 +101,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           toast.error('Import failed. Please check the errors below.');
         }
       } catch (err: any) {
-        toast.error(err.response?.data?.message || 'Failed to parse or upload CSV file');
+        toast.error(err.response?.data?.message || err.message || 'Failed to parse or upload CSV file');
       } finally {
         setIsLoading(false);
       }
