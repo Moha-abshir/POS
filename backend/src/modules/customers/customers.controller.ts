@@ -34,6 +34,24 @@ export class CustomersController {
     }
   }
 
+  static async deleteCustomer(req: Request, res: Response, next: NextFunction) {
+    try {
+      await CustomersService.deleteCustomer(req.user!.businessId, req.params.id as string);
+      res.status(200).json({ status: 'success', message: 'Customer deleted successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async clearAllCustomers(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await CustomersService.clearAllCustomers(req.user!.businessId);
+      res.status(200).json({ status: 'success', message: `${result.count} customers cleared successfully`, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getCustomerPurchases(req: Request, res: Response, next: NextFunction) {
     try {
       const purchases = await CustomersService.getCustomerPurchases(req.user!.businessId, req.params.id as string);

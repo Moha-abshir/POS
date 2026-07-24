@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { useCustomers, type Customer } from '../features/customers/api/customers.api';
-import { Search, Plus, UserCircle, Eye, Pencil, Filter, Upload, Download } from 'lucide-react';
+import { useCustomers, useDeleteCustomer, useClearAllCustomers, type Customer } from '../features/customers/api/customers.api';
+import { Search, Plus, UserCircle, Eye, Pencil, Filter, Upload, Download, Trash2 } from 'lucide-react';
 import { CustomerModal } from '../features/customers/components/CustomerModal';
 import { CustomerDetailsModal } from '../features/customers/components/CustomerDetailsModal';
 import { formatDistanceToNow } from 'date-fns';
@@ -52,6 +52,35 @@ export const CustomersPage = () => {
   const { data: customersResponse, isLoading, error } = useCustomers();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const customers: Customer[] = customersResponse?.data || [];
+
+  const { mutateAsync: deleteCustomer } = useDeleteCustomer();
+  const { mutateAsync: clearAllCustomers } = useClearAllCustomers();
+
+  const handleDeleteCustomer = async (customer: Customer) => {
+    if (window.confirm(`Are you sure you want to delete customer "${customer.name}"?`)) {
+      try {
+        await deleteCustomer(customer.id);
+        toast.success(`Customer "${customer.name}" deleted successfully`);
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Failed to delete customer');
+      }
+    }
+  };
+
+  const handleClearAllCustomers = async () => {
+    if (!customers.length) {
+      toast.error('No customers to clear');
+      return;
+    }
+    if (window.confirm(`Are you sure you want to delete ALL ${customers.length} customers? This action cannot be undone.`)) {
+      try {
+        const res = await clearAllCustomers();
+        toast.success(res.message || 'All customer records cleared successfully');
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Failed to clear customers');
+      }
+    }
+  };
 
   // Tab count derivations
   const counts = useMemo(() => {
@@ -218,6 +247,17 @@ export const CustomersPage = () => {
               <span>Export</span>
             </button>
 
+            {currentUser?.role === 'OWNER' && customers.length > 0 && (
+              <button
+                onClick={handleClearAllCustomers}
+                className="flex-1 xl:flex-none flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 px-3 sm:px-4 h-10 rounded-[var(--radius-md)] font-semibold text-xs sm:text-sm transition-all shrink-0 select-none cursor-pointer"
+                title="Delete all customer records"
+              >
+                <Trash2 size={16} className="w-4 h-4" />
+                <span>Clear All</span>
+              </button>
+            )}
+
             <button
               onClick={handleOpenAddModal}
               className="flex-1 xl:flex-none flex items-center justify-center gap-1.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-3 sm:px-5 h-10 rounded-[var(--radius-md)] font-semibold text-xs sm:text-sm transition-all shrink-0 cursor-pointer shadow-sm whitespace-nowrap"
@@ -378,7 +418,7 @@ export const CustomersPage = () => {
                             <Eye className="w-4 h-4" />
                           </button>
                           <button 
-                            className="p-1 text-gray-400 hover:text-[#D97706] transition-colors rounded" 
+                            className="p-1 text-gray-400 hover:text-[#D97706] transition-colors rounded cursor-pointer" 
                             title="Edit customer"
                             onClick={() => {
                               setCustomerToEdit(customer);
@@ -387,6 +427,15 @@ export const CustomersPage = () => {
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
+                          {currentUser?.role === 'OWNER' && (
+                            <button 
+                              className="p-1 text-gray-400 hover:text-red-600 transition-colors rounded cursor-pointer" 
+                              title="Delete customer"
+                              onClick={() => handleDeleteCustomer(customer)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

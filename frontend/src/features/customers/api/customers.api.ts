@@ -103,6 +103,16 @@ export const customersApi = {
   getCustomerPayments: async (id: string) => {
     const { data } = await api.get(`/customers/${id}/payments`);
     return data.data;
+  },
+
+  deleteCustomer: async (id: string) => {
+    const { data } = await api.delete(`/customers/${id}`);
+    return data;
+  },
+
+  clearAllCustomers: async () => {
+    const { data } = await api.delete('/customers/clear-all');
+    return data;
   }
 };
 
@@ -128,6 +138,26 @@ export const useUpdateCustomer = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<Customer> & { id: string }) => customersApi.updateCustomer(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
+  });
+};
+
+export const useDeleteCustomer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: customersApi.deleteCustomer,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
+  });
+};
+
+export const useClearAllCustomers = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: customersApi.clearAllCustomers,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
     },

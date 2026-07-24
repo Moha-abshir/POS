@@ -117,6 +117,26 @@ export class CustomersService {
     return updatedCustomer;
   }
 
+  static async deleteCustomer(businessId: string, customerId: string) {
+    const [deleted] = await db.delete(customers)
+      .where(and(eq(customers.id, customerId), eq(customers.businessId, businessId)))
+      .returning();
+
+    if (!deleted) {
+      throw new Error('Customer not found');
+    }
+
+    return deleted;
+  }
+
+  static async clearAllCustomers(businessId: string) {
+    const deletedList = await db.delete(customers)
+      .where(eq(customers.businessId, businessId))
+      .returning();
+
+    return { count: deletedList.length };
+  }
+
   static async getCustomerPurchases(businessId: string, customerId: string) {
     return await db.select()
       .from(sales)
