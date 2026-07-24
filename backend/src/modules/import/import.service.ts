@@ -154,26 +154,30 @@ export class ImportService {
           businessId,
           name: 'Standard',
           sku: sku || null,
+          costPrice: costPrice.toString(),
           baseUnitName: baseUnitName || 'Piece',
+          baseStockQuantity: '0',
+          lowStockThreshold: lowStockThreshold.toString(),
         }).returning();
 
         await db.insert(variantUnits).values({
+          businessId,
           variantId: variant.id,
-          unitName: baseUnitName || 'Piece',
-          conversionFactor: '1',
-          costPrice: costPrice.toString(),
+          name: baseUnitName || 'Piece',
           sellingPrice: sellingPrice.toString(),
-          isBaseUnit: true,
+          conversionFactor: '1',
+          isDefault: true,
         });
 
         if (initialStock > 0) {
-          await InventoryService.adjustStock(
+          await InventoryService.manualAdjustment(
             businessId,
             userId,
-            variant.id,
-            initialStock,
-            'INITIAL_STOCK',
-            'CSV Bulk Import Initial Stock'
+            {
+              variantId: variant.id,
+              newQuantity: initialStock,
+              notes: 'CSV Bulk Import Initial Stock',
+            }
           );
         }
 
