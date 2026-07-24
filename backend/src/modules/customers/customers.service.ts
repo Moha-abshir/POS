@@ -23,6 +23,7 @@ export class CustomersService {
       notes: customers.notes,
       type: customers.type,
       balance: customers.balance,
+      periodOwed: customers.periodOwed,
       hasActiveCredit: customers.hasActiveCredit,
       isActive: customers.isActive,
       createdAt: customers.createdAt,
@@ -49,7 +50,22 @@ export class CustomersService {
     };
   }
 
-  static async createCustomer(businessId: string, userId: string, data: { name: string; phone?: string; nationalId?: string; address?: string; notes?: string; type?: 'INDIVIDUAL' | 'BUSINESS' }) {
+  static async createCustomer(
+    businessId: string,
+    userId: string,
+    data: {
+      name: string;
+      phone?: string;
+      nationalId?: string;
+      address?: string;
+      notes?: string;
+      type?: 'INDIVIDUAL' | 'BUSINESS';
+      amountOwed?: number;
+      periodOwed?: string;
+    }
+  ) {
+    const amountOwed = Number(data.amountOwed || 0);
+
     const [newCustomer] = await db.insert(customers).values({
       businessId,
       name: data.name,
@@ -58,14 +74,39 @@ export class CustomersService {
       address: data.address,
       notes: data.notes,
       type: data.type || 'INDIVIDUAL',
+      balance: amountOwed > 0 ? amountOwed.toString() : '0',
+      periodOwed: amountOwed > 0 ? (data.periodOwed || null) : null,
+      hasActiveCredit: amountOwed > 0,
       createdBy: userId,
     }).returning();
     return newCustomer;
   }
 
-  static async updateCustomer(businessId: string, customerId: string, data: { name?: string; phone?: string; nationalId?: string; address?: string; notes?: string; isActive?: boolean; type?: 'INDIVIDUAL' | 'BUSINESS' }) {
+  static async updateCustomer(
+    businessId: string,
+    customerId: string,
+    data: {
+      name?: string;
+      phone?: string;
+      nationalId?: string;
+      address?: string;
+      notes?: string;
+      isActive?: boolean;
+      type?: 'INDIVIDUAL' | 'BUSINESS';
+      periodOwed?: string;
+      amountOwed?: number;
+      balance?: string;
+    }
+  ) {
+    const updateData: any = { ...data };
+    if (data.amountOwed !== undefined) {
+      updateData.balance = data.amountOwed.toString();
+      updateData.hasActiveCredit = data.amountOwed > 0;
+      delete updateData.amountOwed;
+    }
+
     const [updatedCustomer] = await db.update(customers)
-      .set(data)
+      .set(updateData)
       .where(and(eq(customers.id, customerId), eq(customers.businessId, businessId)))
       .returning();
     

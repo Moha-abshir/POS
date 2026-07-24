@@ -46,8 +46,8 @@ export const CustomersPage = () => {
     queryClient.invalidateQueries({ queryKey: ['customers'] });
   };
 
-  const templateHeaders = ['Name', 'Phone', 'National ID', 'Address', 'Notes', 'Type'];
-  const sampleRow = ['"John Doe"', '"0712345678"', '"12345678"', '"Nairobi, Kenya"', '"Premium client"', '"INDIVIDUAL"'];
+  const templateHeaders = ['Name', 'Phone', 'National ID', 'Address', 'Notes', 'Type', 'Amount Owed', 'Period Owed'];
+  const sampleRow = ['"John Doe"', '"0712345678"', '"12345678"', '"Nairobi, Kenya"', '"Premium client"', '"INDIVIDUAL"', '"5000"', '"30 to 60 days"'];
 
   const { data: customersResponse, isLoading, error } = useCustomers();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -362,9 +362,16 @@ export const CustomersPage = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`text-sm ${balance > 0 ? 'text-[var(--color-accent)] font-semibold' : 'text-[var(--color-text-muted)]'}`}>
-                          KSH {balance.toLocaleString()}
-                        </span>
+                        <div className="flex flex-col items-start">
+                          <span className={`text-sm ${balance > 0 ? 'text-[var(--color-accent)] font-semibold' : 'text-[var(--color-text-muted)]'}`}>
+                            KSH {balance.toLocaleString()}
+                          </span>
+                          {balance > 0 && customer.periodOwed && (
+                            <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-medium border border-amber-200/60 mt-0.5 whitespace-nowrap">
+                              {customer.periodOwed}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`text-sm ${purchaseCount > 0 ? 'text-[var(--color-text-secondary)] font-medium' : 'text-[var(--color-text-muted)]'}`}>

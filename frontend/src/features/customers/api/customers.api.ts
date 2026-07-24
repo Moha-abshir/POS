@@ -10,6 +10,7 @@ export interface Customer {
   address?: string;
   notes?: string;
   balance: number;
+  periodOwed?: string;
   isActive: boolean;
   createdAt: string;
   lastPurchaseDate?: string;
@@ -70,7 +71,16 @@ export const customersApi = {
     }
   },
   
-  createCustomer: async (customerData: { name: string; phone?: string; nationalId?: string; address?: string; notes?: string; type?: 'INDIVIDUAL' | 'BUSINESS' }) => {
+  createCustomer: async (customerData: {
+    name: string;
+    phone?: string;
+    nationalId?: string;
+    address?: string;
+    notes?: string;
+    type?: 'INDIVIDUAL' | 'BUSINESS';
+    amountOwed?: number;
+    periodOwed?: string;
+  }) => {
     const { data } = await api.post('/customers', customerData);
     return data.data;
   },

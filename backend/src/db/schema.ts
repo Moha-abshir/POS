@@ -288,6 +288,7 @@ export const customers = pgTable('customers', {
   address: text('address'),
   notes: text('notes'),
   balance: decimal('balance', { precision: 12, scale: 2 }).notNull().default('0'),
+  periodOwed: varchar('period_owed', { length: 50 }),
   hasActiveCredit: boolean('has_active_credit').notNull().default(false),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

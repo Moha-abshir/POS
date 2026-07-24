@@ -202,13 +202,15 @@ export class ImportService {
       throw new Error('CSV file is empty or contains only headers');
     }
 
-    const headers = rows[0].map(h => h.toLowerCase());
+    const headers = rows[0].map(h => h.toLowerCase().trim());
     const nameIdx = headers.indexOf('name');
     const phoneIdx = headers.indexOf('phone');
     const idIdx = headers.indexOf('national id');
     const addressIdx = headers.indexOf('address');
     const notesIdx = headers.indexOf('notes');
     const typeIdx = headers.indexOf('type');
+    const amountOwedIdx = headers.indexOf('amount owed') !== -1 ? headers.indexOf('amount owed') : headers.indexOf('balance');
+    const periodOwedIdx = headers.indexOf('period owed') !== -1 ? headers.indexOf('period owed') : headers.indexOf('period');
 
     if (nameIdx === -1) {
       throw new Error('CSV must contain at least a "Name" column');
@@ -233,6 +235,10 @@ export class ImportService {
         let type = typeIdx !== -1 ? row[typeIdx]?.toUpperCase() : 'INDIVIDUAL';
         if (type !== 'BUSINESS') type = 'INDIVIDUAL';
 
+        const amountOwedRaw = amountOwedIdx !== -1 ? row[amountOwedIdx] : undefined;
+        const amountOwed = amountOwedRaw ? Number(amountOwedRaw) : 0;
+        const periodOwed = periodOwedIdx !== -1 ? row[periodOwedIdx] : undefined;
+
         if (phone) {
           const [existingCustomer] = await db.select()
             .from(customers)
@@ -243,6 +249,8 @@ export class ImportService {
           }
         }
 
+        const validAmount = !isNaN(amountOwed) && amountOwed > 0 ? amountOwed : 0;
+
         await db.insert(customers).values({
           businessId,
           name,
@@ -251,6 +259,9 @@ export class ImportService {
           address,
           notes,
           type: type as 'INDIVIDUAL' | 'BUSINESS',
+          balance: validAmount > 0 ? validAmount.toString() : '0',
+          periodOwed: validAmount > 0 ? (periodOwed || null) : null,
+          hasActiveCredit: validAmount > 0,
           createdBy: userId,
         });
 

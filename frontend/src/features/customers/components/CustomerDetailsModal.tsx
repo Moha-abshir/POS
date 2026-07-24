@@ -87,6 +87,11 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
               <p className={`mt-1 text-sm font-medium ${Number(customer.balance) > 0 ? 'text-[#D97706]' : 'text-green-600'}`}>
                 Balance: KSH {Number(customer.balance).toLocaleString()}
               </p>
+              {Number(customer.balance) > 0 && customer.periodOwed && (
+                <span className="mt-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-medium border border-amber-200">
+                  Period Owed: {customer.periodOwed}
+                </span>
+              )}
               {Number(customer.balance) > 0 && (
                 <button
                   onClick={() => setIsPaymentModalOpen(true)}

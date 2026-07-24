@@ -19,7 +19,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
     nationalId: '',
     address: '',
     notes: '',
-    type: 'INDIVIDUAL' as 'INDIVIDUAL' | 'BUSINESS'
+    type: 'INDIVIDUAL' as 'INDIVIDUAL' | 'BUSINESS',
+    amountOwed: '',
+    periodOwed: 'within 30 days',
   });
 
   useEffect(() => {
@@ -30,10 +32,12 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
         nationalId: customerToEdit.nationalId || '',
         address: customerToEdit.address || '',
         notes: customerToEdit.notes || '',
-        type: customerToEdit.type || 'INDIVIDUAL'
+        type: customerToEdit.type || 'INDIVIDUAL',
+        amountOwed: customerToEdit.balance ? customerToEdit.balance.toString() : '',
+        periodOwed: customerToEdit.periodOwed || 'within 30 days',
       });
     } else if (!isOpen) {
-      setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '', type: 'INDIVIDUAL' });
+      setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '', type: 'INDIVIDUAL', amountOwed: '', periodOwed: 'within 30 days' });
     }
   }, [customerToEdit, isOpen]);
 
@@ -44,7 +48,17 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
 
     if (customerToEdit) {
       updateCustomer(
-        { id: customerToEdit.id, ...formData },
+        {
+          id: customerToEdit.id,
+          name: formData.name,
+          phone: formData.phone,
+          nationalId: formData.nationalId,
+          address: formData.address,
+          notes: formData.notes,
+          type: formData.type,
+          periodOwed: formData.amountOwed && Number(formData.amountOwed) > 0 ? formData.periodOwed : undefined,
+          balance: formData.amountOwed ? Number(formData.amountOwed) : 0,
+        },
         {
           onSuccess: () => {
             toast.success('Customer updated successfully');
@@ -57,12 +71,21 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
       );
     } else {
       createCustomer(
-        { ...formData },
+        {
+          name: formData.name,
+          phone: formData.phone,
+          nationalId: formData.nationalId,
+          address: formData.address,
+          notes: formData.notes,
+          type: formData.type,
+          amountOwed: formData.amountOwed ? Number(formData.amountOwed) : 0,
+          periodOwed: formData.amountOwed && Number(formData.amountOwed) > 0 ? formData.periodOwed : undefined,
+        },
         {
           onSuccess: () => {
             toast.success('Customer added successfully');
             onClose();
-            setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '', type: 'INDIVIDUAL' });
+            setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '', type: 'INDIVIDUAL', amountOwed: '', periodOwed: 'within 30 days' });
           },
           onError: (error: any) => {
             toast.error(error.response?.data?.message || 'Failed to save customer');
@@ -105,11 +128,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
           <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-md p-3 text-amber-800">
             <Info className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
             <p className="text-xs leading-relaxed">
-              Customer registration is only required for credit sales. Walk-in cash and M-Pesa sales do not need a customer record.
+              Customer registration is required for credit sales or tracking existing debt. Walk-in cash sales do not require customer profiles.
             </p>
           </div>
-
-
 
           {/* Required Details */}
           <div>
@@ -146,6 +167,45 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
                 >
                   <option value="INDIVIDUAL">Individual</option>
                   <option value="BUSINESS">Business</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Initial Debt / Amount Owed Section */}
+          <div>
+            <h3 className="text-xs font-medium uppercase tracking-wide text-gray-400 pb-2 border-b border-[#E5E1DA] mb-3">
+              Existing Balance / Debt <span className="text-gray-400 font-normal">(optional)</span>
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Amount Owed <span className="text-gray-400 font-normal">(KES)</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  placeholder="0.00"
+                  value={formData.amountOwed}
+                  onChange={(e) => setFormData(prev => ({ ...prev, amountOwed: e.target.value }))}
+                  className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Period Owed
+                </label>
+                <select
+                  value={formData.periodOwed}
+                  onChange={(e) => setFormData(prev => ({ ...prev, periodOwed: e.target.value }))}
+                  disabled={!formData.amountOwed || Number(formData.amountOwed) <= 0}
+                  className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400 disabled:opacity-50"
+                >
+                  <option value="within 30 days">within 30 days</option>
+                  <option value="30 to 60 days">30 to 60 days</option>
+                  <option value="60 to 90 days">60 to 90 days</option>
+                  <option value=">90 days">&gt;90 days</option>
                 </select>
               </div>
             </div>
@@ -200,7 +260,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
           <div className="flex items-start gap-2.5 bg-[#F7F6F4] border border-[#E5E1DA] rounded-md p-3 text-gray-500">
             <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-gray-400" />
             <p className="text-xs leading-relaxed">
-              This customer's credit balance starts at KSH 0. Credit is extended during checkout when completing a credit sale.
+              If an initial amount owed is specified, the customer will start with that outstanding debt. Additional credit is extended during checkout.
             </p>
           </div>
 
