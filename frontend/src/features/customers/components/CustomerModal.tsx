@@ -44,17 +44,17 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
   if (!isOpen) return null;
 
   const handleSubmit = () => {
-    if (!formData.name.trim() || !formData.phone.trim()) return;
+    if (!formData.name.trim()) return;
 
     if (customerToEdit) {
       updateCustomer(
         {
           id: customerToEdit.id,
-          name: formData.name,
-          phone: formData.phone,
-          nationalId: formData.nationalId,
-          address: formData.address,
-          notes: formData.notes,
+          name: formData.name.trim(),
+          phone: formData.phone.trim() || undefined,
+          nationalId: formData.nationalId.trim() || undefined,
+          address: formData.address.trim() || undefined,
+          notes: formData.notes.trim() || undefined,
           type: formData.type,
           periodOwed: formData.amountOwed && Number(formData.amountOwed) > 0 ? formData.periodOwed : undefined,
           balance: formData.amountOwed ? Number(formData.amountOwed) : 0,
@@ -72,11 +72,11 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
     } else {
       createCustomer(
         {
-          name: formData.name,
-          phone: formData.phone,
-          nationalId: formData.nationalId,
-          address: formData.address,
-          notes: formData.notes,
+          name: formData.name.trim(),
+          phone: formData.phone.trim() || undefined,
+          nationalId: formData.nationalId.trim() || undefined,
+          address: formData.address.trim() || undefined,
+          notes: formData.notes.trim() || undefined,
           type: formData.type,
           amountOwed: formData.amountOwed ? Number(formData.amountOwed) : 0,
           periodOwed: formData.amountOwed && Number(formData.amountOwed) > 0 ? formData.periodOwed : undefined,
@@ -95,7 +95,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
     }
   };
 
-  const isFormValid = formData.name.trim() && formData.phone.trim();
+  const isFormValid = !!formData.name.trim();
   const isPending = isCreating || isUpdating;
 
   return (
@@ -135,11 +135,11 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
           {/* Required Details */}
           <div>
             <h3 className="text-xs font-medium uppercase tracking-wide text-gray-400 pb-2 border-b border-[#E5E1DA] mb-3">
-              Required Fields
+              Customer Information
             </h3>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Full Name</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Full Name *</label>
                 <input
                   type="text"
                   placeholder={formData.type === 'BUSINESS' ? "e.g., Acme Hardware Ltd" : "e.g., John Kamau"}
@@ -149,7 +149,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Phone Number</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Phone Number <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
                 <input
                   type="text"
                   placeholder="e.g., 0712 345 678"
