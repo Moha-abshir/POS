@@ -151,14 +151,6 @@ export const DashboardLayout: React.FC = () => {
   };
 
   const handleCloseRegister = async () => {
-    const expected = Number(activeSession?.expectedCash || 0);
-    const targetCash = Math.abs(expected);
-    const variance = totalCounted - targetCash;
-    if (Math.abs(variance) > 0.01 && !notes.trim()) {
-      toast.error('Please provide discrepancy notes');
-      return;
-    }
-
     try {
       await api.post('/cash-sessions/close', {
         denominationCounts: counts,
