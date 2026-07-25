@@ -246,7 +246,7 @@ export function SalesPage() {
                         setFilters(tempFilters);
                         setIsFilterOpen(false);
                       }}
-                      className="flex-1 px-4 py-3 text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-500/20 rounded-xl transition-all cursor-pointer"
+                      className="flex-1 px-4 py-3 text-sm font-bold text-white bg-gray-900 hover:bg-black rounded-xl transition-all cursor-pointer"
                     >
                       Apply Filters
                     </button>

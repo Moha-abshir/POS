@@ -411,7 +411,7 @@ export function PurchasingPage() {
                     <button onClick={handleClearFilters} className="px-4 py-2 text-[var(--color-text-secondary)] bg-[var(--color-bg-sunken)] hover:bg-[var(--color-border)] rounded-[var(--radius-md)] font-semibold transition-all shadow-sm cursor-pointer select-none">
                       Clear
                     </button>
-                    <button onClick={handleApplyFilters} className="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-[var(--radius-md)] transition-all shadow-sm cursor-pointer select-none">
+                    <button onClick={handleApplyFilters} className="px-4 py-2 bg-gray-900 hover:bg-black text-white font-semibold rounded-[var(--radius-md)] transition-all shadow-sm cursor-pointer select-none">
                       Apply Filters
                     </button>
                   </div>
