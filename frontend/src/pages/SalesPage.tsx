@@ -143,13 +143,9 @@ export function SalesPage() {
           <div className="relative">
             <button 
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`flex items-center gap-2.5 px-6 py-3 text-sm font-bold rounded-2xl transition-all cursor-pointer border shadow-sm active:scale-95 ${
-                isFilterOpen || Object.values(filters).some(v => v !== '') 
-                  ? 'bg-amber-50 border-amber-200 text-amber-700 shadow-amber-500/10' 
-                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}
+              className={`flex items-center gap-2.5 px-6 py-3 text-sm font-bold rounded-2xl transition-all cursor-pointer border border-transparent shadow-sm active:scale-95 bg-gray-900 text-white hover:bg-black`}
             >
-              <Filter size={18} className={isFilterOpen || Object.values(filters).some(v => v !== '') ? 'text-amber-600' : 'text-gray-400'} />
+              <Filter size={18} className={isFilterOpen || Object.values(filters).some(v => v !== '') ? 'text-amber-500' : 'text-gray-300'} />
               Filters
               {Object.values(filters).filter(v => v !== '').length > 0 && (
                 <span className="ml-1 flex items-center justify-center w-5 h-5 bg-amber-500 text-white rounded-full text-[10px] font-extrabold shadow-sm">

@@ -338,7 +338,7 @@ export function PurchasingPage() {
               <h2 className="text-base md:text-lg font-semibold text-[var(--color-text-primary)] whitespace-nowrap truncate">Purchase History</h2>
               <button 
                 onClick={handleOpenFilters} 
-                className="flex items-center justify-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-semibold border rounded-[var(--radius-md)] transition-all bg-white text-[var(--color-text-secondary)] border-[var(--color-border)] hover:bg-[var(--color-bg-base)] cursor-pointer shrink-0"
+                className="flex items-center justify-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-semibold border border-transparent rounded-[var(--radius-md)] transition-all bg-gray-900 text-white hover:bg-black cursor-pointer shrink-0"
               >
                 <Filter size={16} className="w-4 h-4" /> Filters
               </button>
