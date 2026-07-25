@@ -6,6 +6,7 @@ import { db } from '../../../core/offline/offlineDatabase';
 import { api } from '../../../lib/api';
 import { X, CreditCard, User, AlertCircle, Building2, Smartphone, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { CustomSelect } from '../../../components/ui/CustomSelect';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -743,19 +744,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
                   {isBusinessSale ? 'Select Business' : 'Select Customer'} 
                   <span className="text-red-500 ml-1.5 font-semibold text-xs">*Required</span>
                 </label>
-                <select
+                <CustomSelect
+                  label={`-- Choose a ${isBusinessSale ? 'Business' : 'Customer'} --`}
+                  options={filteredCustomers.map((c: any) => ({
+                    id: c.id,
+                    name: `${c.name} ${c.phone ? `(${c.phone})` : ''}`
+                  }))}
                   value={customerId}
                   onChange={(e) => setCustomerId(e.target.value)}
+                  searchable={true}
                   required={isCustomerRequired}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent outline-none bg-white transition-all shadow-sm text-sm ${
-                    !customerId ? 'border-red-300 focus:ring-red-500' : 'border-amber-300 focus:ring-[#D97706]'
-                  }`}
-                >
-                  <option value="" disabled>-- Choose a {isBusinessSale ? 'Business' : 'Customer'} --</option>
-                  {filteredCustomers.map((c: any) => (
-                    <option key={c.id} value={c.id}>{c.name} {c.phone ? `(${c.phone})` : ''}</option>
-                  ))}
-                </select>
+                  className="w-full"
+                />
                 {!customerId && (
                   <p className="mt-2 text-xs text-red-600 flex items-center font-medium">
                     <AlertCircle className="w-4 h-4 mr-1.5" />
