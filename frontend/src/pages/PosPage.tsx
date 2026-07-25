@@ -248,36 +248,36 @@ export const PosPage = () => {
 
       {/* Cart Backdrop Overlay */}
       <div 
-        className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-300 ${isCartOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
+        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${isCartOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
         onClick={() => setIsCartOpen(false)} 
       />
 
       {/* Sliding Cart Drawer (Right Side) */}
-      <div className={`fixed inset-y-0 right-0 w-full sm:w-[420px] bg-[#1C1F24] shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isCartOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed inset-y-0 right-0 w-full sm:w-[420px] bg-[var(--color-bg-surface)] border-l border-[var(--color-border)] shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isCartOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         
         {/* Cart Header */}
-        <div className="p-6 shrink-0 flex justify-between items-center border-b border-white/5">
+        <div className="p-6 shrink-0 flex justify-between items-center border-b border-[var(--color-border)] bg-[var(--color-bg-base)]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-[var(--color-accent-subtle)] flex items-center justify-center">
               <ShoppingCart className="w-5 h-5 text-[#D97706]" />
             </div>
             <div>
-              <h2 className="text-white font-bold text-lg leading-none">Your Cart</h2>
-              <p className="text-xs text-zinc-400 mt-1">{cart.reduce((sum, item) => sum + item.quantity, 0)} items</p>
+              <h2 className="text-[var(--color-text-primary)] font-bold text-lg leading-none">Your Cart</h2>
+              <p className="text-xs text-[var(--color-text-secondary)] mt-1">{cart.reduce((sum, item) => sum + item.quantity, 0)} items</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {cart.length > 0 && (
               <button 
                 onClick={() => setCart([])}
-                className="text-xs font-bold text-zinc-500 hover:text-red-400 transition-colors px-3 py-2 cursor-pointer"
+                className="text-xs font-bold text-[var(--color-text-secondary)] hover:text-red-500 transition-colors px-3 py-2 cursor-pointer"
               >
                 Clear
               </button>
             )}
             <button 
               onClick={() => setIsCartOpen(false)}
-              className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              className="w-10 h-10 rounded-full bg-[var(--color-bg-sunken)] flex items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-border)] transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -288,12 +288,12 @@ export const PosPage = () => {
         <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-hide">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center gap-4">
-              <div className="p-6 bg-white/5 rounded-full border border-white/5 text-zinc-600">
+              <div className="p-6 bg-[var(--color-bg-sunken)] rounded-full border border-[var(--color-border)] text-[var(--color-text-secondary)]">
                 <ShoppingBag className="w-10 h-10" />
               </div>
               <div>
-                <p className="font-bold text-base text-zinc-300">Your cart is empty</p>
-                <p className="text-sm text-zinc-500 mt-1 max-w-[250px]">Select products from the catalog to build your customer's order.</p>
+                <p className="font-bold text-base text-[var(--color-text-primary)]">Your cart is empty</p>
+                <p className="text-sm text-[var(--color-text-secondary)] mt-1 max-w-[250px]">Select products from the catalog to build your customer's order.</p>
               </div>
             </div>
           ) : (
@@ -307,36 +307,36 @@ export const PosPage = () => {
                 return (
                 <div 
                   key={item.unitId} 
-                  className="flex flex-col p-4 rounded-2xl transition-all group bg-white/[0.03] hover:bg-white/[0.06] border border-white/5"
+                  className="flex flex-col p-4 rounded-2xl transition-all group bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-sunken)] border border-[var(--color-border)]"
                 >
                   <div className="flex justify-between items-start">
                     <div className="pr-3 flex-1 min-w-0">
-                      <div className="font-bold text-white text-sm truncate" title={item.productName}>
+                      <div className="font-bold text-[var(--color-text-primary)] text-sm truncate" title={item.productName}>
                         {item.productName}
                       </div>
-                      <div className="text-xs text-zinc-400 mt-1.5 font-medium flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.5 bg-white/10 rounded-md">{variantNameText(item)}</span>
+                      <div className="text-xs text-[var(--color-text-secondary)] mt-1.5 font-medium flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.5 bg-[var(--color-border)] text-[var(--color-text-primary)] rounded-md">{variantNameText(item)}</span>
                         <span>@ KSh {item.sellingPrice.toLocaleString()}</span>
                       </div>
                     </div>
-                    <div className="font-extrabold text-white text-sm shrink-0">
+                    <div className="font-extrabold text-[var(--color-text-primary)] text-sm shrink-0">
                       KSh {(item.quantity * item.sellingPrice).toLocaleString()}
                     </div>
                   </div>
                   
                   {/* Quantity Adjustment Row */}
                   <div className="flex items-center justify-between mt-5">
-                    <div className="flex items-center bg-white/5 rounded-xl border border-white/5 p-1">
+                    <div className="flex items-center bg-[var(--color-bg-sunken)] rounded-xl border border-[var(--color-border)] p-1">
                       <button 
                         onClick={() => updateQuantity(item.unitId, -1)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-base)] hover:text-[var(--color-text-primary)] transition-all cursor-pointer"
                       >
                         <Minus className="w-4 h-4" />
                       </button>
-                      <span className="font-bold text-sm w-10 text-center text-white">{item.quantity}</span>
+                      <span className="font-bold text-sm w-10 text-center text-[var(--color-text-primary)]">{item.quantity}</span>
                       <button 
                         onClick={() => updateQuantity(item.unitId, 1)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-base)] hover:text-[var(--color-text-primary)] transition-all cursor-pointer"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
@@ -358,13 +358,13 @@ export const PosPage = () => {
         </div>
 
         {/* Cart Summary & Action Footer */}
-        <div className="p-6 bg-white/[0.02] border-t border-white/5 backdrop-blur-xl">
+        <div className="p-6 bg-[var(--color-bg-base)] border-t border-[var(--color-border)]">
           <div className="flex flex-col gap-4 mb-6">
             
             {/* Subtotal */}
-            <div className="flex justify-between items-center text-sm text-zinc-400 font-medium">
+            <div className="flex justify-between items-center text-sm text-[var(--color-text-secondary)] font-medium">
               <span>Subtotal</span>
-              <span className="text-zinc-200">KSh {cartSubtotal.toLocaleString()}</span>
+              <span className="text-[var(--color-text-primary)] font-bold">KSh {cartSubtotal.toLocaleString()}</span>
             </div>
             
             {/* Discount Row (Interactive Design) */}
@@ -380,20 +380,20 @@ export const PosPage = () => {
                     onChange={(e) => setDiscountInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleApplyDiscount()}
                     onBlur={handleApplyDiscount}
-                    className="w-24 bg-white/5 text-white border border-white/10 rounded-xl px-2.5 py-1.5 outline-none text-right focus:border-[#D97706] text-sm font-bold transition-colors"
+                    className="w-24 bg-white text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-xl px-2.5 py-1.5 outline-none text-right focus:border-[#D97706] text-sm font-bold transition-colors"
                   />
                 </div>
               </div>
             ) : (
               <div 
-                className="flex justify-between items-center text-sm text-zinc-400 cursor-pointer hover:text-white transition-all group"
+                className="flex justify-between items-center text-sm text-[var(--color-text-secondary)] cursor-pointer hover:text-white transition-all group"
                 onClick={() => {
                   setDiscountInput(discount > 0 ? discount.toString() : '');
                   setIsEditingDiscount(true);
                 }}
               >
                 <span className="flex items-center gap-2 font-medium">
-                  <div className="p-1 rounded bg-white/5 group-hover:bg-[#D97706]/20 transition-colors">
+                  <div className="p-1 rounded bg-[var(--color-bg-sunken)] group-hover:bg-[var(--color-accent-subtle)] transition-colors">
                     <Tag className="w-3.5 h-3.5 group-hover:text-[#D97706]" />
                   </div>
                   Discount <span className="opacity-0 group-hover:opacity-100 text-[10px] text-amber-500 transition-opacity ml-1">(edit)</span>
@@ -405,9 +405,9 @@ export const PosPage = () => {
             )}
             
             {/* Grand Total */}
-            <div className="flex justify-between items-end border-t border-white/10 pt-5 mt-2">
+            <div className="flex justify-between items-end border-t border-[var(--color-border)] pt-5 mt-2">
               <span className="text-sm font-bold text-zinc-400">Total</span>
-              <span className="text-3xl font-extrabold text-white tracking-tight leading-none">
+              <span className="text-3xl font-extrabold text-[var(--color-text-primary)] tracking-tight leading-none">
                 KSh {cartTotal.toLocaleString()}
               </span>
             </div>
@@ -417,7 +417,7 @@ export const PosPage = () => {
           <button 
             disabled={cart.length === 0 || hasStockError}
             onClick={() => setIsCheckoutOpen(true)}
-            className="w-full h-14 bg-[#D97706] hover:bg-[#B45309] disabled:bg-zinc-800 disabled:text-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base rounded-2xl transition-all shadow-lg shadow-[#D97706]/20 hover:shadow-[#D97706]/40 flex justify-center items-center gap-2 cursor-pointer active:scale-[0.98]"
+            className="w-full h-14 bg-gray-900 hover:bg-black disabled:bg-gray-200 disabled:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base rounded-2xl transition-all shadow-lg  flex justify-center items-center gap-2 cursor-pointer active:scale-[0.98]"
           >
             <span>{hasStockError ? 'Stock Exceeded' : 'Proceed to Checkout'}</span>
             {!hasStockError && <ArrowRight className="w-5 h-5" />}
