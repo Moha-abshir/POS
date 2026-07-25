@@ -415,7 +415,7 @@ export const DashboardLayout: React.FC = () => {
                   </div>
                   <button 
                     onClick={handleOpenRegister}
-                    className="w-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 mt-4"
+                    className="w-full bg-gray-900 hover:bg-black text-white font-bold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 mt-4"
                   >
                     Open Register Shift
                   </button>
@@ -455,7 +455,7 @@ export const DashboardLayout: React.FC = () => {
                       setNotes('');
                       setIsClosingStep(true);
                     }}
-                    className="w-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 mt-4"
+                    className="w-full bg-gray-900 hover:bg-black text-white font-bold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 mt-4"
                   >
                     Proceed to Count &amp; Close Register
                   </button>
@@ -532,7 +532,7 @@ export const DashboardLayout: React.FC = () => {
                     </button>
                     <button 
                       onClick={handleCloseRegister}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg transition-colors"
+                      className="flex-1 bg-gray-900 hover:bg-black text-white font-bold py-2 rounded-lg transition-colors"
                     >
                       Close Shift Register
                     </button>
