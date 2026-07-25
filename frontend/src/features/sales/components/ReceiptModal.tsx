@@ -53,12 +53,16 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     // Save the original document title
     const originalTitle = document.title;
     
-    // Set a custom document title for the default file name (e.g. Receipt-2A1E0E0E)
+    // Set a custom document title for the default file name
     if (sale) {
       document.title = `Receipt-${sale.id.slice(0, 8).toUpperCase()}`;
     }
 
-    // Create a temporary body-level container to bypass React root layout constraints during printing
+    // Clean up any old container
+    const existing = document.getElementById('temp-print-container');
+    if (existing) existing.remove();
+
+    // Create a temporary body-level container for printing
     const printContainer = document.createElement('div');
     printContainer.id = 'temp-print-container';
     printContainer.innerHTML = printContent.outerHTML;
@@ -66,9 +70,13 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
 
     window.print();
 
-    // Clean up and restore original title after print dialog closes
-    document.body.removeChild(printContainer);
-    document.title = originalTitle;
+    // Delay cleanup so printer spooler completes DOM capture
+    setTimeout(() => {
+      if (document.body.contains(printContainer)) {
+        document.body.removeChild(printContainer);
+      }
+      document.title = originalTitle;
+    }, 1000);
   };
 
   return (
@@ -81,23 +89,24 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
             margin: 0;
           }
           html, body {
-            width: 100% !important;
+            width: 80mm !important;
             margin: 0 !important;
             padding: 0 !important;
             background: white !important;
+            color: black !important;
           }
           /* Hide everything except the temporary body-level print container */
-          body > * {
+          body > *:not(#temp-print-container) {
             display: none !important;
           }
           body > #temp-print-container {
             display: block !important;
-            position: absolute !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
+            position: relative !important;
+            left: 0 !important;
             top: 0 !important;
-            width: 80mm !important;
+            width: 76mm !important;
             background: white !important;
+            color: black !important;
             padding: 0 !important;
             margin: 0 !important;
             page-break-inside: avoid !important;
@@ -111,15 +120,19 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
             margin: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
-            padding: 4mm !important;
-            display: flex !important;
-            flex-direction: column !important;
+            padding: 2mm !important;
+            display: block !important;
             background: white !important;
+            color: black !important;
             page-break-inside: avoid !important;
+          }
+          #printable-receipt * {
+            color: black !important;
+            text-shadow: none !important;
           }
           /* Compress spacing for a compact, single-page thermal receipt */
           #printable-receipt .px-6.py-8 {
-            padding: 4mm 4mm !important;
+            padding: 2mm 2mm !important;
           }
           #printable-receipt .mb-5, 
           #printable-receipt .mb-6, 
