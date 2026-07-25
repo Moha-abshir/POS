@@ -2,11 +2,32 @@ import { eq, and, sql, desc } from 'drizzle-orm';
 import { db } from '../../db';
 import { customers, sales, payments } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
+import { getCache, setCache, flushPattern } from '../../core/cache/redis';
 
 export class CustomersService {
+  public static async invalidateCustomerCache(businessId: string) {
+    try {
+      await flushPattern(`cache:${businessId}:customers:*`);
+    } catch (err) {
+      console.error(`Error invalidating customer cache for business ${businessId}:`, err);
+    }
+  }
+
   static async getCustomers(businessId: string, filters: { limit?: number; offset?: number; search?: string } = {}) {
-    const { limit = 50, offset = 0, search } = filters;
-    
+    const { limit = 1000, offset = 0, search } = filters;
+    const cacheKey = `cache:${businessId}:customers:${limit}:${offset}:${search || 'all'}`;
+
+    // 1. Check Redis Cache first
+    try {
+      const cached = await getCache(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (err) {
+      console.error(`Redis read error on getCustomers for business ${businessId}:`, err);
+    }
+
+    // 2. Fetch from Database on cache miss
     const conditions: any[] = [eq(customers.businessId, businessId)];
     
     if (search) {
@@ -44,10 +65,19 @@ export class CustomersService {
       .from(customers)
       .where(and(...conditions));
 
-    return {
+    const result = {
       data,
       meta: { total: count, limit, offset }
     };
+
+    // 3. Store in Redis with 15 minutes TTL
+    try {
+      await setCache(cacheKey, JSON.stringify(result), 900);
+    } catch (err) {
+      console.error(`Redis write error on getCustomers for business ${businessId}:`, err);
+    }
+
+    return result;
   }
 
   static async createCustomer(
@@ -79,6 +109,8 @@ export class CustomersService {
       hasActiveCredit: amountOwed > 0,
       createdBy: userId,
     }).returning();
+
+    await this.invalidateCustomerCache(businessId);
     return newCustomer;
   }
 
@@ -114,6 +146,7 @@ export class CustomersService {
       throw new Error('Customer not found');
     }
     
+    await this.invalidateCustomerCache(businessId);
     return updatedCustomer;
   }
 
@@ -126,6 +159,7 @@ export class CustomersService {
       throw new Error('Customer not found');
     }
 
+    await this.invalidateCustomerCache(businessId);
     return deleted;
   }
 
@@ -134,6 +168,7 @@ export class CustomersService {
       .where(eq(customers.businessId, businessId))
       .returning();
 
+    await this.invalidateCustomerCache(businessId);
     return { count: deletedList.length };
   }
 
@@ -243,6 +278,7 @@ export class CustomersService {
         createdBy: userId,
       }).returning();
 
+      await this.invalidateCustomerCache(businessId);
       return { payment, customer: updatedCustomer };
     });
   }
@@ -324,6 +360,8 @@ export class CustomersService {
         mpesaReceiptNumber: mpesaReceiptNumber
       })
       .where(eq(payments.id, paymentId));
+
+    await this.invalidateCustomerCache(customer.businessId);
   }
 
   static async getCustomerPayments(businessId: string, customerId: string) {

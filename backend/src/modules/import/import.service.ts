@@ -2,6 +2,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import { db } from '../../db';
 import { categories, products, productVariants, variantUnits, customers, suppliers } from '../../db/schema';
 import { InventoryService } from '../inventory/inventory.service';
+import { CustomersService } from '../customers/customers.service';
 import { AppError } from '../../core/utils/AppError';
 
 export interface ImportResult {
@@ -287,6 +288,10 @@ export class ImportService {
           message: err.message || 'Validation failed',
         });
       }
+    }
+
+    if (successCount > 0) {
+      await CustomersService.invalidateCustomerCache(businessId);
     }
 
     return { successCount, failureCount, errors };
