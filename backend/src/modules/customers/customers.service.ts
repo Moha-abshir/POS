@@ -131,16 +131,28 @@ export class CustomersService {
       type?: 'INDIVIDUAL' | 'BUSINESS' | 'EMPLOYEE';
       periodOwed?: string;
       amountOwed?: number;
-      balance?: string;
-      baseSalary?: number;
+      balance?: string | number;
+      baseSalary?: number | string;
     }
   ) {
-    const updateData: any = { ...data };
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.nationalId !== undefined) updateData.nationalId = data.nationalId;
+    if (data.address !== undefined) updateData.address = data.address;
+    if (data.notes !== undefined) updateData.notes = data.notes;
+    if (data.type !== undefined) updateData.type = data.type;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+    if (data.periodOwed !== undefined) updateData.periodOwed = data.periodOwed;
+
     if (data.amountOwed !== undefined) {
       updateData.balance = data.amountOwed.toString();
       updateData.hasActiveCredit = data.amountOwed > 0;
-      delete updateData.amountOwed;
+    } else if (data.balance !== undefined) {
+      updateData.balance = data.balance.toString();
+      updateData.hasActiveCredit = Number(data.balance) > 0;
     }
+
     if (data.baseSalary !== undefined) {
       updateData.baseSalary = data.baseSalary.toString();
     }
