@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
 import { RefundModal } from './RefundModal';
 import { LoadingSpinner } from '../../../components/ui/Loading';
+import toast from 'react-hot-toast';
 
 interface ReceiptModalProps {
   saleId: string | null;
@@ -46,7 +47,162 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
 
   if (!saleId) return null;
 
-  const handlePrint = () => {
+  const generateEscPosData = (sale: any, meData: any) => {
+    const ESC = '\x1b';
+    const GS = '\x1d';
+    
+    let commands = '';
+    
+    // Initialize printer
+    commands += ESC + '@';
+    
+    // Center alignment for Header
+    commands += ESC + 'a' + '\x01';
+    
+    // Title (Double-size, Bold)
+    const businessName = meData?.business?.name || 'SMART STORE POS';
+    commands += GS + '!' + '\x11'; // double size
+    commands += ESC + 'E' + '\x01'; // bold
+    commands += businessName.toUpperCase() + '\n';
+    commands += GS + '!' + '\x00'; // normal size
+    commands += ESC + 'E' + '\x00'; // regular
+    
+    if (meData?.business?.sector) {
+      commands += meData.business.sector.toUpperCase() + '\n';
+    }
+    if (meData?.business?.location) {
+      commands += meData.business.location + '\n';
+    }
+    if (meData?.business?.phone) {
+      commands += 'TEL: ' + meData.business.phone + '\n';
+    }
+    
+    // Divider
+    commands += '------------------------------------------------\n';
+    commands += 'SALES RECEIPT\n';
+    commands += '------------------------------------------------\n';
+    
+    // Left aligned metadata
+    commands += ESC + 'a' + '\x00';
+    
+    const receiptNo = sale.id.slice(0, 8).toUpperCase();
+    const dateStr = format(new Date(sale.soldAt), 'dd/MM/yyyy h:mm a');
+    const cashierName = ((meData?.user?.firstName || '') + ' ' + (meData?.user?.lastName || '')).trim() || 'System Cashier';
+    const customerName = sale.customerName || 'Walk-in Customer';
+    
+    commands += `Receipt No: #${receiptNo}\n`;
+    commands += `Date/Time:  ${dateStr}\n`;
+    commands += `Cashier:    ${cashierName}\n`;
+    commands += `Customer:   ${customerName}\n`;
+    if (sale.customerPhone) {
+      commands += `Phone:      ${sale.customerPhone}\n`;
+    }
+    
+    // Divider
+    commands += '------------------------------------------------\n';
+    
+    // Items header
+    commands += 'ITEMS & QTY                                TOTAL\n';
+    commands += '------------------------------------------------\n';
+    
+    // Items list
+    sale.items?.forEach((item: any) => {
+      const isGenericVariant = !item.variantName || item.variantName === 'Default' || item.variantName === 'Standard';
+      const displayName = item.productName 
+        ? `${item.productName}${isGenericVariant ? '' : ` - ${item.variantName}`}`
+        : 'Generic Item';
+        
+      const qtyStr = `${item.quantity} x KSh ${Number(item.price).toLocaleString()}`;
+      const totalStr = `KSh ${Number(item.totalPrice).toLocaleString()}`;
+      
+      // Write item display name
+      commands += displayName + '\n';
+      
+      // Write price and subtotal columns aligning to 48 characters
+      const leftPadLen = 48 - qtyStr.length - totalStr.length;
+      let spaces = '';
+      for (let i = 0; i < leftPadLen; i++) {
+        spaces += ' ';
+      }
+      commands += '  ' + qtyStr + spaces.substring(2) + totalStr + '\n';
+    });
+    
+    commands += '------------------------------------------------\n';
+    
+    // Totals block
+    const formatTotalLine = (label: string, value: string) => {
+      const spaces = 48 - label.length - value.length;
+      let pad = '';
+      for (let i = 0; i < spaces; i++) pad += ' ';
+      return label + pad + value + '\n';
+    };
+    
+    commands += formatTotalLine('Subtotal:', `KSh ${Number(sale.totalAmount).toLocaleString()}`);
+    if (Number(sale.discountAmount) > 0) {
+      commands += formatTotalLine('Discount:', `- KSh ${Number(sale.discountAmount).toLocaleString()}`);
+    }
+    commands += ESC + 'E' + '\x01'; // bold for grand total
+    commands += formatTotalLine('Total Amount:', `KSh ${Number(sale.totalAmount).toLocaleString()}`);
+    commands += ESC + 'E' + '\x00'; // normal
+    commands += formatTotalLine('Amount Paid:', `KSh ${Number(sale.amountPaid).toLocaleString()}`);
+    
+    const balance = Number(sale.totalAmount) - Number(sale.amountPaid);
+    if (balance > 0) {
+      commands += ESC + 'E' + '\x01';
+      commands += formatTotalLine('Balance Due (Credit):', `KSh ${balance.toLocaleString()}`);
+      commands += ESC + 'E' + '\x00';
+    }
+    
+    commands += '------------------------------------------------\n';
+    
+    // Footer (Center aligned)
+    commands += ESC + 'a' + '\x01';
+    commands += 'Thank you for shopping with us!\n';
+    commands += 'Please come again.\n';
+    
+    // Extra spacing and Cut paper
+    commands += '\n\n\n\n';
+    commands += GS + 'V' + '\x42' + '\x00'; // standard cut command
+    
+    // Kick cash drawer open command
+    commands += ESC + 'p' + '\x00' + '\x19' + '\xfa';
+    
+    return btoa(unescape(encodeURIComponent(commands)));
+  };
+
+  const handlePrint = async () => {
+    // 1. Try to print silently via local agent first
+    try {
+      const agentCheck = await fetch('http://localhost:4000/status', { method: 'GET' });
+      if (agentCheck.ok && sale) {
+        const printersRes = await fetch('http://localhost:4000/printers');
+        const printersData = await printersRes.json();
+        const printersList = printersData.printers || [];
+        
+        let targetPrinter = 'E-POS ECO250';
+        if (printersList.length > 0) {
+          const match = printersList.find((p: string) => p.toUpperCase().includes('E-POS') || p.toUpperCase().includes('POS'));
+          targetPrinter = match || printersList[0];
+        }
+        
+        const rawBase64 = generateEscPosData(sale, meData);
+        
+        const printJob = await fetch('http://localhost:4000/print', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ printer: targetPrinter, raw_base64: rawBase64 })
+        });
+        
+        if (printJob.ok) {
+          toast.success(`Printed silently on ${targetPrinter}!`);
+          return;
+        }
+      }
+    } catch (err) {
+      console.log('Local print agent offline, falling back to browser print dialog.');
+    }
+
+    // 2. Fallback to standard browser printing
     const printContent = document.getElementById('printable-receipt');
     if (!printContent) return;
 
