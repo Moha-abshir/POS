@@ -386,7 +386,7 @@ export const PosPage = () => {
               </div>
             ) : (
               <div 
-                className="flex justify-between items-center text-sm text-[var(--color-text-secondary)] cursor-pointer hover:text-white transition-all group"
+                className="flex justify-between items-center text-sm text-[var(--color-text-secondary)] cursor-pointer hover:text-[var(--color-text-primary)] transition-all group"
                 onClick={() => {
                   setDiscountInput(discount > 0 ? discount.toString() : '');
                   setIsEditingDiscount(true);
@@ -406,7 +406,7 @@ export const PosPage = () => {
             
             {/* Grand Total */}
             <div className="flex justify-between items-end border-t border-[var(--color-border)] pt-5 mt-2">
-              <span className="text-sm font-bold text-zinc-400">Total</span>
+              <span className="text-sm font-bold text-[var(--color-text-secondary)]">Total</span>
               <span className="text-3xl font-extrabold text-[var(--color-text-primary)] tracking-tight leading-none">
                 KSh {cartTotal.toLocaleString()}
               </span>
