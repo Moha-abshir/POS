@@ -213,7 +213,7 @@ export const OnboardingModal: React.FC = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-12 flex items-center justify-center rounded-[var(--radius-lg)] text-[var(--text-base)] font-bold text-white bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-4 focus:ring-[var(--color-accent-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg shadow-amber-500/20"
+              className="w-full h-12 flex items-center justify-center rounded-[var(--radius-lg)] text-[var(--text-base)] font-bold text-white bg-gray-900 hover:bg-black focus:outline-none focus:ring-4 focus:ring-[var(--color-accent-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg shadow-amber-500/20"
             >
               {isSubmitting ? (
                 <Loader2 className="animate-spin w-6 h-6" />

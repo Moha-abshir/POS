@@ -77,7 +77,7 @@ export const CostPriceEditModal: React.FC<CostPriceEditModalProps> = ({ isOpen, 
             <button type="button" onClick={onClose} className="px-4 py-2 text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">
               Cancel
             </button>
-            <button type="submit" disabled={updateVariant.isPending} className="h-10 px-6 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-[var(--text-sm)] font-medium rounded-[var(--radius-md)] transition-colors disabled:opacity-50">
+            <button type="submit" disabled={updateVariant.isPending} className="h-10 px-6 bg-gray-900 hover:bg-black text-white text-[var(--text-sm)] font-medium rounded-[var(--radius-md)] transition-colors disabled:opacity-50">
               {updateVariant.isPending ? 'Updating...' : 'Update Cost Price'}
             </button>
           </div>

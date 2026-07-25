@@ -110,7 +110,7 @@ export const UnitPriceEditModal: React.FC<UnitPriceEditModalProps> = ({ isOpen, 
               <button 
                 type="submit" 
                 disabled={updateUnit.isPending || !sellingPrice} 
-                className="h-10 px-6 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-[var(--text-sm)] font-medium rounded-[var(--radius-md)] transition-colors disabled:opacity-50"
+                className="h-10 px-6 bg-gray-900 hover:bg-black text-white text-[var(--text-sm)] font-medium rounded-[var(--radius-md)] transition-colors disabled:opacity-50"
               >
                 {updateUnit.isPending ? 'Updating...' : 'Update Price'}
               </button>

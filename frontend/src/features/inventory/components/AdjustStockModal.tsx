@@ -172,7 +172,7 @@ export function AdjustStockModal({ onClose, initialVariantId }: AdjustStockModal
             <button
               type="submit"
               disabled={adjustMutation.isPending}
-              className="flex-1 px-4 py-2 bg-[var(--color-accent)] text-white text-sm font-medium rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex-1 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-[var(--radius-md)] hover:bg-black transition-colors disabled:opacity-50 cursor-pointer"
             >
               {adjustMutation.isPending ? 'Saving...' : 'Set Stock Level'}
             </button>

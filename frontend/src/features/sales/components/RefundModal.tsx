@@ -230,7 +230,7 @@ export function RefundModal({ sale, onClose }: RefundModalProps) {
             <button 
               type="submit" 
               disabled={refundMutation.isPending}
-              className="flex-1 h-10 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-[var(--radius-md)] text-sm font-semibold transition-all select-none cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+              className="flex-1 h-10 bg-gray-900 hover:bg-black disabled:opacity-50 text-white rounded-[var(--radius-md)] text-sm font-semibold transition-all select-none cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
             >
               {refundMutation.isPending ? (
                 <div className="animate-spin rounded-full h-4.5 w-4.5 border-b-2 border-white"></div>

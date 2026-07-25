@@ -494,7 +494,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
               form="add-product-form"
               type="submit"
               disabled={isSaveDisabled}
-              className="h-10 px-6 flex items-center justify-center rounded-[var(--radius-md)] text-[var(--text-base)] font-semibold text-white bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-accent)] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="h-10 px-6 flex items-center justify-center rounded-[var(--radius-md)] text-[var(--text-base)] font-semibold text-white bg-gray-900 hover:bg-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {createProduct.isPending ? <Loader2 className="animate-spin w-5 h-5" /> : 'Save Product'}
             </button>

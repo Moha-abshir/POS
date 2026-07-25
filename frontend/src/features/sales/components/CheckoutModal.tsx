@@ -781,7 +781,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
             form="checkout-form"
             type="submit"
             disabled={createSaleMutation.isPending || isPolling || isInitiatingPush || (isCustomerRequired && !customerId)}
-            className="flex-1 px-6 py-3.5 bg-[#D97706] hover:bg-amber-700 text-white rounded-xl font-semibold text-sm transition-all shadow-md shadow-amber-600/10 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-1.5 cursor-pointer"
+            className="flex-1 px-6 py-3.5 bg-gray-900 hover:bg-black text-white rounded-xl font-semibold text-sm transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-1.5 cursor-pointer"
           >
             {createSaleMutation.isPending ? 'Processing...' : (
               <>

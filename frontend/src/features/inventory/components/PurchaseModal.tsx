@@ -381,7 +381,7 @@ export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps)
             <button
               type="submit"
               disabled={purchaseMutation.isPending}
-              className="flex-1 px-4 py-2 h-10 bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] transition-colors font-medium disabled:opacity-50 cursor-pointer"
+              className="flex-1 px-4 py-2 h-10 bg-gray-900 text-white rounded-[var(--radius-md)] hover:bg-black transition-colors font-medium disabled:opacity-50 cursor-pointer"
             >
               {purchaseMutation.isPending ? 'Recording...' : 'Record Purchase'}
             </button>

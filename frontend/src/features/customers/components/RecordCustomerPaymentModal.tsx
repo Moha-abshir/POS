@@ -448,7 +448,7 @@ export function RecordCustomerPaymentModal({ customer, onClose }: RecordCustomer
             <button
               type="submit"
               disabled={recordPaymentMutation.isPending || isInitiatingPush || isPolling}
-              className="px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+              className="px-4 py-2 bg-gray-900 text-white font-semibold rounded-lg hover:bg-black transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
             >
               {recordPaymentMutation.isPending || isInitiatingPush ? 'Processing...' : 'Record Payment'}
             </button>

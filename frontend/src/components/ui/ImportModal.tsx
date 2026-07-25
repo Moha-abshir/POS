@@ -257,7 +257,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           {result ? (
             <button 
               onClick={handleReset}
-              className="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 bg-gray-900 hover:bg-black text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <RefreshCw size={15} />
               Import Another File
@@ -266,7 +266,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             <button 
               onClick={handleImport}
               disabled={!file || isLoading}
-              className="px-5 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-5 py-2 bg-gray-900 hover:bg-black disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
             >
               {isLoading ? (
                 <>
