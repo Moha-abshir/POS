@@ -493,15 +493,19 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Balance Liability widgets */}
+          {/* Today's Credit & Debt Collection Widgets */}
           <div className="border-t border-gray-100 pt-4 grid grid-cols-2 gap-4 text-center mt-4">
             <div>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Customer Debt</p>
-              <p className="text-sm font-bold text-red-600 mt-0.5">{formatKES(debtSummary.customerOutstanding)}</p>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Today's Credit Issued</p>
+              <p className="text-sm font-bold text-red-600 mt-0.5">
+                {formatKES((debtSummary as any).todayCreditIssued ?? 0)}
+              </p>
             </div>
             <div>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Supplier Liabilities</p>
-              <p className="text-sm font-bold text-amber-700 mt-0.5">{formatKES(debtSummary.supplierLiabilities)}</p>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Today's Debt Collected</p>
+              <p className="text-sm font-bold text-emerald-600 mt-0.5">
+                {formatKES((debtSummary as any).todayDebtCollected ?? 0)}
+              </p>
             </div>
           </div>
         </div>

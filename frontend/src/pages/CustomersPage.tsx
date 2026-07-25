@@ -247,17 +247,6 @@ export const CustomersPage = () => {
               <span>Export</span>
             </button>
 
-            {currentUser?.role === 'OWNER' && customers.length > 0 && (
-              <button
-                onClick={handleClearAllCustomers}
-                className="flex-1 xl:flex-none flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 px-3 sm:px-4 h-10 rounded-[var(--radius-md)] font-semibold text-xs sm:text-sm transition-all shrink-0 select-none cursor-pointer"
-                title="Delete all customer records"
-              >
-                <Trash2 size={16} className="w-4 h-4" />
-                <span>Clear All</span>
-              </button>
-            )}
-
             <button
               onClick={handleOpenAddModal}
               className="flex-1 xl:flex-none flex items-center justify-center gap-1.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-3 sm:px-5 h-10 rounded-[var(--radius-md)] font-semibold text-xs sm:text-sm transition-all shrink-0 cursor-pointer shadow-sm whitespace-nowrap"
