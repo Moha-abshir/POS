@@ -160,7 +160,7 @@ export function SalesPage() {
 
             {/* Filter Dropdown (Glassmorphism Context Menu) */}
             {isFilterOpen && (
-              <div className="absolute left-0 sm:left-auto sm:right-0 mt-3 w-[calc(100vw-2rem)] max-w-[340px] bg-white/95 backdrop-blur-xl rounded-[24px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 z-50 p-6 animate-in slide-in-from-top-2 fade-in duration-200">
+              <div className="absolute left-0 sm:left-auto sm:right-0 mt-3 w-[calc(100vw-2rem)] max-w-[340px] bg-white rounded-[24px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-gray-200 z-50 p-6 animate-in slide-in-from-top-2 fade-in duration-200">
                 <div className="flex justify-between items-center mb-5">
                   <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
                     <Filter size={18} className="text-amber-500" />

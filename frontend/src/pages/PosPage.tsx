@@ -225,7 +225,7 @@ export const PosPage = () => {
 
       {/* Floating Cart Button (Visible when cart is closed) */}
       <div 
-        className={`fixed bottom-[88px] right-6 lg:bottom-8 lg:right-8 z-30 transition-all duration-300 transform ${isCartOpen ? 'translate-y-24 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}
+        className={`fixed bottom-[88px] right-6 lg:bottom-8 lg:right-8 z-30 ${isCartOpen ? 'hidden' : 'block'}`}
       >
         <button
           onClick={() => setIsCartOpen(true)}
