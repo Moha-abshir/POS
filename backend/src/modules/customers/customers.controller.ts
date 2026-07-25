@@ -5,7 +5,7 @@ export class CustomersController {
   static async getCustomers(req: Request, res: Response, next: NextFunction) {
     try {
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 50;
+      const limit = parseInt(req.query.limit as string) || 1000;
       const offset = (page - 1) * limit;
       const search = req.query.search as string;
 

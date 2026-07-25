@@ -435,30 +435,37 @@ export class ReportsService {
   static async getCustomerReport(businessId: string, startDate?: string, endDate?: string) {
     const { start, end } = this.parseDateRange(startDate, endDate);
 
-    const conditions = [eq(sales.businessId, businessId), gte(sales.soldAt, start), lte(sales.soldAt, end)];
-
-    // Rank customers by total spent
-    const rankings = await db.select({
+    // Rank customers by balance or total spent
+    const customerList = await db.select({
       customerId: customers.id,
       name: customers.name,
       phone: customers.phone,
+      balance: customers.balance,
       totalSpent: sql<string>`COALESCE(SUM(${sales.totalAmount}), 0)`,
       visitCount: sql<number>`COUNT(${sales.id})::int`,
-      unpaidDebt: customers.balance
-    })
-    .from(sales)
-    .innerJoin(customers, eq(sales.customerId, customers.id))
-    .where(and(...conditions))
-    .groupBy(customers.id, customers.name, customers.phone, customers.balance)
-    .orderBy(desc(sql`SUM(${sales.totalAmount})`))
-    .limit(50);
-
-    // Sum of all outstanding customer credit balances
-    const [totalOutstandingCredit] = await db.select({
-      total: sql<string>`COALESCE(SUM(${customers.balance}), 0)`
     })
     .from(customers)
-    .where(eq(customers.businessId, businessId));
+    .leftJoin(sales, and(eq(sales.customerId, customers.id), gte(sales.soldAt, start), lte(sales.soldAt, end)))
+    .where(and(eq(customers.businessId, businessId), eq(customers.isActive, true)))
+    .groupBy(customers.id, customers.name, customers.phone, customers.balance)
+    .orderBy(desc(sql`CAST(${customers.balance} AS numeric)`), desc(sql`COALESCE(SUM(${sales.totalAmount}), 0)`))
+    .limit(500);
+
+    // Sum of all outstanding customer credit balances for this specific business
+    const [totalOutstandingCredit] = await db.select({
+      total: sql<string>`COALESCE(SUM(CAST(${customers.balance} AS numeric)), 0)`
+    })
+    .from(customers)
+    .where(and(eq(customers.businessId, businessId), eq(customers.isActive, true)));
+
+    const rankings = customerList.map(c => ({
+      customerId: c.customerId,
+      name: c.name,
+      phone: c.phone,
+      totalSpent: this.parseNum(c.totalSpent),
+      visitCount: c.visitCount,
+      unpaidDebt: c.balance
+    }));
 
     return {
       totalOutstandingCredit: this.parseNum(totalOutstandingCredit?.total),
@@ -470,51 +477,54 @@ export class ReportsService {
    * 6. Credit Aging Buckets Report Service
    */
   static async getCreditReport(businessId: string) {
-    // Unpaid credit aging analysis bucketed by days: 0-30, 31-60, 61-90, 90+ days
-    const agingData = await db.select({
+    // Include all active customers in this business with a positive balance
+    const customerRecords = await db.select({
       customerId: customers.id,
       customerName: customers.name,
       customerPhone: customers.phone,
-      totalUnpaid: sql<string>`COALESCE(SUM(${sales.totalAmount} - ${sales.amountPaid}), 0)`,
-      bucket_0_30: sql<string>`COALESCE(SUM(CASE WHEN NOW() - ${sales.soldAt} <= interval '30 days' THEN (${sales.totalAmount} - ${sales.amountPaid}) ELSE 0 END), 0)`,
-      bucket_31_60: sql<string>`COALESCE(SUM(CASE WHEN NOW() - ${sales.soldAt} > interval '30 days' AND NOW() - ${sales.soldAt} <= interval '60 days' THEN (${sales.totalAmount} - ${sales.amountPaid}) ELSE 0 END), 0)`,
-      bucket_61_90: sql<string>`COALESCE(SUM(CASE WHEN NOW() - ${sales.soldAt} > interval '60 days' AND NOW() - ${sales.soldAt} <= interval '90 days' THEN (${sales.totalAmount} - ${sales.amountPaid}) ELSE 0 END), 0)`,
-      bucket_90_plus: sql<string>`COALESCE(SUM(CASE WHEN NOW() - ${sales.soldAt} > interval '90 days' THEN (${sales.totalAmount} - ${sales.amountPaid}) ELSE 0 END), 0)`
+      balance: customers.balance,
+      periodOwed: customers.periodOwed
     })
-    .from(sales)
-    .innerJoin(customers, eq(sales.customerId, customers.id))
+    .from(customers)
     .where(and(
-      eq(sales.businessId, businessId),
-      sql`${sales.paymentStatus} IN ('UNPAID', 'PARTIAL')`
+      eq(customers.businessId, businessId),
+      eq(customers.isActive, true),
+      sql`CAST(${customers.balance} AS numeric) > 0`
     ))
-    .groupBy(customers.id, customers.name, customers.phone)
-    .orderBy(desc(sql`SUM(${sales.totalAmount} - ${sales.amountPaid})`));
+    .orderBy(desc(sql`CAST(${customers.balance} AS numeric)`));
 
-    // Summary of buckets
     let totalUnpaidSum = 0;
     let b0_30Sum = 0;
     let b31_60Sum = 0;
     let b61_90Sum = 0;
     let b90PlusSum = 0;
 
-    const formattedAging = agingData.map(row => {
-      const total = this.parseNum(row.totalUnpaid);
-      const b0 = this.parseNum(row.bucket_0_30);
-      const b30 = this.parseNum(row.bucket_31_60);
-      const b60 = this.parseNum(row.bucket_61_90);
-      const b90 = this.parseNum(row.bucket_90_plus);
+    const formattedAging = customerRecords.map(row => {
+      const balance = Number(row.balance) || 0;
+      totalUnpaidSum += balance;
 
-      totalUnpaidSum += total;
-      b0_30Sum += b0;
-      b31_60Sum += b30;
-      b61_90Sum += b60;
-      b90PlusSum += b90;
+      let b0 = 0, b30 = 0, b60 = 0, b90 = 0;
+      const period = (row.periodOwed || '').toLowerCase();
+
+      if (period.includes('30 to 60') || period.includes('31-60') || period.includes('31 to 60')) {
+        b30 = balance;
+        b31_60Sum += balance;
+      } else if (period.includes('61-90') || period.includes('60 to 90') || period.includes('61 to 90')) {
+        b60 = balance;
+        b61_90Sum += balance;
+      } else if (period.includes('90') || period.includes('above 90')) {
+        b90 = balance;
+        b90PlusSum += balance;
+      } else {
+        b0 = balance;
+        b0_30Sum += balance;
+      }
 
       return {
         customerId: row.customerId,
         customerName: row.customerName,
         customerPhone: row.customerPhone,
-        totalUnpaid: total,
+        totalUnpaid: balance,
         bucket_0_30: b0,
         bucket_31_60: b30,
         bucket_61_90: b60,

@@ -49,7 +49,7 @@ export const CustomersPage = () => {
   const templateHeaders = ['Name', 'Phone', 'National ID', 'Address', 'Notes', 'Type', 'Amount Owed', 'Period Owed'];
   const sampleRow = ['"John Doe"', '"0712345678"', '"12345678"', '"Nairobi, Kenya"', '"Premium client"', '"INDIVIDUAL"', '"5000"', '"30 to 60 days"'];
 
-  const { data: customersResponse, isLoading, error } = useCustomers();
+  const { data: customersResponse, isLoading, error } = useCustomers({ limit: 1000 });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const customers: Customer[] = customersResponse?.data || [];
 
