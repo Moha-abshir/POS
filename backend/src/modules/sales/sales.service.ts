@@ -381,8 +381,10 @@ export class SalesService {
 
     try {
       await flushPattern(`cache:${businessId}:/catalog*`);
+      await flushPattern(`cache:${businessId}:*reports*`);
+      await flushPattern(`cache:${businessId}:customers:*`);
     } catch (err) {
-      console.error('Failed to flush catalog cache on sale:', err);
+      console.error('Failed to flush cache on sale:', err);
     }
 
     return result;

@@ -8,8 +8,9 @@ export class CustomersService {
   public static async invalidateCustomerCache(businessId: string) {
     try {
       await flushPattern(`cache:${businessId}:customers:*`);
+      await flushPattern(`cache:${businessId}:*reports*`);
     } catch (err) {
-      console.error(`Error invalidating customer cache for business ${businessId}:`, err);
+      console.error(`Error invalidating customer/report cache for business ${businessId}:`, err);
     }
   }
 
