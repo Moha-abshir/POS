@@ -174,7 +174,7 @@ export class DashboardService {
     // 8. Recent Sales (Top 5 latest sales)
     const recentSales = await db.select({
       id: sales.id,
-      receiptNumber: sales.receiptNumber,
+      mpesaRef: sales.mpesaRef,
       totalAmount: sales.totalAmount,
       amountPaid: sales.amountPaid,
       paymentMethod: sales.paymentMethod,
