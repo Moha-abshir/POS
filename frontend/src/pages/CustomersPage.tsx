@@ -19,6 +19,8 @@ export const CustomersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [owingOnly, setOwingOnly] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 25;
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -136,6 +138,11 @@ export const CustomersPage = () => {
     });
   }, [customers, searchTerm, owingOnly, activeTab]);
 
+  const paginatedCustomers = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredCustomers.slice(startIndex, startIndex + pageSize);
+  }, [filteredCustomers, currentPage, pageSize]);
+
   const totalCustomers = customers.length;
   const outstandingDebt = customers.reduce((sum, c) => sum + (Number(c.balance) > 0 ? Number(c.balance) : 0), 0);
   
@@ -216,13 +223,19 @@ export const CustomersPage = () => {
               type="text"
               placeholder="Search by name or phone..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full h-10 pl-10 pr-4 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm placeholder:text-[var(--color-text-muted)] outline-none focus:bg-white focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
             />
           </div>
           
             <button
-              onClick={() => setOwingOnly(!owingOnly)}
+              onClick={() => {
+                setOwingOnly(!owingOnly);
+                setCurrentPage(1);
+              }}
               className={`h-10 px-3 sm:px-4 rounded-[var(--radius-md)] text-xs sm:text-sm transition-all border shrink-0 select-none cursor-pointer font-medium whitespace-nowrap ${
                 owingOnly 
                   ? 'bg-[var(--color-accent-subtle)] border-[var(--color-accent)]/30 text-[var(--color-accent-hover)]' 
@@ -267,7 +280,10 @@ export const CustomersPage = () => {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setCurrentPage(1);
+              }}
               className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm border-b-2 transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'border-[var(--color-accent)] text-[var(--color-accent)] font-semibold'
@@ -340,13 +356,13 @@ export const CustomersPage = () => {
                   </td>
                 </tr>
               ) : (
-                filteredCustomers.map((customer, index) => {
+                paginatedCustomers.map((customer, index) => {
                   const balance = Number(customer.balance);
                   const purchaseCount = customer.purchaseCount || 0;
                   const avatarStyle = getAvatarStyle(customer.name);
                   const status = getStatus(balance, purchaseCount, customer.lastPurchaseDate);
                   const initials = customer.name.substring(0, 2).toUpperCase();
-                  const isLastRow = index === filteredCustomers.length - 1;
+                  const isLastRow = index === paginatedCustomers.length - 1;
 
                   return (
                     <tr 
@@ -445,6 +461,37 @@ export const CustomersPage = () => {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Footer */}
+        {filteredCustomers.length > 0 && (
+          <div className="px-6 py-4 border-t border-[var(--color-border)] bg-gray-50 flex items-center justify-between text-sm select-none shrink-0">
+            <div className="text-[var(--color-text-muted)] font-medium">
+              Showing <span className="font-semibold text-[var(--color-text-primary)]">{Math.min(filteredCustomers.length, (currentPage - 1) * pageSize + 1)}</span> to{' '}
+              <span className="font-semibold text-[var(--color-text-primary)]">
+                {Math.min(filteredCustomers.length, currentPage * pageSize)}
+              </span>{' '}
+              of <span className="font-semibold text-[var(--color-text-primary)]">{filteredCustomers.length}</span> customers
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-colors cursor-pointer text-xs font-semibold"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredCustomers.length / pageSize), prev + 1))}
+                disabled={currentPage >= Math.ceil(filteredCustomers.length / pageSize)}
+                className="px-3 py-1.5 border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-colors cursor-pointer text-xs font-semibold"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <CustomerModal 
