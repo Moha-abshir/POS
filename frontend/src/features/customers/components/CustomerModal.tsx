@@ -19,8 +19,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
     nationalId: '',
     address: '',
     notes: '',
-    type: 'INDIVIDUAL' as 'INDIVIDUAL' | 'BUSINESS',
+    type: 'INDIVIDUAL' as 'INDIVIDUAL' | 'BUSINESS' | 'EMPLOYEE',
     amountOwed: '',
+    baseSalary: '',
     periodOwed: 'within 30 days',
   });
 
@@ -34,10 +35,11 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
         notes: customerToEdit.notes || '',
         type: customerToEdit.type || 'INDIVIDUAL',
         amountOwed: customerToEdit.balance ? customerToEdit.balance.toString() : '',
+        baseSalary: customerToEdit.baseSalary ? customerToEdit.baseSalary.toString() : '',
         periodOwed: customerToEdit.periodOwed || 'within 30 days',
       });
     } else if (!isOpen) {
-      setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '', type: 'INDIVIDUAL', amountOwed: '', periodOwed: 'within 30 days' });
+      setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '', type: 'INDIVIDUAL', amountOwed: '', baseSalary: '', periodOwed: 'within 30 days' });
     }
   }, [customerToEdit, isOpen]);
 
@@ -56,6 +58,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
           address: formData.address.trim() || undefined,
           notes: formData.notes.trim() || undefined,
           type: formData.type,
+          baseSalary: formData.type === 'EMPLOYEE' && formData.baseSalary ? Number(formData.baseSalary) : 0,
           periodOwed: formData.amountOwed && Number(formData.amountOwed) > 0 ? formData.periodOwed : undefined,
           balance: formData.amountOwed ? Number(formData.amountOwed) : 0,
         },
@@ -78,6 +81,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
           address: formData.address.trim() || undefined,
           notes: formData.notes.trim() || undefined,
           type: formData.type,
+          baseSalary: formData.type === 'EMPLOYEE' && formData.baseSalary ? Number(formData.baseSalary) : 0,
           amountOwed: formData.amountOwed ? Number(formData.amountOwed) : 0,
           periodOwed: formData.amountOwed && Number(formData.amountOwed) > 0 ? formData.periodOwed : undefined,
         },
@@ -85,7 +89,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
           onSuccess: () => {
             toast.success('Customer added successfully');
             onClose();
-            setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '', type: 'INDIVIDUAL', amountOwed: '', periodOwed: 'within 30 days' });
+            setFormData({ name: '', phone: '', nationalId: '', address: '', notes: '', type: 'INDIVIDUAL', amountOwed: '', baseSalary: '', periodOwed: 'within 30 days' });
           },
           onError: (error: any) => {
             toast.error(error.response?.data?.message || 'Failed to save customer');
@@ -142,7 +146,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
                 <label className="block text-xs font-medium text-gray-600 mb-1">Full Name *</label>
                 <input
                   type="text"
-                  placeholder={formData.type === 'BUSINESS' ? "e.g., Acme Hardware Ltd" : "e.g., John Kamau"}
+                  placeholder={formData.type === 'BUSINESS' ? "e.g., Acme Hardware Ltd" : formData.type === 'EMPLOYEE' ? "e.g., Jane Wanjiku (Staff)" : "e.g., John Kamau"}
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400"
@@ -164,13 +168,34 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
                 <label className="block text-xs font-medium text-gray-600 mb-1">Customer Type</label>
                 <select
                   value={formData.type}
-                  onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as 'INDIVIDUAL' | 'BUSINESS' }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as 'INDIVIDUAL' | 'BUSINESS' | 'EMPLOYEE' }))}
                   className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400"
                 >
                   <option value="INDIVIDUAL">Individual</option>
                   <option value="BUSINESS">Business</option>
+                  <option value="EMPLOYEE">Employee</option>
                 </select>
               </div>
+
+              {formData.type === 'EMPLOYEE' && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Base Salary <span className="text-gray-400 font-normal">(KES)</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    placeholder="e.g., 30000"
+                    value={formData.baseSalary}
+                    onChange={(e) => setFormData(prev => ({ ...prev, baseSalary: e.target.value }))}
+                    className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Credit purchases made by this employee will be deducted from their base salary in the Employees tab.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -281,8 +306,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
             disabled={!isFormValid || isPending}
             className={`px-4 h-9 text-sm font-medium text-white rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
               isFormValid && !isPending
-                ? 'bg-[#D97706] hover:bg-[#B45309] shadow-sm'
-                : 'bg-[#D97706]/50 cursor-not-allowed'
+                ? 'bg-gray-900 hover:bg-black shadow-sm'
+                : 'bg-gray-900/50 cursor-not-allowed'
             }`}
           >
             {isPending ? 'Saving...' : customerToEdit ? 'Save Changes' : 'Save Customer'}

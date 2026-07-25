@@ -215,6 +215,7 @@ export class ImportService {
     const typeIdx = findHeaderIdx(['type']);
     const amountOwedIdx = findHeaderIdx(['amount owed', 'balance', 'debt', 'amount_owed', 'owed']);
     const periodOwedIdx = findHeaderIdx(['period owed', 'period', 'period_owed']);
+    const baseSalaryIdx = findHeaderIdx(['base salary', 'salary', 'base_salary', 'base']);
 
     if (nameIdx === -1) {
       throw new AppError('CSV must contain at least a "Name" or "Customer" column', 400);
@@ -247,11 +248,15 @@ export class ImportService {
         const notes = rawNotes ? rawNotes : undefined;
 
         let type = typeIdx !== -1 ? row[typeIdx]?.trim()?.toUpperCase() : 'INDIVIDUAL';
-        if (type !== 'BUSINESS') type = 'INDIVIDUAL';
+        if (type !== 'BUSINESS' && type !== 'EMPLOYEE') type = 'INDIVIDUAL';
 
         const amountOwedRaw = amountOwedIdx !== -1 ? row[amountOwedIdx]?.trim() : undefined;
         const amountOwed = amountOwedRaw ? Number(amountOwedRaw) : 0;
         const rawPeriod = periodOwedIdx !== -1 ? row[periodOwedIdx]?.trim() : undefined;
+
+        const baseSalaryRaw = baseSalaryIdx !== -1 ? row[baseSalaryIdx]?.trim() : undefined;
+        const baseSalary = baseSalaryRaw ? Number(baseSalaryRaw) : 0;
+        const validSalary = !isNaN(baseSalary) && baseSalary > 0 ? baseSalary : 0;
 
         if (phone) {
           const [existingCustomer] = await db.select()
@@ -272,8 +277,9 @@ export class ImportService {
           nationalId: nationalId || null,
           address: address || null,
           notes: notes || null,
-          type: type as 'INDIVIDUAL' | 'BUSINESS',
+          type: type as 'INDIVIDUAL' | 'BUSINESS' | 'EMPLOYEE',
           balance: validAmount > 0 ? validAmount.toString() : '0',
+          baseSalary: validSalary > 0 ? validSalary.toString() : '0',
           periodOwed: validAmount > 0 ? (rawPeriod || null) : null,
           hasActiveCredit: validAmount > 0,
           createdBy: userId,

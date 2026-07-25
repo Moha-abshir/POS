@@ -45,6 +45,7 @@ export class CustomersService {
       notes: customers.notes,
       type: customers.type,
       balance: customers.balance,
+      baseSalary: customers.baseSalary,
       periodOwed: customers.periodOwed,
       hasActiveCredit: customers.hasActiveCredit,
       isActive: customers.isActive,
@@ -90,9 +91,10 @@ export class CustomersService {
       nationalId?: string;
       address?: string;
       notes?: string;
-      type?: 'INDIVIDUAL' | 'BUSINESS';
+      type?: 'INDIVIDUAL' | 'BUSINESS' | 'EMPLOYEE';
       amountOwed?: number;
       periodOwed?: string;
+      baseSalary?: number;
     }
   ) {
     const amountOwed = Number(data.amountOwed || 0);
@@ -106,6 +108,7 @@ export class CustomersService {
       notes: data.notes,
       type: data.type || 'INDIVIDUAL',
       balance: amountOwed > 0 ? amountOwed.toString() : '0',
+      baseSalary: data.baseSalary !== undefined ? data.baseSalary.toString() : '0',
       periodOwed: amountOwed > 0 ? (data.periodOwed || null) : null,
       hasActiveCredit: amountOwed > 0,
       createdBy: userId,
@@ -125,10 +128,11 @@ export class CustomersService {
       address?: string;
       notes?: string;
       isActive?: boolean;
-      type?: 'INDIVIDUAL' | 'BUSINESS';
+      type?: 'INDIVIDUAL' | 'BUSINESS' | 'EMPLOYEE';
       periodOwed?: string;
       amountOwed?: number;
       balance?: string;
+      baseSalary?: number;
     }
   ) {
     const updateData: any = { ...data };
@@ -136,6 +140,9 @@ export class CustomersService {
       updateData.balance = data.amountOwed.toString();
       updateData.hasActiveCredit = data.amountOwed > 0;
       delete updateData.amountOwed;
+    }
+    if (data.baseSalary !== undefined) {
+      updateData.baseSalary = data.baseSalary.toString();
     }
 
     const [updatedCustomer] = await db.update(customers)

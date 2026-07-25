@@ -83,10 +83,36 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
               <div className="w-20 h-20 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-2xl font-bold mb-3">
                 {initials}
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">{customer.name}</h3>
-              <p className={`mt-1 text-sm font-medium ${Number(customer.balance) > 0 ? 'text-[#D97706]' : 'text-green-600'}`}>
-                Balance: KSH {Number(customer.balance).toLocaleString()}
-              </p>
+              {customer.type === 'EMPLOYEE' && (
+                <span className="mt-1 px-2.5 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-extrabold rounded-full uppercase tracking-wider border border-purple-200">
+                  Employee
+                </span>
+              )}
+              <h3 className="text-lg font-semibold text-gray-900 mt-1">{customer.name}</h3>
+              
+              {customer.type === 'EMPLOYEE' ? (
+                <div className="w-full mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg text-left space-y-1.5 text-xs">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Base Salary:</span>
+                    <span className="font-semibold text-gray-900">KSh {Number(customer.baseSalary || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-amber-700">
+                    <span>Total Amount Taken:</span>
+                    <span className="font-bold">KSh {Number(customer.balance || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-gray-200 pt-1.5 font-bold text-gray-900">
+                    <span>Net Salary Remaining:</span>
+                    <span className={Number(customer.baseSalary || 0) - Number(customer.balance || 0) < 0 ? 'text-red-600' : 'text-green-600'}>
+                      KSh {(Number(customer.baseSalary || 0) - Number(customer.balance || 0)).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className={`mt-1 text-sm font-medium ${Number(customer.balance) > 0 ? 'text-[#D97706]' : 'text-green-600'}`}>
+                  Balance: KSH {Number(customer.balance).toLocaleString()}
+                </p>
+              )}
+
               {Number(customer.balance) > 0 && customer.periodOwed && (
                 <span className="mt-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-medium border border-amber-200">
                   Period Owed: {customer.periodOwed}
@@ -95,10 +121,10 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
               {Number(customer.balance) > 0 && (
                 <button
                   onClick={() => setIsPaymentModalOpen(true)}
-                  className="mt-3 w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold py-2 px-3 rounded-md transition-colors shadow-sm cursor-pointer"
+                  className="mt-3 w-full flex items-center justify-center gap-2 bg-gray-900 hover:bg-black text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition-colors shadow-sm cursor-pointer"
                 >
-                  <DollarSign className="w-4 h-4" />
-                  Record Payment
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                  {customer.type === 'EMPLOYEE' ? 'Deduct / Record Salary Payment' : 'Record Payment'}
                 </button>
               )}
             </div>

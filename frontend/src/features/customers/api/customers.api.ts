@@ -10,11 +10,12 @@ export interface Customer {
   address?: string;
   notes?: string;
   balance: number;
+  baseSalary?: number | string;
   periodOwed?: string;
   isActive: boolean;
   createdAt: string;
   lastPurchaseDate?: string;
-  type?: 'INDIVIDUAL' | 'BUSINESS';
+  type?: 'INDIVIDUAL' | 'BUSINESS' | 'EMPLOYEE';
   hasActiveCredit?: boolean;
   purchaseCount?: number;
   email?: string;
@@ -77,9 +78,10 @@ export const customersApi = {
     nationalId?: string;
     address?: string;
     notes?: string;
-    type?: 'INDIVIDUAL' | 'BUSINESS';
+    type?: 'INDIVIDUAL' | 'BUSINESS' | 'EMPLOYEE';
     amountOwed?: number;
     periodOwed?: string;
+    baseSalary?: number;
   }) => {
     const { data } = await api.post('/customers', customerData);
     return data.data;

@@ -276,7 +276,7 @@ export const restockItems = pgTable('restock_items', {
   uniqueVariantPerBusiness: unique('restock_items_variant_business_unique').on(table.businessId, table.variantId)
 }));
 
-export const customerTypeEnum = pgEnum('customer_type', ['INDIVIDUAL', 'BUSINESS']);
+export const customerTypeEnum = pgEnum('customer_type', ['INDIVIDUAL', 'BUSINESS', 'EMPLOYEE']);
 
 export const customers = pgTable('customers', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -288,6 +288,7 @@ export const customers = pgTable('customers', {
   address: text('address'),
   notes: text('notes'),
   balance: decimal('balance', { precision: 12, scale: 2 }).notNull().default('0'),
+  baseSalary: decimal('base_salary', { precision: 12, scale: 2 }).default('0'),
   periodOwed: varchar('period_owed', { length: 50 }),
   hasActiveCredit: boolean('has_active_credit').notNull().default(false),
   isActive: boolean('is_active').notNull().default(true),

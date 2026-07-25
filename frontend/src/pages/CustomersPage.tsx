@@ -11,7 +11,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { ImportModal } from '../components/ui/ImportModal';
 
-type TabType = 'all' | 'owing' | 'business' | 'frequent' | 'inactive';
+type TabType = 'all' | 'owing' | 'business' | 'employees' | 'frequent' | 'inactive';
 
 export const CustomersPage = () => {
   const currentUser = useAuthStore((state) => state.user);
@@ -46,8 +46,8 @@ export const CustomersPage = () => {
     queryClient.invalidateQueries({ queryKey: ['customers'] });
   };
 
-  const templateHeaders = ['Name', 'Phone', 'National ID', 'Address', 'Notes', 'Type', 'Amount Owed', 'Period Owed'];
-  const sampleRow = ['"John Doe"', '"0712345678"', '"12345678"', '"Nairobi, Kenya"', '"Premium client"', '"INDIVIDUAL"', '"5000"', '"30 to 60 days"'];
+  const templateHeaders = ['Name', 'Phone', 'National ID', 'Address', 'Notes', 'Type', 'Amount Owed', 'Period Owed', 'Base Salary'];
+  const sampleRow = ['"Jane Wanjiku"', '"0712345678"', '"12345678"', '"Nairobi, Kenya"', '"Sales Staff"', '"EMPLOYEE"', '"2500"', '"within 30 days"', '"30000"'];
 
   const { data: customersResponse, isLoading, error } = useCustomers({ limit: 1000 });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,6 +86,7 @@ export const CustomersPage = () => {
   const counts = useMemo(() => {
     const owing = customers.filter(c => Number(c.balance) > 0).length;
     const business = customers.filter(c => c.type === 'BUSINESS').length;
+    const employees = customers.filter(c => c.type === 'EMPLOYEE').length;
     const frequent = customers.filter(c => (c.purchaseCount || 0) > 10).length;
     const inactive = customers.filter(c => {
       if (c.lastPurchaseDate) {
@@ -100,6 +101,7 @@ export const CustomersPage = () => {
       all: customers.length,
       owing,
       business,
+      employees,
       frequent,
       inactive
     };
@@ -116,6 +118,8 @@ export const CustomersPage = () => {
         matchesTab = Number(customer.balance) > 0;
       } else if (activeTab === 'business') {
         matchesTab = customer.type === 'BUSINESS';
+      } else if (activeTab === 'employees') {
+        matchesTab = customer.type === 'EMPLOYEE';
       } else if (activeTab === 'frequent') {
         matchesTab = (customer.purchaseCount || 0) > 10;
       } else if (activeTab === 'inactive') {
@@ -193,6 +197,7 @@ export const CustomersPage = () => {
     { id: 'all', label: 'All', count: counts.all },
     { id: 'owing', label: 'Owing balance', count: counts.owing },
     { id: 'business', label: 'Business accounts', count: counts.business },
+    { id: 'employees', label: 'Employees', count: counts.employees },
     { id: 'frequent', label: 'Frequent buyers', count: counts.frequent },
     { id: 'inactive', label: 'Inactive', count: counts.inactive },
   ];
@@ -365,9 +370,11 @@ export const CustomersPage = () => {
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
                           customer.type === 'BUSINESS' 
                             ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                            : customer.type === 'EMPLOYEE'
+                            ? 'bg-purple-50 text-purple-700 border border-purple-200'
                             : 'bg-[var(--color-bg-sunken)] text-[var(--color-text-secondary)]'
                         }`}>
-                          {customer.type === 'BUSINESS' ? 'Business' : 'Individual'}
+                          {customer.type === 'BUSINESS' ? 'Business' : customer.type === 'EMPLOYEE' ? 'Employee' : 'Individual'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
@@ -375,11 +382,15 @@ export const CustomersPage = () => {
                           <span className={`text-sm ${balance > 0 ? 'text-[var(--color-accent)] font-semibold' : 'text-[var(--color-text-muted)]'}`}>
                             KSH {balance.toLocaleString()}
                           </span>
-                          {balance > 0 && customer.periodOwed && (
+                          {customer.type === 'EMPLOYEE' && customer.baseSalary ? (
+                            <span className="text-[10px] text-gray-500 font-medium mt-0.5 whitespace-nowrap">
+                              Net: KSh {(Number(customer.baseSalary) - balance).toLocaleString()} (Base: {Number(customer.baseSalary).toLocaleString()})
+                            </span>
+                          ) : balance > 0 && customer.periodOwed ? (
                             <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-medium border border-amber-200/60 mt-0.5 whitespace-nowrap">
                               {customer.periodOwed}
                             </span>
-                          )}
+                          ) : null}
                         </div>
                       </td>
                       <td className="px-4 py-3">
