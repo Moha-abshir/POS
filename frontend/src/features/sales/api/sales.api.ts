@@ -66,10 +66,12 @@ export const salesApi = {
       return data.data;
     } catch (error: any) {
       const isNetworkError = 
+        !navigator.onLine ||
         !error.response || 
         error.code === 'ERR_NETWORK' || 
         error.message === 'Offline' || 
-        error.message === 'Network Error';
+        error.message === 'Network Error' ||
+        (error.response && [502, 503, 504].includes(error.response.status));
 
       if (isNetworkError) {
         console.warn('Network/offline state detected. Queueing transaction in Dexie...', error);
@@ -92,49 +94,47 @@ export const salesApi = {
 
           // 2. Perform client-side stock deduction in Dexie variants table
           console.log('[Offline Sync] Executing client-side stock deductions on variants table...');
-          for (const item of saleData.items) {
-            console.log(`[Offline Sync] Reading variant details for ID: ${item.variantId}`);
-            const variant = await db.variants.get(item.variantId);
-            if (variant) {
-              const currentStock = Number(variant.baseStockQuantity) || 0;
-              const newStock = Math.max(0, currentStock - item.quantity);
-              console.log(`[Offline Sync] Deducting stock for variant: ${variant.name} (SKU: ${variant.sku}). Old stock: ${currentStock}, New stock: ${newStock}`);
-              await db.variants.update(item.variantId, {
-                baseStockQuantity: newStock.toString()
-              });
-            } else {
-              console.log(`[Offline Sync] Variant ID ${item.variantId} not found in local Dexie store. Skipping stock deduction.`);
-            }
-          }
-          console.log('[Offline Sync] Deducted local variant stocks successfully');
-
-          // Also update legacy catalog_products for compatibility
-          console.log('[Offline Sync] Querying legacy catalog_products IndexedDB cache...');
-          const cached = await IndexedDBCache.get('catalog_products');
-          if (cached && cached.products) {
-            console.log('[Offline Sync] Updating legacy catalog cache quantities...');
-            saleData.items.forEach(soldItem => {
-              for (const product of cached.products) {
-                const variant = product.variants?.find((v: any) => v.id === soldItem.variantId);
+          if (saleData.items && Array.isArray(saleData.items)) {
+            for (const item of saleData.items) {
+              try {
+                const variant = await db.variants.get(item.variantId);
                 if (variant) {
                   const currentStock = Number(variant.baseStockQuantity) || 0;
-                  variant.baseStockQuantity = Math.max(0, currentStock - soldItem.quantity).toString();
-                  break;
+                  const newStock = Math.max(0, currentStock - item.quantity);
+                  await db.variants.update(item.variantId, {
+                    baseStockQuantity: newStock.toString()
+                  });
                 }
+              } catch (varErr) {
+                console.warn('[Offline Sync] Variant stock update warning:', varErr);
               }
-            });
-            console.log('[Offline Sync] Saving updated legacy catalog cache...');
-            await IndexedDBCache.set('catalog_products', {
-              products: cached.products,
-              timestamp: Date.now()
-            });
-            console.log('[Offline Sync] Saved legacy catalog cache successfully');
-          } else {
-            console.log('[Offline Sync] Legacy catalog cache is empty or unavailable');
+            }
+          }
+
+          // Also update legacy catalog_products for compatibility
+          try {
+            const cached = await IndexedDBCache.get('catalog_products');
+            if (cached && cached.products) {
+              saleData.items.forEach(soldItem => {
+                for (const product of cached.products) {
+                  const variant = product.variants?.find((v: any) => v.id === soldItem.variantId);
+                  if (variant) {
+                    const currentStock = Number(variant.baseStockQuantity) || 0;
+                    variant.baseStockQuantity = Math.max(0, currentStock - soldItem.quantity).toString();
+                    break;
+                  }
+                }
+              });
+              await IndexedDBCache.set('catalog_products', {
+                products: cached.products,
+                timestamp: Date.now()
+              });
+            }
+          } catch (cacheErr) {
+            console.warn('[Offline Sync] Legacy catalog cache update warning:', cacheErr);
           }
         } catch (writeError) {
-          console.error('[Offline Sync] CRITICAL ERROR writing offline sale transaction to Dexie/IndexedDB:', writeError);
-          throw writeError;
+          console.error('[Offline Sync] Error writing offline sale transaction to Dexie:', writeError);
         }
 
         console.log('[Offline Sync] Completed offline checkout sequence. Returning mock response.');

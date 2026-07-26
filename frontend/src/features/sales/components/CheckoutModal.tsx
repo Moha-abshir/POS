@@ -129,7 +129,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
       return { previousProducts };
     },
     onSuccess: async (data: any) => {
-      const needsStkPush = (paymentMethod === 'MPESA' && isStkPush) || (paymentMethod === 'SPLIT' && isStkPush && Number(mpesaAmount) > 0);
+      const isOfflineSale = data?.isOffline || !navigator.onLine;
+      const needsStkPush = !isOfflineSale && ((paymentMethod === 'MPESA' && isStkPush) || (paymentMethod === 'SPLIT' && isStkPush && Number(mpesaAmount) > 0));
+      
       if (needsStkPush) {
         setIsInitiatingPush(true);
         try {
@@ -144,17 +146,26 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
           toast.success('STK Push sent to customer phone. Waiting for PIN...');
         } catch (e: any) {
           toast.error(e.response?.data?.message || 'Failed to send STK push');
-          // Invalidate to sync backend state on failure
-          queryClient.invalidateQueries({ queryKey: ['products'] });
-          queryClient.invalidateQueries({ queryKey: ['sales'] });
+          if (navigator.onLine) {
+            queryClient.invalidateQueries({ queryKey: ['products'] });
+            queryClient.invalidateQueries({ queryKey: ['sales'] });
+          }
         } finally {
           setIsInitiatingPush(false);
         }
       } else {
-        toast.success('Sale completed successfully!');
-        queryClient.invalidateQueries({ queryKey: ['products'] });
-        queryClient.invalidateQueries({ queryKey: ['customers'] });
-        queryClient.invalidateQueries({ queryKey: ['sales'] });
+        if (isOfflineSale) {
+          toast.success('Sale saved offline! Will sync automatically when back online.');
+        } else {
+          toast.success('Sale completed successfully!');
+        }
+
+        if (navigator.onLine) {
+          queryClient.invalidateQueries({ queryKey: ['products'] });
+          queryClient.invalidateQueries({ queryKey: ['customers'] });
+          queryClient.invalidateQueries({ queryKey: ['sales'] });
+        }
+
         onSuccessRef.current();
         handleClose();
       }

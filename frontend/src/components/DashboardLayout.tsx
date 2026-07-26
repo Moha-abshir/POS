@@ -90,6 +90,8 @@ export const DashboardLayout: React.FC = () => {
 
   // Fetch alerts and register session
   const fetchData = useCallback(async () => {
+    if (!navigator.onLine) return;
+
     // 1. Fetch notifications
     try {
       const notifRes = await api.get('/notifications');
@@ -102,14 +104,10 @@ export const DashboardLayout: React.FC = () => {
 
     // 2. Fetch active cash register session
     try {
-      if (navigator.onLine) {
-        const sessionRes = await api.get('/cash-sessions/active');
-        const active = sessionRes.data.data;
-        setActiveSession(active);
-        await db.settings.put({ key: 'active_session', value: active });
-      } else {
-        throw new Error('Offline');
-      }
+      const sessionRes = await api.get('/cash-sessions/active');
+      const active = sessionRes.data.data;
+      setActiveSession(active);
+      await db.settings.put({ key: 'active_session', value: active });
     } catch (err) {
       console.warn('Error fetching active register session (using local offline cache):', err);
       try {
@@ -126,9 +124,22 @@ export const DashboardLayout: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchData();
-    // Poll every 30s for live updates
-    const interval = setInterval(fetchData, 30000);
+    if (navigator.onLine) {
+      fetchData();
+    } else {
+      db.settings.get('active_session').then(cachedSession => {
+        if (cachedSession) {
+          setActiveSession(cachedSession.value);
+        }
+      }).catch(() => {});
+    }
+
+    // Poll every 30s for live updates only when online
+    const interval = setInterval(() => {
+      if (navigator.onLine) {
+        fetchData();
+      }
+    }, 30000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
