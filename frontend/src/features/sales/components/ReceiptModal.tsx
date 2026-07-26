@@ -119,7 +119,9 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
         ? `${item.productName}${isGenericVariant ? '' : ` - ${item.variantName}`}`
         : 'Item').toUpperCase();
         
-      const qtyPriceStr = `${item.quantity} x ${Number(item.sellingPrice || item.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      const qtyNum = Number(item.quantity) || 0;
+      const qtyVal = Number.isInteger(qtyNum) ? qtyNum.toString() : qtyNum.toFixed(2);
+      const qtyPriceStr = `${qtyVal} x ${Number(item.sellingPrice || item.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       const totalStr = Number(item.subtotal || item.totalPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       
       commands += displayName + '\n';
@@ -435,7 +437,9 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
                         ? `${item.productName}${isGenericVariant ? '' : ` - ${item.variantName}`}`
                         : 'Item').toUpperCase();
 
-                      const qtyStr = `${item.quantity} x ${Number(item.sellingPrice || item.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                      const qtyNum = Number(item.quantity) || 0;
+                      const qtyVal = Number.isInteger(qtyNum) ? qtyNum.toString() : qtyNum.toFixed(2);
+                      const qtyStr = `${qtyVal} x ${Number(item.sellingPrice || item.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                       const totalStr = Number(item.subtotal || item.totalPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                       return (
