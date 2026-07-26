@@ -19,7 +19,7 @@ export const authLimiter = rateLimit({
   store: createRedisStore('auth'),
   windowMs: 15 * 60 * 1000, // 15 minutes
   limit: 5,
-  validate: { ip: false },
+  validate: { keyGeneratorIpFallback: false },
   message: {
     success: false,
     error: {
@@ -45,7 +45,7 @@ export const mpesaCustomerLimiter = rateLimit({
   store: createRedisStore('mpesa_customer'),
   windowMs: 5 * 60 * 1000, // 5 minutes
   limit: 2,
-  validate: { ip: false },
+  validate: { keyGeneratorIpFallback: false },
   message: {
     success: false,
     error: {
@@ -68,7 +68,7 @@ export const mpesaTenantLimiter = rateLimit({
   store: createRedisStore('mpesa_tenant'),
   windowMs: 1 * 60 * 1000, // 1 minute
   limit: 10,
-  validate: { ip: false },
+  validate: { keyGeneratorIpFallback: false },
   message: {
     success: false,
     error: {
@@ -92,7 +92,7 @@ export const globalLimiter = rateLimit({
   store: createRedisStore('global'),
   windowMs: 15 * 60 * 1000, // 15 minutes
   limit: 600, // ~40 req/min
-  validate: { ip: false },
+  validate: { keyGeneratorIpFallback: false },
   message: {
     success: false,
     error: {

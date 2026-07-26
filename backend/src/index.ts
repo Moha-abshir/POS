@@ -25,7 +25,6 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet'; 
 import compression from 'compression';
-import rateLimit from 'express-rate-limit';
 import authRoutes from './modules/auth/auth.routes';
 import catalogRoutes from './modules/catalog/catalog.routes';
 import usersRoutes from './modules/users/users.routes';
