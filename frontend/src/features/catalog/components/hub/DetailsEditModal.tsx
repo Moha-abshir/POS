@@ -46,7 +46,10 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
     try {
       await updateProduct.mutateAsync({
         id: product.id,
-        data: formData
+        data: {
+          ...formData,
+          categoryId: formData.categoryId || undefined,
+        }
       });
       onClose();
     } catch (err) {

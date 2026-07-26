@@ -105,7 +105,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
     try {
       await createProduct.mutateAsync({
         name: formData.name,
-        categoryId: formData.categoryId,
+        categoryId: formData.categoryId || undefined,
         description: formData.description,
         imageUrl: formData.imageUrl || undefined,
         variants: [

@@ -5,7 +5,7 @@ export const createCategorySchema = z.object({
 });
 
 export const createProductSchema = z.object({
-  categoryId: z.string().uuid('Invalid Category ID').optional().nullable(),
+  categoryId: z.string().uuid('Invalid Category ID').or(z.literal('')).optional().nullable().transform(val => val === '' ? null : val),
   name: z.string().min(2, 'Name must be at least 2 characters'),
   description: z.string().optional(),
   imageUrl: z.string().url('Invalid URL').or(z.literal('')).optional(),
@@ -52,7 +52,7 @@ export const createVariantUnitSchema = z.object({
 });
 
 export const updateProductSchema = z.object({
-  categoryId: z.string().uuid('Invalid Category ID').optional().nullable(),
+  categoryId: z.string().uuid('Invalid Category ID').or(z.literal('')).optional().nullable().transform(val => val === '' ? null : val),
   name: z.string().min(2, 'Name must be at least 2 characters'),
   description: z.string().optional(),
   imageUrl: z.string().url('Invalid URL').or(z.literal('')).optional(),
