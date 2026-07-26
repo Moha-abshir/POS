@@ -42,9 +42,15 @@ export interface LocalCustomer {
   id: string;
   name: string;
   phoneNumber?: string;
+  nationalId?: string;
   email?: string;
   address?: string;
+  notes?: string;
   balance: string;
+  type?: 'INDIVIDUAL' | 'BUSINESS' | 'EMPLOYEE';
+  baseSalary?: string;
+  periodOwed?: string;
+  hasActiveCredit?: boolean;
 }
 
 export interface SyncQueueItem {
@@ -88,7 +94,7 @@ export class OfflineDatabase extends Dexie {
       categories: 'id, name',
       variants: 'id, productId, name, sku',
       variantUnits: 'id, variantId, name',
-      customers: 'id, name, phoneNumber',
+      customers: 'id, name, phoneNumber, type',
       syncQueue: '++id, localId, type, status, createdAt',
       syncLogs: '++id, timestamp, status',
       settings: 'key'

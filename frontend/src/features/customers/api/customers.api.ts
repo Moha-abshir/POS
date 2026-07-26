@@ -45,9 +45,15 @@ export const customersApi = {
             id: c.id,
             name: c.name,
             phoneNumber: c.phone || '',
+            nationalId: c.nationalId || '',
             email: c.email || '',
             address: c.address || '',
-            balance: (c.balance || 0).toString()
+            notes: c.notes || '',
+            balance: (c.balance || 0).toString(),
+            type: c.type || 'INDIVIDUAL',
+            baseSalary: (c.baseSalary || 0).toString(),
+            periodOwed: c.periodOwed || '',
+            hasActiveCredit: !!c.hasActiveCredit
           });
         }
       }
@@ -60,15 +66,22 @@ export const customersApi = {
             id: c.id,
             name: c.name,
             phone: c.phoneNumber,
+            nationalId: c.nationalId,
+            email: c.email,
             address: c.address,
+            notes: c.notes,
             balance: Number(c.balance) || 0,
+            type: c.type || 'INDIVIDUAL',
+            baseSalary: Number(c.baseSalary) || 0,
+            periodOwed: c.periodOwed,
+            hasActiveCredit: c.hasActiveCredit,
             isActive: true,
             createdAt: new Date().toISOString()
           })),
-          meta: { total: localCustomers.length, limit: filters?.limit || 50, offset: 0 }
+          meta: { total: localCustomers.length, limit: filters?.limit || 1000, offset: 0 }
         };
       }
-      throw error;
+      return { data: [], meta: { total: 0, limit: filters?.limit || 50, offset: 0 } };
     }
   },
   
@@ -83,8 +96,63 @@ export const customersApi = {
     periodOwed?: string;
     baseSalary?: number;
   }) => {
-    const { data } = await api.post('/customers', customerData);
-    return data.data;
+    try {
+      if (!navigator.onLine) throw new Error('Offline');
+      const { data } = await api.post('/customers', customerData);
+      
+      if (data?.data) {
+        await db.customers.put({
+          id: data.data.id,
+          name: data.data.name,
+          phoneNumber: data.data.phone || '',
+          nationalId: data.data.nationalId || '',
+          email: data.data.email || '',
+          address: data.data.address || '',
+          notes: data.data.notes || '',
+          balance: (data.data.balance || 0).toString(),
+          type: data.data.type || 'INDIVIDUAL',
+          baseSalary: (data.data.baseSalary || 0).toString(),
+          periodOwed: data.data.periodOwed || '',
+          hasActiveCredit: !!data.data.hasActiveCredit
+        });
+      }
+      return data.data;
+    } catch (error: any) {
+      if (!navigator.onLine || !error.response || error.code === 'ERR_NETWORK' || error.message === 'Offline') {
+        const localId = uuidv4();
+        const newLocalCustomer = {
+          id: localId,
+          name: customerData.name,
+          phoneNumber: customerData.phone || '',
+          nationalId: customerData.nationalId || '',
+          email: '',
+          address: customerData.address || '',
+          notes: customerData.notes || '',
+          balance: (customerData.amountOwed || 0).toString(),
+          type: customerData.type || 'INDIVIDUAL',
+          baseSalary: (customerData.baseSalary || 0).toString(),
+          periodOwed: customerData.periodOwed || '',
+          hasActiveCredit: Number(customerData.amountOwed || 0) > 0
+        };
+        await db.customers.put(newLocalCustomer);
+        await queueManager.addToQueue('SALE', { localType: 'CUSTOMER_CREATE', ...customerData, localId }, localId).catch(() => {});
+        return {
+          id: localId,
+          name: customerData.name,
+          phone: customerData.phone,
+          nationalId: customerData.nationalId,
+          address: customerData.address,
+          notes: customerData.notes,
+          type: customerData.type || 'INDIVIDUAL',
+          balance: Number(customerData.amountOwed || 0),
+          baseSalary: customerData.baseSalary || 0,
+          periodOwed: customerData.periodOwed,
+          isActive: true,
+          createdAt: new Date().toISOString()
+        };
+      }
+      throw error;
+    }
   },
   
   updateCustomer: async (id: string, customerData: Partial<Customer>) => {

@@ -111,6 +111,31 @@ export const salesApi = {
             }
           }
 
+          // Update customer balance locally if customerId and credit purchase
+          if (saleData.customerId) {
+            try {
+              const subtotal = saleData.items.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
+              const discount = saleData.discountAmount || 0;
+              const totalAmt = Math.max(0, subtotal - discount);
+              const creditAmount = Math.max(0, totalAmt - Number(saleData.amountPaid || 0));
+
+              if (creditAmount > 0) {
+                const customer = await db.customers.get(saleData.customerId);
+                if (customer) {
+                  const currentBalance = Number(customer.balance) || 0;
+                  const newBalance = currentBalance + creditAmount;
+                  await db.customers.update(saleData.customerId, {
+                    balance: newBalance.toString(),
+                    hasActiveCredit: true
+                  });
+                  console.log(`[Offline Sync] Updated customer balance for ${customer.name}. New balance: KSh ${newBalance}`);
+                }
+              }
+            } catch (custErr) {
+              console.warn('[Offline Sync] Customer balance update warning:', custErr);
+            }
+          }
+
           // Also update legacy catalog_products for compatibility
           try {
             const cached = await IndexedDBCache.get('catalog_products');
