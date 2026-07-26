@@ -4,12 +4,14 @@ import { ShoppingCart, Search, Plus, Minus, Trash2, Tag, ArrowRight, Package, Sh
 import { api } from '../lib/api';
 import { CheckoutModal } from '../features/sales/components/CheckoutModal';
 import { UnitSelectionModal } from '../features/sales/components/UnitSelectionModal';
+import { ReceiptModal } from '../features/sales/components/ReceiptModal';
 import { CardSkeleton } from '../components/ui/Loading';
 
 export const PosPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [completedSaleId, setCompletedSaleId] = useState<string | null>(null);
   const { data: products = [], isLoading } = useProducts();
   const { data: fetchedCategories } = useCategories();
 
@@ -431,11 +433,20 @@ export const PosPage = () => {
         cart={cart}
         totalAmount={cartTotal}
         discountAmount={discount}
-        onSuccess={() => {
+        onSuccess={(saleData) => {
           setCart([]);
           setDiscount(0);
           setIsCheckoutOpen(false);
+          const sId = saleData?.id || saleData?.localId;
+          if (sId) {
+            setCompletedSaleId(sId);
+          }
         }}
+      />
+
+      <ReceiptModal
+        saleId={completedSaleId}
+        onClose={() => setCompletedSaleId(null)}
       />
 
       {selectingUnitFor && (

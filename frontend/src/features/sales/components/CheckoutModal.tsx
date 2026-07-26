@@ -14,7 +14,7 @@ interface CheckoutModalProps {
   cart: any[];
   totalAmount: number;
   discountAmount?: number;
-  onSuccess: () => void;
+  onSuccess: (saleData?: any) => void;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, totalAmount, discountAmount = 0, onSuccess }) => {
@@ -166,7 +166,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
           queryClient.invalidateQueries({ queryKey: ['sales'] });
         }
 
-        onSuccessRef.current();
+        onSuccessRef.current(data);
         handleClose();
       }
     },

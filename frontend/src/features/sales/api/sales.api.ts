@@ -187,8 +187,43 @@ export const salesApi = {
   },
 
   getSaleDetails: async (id: string) => {
-    const { data } = await api.get(`/sales/${id}`);
-    return data.data;
+    try {
+      if (!navigator.onLine) {
+        throw new Error('Offline');
+      }
+      const { data } = await api.get(`/sales/${id}`);
+      return data.data;
+    } catch (error: any) {
+      const queuedItem = await db.syncQueue.where('localId').equals(id).first();
+      if (queuedItem && queuedItem.payload) {
+        const p = queuedItem.payload;
+        const subtotal = p.items?.reduce((sum: number, item: any) => sum + (item.quantity * item.sellingPrice), 0) || 0;
+        const discount = p.discountAmount || 0;
+        const total = Math.max(0, subtotal - discount);
+        return {
+          id: p.localId || id,
+          totalAmount: total,
+          amountPaid: p.amountPaid || 0,
+          paymentStatus: (p.amountPaid || 0) >= total ? 'PAID' : ((p.amountPaid || 0) > 0 ? 'PARTIAL' : 'UNPAID'),
+          paymentMethod: p.paymentMethod || 'CASH',
+          soldAt: p.soldAt || new Date().toISOString(),
+          customerName: 'Offline Customer',
+          items: p.items?.map((item: any) => ({
+            id: item.variantId,
+            variantId: item.variantId,
+            unitId: item.unitId,
+            quantity: item.quantity,
+            sellingPrice: item.sellingPrice,
+            totalPrice: item.quantity * item.sellingPrice,
+            productName: item.productName || 'Item',
+            variantName: item.variantName || 'Default',
+            unitName: item.unitName || 'Pcs'
+          })) || [],
+          isOffline: true
+        };
+      }
+      throw error;
+    }
   },
 
   refundSale: async (id: string, refundData: { reason?: string; items: { variantId: string; unitId: string; quantity: number }[] }) => {
