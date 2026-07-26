@@ -18,6 +18,7 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
   const { data: sale, isLoading } = useSaleDetails(saleId);
   const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
   const [customerDetails, setCustomerDetails] = useState<any>(null);
+  const [variantCounts, setVariantCounts] = useState<{ [variantId: string]: number }>({});
 
   // Fetch business and cashier details to display dynamically on the receipt
   const { data: meData } = useQuery({
@@ -42,6 +43,45 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
       }).catch(() => {});
     }
   }, [sale?.customerId]);
+
+  // Load variant counts to determine if we should print variant name suffix
+  useEffect(() => {
+    if (sale?.items) {
+      const loadVariantCounts = async () => {
+        const counts: { [variantId: string]: number } = {};
+        for (const item of sale.items) {
+          try {
+            const variant = await db.variants.get(item.variantId);
+            if (variant?.productId) {
+              const list = await db.variants.where('productId').equals(variant.productId).toArray();
+              const activeCount = list.filter((v: any) => v.isActive !== false).length;
+              counts[item.variantId] = activeCount;
+            } else {
+              counts[item.variantId] = 1;
+            }
+          } catch (e) {
+            counts[item.variantId] = 1;
+          }
+        }
+        setVariantCounts(counts);
+      };
+      loadVariantCounts();
+    }
+  }, [sale?.items]);
+
+  const getItemDisplayName = (item: any) => {
+    const isGeneric = !item.variantName || 
+      ['DEFAULT', 'STANDARD', 'STANDARD VARIANT'].includes(item.variantName.toUpperCase());
+    
+    const hasMultiple = (variantCounts[item.variantId] || 0) > 1;
+    const pName = item.productName || 'Item';
+    
+    if (isGeneric || !hasMultiple) {
+      return pName.toUpperCase();
+    }
+    
+    return `${pName} - ${item.variantName}`.toUpperCase();
+  };
 
   const getPreviouslyRefundedQty = (item: any) => {
     if (!sale?.refunds) return 0;
@@ -112,30 +152,21 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
 
     // Line items
     sale.items?.forEach((item: any) => {
-      const isGenericVariant = !item.variantName || item.variantName === 'Default' || item.variantName === 'Standard';
-      const name = (item.productName 
-        ? `${item.productName}${isGenericVariant ? '' : ` - ${item.variantName}`}`
-        : 'Item').toUpperCase();
+      const displayName = getItemDisplayName(item);
 
       const qtyNum = Number(item.quantity) || 0;
       const qtyVal = Number.isInteger(qtyNum) ? qtyNum.toString() : qtyNum.toFixed(2);
       const priceStr = Number(item.sellingPrice || item.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       const totalStr = Number(item.subtotal || item.totalPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-      if (name.length <= 20) {
-        const pName = name.padEnd(20, ' ');
-        const pQty = qtyVal.padStart(6, ' ');
-        const pPrice = priceStr.padStart(10, ' ');
-        const pTotal = totalStr.padStart(12, ' ');
-        commands += pName + pQty + pPrice + pTotal + '\n';
-      } else {
-        commands += name + '\n';
-        const pName = ''.padEnd(20, ' ');
-        const pQty = qtyVal.padStart(6, ' ');
-        const pPrice = priceStr.padStart(10, ' ');
-        const pTotal = totalStr.padStart(12, ' ');
-        commands += pName + pQty + pPrice + pTotal + '\n';
-      }
+      commands += displayName + '\n';
+      commands += `[${item.unitName || 'Piece'}]\n`;
+
+      const pName = ''.padEnd(20, ' ');
+      const pQty = qtyVal.padStart(6, ' ');
+      const pPrice = priceStr.padStart(10, ' ');
+      const pTotal = totalStr.padStart(12, ' ');
+      commands += pName + pQty + pPrice + pTotal + '\n';
     });
     commands += '------------------------------------------------\n';
 
@@ -437,12 +468,9 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
                   <div className="text-gray-400 text-[10px]">------------------------------------------------</div>
 
                   {/* Line Items */}
-                  <div className="space-y-2 my-2">
+                  <div className="space-y-3 my-2">
                     {sale.items?.map((item: any) => {
-                      const isGenericVariant = !item.variantName || item.variantName === 'Default' || item.variantName === 'Standard';
-                      const displayName = (item.productName 
-                        ? `${item.productName}${isGenericVariant ? '' : ` - ${item.variantName}`}`
-                        : 'Item').toUpperCase();
+                      const displayName = getItemDisplayName(item);
 
                       const qtyNum = Number(item.quantity) || 0;
                       const qtyVal = Number.isInteger(qtyNum) ? qtyNum.toString() : qtyNum.toFixed(2);
@@ -450,11 +478,16 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
                       const totalStr = Number(item.subtotal || item.totalPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                       return (
-                        <div key={item.id} className="flex justify-between text-[11px] items-start">
-                          <span className="w-2/5 font-bold text-gray-900 truncate pr-1">{displayName}</span>
-                          <span className="w-1/5 text-center text-gray-800">{qtyVal}</span>
-                          <span className="w-1/5 text-right text-gray-800">{priceStr}</span>
-                          <span className="w-1/5 text-right font-semibold text-gray-900">{totalStr}</span>
+                        <div key={item.id} className="text-[11px] flex flex-col">
+                          <div className="flex justify-between items-start">
+                            <span className="w-2/5 font-bold text-gray-900 truncate pr-1">{displayName}</span>
+                            <span className="w-1/5 text-center text-gray-800">{qtyVal}</span>
+                            <span className="w-1/5 text-right text-gray-800">{priceStr}</span>
+                            <span className="w-1/5 text-right font-semibold text-gray-900">{totalStr}</span>
+                          </div>
+                          <div className="text-[10px] text-gray-500 font-normal pl-0.5 mt-0.5">
+                            [{item.unitName || 'Piece'}]
+                          </div>
                         </div>
                       );
                     })}
