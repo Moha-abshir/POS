@@ -31,7 +31,7 @@ export interface Variant {
 
 export interface Product {
   id: string;
-  categoryId: string;
+  categoryId?: string;
   name: string;
   categoryName?: string;
   description?: string;
@@ -209,7 +209,7 @@ export const useCreateCategory = () => {
 };
 
 export interface CreateProductInput {
-  categoryId: string;
+  categoryId?: string;
   name: string;
   description?: string;
   imageUrl?: string;

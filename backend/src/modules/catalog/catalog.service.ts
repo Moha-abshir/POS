@@ -46,7 +46,7 @@ export class CatalogService {
         name: data.name,
         description: data.description,
         imageUrl: data.imageUrl,
-        categoryId: data.categoryId,
+        categoryId: data.categoryId || null,
         businessId,
         createdBy: userId,
       }).returning();

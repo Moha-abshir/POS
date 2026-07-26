@@ -156,7 +156,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
   const isSaveDisabled = 
     createProduct.isPending || 
     !formData.name || 
-    !formData.categoryId || 
     !formData.costPrice || 
     !formData.baseUnitName ||
     hasEmptyUnits;
@@ -206,15 +205,14 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
-                    Category *
+                    Category (Optional)
                   </label>
                   <CustomSelect
                     name="categoryId"
-                    label="Select a category"
-                    options={categories?.map(cat => ({ id: cat.id, name: cat.name })) || []}
+                    label="Select a category (Optional)"
+                    options={[{ id: '', name: 'Uncategorized (None)' }, ...(categories?.map(cat => ({ id: cat.id, name: cat.name })) || [])]}
                     value={formData.categoryId}
                     onChange={handleChange as any}
-                    required
                   />
                 </div>
                 <div>

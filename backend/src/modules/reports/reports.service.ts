@@ -208,7 +208,7 @@ export class ReportsService {
 
     if (groupBy === 'category') {
       return await db.select({
-        groupKey: categories.name,
+        groupKey: sql<string>`COALESCE(${categories.name}, 'Uncategorized')`,
         totalSales: sql<string>`COALESCE(SUM(${saleItems.subtotal}), 0)`,
         quantitySold: sql<string>`COALESCE(SUM(${saleItems.quantity}), 0)`
       })
@@ -216,7 +216,7 @@ export class ReportsService {
       .innerJoin(sales, eq(saleItems.saleId, sales.id))
       .innerJoin(productVariants, eq(saleItems.variantId, productVariants.id))
       .innerJoin(products, eq(productVariants.productId, products.id))
-      .innerJoin(categories, eq(products.categoryId, categories.id))
+      .leftJoin(categories, eq(products.categoryId, categories.id))
       .where(and(...conditions))
       .groupBy(categories.name)
       .orderBy(desc(sql`SUM(${saleItems.subtotal})`));
