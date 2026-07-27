@@ -6,6 +6,7 @@ import { ImageUploader } from '../../../components/ui/ImageUploader';
 import { AxiosError } from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
+import { db } from '../../../core/offline/offlineDatabase';
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -55,7 +56,14 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      if (productMode === 'SIMPLE') {
+        db.products.count().then(count => {
+          const nextCode = String(count + 1).padStart(4, '0');
+          setFormData(prev => ({ ...prev, code: nextCode }));
+        }).catch(() => {});
+      }
+    } else {
       setFormData({
         name: '',
         categoryId: '',
@@ -73,7 +81,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
       setUnits([{ id: '1', name: 'Piece', sellingPrice: '', conversionFactor: '1', isDefault: true }]);
       setErrorMsg('');
     }
-  }, [isOpen]);
+  }, [isOpen, productMode]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -241,16 +249,14 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
-                      Item Code (SKU) *
+                      Item Code (SKU) (Auto-generated)
                     </label>
                     <input
                       name="code"
                       type="text"
-                      required
+                      readOnly
                       value={formData.code}
-                      onChange={handleChange}
-                      placeholder="e.g., 282"
-                      className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                      className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-[var(--text-base)] text-gray-500 opacity-70 cursor-not-allowed outline-none transition-colors"
                     />
                   </div>
 
@@ -367,18 +373,10 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                       placeholder="Product details..."
                       className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                     />
-                  </div>
-                </div>
-
-                <div>
-                  <ImageUploader
-                    label="Product Image (Optional)"
-                    value={formData.imageUrl}
-                    onChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
-                  />
                 </div>
               </div>
-            ) : (
+            </div>
+          ) : (
               /* Advanced Product Info (Old Way) */
               <>
                 <div className="space-y-4">

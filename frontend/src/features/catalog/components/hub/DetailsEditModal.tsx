@@ -125,14 +125,13 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
                 />
               </div>
               <div>
-                <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Item Code (SKU) *</label>
+                <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Item Code (SKU) (Auto-generated)</label>
                 <input
                   name="code"
                   type="text"
-                  required
+                  readOnly
                   value={formData.code}
-                  onChange={handleChange}
-                  className="w-full h-10 px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all"
+                  className="w-full h-10 px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-gray-500 opacity-70 cursor-not-allowed outline-none transition-all"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -244,13 +243,15 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
             </>
           )}
 
-          <div>
-            <ImageUploader
-              label="Product Image (Optional)"
-              value={formData.imageUrl}
-              onChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
-            />
-          </div>
+          {productMode === 'ADVANCED' && (
+            <div>
+              <ImageUploader
+                label="Product Image (Optional)"
+                value={formData.imageUrl}
+                onChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
+              />
+            </div>
+          )}
 
           {errorMsg && <div className="text-red-500 text-[var(--text-sm)]">{errorMsg}</div>}
 
