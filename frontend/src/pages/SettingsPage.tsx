@@ -9,6 +9,7 @@ import { CustomSelect } from '../components/ui/CustomSelect';
 import { MpesaSettingsSection } from './components/MpesaSettingsSection';
 import { AppearanceSettingsSection } from './components/AppearanceSettingsSection';
 import { PrinterSettingsSection } from './components/PrinterSettingsSection';
+import { ProductModeSettingsSection } from './components/ProductModeSettingsSection';
 
 export const SettingsPage: React.FC = () => {
   const { user, accessToken, setAuth } = useAuthStore();
@@ -215,6 +216,10 @@ export const SettingsPage: React.FC = () => {
           </div>
         </form>
       </div>
+
+      {user?.role === 'OWNER' && (
+        <ProductModeSettingsSection />
+      )}
 
       <PrinterSettingsSection />
 
