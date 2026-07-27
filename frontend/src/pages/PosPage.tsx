@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCategories, useProducts } from '../features/catalog/api/catalog.api';
-import { ShoppingCart, Search, Plus, Minus, Trash2, Tag, ArrowRight, Package, ShoppingBag, X } from 'lucide-react';
+import { ShoppingCart, Search, Plus, Minus, Trash2, Tag, ArrowRight, Package, ShoppingBag, X, Pencil } from 'lucide-react';
 import { api } from '../lib/api';
 import { CheckoutModal } from '../features/sales/components/CheckoutModal';
 import { UnitSelectionModal } from '../features/sales/components/UnitSelectionModal';
@@ -26,6 +26,7 @@ export const PosPage = () => {
   }, [cart]);
   const [selectingUnitFor, setSelectingUnitFor] = useState<{product: any, variant: any} | null>(null);
   const [priceViolations, setPriceViolations] = useState<any[]>([]);
+  const [activeCartEditItem, setActiveCartEditItem] = useState<any | null>(null);
   
   const [discount, setDiscount] = useState<number>(0);
   const [isEditingDiscount, setIsEditingDiscount] = useState(false);
@@ -35,7 +36,14 @@ export const PosPage = () => {
     if (!variant.units || variant.units.length === 0) return;
     
     if (variant.units.length === 1) {
-      addToCart(product, variant, variant.units[0]);
+      setActiveCartEditItem({
+        product,
+        variant,
+        unit: variant.units[0],
+        quantity: 1,
+        sellingPrice: Number(variant.units[0].sellingPrice),
+        isEditingExisting: false
+      });
     } else {
       setSelectingUnitFor({ product, variant });
     }
@@ -337,56 +345,49 @@ export const PosPage = () => {
                       <div className="font-bold text-[var(--color-text-primary)] text-xs truncate" title={item.productName}>
                         {item.productName}
                       </div>
-                      <div className="text-[10px] text-[var(--color-text-secondary)] mt-0.5 font-medium">
-                        {variantNameText(item)}
+                      <div className="text-[10px] text-[var(--color-text-secondary)] mt-0.5 font-medium flex items-center gap-1.5">
+                        <span>{variantNameText(item)}</span>
+                        <span>•</span>
+                        <span>{item.quantity} x KSh {item.sellingPrice.toLocaleString()}</span>
                       </div>
                     </div>
-                    <div className="font-extrabold text-[var(--color-text-primary)] text-xs shrink-0">
+                    <div className="font-extrabold text-[var(--color-text-primary)] text-xs shrink-0 text-right">
                       KSh {(item.quantity * item.sellingPrice).toLocaleString()}
                     </div>
                   </div>
                   
-                  {/* Compact Bottom Row: Price Edit + Quantity Adjust + Delete */}
-                  <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-[var(--color-border)]/50 gap-2">
-                    {/* Inline Price Editor */}
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] font-bold text-[var(--color-text-secondary)]">KSh</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={item.sellingPrice}
-                        onChange={(e) => updateItemPrice(item.unitId, Number(e.target.value))}
-                        className="w-16 h-7 px-1.5 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
-                      />
-                    </div>
+                  {/* Bottom Actions: Edit Pencil + Delete Trash */}
+                  <div className="flex items-center justify-end mt-2 gap-1.5 pt-1.5 border-t border-[var(--color-border)]/30">
+                    <button 
+                      onClick={() => {
+                        const product = products.find((p: any) => p.id === item.productId);
+                        const variant = product?.variants?.find((v: any) => v.id === item.variantId);
+                        const unit = variant?.units?.find((u: any) => u.id === item.unitId);
+                        if (product && variant && unit) {
+                          setActiveCartEditItem({
+                            product,
+                            variant,
+                            unit,
+                            quantity: item.quantity,
+                            sellingPrice: item.sellingPrice,
+                            isEditingExisting: true,
+                            cartUnitId: item.unitId
+                          });
+                        }
+                      }} 
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-all cursor-pointer"
+                      title="Edit price & quantity"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
 
-                    {/* Quantity Controls */}
-                    <div className="flex items-center gap-1.5">
-                      <div className="flex items-center bg-[var(--color-bg-sunken)] rounded-lg border border-[var(--color-border)] p-0.5">
-                        <button 
-                          onClick={() => updateQuantity(item.unitId, -1)}
-                          className="w-6 h-6 flex items-center justify-center rounded text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-base)] hover:text-[var(--color-text-primary)] transition-all cursor-pointer"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="font-bold text-xs w-8 text-center text-[var(--color-text-primary)]">{item.quantity}</span>
-                        <button 
-                          onClick={() => updateQuantity(item.unitId, 1)}
-                          className="w-6 h-6 flex items-center justify-center rounded text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-base)] hover:text-[var(--color-text-primary)] transition-all cursor-pointer"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-                      
-                      <button 
-                        onClick={() => removeFromCart(item.unitId)} 
-                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all cursor-pointer"
-                        title="Remove item"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    <button 
+                      onClick={() => removeFromCart(item.unitId)} 
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all cursor-pointer"
+                      title="Remove item"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
                 );
@@ -492,7 +493,15 @@ export const PosPage = () => {
           product={selectingUnitFor.product}
           variant={selectingUnitFor.variant}
           onAddToCart={(p, v, u) => {
-            addToCart(p, v, u);
+            setSelectingUnitFor(null);
+            setActiveCartEditItem({
+              product: p,
+              variant: v,
+              unit: u,
+              quantity: 1,
+              sellingPrice: Number(u.sellingPrice),
+              isEditingExisting: false
+            });
           }}
         />
       )}
@@ -583,6 +592,135 @@ export const PosPage = () => {
                 className="px-5 py-2 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg transition-colors"
               >
                 Resolve & Checkout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {activeCartEditItem && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px]" onClick={() => setActiveCartEditItem(null)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[400px] m-4 flex flex-col transition-all duration-300">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h2 className="text-base font-bold text-gray-900">
+                {activeCartEditItem.isEditingExisting ? 'Edit Item Details' : 'Add to Cart'}
+              </h2>
+              <button onClick={() => setActiveCartEditItem(null)} className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="p-5 space-y-4">
+              <div>
+                <h3 className="font-bold text-sm text-gray-900">{activeCartEditItem.product.name}</h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  {activeCartEditItem.variant.name === 'Default' ? 'Standard' : activeCartEditItem.variant.name} • {activeCartEditItem.unit.name}
+                </p>
+              </div>
+
+              {/* Price input */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">Selling Price (KSh)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">KSh</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={activeCartEditItem.sellingPrice}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setActiveCartEditItem(prev => prev ? { ...prev, sellingPrice: val } : null);
+                    }}
+                    className="w-full h-10 pl-11 pr-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm font-bold focus:outline-none focus:ring-1 focus:ring-[#D97706] focus:bg-white transition-all"
+                  />
+                </div>
+                {activeCartEditItem.unit.minimumPrice && activeCartEditItem.sellingPrice < Number(activeCartEditItem.unit.minimumPrice) && (
+                  <p className="text-[10px] text-red-500 font-medium mt-1">
+                    ⚠️ Selling price cannot be below minimum price (KSh {Number(activeCartEditItem.unit.minimumPrice).toLocaleString()})
+                  </p>
+                )}
+              </div>
+
+              {/* Quantity selector */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">Quantity</label>
+                <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl p-1 w-fit">
+                  <button 
+                    type="button"
+                    onClick={() => setActiveCartEditItem(prev => prev ? { ...prev, quantity: Math.max(1, prev.quantity - 1) } : null)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-white hover:text-gray-900 transition-all cursor-pointer shadow-sm"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <input
+                    type="number"
+                    min="1"
+                    value={activeCartEditItem.quantity}
+                    onChange={(e) => {
+                      const val = Math.max(1, parseInt(e.target.value) || 1);
+                      setActiveCartEditItem(prev => prev ? { ...prev, quantity: val } : null);
+                    }}
+                    className="w-12 text-center bg-transparent border-none text-gray-900 text-sm font-bold outline-none"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setActiveCartEditItem(prev => prev ? { ...prev, quantity: prev.quantity + 1 } : null)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-white hover:text-gray-900 transition-all cursor-pointer shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-5 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3 rounded-b-2xl">
+              <button 
+                type="button" 
+                onClick={() => setActiveCartEditItem(null)} 
+                className="px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button"
+                disabled={activeCartEditItem.unit.minimumPrice && activeCartEditItem.sellingPrice < Number(activeCartEditItem.unit.minimumPrice)}
+                onClick={() => {
+                  if (activeCartEditItem.isEditingExisting && activeCartEditItem.cartUnitId) {
+                    setCart(prev => prev.map(item => 
+                      item.unitId === activeCartEditItem.cartUnitId 
+                        ? { ...item, sellingPrice: activeCartEditItem.sellingPrice, quantity: activeCartEditItem.quantity }
+                        : item
+                    ));
+                  } else {
+                    setCart(prev => {
+                      const existing = prev.find(item => item.unitId === activeCartEditItem.unit.id);
+                      if (existing) {
+                        return prev.map(item => 
+                          item.unitId === activeCartEditItem.unit.id 
+                            ? { ...item, quantity: activeCartEditItem.quantity, sellingPrice: activeCartEditItem.sellingPrice } 
+                            : item
+                        );
+                      }
+                      return [...prev, {
+                        productId: activeCartEditItem.product.id,
+                        productName: activeCartEditItem.product.name,
+                        variantId: activeCartEditItem.variant.id,
+                        variantName: activeCartEditItem.variant.name,
+                        unitId: activeCartEditItem.unit.id,
+                        unitName: activeCartEditItem.unit.name,
+                        quantity: activeCartEditItem.quantity,
+                        sellingPrice: activeCartEditItem.sellingPrice,
+                        minimumPrice: activeCartEditItem.unit.minimumPrice ? Number(activeCartEditItem.unit.minimumPrice) : null,
+                        maxStock: Number(activeCartEditItem.variant.baseStockQuantity) || 0,
+                      }];
+                    });
+                  }
+                  setActiveCartEditItem(null);
+                }}
+                className="px-5 py-2.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {activeCartEditItem.isEditingExisting ? 'Save Changes' : 'Add to Order'}
               </button>
             </div>
           </div>
