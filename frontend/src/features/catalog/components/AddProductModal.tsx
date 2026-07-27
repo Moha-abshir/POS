@@ -248,7 +248,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] h-10 flex items-end pb-1 leading-tight">
                       Item Code (SKU) (Auto-generated)
                     </label>
                     <input
@@ -261,7 +261,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                   </div>
 
                   <div>
-                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] h-10 flex items-end pb-1 leading-tight">
                       Category (Optional)
                     </label>
                     <CustomSelect
@@ -276,7 +276,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] h-10 flex items-end pb-1 leading-tight">
                       Purchase Price (Cost) *
                     </label>
                     <input
@@ -293,7 +293,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                   </div>
 
                   <div>
-                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] h-10 flex items-end pb-1 leading-tight">
                       Selling Price *
                     </label>
                     <input
@@ -312,7 +312,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] h-10 flex items-end pb-1 leading-tight">
                       Minimum Price (Optional)
                     </label>
                     <input
@@ -328,7 +328,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                   </div>
 
                   <div>
-                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] h-10 flex items-end pb-1 leading-tight">
                       Low Stock Threshold (Re-Order Level) *
                     </label>
                     <input
@@ -346,7 +346,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] h-10 flex items-end pb-1 leading-tight">
                       Initial Stock Quantity *
                     </label>
                     <input
@@ -362,7 +362,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                   </div>
 
                   <div>
-                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] h-10 flex items-end pb-1 leading-tight">
                       Description (Optional)
                     </label>
                     <input
@@ -373,10 +373,10 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                       placeholder="Product details..."
                       className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                     />
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
+            ) : (
               /* Advanced Product Info (Old Way) */
               <>
                 <div className="space-y-4">
