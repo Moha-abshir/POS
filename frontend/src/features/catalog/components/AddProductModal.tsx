@@ -4,6 +4,8 @@ import { useCreateProduct, useCategories } from '../api/catalog.api';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
 import { ImageUploader } from '../../../components/ui/ImageUploader';
 import { AxiosError } from 'axios';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../../../lib/api';
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -22,13 +24,25 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
   const createProduct = useCreateProduct();
   const { data: categories } = useCategories();
 
+  const { data: meData } = useQuery({
+    queryKey: ['me'],
+    queryFn: async () => {
+      const res = await api.get('/auth/me');
+      return res.data.data;
+    },
+  });
+  const productMode = meData?.business?.productMode || 'ADVANCED';
+
   const [formData, setFormData] = useState({
     name: '',
     categoryId: '',
     description: '',
     imageUrl: '',
     variantName: 'Standard', // Default variant name
+    code: '', // Simple mode item code
     costPrice: '',
+    sellingPrice: '', // Simple mode selling price
+    minimumPrice: '', // Simple mode minimum price
     baseUnitName: 'Piece', // Default base unit
     initialStock: '',
     lowStockThreshold: '',
@@ -48,7 +62,10 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
         description: '',
         imageUrl: '',
         variantName: 'Standard',
+        code: '',
         costPrice: '',
+        sellingPrice: '',
+        minimumPrice: '',
         baseUnitName: 'Piece',
         initialStock: '',
         lowStockThreshold: '',
@@ -103,27 +120,42 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
     setErrorMsg('');
 
     try {
-      await createProduct.mutateAsync({
-        name: formData.name,
-        categoryId: formData.categoryId || undefined,
-        description: formData.description,
-        imageUrl: formData.imageUrl || undefined,
-        variants: [
-          {
-            name: formData.variantName,
-            costPrice: Number(formData.costPrice),
-            baseUnitName: formData.baseUnitName,
-            initialStock: Number(formData.initialStock || 0),
-            lowStockThreshold: Number(formData.lowStockThreshold || 0),
-            units: units.map(u => ({
-              name: u.name,
-              sellingPrice: Number(u.sellingPrice),
-              conversionFactor: Number(u.conversionFactor || 1),
-              isDefault: u.isDefault
-            }))
-          }
-        ]
-      });
+      if (productMode === 'SIMPLE') {
+        await createProduct.mutateAsync({
+          name: formData.name,
+          code: formData.code,
+          costPrice: Number(formData.costPrice || 0),
+          sellingPrice: Number(formData.sellingPrice || 0),
+          minimumPrice: formData.minimumPrice ? Number(formData.minimumPrice) : null,
+          lowStockThreshold: Number(formData.lowStockThreshold || 0),
+          categoryId: formData.categoryId || undefined,
+          description: formData.description,
+          imageUrl: formData.imageUrl || undefined,
+          initialStock: Number(formData.initialStock || 0),
+        });
+      } else {
+        await createProduct.mutateAsync({
+          name: formData.name,
+          categoryId: formData.categoryId || undefined,
+          description: formData.description,
+          imageUrl: formData.imageUrl || undefined,
+          variants: [
+            {
+              name: formData.variantName,
+              costPrice: Number(formData.costPrice),
+              baseUnitName: formData.baseUnitName,
+              initialStock: Number(formData.initialStock || 0),
+              lowStockThreshold: Number(formData.lowStockThreshold || 0),
+              units: units.map(u => ({
+                name: u.name,
+                sellingPrice: Number(u.sellingPrice),
+                conversionFactor: Number(u.conversionFactor || 1),
+                isDefault: u.isDefault
+              }))
+            }
+          ]
+        });
+      }
 
       onClose();
       setFormData({
@@ -132,7 +164,10 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
         description: '',
         imageUrl: '',
         variantName: 'Standard',
+        code: '',
         costPrice: '',
+        sellingPrice: '',
+        minimumPrice: '',
         baseUnitName: 'Piece',
         initialStock: '',
         lowStockThreshold: '',
@@ -146,19 +181,20 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
   const cost = parseFloat(formData.costPrice) || 0;
 
   const hasEmptyUnits = units.some(u => !u.name || !u.sellingPrice || !u.conversionFactor);
-  const hasNegativeMargins = units.some(u => {
-    const sp = parseFloat(u.sellingPrice) || 0;
-    const cf = parseFloat(u.conversionFactor) || 1;
-    const unitCost = cost * cf;
-    return cost > 0 && sp < unitCost;
-  });
+  const hasNegativeMargins = productMode === 'SIMPLE'
+    ? (cost > 0 && (parseFloat(formData.sellingPrice) || 0) < cost)
+    : units.some(u => {
+        const sp = parseFloat(u.sellingPrice) || 0;
+        const cf = parseFloat(u.conversionFactor) || 1;
+        const unitCost = cost * cf;
+        return cost > 0 && sp < unitCost;
+      });
   
   const isSaveDisabled = 
     createProduct.isPending || 
     !formData.name || 
     !formData.costPrice || 
-    !formData.baseUnitName ||
-    hasEmptyUnits;
+    (productMode === 'SIMPLE' ? (!formData.code || !formData.sellingPrice) : (!formData.baseUnitName || hasEmptyUnits));
 
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center overflow-y-auto transition-all duration-300 ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
@@ -184,257 +220,421 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
         {/* Body */}
         <div className="p-6 overflow-y-auto max-h-[calc(100vh-200px)]">
           <form id="add-product-form" onSubmit={handleSubmit} className="space-y-6">
-            
-            {/* Generic Product Info */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
-                  Product Name *
-                </label>
-                <input
-                  name="name"
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="e.g., Portland Cement"
-                  className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {productMode === 'SIMPLE' ? (
+              /* Simple Product Info */
+              <div className="space-y-4">
                 <div>
                   <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
-                    Category (Optional)
-                  </label>
-                  <CustomSelect
-                    name="categoryId"
-                    label="Select a category (Optional)"
-                    options={[{ id: '', name: 'Uncategorized (None)' }, ...(categories?.map(cat => ({ id: cat.id, name: cat.name })) || [])]}
-                    value={formData.categoryId}
-                    onChange={handleChange as any}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
-                    Description (Optional)
+                    Product Name *
                   </label>
                   <input
-                    name="description"
+                    name="name"
                     type="text"
-                    value={formData.description}
+                    required
+                    value={formData.name}
                     onChange={handleChange}
-                    placeholder="Product details..."
+                    placeholder="e.g., Dola Maize Flour"
                     className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                   />
                 </div>
-              </div>
-              <div>
-                <ImageUploader
-                  label="Product Image (Optional)"
-                  value={formData.imageUrl}
-                  onChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
-                />
-              </div>
-            </div>
 
-            {/* Default Variant Info */}
-            <div className="pt-4 border-t border-[var(--color-border)] space-y-4">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-[var(--text-md)] font-semibold text-[var(--color-text-primary)]">Variant Details</h3>
-                <div className="group relative">
-                  <Info className="w-4 h-4 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors cursor-help" />
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2.5 bg-gray-900 text-white text-[12px] rounded-[var(--radius-md)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-50 shadow-lg text-center leading-relaxed">
-                    This creates the first variant (e.g. "Standard" or "50kg Bag"). You can add more variants later from the product details page.
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                      Item Code (SKU) *
+                    </label>
+                    <input
+                      name="code"
+                      type="text"
+                      required
+                      value={formData.code}
+                      onChange={handleChange}
+                      placeholder="e.g., 282"
+                      className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                      Category (Optional)
+                    </label>
+                    <CustomSelect
+                      name="categoryId"
+                      label="Select a category (Optional)"
+                      options={[{ id: '', name: 'Uncategorized (None)' }, ...(categories?.map(cat => ({ id: cat.id, name: cat.name })) || [])]}
+                      value={formData.categoryId}
+                      onChange={handleChange as any}
+                    />
                   </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                      Purchase Price (Cost) *
+                    </label>
+                    <input
+                      name="costPrice"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      required
+                      value={formData.costPrice}
+                      onChange={handleChange}
+                      placeholder="e.g. 6150"
+                      className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                      Selling Price *
+                    </label>
+                    <input
+                      name="sellingPrice"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      required
+                      value={formData.sellingPrice}
+                      onChange={handleChange}
+                      placeholder="e.g. 6350"
+                      className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                      Minimum Price (Optional)
+                    </label>
+                    <input
+                      name="minimumPrice"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.minimumPrice}
+                      onChange={handleChange}
+                      placeholder="e.g. 6250"
+                      className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                      Low Stock Threshold (Re-Order Level) *
+                    </label>
+                    <input
+                      name="lowStockThreshold"
+                      type="number"
+                      min="0"
+                      required
+                      value={formData.lowStockThreshold}
+                      onChange={handleChange}
+                      placeholder="e.g., 1"
+                      className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                      Initial Stock Quantity *
+                    </label>
+                    <input
+                      name="initialStock"
+                      type="number"
+                      min="0"
+                      required
+                      value={formData.initialStock}
+                      onChange={handleChange}
+                      placeholder="0"
+                      className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                      Description (Optional)
+                    </label>
+                    <input
+                      name="description"
+                      type="text"
+                      value={formData.description}
+                      onChange={handleChange}
+                      placeholder="Product details..."
+                      className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
-                    Variant Name *
-                  </label>
-                  <input
-                    name="variantName"
-                    type="text"
-                    required
-                    value={formData.variantName}
-                    onChange={handleChange}
-                    placeholder="e.g., Standard, 50kg"
-                    className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                  <ImageUploader
+                    label="Product Image (Optional)"
+                    value={formData.imageUrl}
+                    onChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
                   />
                 </div>
-                <div>
-                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
-                    Base Tracking Unit *
-                  </label>
-                  <input
-                    name="baseUnitName"
-                    type="text"
-                    required
-                    value={formData.baseUnitName}
-                    onChange={handleChange}
-                    placeholder="e.g., Piece, Kg, L"
-                    className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
-                  />
-                </div>
               </div>
+            ) : (
+              /* Advanced Product Info (Old Way) */
+              <>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                      Product Name *
+                    </label>
+                    <input
+                      name="name"
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="e.g., Portland Cement"
+                      className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                    />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
-                    Base Cost Price (KSH) *
-                  </label>
-                  <input
-                    name="costPrice"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    required
-                    value={formData.costPrice}
-                    onChange={handleChange}
-                    placeholder="0.00"
-                    className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                        Category (Optional)
+                      </label>
+                      <CustomSelect
+                        name="categoryId"
+                        label="Select a category (Optional)"
+                        options={[{ id: '', name: 'Uncategorized (None)' }, ...(categories?.map(cat => ({ id: cat.id, name: cat.name })) || [])]}
+                        value={formData.categoryId}
+                        onChange={handleChange as any}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                        Description (Optional)
+                      </label>
+                      <input
+                        name="description"
+                        type="text"
+                        value={formData.description}
+                        onChange={handleChange}
+                        placeholder="Product details..."
+                        className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <ImageUploader
+                      label="Product Image (Optional)"
+                      value={formData.imageUrl}
+                      onChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
-                    Initial Stock (in {formData.baseUnitName || 'Base Units'}) *
-                  </label>
-                  <input
-                    name="initialStock"
-                    type="number"
-                    min="0"
-                    required
-                    value={formData.initialStock}
-                    onChange={handleChange}
-                    placeholder="0"
-                    className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
-                  />
-                </div>
-              </div>
 
-              <div>
-                <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
-                  Low Stock Alert Threshold
-                </label>
-                <input
-                  name="lowStockThreshold"
-                  type="number"
-                  min="0"
-                  required
-                  value={formData.lowStockThreshold}
-                  onChange={handleChange}
-                  placeholder="10"
-                  className="block w-full sm:w-1/2 h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
-                />
-              </div>
-            </div>
-
-            {/* Units Section */}
-            <div className="pt-4 border-t border-[var(--color-border)]">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex flex-col">
-                  <h3 className="text-[var(--text-md)] font-semibold text-[var(--color-text-primary)]">Sales Units</h3>
-                  <span className="text-[12px] text-[var(--color-text-muted)]">How you package and price this variant.</span>
-                </div>
-                <button 
-                  type="button" 
-                  onClick={addUnitRow}
-                  className="text-[var(--text-sm)] font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] flex items-center gap-1 transition-colors bg-[var(--color-primary-transparent)] px-3 py-1.5 rounded-[var(--radius-md)]"
-                >
-                  <Plus className="w-4 h-4" /> Add Unit
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {units.map((unit) => (
-                  <div key={unit.id} className="p-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] relative group">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-[13px] font-medium text-[var(--color-text-secondary)] mb-1">
-                          Unit Name *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={unit.name}
-                          onChange={(e) => handleUnitChange(unit.id, 'name', e.target.value)}
-                          placeholder="e.g., Dozen"
-                          className="block w-full h-9 px-3 bg-white border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[14px] outline-none transition-colors"
-                        />
+                {/* Default Variant Info */}
+                <div className="pt-4 border-t border-[var(--color-border)] space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-[var(--text-md)] font-semibold text-[var(--color-text-primary)]">Variant Details</h3>
+                    <div className="group relative">
+                      <Info className="w-4 h-4 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors cursor-help" />
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2.5 bg-gray-900 text-white text-[12px] rounded-[var(--radius-md)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-50 shadow-lg text-center leading-relaxed">
+                        This creates the first variant (e.g. "Standard" or "50kg Bag"). You can add more variants later from the product details page.
                       </div>
-                      
-                      <div>
-                        <label className="block text-[13px] font-medium text-[var(--color-text-secondary)] mb-1">
-                          Conversion Factor *
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="number"
-                            min="0.0001"
-                            step="any"
-                            required
-                            value={unit.conversionFactor}
-                            onChange={(e) => handleUnitChange(unit.id, 'conversionFactor', e.target.value)}
-                            className="block w-full h-9 pl-3 pr-12 bg-white border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[14px] outline-none transition-colors"
-                          />
-                          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <span className="text-[12px] text-[var(--color-text-muted)] truncate max-w-[40px]">{formData.baseUnitName || 'Unit'}s</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                        Variant Name *
+                      </label>
+                      <input
+                        name="variantName"
+                        type="text"
+                        required
+                        value={formData.variantName}
+                        onChange={handleChange}
+                        placeholder="e.g., Standard, 50kg"
+                        className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                        Base Tracking Unit *
+                      </label>
+                      <input
+                        name="baseUnitName"
+                        type="text"
+                        required
+                        value={formData.baseUnitName}
+                        onChange={handleChange}
+                        placeholder="e.g., Piece, Kg, L"
+                        className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                        Base Cost Price (KSH) *
+                      </label>
+                      <input
+                        name="costPrice"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        required
+                        value={formData.costPrice}
+                        onChange={handleChange}
+                        placeholder="0.00"
+                        className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                        Initial Stock (in {formData.baseUnitName || 'Base Units'}) *
+                      </label>
+                      <input
+                        name="initialStock"
+                        type="number"
+                        min="0"
+                        required
+                        value={formData.initialStock}
+                        onChange={handleChange}
+                        placeholder="0"
+                        className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">
+                      Low Stock Alert Threshold
+                    </label>
+                    <input
+                      name="lowStockThreshold"
+                      type="number"
+                      min="0"
+                      required
+                      value={formData.lowStockThreshold}
+                      onChange={handleChange}
+                      placeholder="10"
+                      className="block w-full sm:w-1/2 h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                {/* Units Section */}
+                <div className="pt-4 border-t border-[var(--color-border)]">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col">
+                      <h3 className="text-[var(--text-md)] font-semibold text-[var(--color-text-primary)]">Sales Units</h3>
+                      <span className="text-[12px] text-[var(--color-text-muted)]">How you package and price this variant.</span>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={addUnitRow}
+                      className="h-9 px-3 flex items-center gap-1.5 rounded-[var(--radius-sm)] text-[var(--text-sm)] font-medium text-gray-900 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Package Unit
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {units.map((unit, index) => (
+                      <div key={unit.id} className="relative group p-4 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-[var(--text-xs)] font-medium text-[var(--color-text-secondary)] mb-1">
+                              Unit Name *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={unit.name}
+                              onChange={(e) => handleUnitChange(unit.id, 'name', e.target.value)}
+                              placeholder="e.g. Bag, Box, Pallet"
+                              className="block w-full h-9 px-3 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[var(--text-xs)] font-medium text-[var(--color-text-secondary)] mb-1">
+                              Selling Price (KSH) *
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              required
+                              value={unit.sellingPrice}
+                              onChange={(e) => handleUnitChange(unit.id, 'sellingPrice', e.target.value)}
+                              placeholder="0.00"
+                              className="block w-full h-9 px-3 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[var(--text-xs)] font-medium text-[var(--color-text-secondary)] mb-1 flex items-center gap-1">
+                              Conversion Factor *
+                              <div className="group/help relative inline-block">
+                                <Info className="w-3.5 h-3.5 text-[var(--color-text-muted)] cursor-help" />
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-[var(--radius-md)] opacity-0 invisible group-hover/help:opacity-100 group-hover/help:visible transition-all pointer-events-none z-50 shadow-lg text-center font-normal leading-normal">
+                                  How many "{formData.baseUnitName || 'Base Units'}" make up this package. e.g. Box of 12 has factor 12.
+                                </div>
+                              </div>
+                            </label>
+                            <input
+                              type="number"
+                              min="0.0001"
+                              step="any"
+                              required
+                              disabled={index === 0 && unit.isDefault}
+                              value={unit.conversionFactor}
+                              onChange={(e) => handleUnitChange(unit.id, 'conversionFactor', e.target.value)}
+                              placeholder="1"
+                              className="block w-full h-9 px-3 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            />
                           </div>
                         </div>
-                      </div>
 
-                      <div>
-                        <label className="block text-[13px] font-medium text-[var(--color-text-secondary)] mb-1">
-                          Selling Price *
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          required
-                          value={unit.sellingPrice}
-                          onChange={(e) => handleUnitChange(unit.id, 'sellingPrice', e.target.value)}
-                          placeholder="0.00"
-                          className="block w-full h-9 px-3 bg-white border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[14px] outline-none transition-colors"
-                        />
+                        <div className="flex items-center justify-between pt-2 border-t border-[var(--color-border)] border-dashed">
+                          <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={unit.isDefault}
+                              onChange={() => handleSetDefaultUnit(unit.id)}
+                              className="w-4 h-4 text-gray-900 focus:ring-gray-900 border-gray-300 rounded cursor-pointer"
+                            />
+                            <span className="text-[13px] font-medium text-[var(--color-text-secondary)] flex items-center gap-1">
+                              {unit.isDefault && <span className="text-amber-500">★</span>} 
+                              Default unit
+                            </span>
+                          </label>
+                          
+                          {units.length > 1 && (
+                            <button 
+                              type="button"
+                              onClick={() => removeUnitRow(unit.id)}
+                              className="text-red-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 p-1"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="mt-3 flex items-center justify-between">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input 
-                          type="radio" 
-                          name="defaultUnit" 
-                          checked={unit.isDefault}
-                          onChange={() => handleSetDefaultUnit(unit.id)}
-                          className="w-4 h-4 text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
-                        />
-                        <span className="text-[13px] font-medium text-[var(--color-text-secondary)] flex items-center gap-1">
-                          {unit.isDefault && <span className="text-amber-500">★</span>} 
-                          Default unit
-                        </span>
-                      </label>
-                      
-                      {units.length > 1 && (
-                        <button 
-                          type="button"
-                          onClick={() => removeUnitRow(unit.id)}
-                          className="text-red-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 p-1"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              </>
+            )}
 
             {/* Margin Indicators */}
-            {cost > 0 && units.some(u => u.name && u.sellingPrice && u.conversionFactor) && (
+            {cost > 0 && (productMode === 'SIMPLE' ? (parseFloat(formData.sellingPrice) > 0) : units.some(u => u.name && u.sellingPrice && u.conversionFactor)) && (
               <div className="bg-[var(--color-bg-sunken)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)] mt-4">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-[13px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">Expected Margins:</h4>
@@ -445,26 +645,47 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                   )}
                 </div>
                 <div className="space-y-2">
-                  {units.filter(u => u.name && u.sellingPrice && u.conversionFactor).map(unit => {
-                    const sp = parseFloat(unit.sellingPrice) || 0;
-                    const cf = parseFloat(unit.conversionFactor) || 1;
-                    const unitCost = cost * cf;
-                    const margin = sp - unitCost;
-                    const marginPercent = unitCost > 0 ? (margin / unitCost) * 100 : 100;
-                    const isNegative = margin < 0;
+                  {productMode === 'SIMPLE' ? (
+                    (() => {
+                      const sp = parseFloat(formData.sellingPrice) || 0;
+                      const margin = sp - cost;
+                      const marginPercent = cost > 0 ? (margin / cost) * 100 : 100;
+                      const isNegative = margin < 0;
 
-                    return (
-                      <div key={`margin-${unit.id}`} className="flex items-center text-[14px]">
-                        <span className="font-medium text-[var(--color-text-primary)] w-24 truncate">{unit.name}</span>
-                        <span className="text-[var(--color-text-muted)] mx-2">→</span>
-                        <span className={`font-medium ${isNegative ? 'text-red-600' : 'text-green-600'}`}>
-                          KSH {margin.toFixed(2)} ({marginPercent.toFixed(1)}%)
-                        </span>
-                        {isNegative && <span className="ml-2 text-[12px] text-red-500 italic">below cost</span>}
-                        <span className="ml-auto text-[12px] text-[var(--color-text-muted)]">Cost: {unitCost.toFixed(2)}</span>
-                      </div>
-                    );
-                  })}
+                      return (
+                        <div className="flex items-center text-[14px]">
+                          <span className="font-medium text-[var(--color-text-primary)] w-24 truncate">Selling Margin</span>
+                          <span className="text-[var(--color-text-muted)] mx-2">→</span>
+                          <span className={`font-medium ${isNegative ? 'text-red-600' : 'text-green-600'}`}>
+                            KSH {margin.toFixed(2)} ({marginPercent.toFixed(1)}%)
+                          </span>
+                          {isNegative && <span className="ml-2 text-[12px] text-red-500 italic">below cost</span>}
+                          <span className="ml-auto text-[12px] text-[var(--color-text-muted)]">Cost: {cost.toFixed(2)}</span>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    units.filter(u => u.name && u.sellingPrice && u.conversionFactor).map(unit => {
+                      const sp = parseFloat(unit.sellingPrice) || 0;
+                      const cf = parseFloat(unit.conversionFactor) || 1;
+                      const unitCost = cost * cf;
+                      const margin = sp - unitCost;
+                      const marginPercent = unitCost > 0 ? (margin / unitCost) * 100 : 100;
+                      const isNegative = margin < 0;
+
+                      return (
+                        <div key={`margin-${unit.id}`} className="flex items-center text-[14px]">
+                          <span className="font-medium text-[var(--color-text-primary)] w-24 truncate">{unit.name}</span>
+                          <span className="text-[var(--color-text-muted)] mx-2">→</span>
+                          <span className={`font-medium ${isNegative ? 'text-red-600' : 'text-green-600'}`}>
+                            KSH {margin.toFixed(2)} ({marginPercent.toFixed(1)}%)
+                          </span>
+                          {isNegative && <span className="ml-2 text-[12px] text-red-500 italic">below cost</span>}
+                          <span className="ml-auto text-[12px] text-[var(--color-text-muted)]">Cost: {unitCost.toFixed(2)}</span>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             )}

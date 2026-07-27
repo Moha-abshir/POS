@@ -112,4 +112,18 @@ export class AuthController {
       next(error);
     }
   }
+
+  static async updateBusinessSettings(req: Request, res: Response, next: NextFunction) {
+    try {
+      const businessId = (req as any).user.businessId;
+      const { productMode } = req.body;
+      if (productMode !== 'SIMPLE' && productMode !== 'ADVANCED') {
+        return res.status(400).json({ success: false, error: { message: 'Invalid product mode' } });
+      }
+      const updated = await AuthService.updateBusinessSettings(businessId, productMode);
+      res.json({ success: true, data: updated });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

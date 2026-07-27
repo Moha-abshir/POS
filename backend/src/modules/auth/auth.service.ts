@@ -1,6 +1,6 @@
 import { eq, and, gt, desc, sql } from 'drizzle-orm';
 import { db } from '../../db';
-import { users, otps, sessions, businesses } from '../../db/schema';
+import { users, otps, sessions, businesses, products, sales } from '../../db/schema';
 import argon2 from 'argon2';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
@@ -236,5 +236,43 @@ export class AuthService {
     const [business] = await db.select().from(businesses).where(eq(businesses.id, user.businessId));
 
     return { user, business };
+  }
+
+  static async updateBusinessSettings(businessId: string, productMode: 'SIMPLE' | 'ADVANCED') {
+    // 1. Get current business
+    const [business] = await db.select().from(businesses).where(eq(businesses.id, businessId));
+    if (!business) throw new AppError('Business not found', 404);
+
+    if (business.productMode === productMode) {
+      return business; // No change
+    }
+
+    // 2. Enforce lock: once SIMPLE, cannot switch back to ADVANCED
+    if (business.productMode === 'SIMPLE' && productMode === 'ADVANCED') {
+      throw new AppError('Once Simple Mode is selected, you cannot switch back to Advanced Mode.', 400);
+    }
+
+    // 3. Enforce lock: once ADVANCED and has products/sales, cannot switch to SIMPLE
+    if (business.productMode === 'ADVANCED' && productMode === 'SIMPLE') {
+      // Check if they have any products
+      const [productCheck] = await db.select({ count: sql`count(*)` }).from(products).where(eq(products.businessId, businessId));
+      const productCount = Number(productCheck?.count || 0);
+
+      // Check if they have any sales
+      const [salesCheck] = await db.select({ count: sql`count(*)` }).from(sales).where(eq(sales.businessId, businessId));
+      const salesCount = Number(salesCheck?.count || 0);
+
+      if (productCount > 0 || salesCount > 0) {
+        throw new AppError('Cannot switch to Simple Mode: You already have active products or sales transactions.', 400);
+      }
+    }
+
+    // 4. Perform update
+    const [updated] = await db.update(businesses)
+      .set({ productMode, updatedAt: new Date() })
+      .where(eq(businesses.id, businessId))
+      .returning();
+
+    return updated;
   }
 }

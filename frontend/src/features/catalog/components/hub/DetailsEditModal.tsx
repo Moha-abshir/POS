@@ -4,6 +4,8 @@ import { useUpdateProduct, useCategories, type Product } from '../../api/catalog
 import { CustomSelect } from '../../../../components/ui/CustomSelect';
 import { ImageUploader } from '../../../../components/ui/ImageUploader';
 import { AxiosError } from 'axios';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../../../../lib/api';
 
 interface DetailsEditModalProps {
   isOpen: boolean;
@@ -15,21 +17,42 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
   const { data: categories } = useCategories();
   const updateProduct = useUpdateProduct();
 
+  const { data: meData } = useQuery({
+    queryKey: ['me'],
+    queryFn: async () => {
+      const res = await api.get('/auth/me');
+      return res.data.data;
+    },
+  });
+  const productMode = meData?.business?.productMode || 'ADVANCED';
+
   const [formData, setFormData] = useState({
     name: '',
     categoryId: '',
     description: '',
     imageUrl: '',
+    code: '',
+    costPrice: '',
+    sellingPrice: '',
+    minimumPrice: '',
+    lowStockThreshold: '',
   });
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     if (isOpen) {
+      const standardVariant = product.variants?.[0];
+      const defaultUnit = standardVariant?.units?.[0];
       setFormData({
         name: product.name || '',
         categoryId: product.categoryId || '',
         description: product.description || '',
         imageUrl: product.imageUrl || '',
+        code: standardVariant?.sku || '',
+        costPrice: standardVariant?.costPrice !== undefined ? standardVariant.costPrice.toString() : '',
+        sellingPrice: defaultUnit?.sellingPrice !== undefined ? defaultUnit.sellingPrice.toString() : '',
+        minimumPrice: defaultUnit?.minimumPrice !== undefined ? (defaultUnit.minimumPrice ? defaultUnit.minimumPrice.toString() : '') : '',
+        lowStockThreshold: standardVariant?.lowStockThreshold !== undefined ? standardVariant.lowStockThreshold.toString() : '',
       });
       setErrorMsg('');
     }
@@ -44,13 +67,32 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
     e.preventDefault();
     setErrorMsg('');
     try {
-      await updateProduct.mutateAsync({
-        id: product.id,
-        data: {
-          ...formData,
-          categoryId: formData.categoryId || undefined,
-        }
-      });
+      if (productMode === 'SIMPLE') {
+        await updateProduct.mutateAsync({
+          id: product.id,
+          data: {
+            name: formData.name,
+            code: formData.code,
+            costPrice: Number(formData.costPrice || 0),
+            sellingPrice: Number(formData.sellingPrice || 0),
+            minimumPrice: formData.minimumPrice ? Number(formData.minimumPrice) : null,
+            lowStockThreshold: Number(formData.lowStockThreshold || 0),
+            categoryId: formData.categoryId || undefined,
+            description: formData.description,
+            imageUrl: formData.imageUrl || undefined,
+          }
+        });
+      } else {
+        await updateProduct.mutateAsync({
+          id: product.id,
+          data: {
+            name: formData.name,
+            categoryId: formData.categoryId || undefined,
+            description: formData.description,
+            imageUrl: formData.imageUrl || undefined,
+          }
+        });
+      }
       onClose();
     } catch (err) {
       setErrorMsg((err as AxiosError<{ error: { message: string } }>).response?.data?.error?.message || 'Failed to update details');
@@ -63,42 +105,145 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
       <div className={`relative bg-[var(--color-bg-surface)] rounded-[var(--radius-lg)] shadow-[var(--shadow-modal)] w-full max-w-[500px] m-4 flex flex-col transition-all duration-300 ${isOpen ? 'translate-y-0 scale-100' : 'translate-y-4 scale-[0.97]'}`}>
         <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
           <h2 className="text-[var(--text-lg)] font-semibold text-[var(--color-text-primary)]">Edit Details</h2>
-          <button onClick={onClose} className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
+          <button onClick={onClose} className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Product Name *</label>
-            <input
-              name="name"
-              type="text"
-              required
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full h-10 px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all"
-            />
-          </div>
-          <div>
-            <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Category (Optional)</label>
-            <CustomSelect
-              label="Select category (Optional)"
-              options={[{ id: '', name: 'Uncategorized (None)' }, ...(categories?.map(c => ({ id: c.id, name: c.name })) || [])]}
-              value={formData.categoryId}
-              onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
-            />
-          </div>
-          <div>
-            <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows={3}
-              className="w-full p-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all resize-none"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[calc(100vh-160px)] overflow-y-auto">
+          {productMode === 'SIMPLE' ? (
+            <>
+              <div>
+                <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Product Name *</label>
+                <input
+                  name="name"
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full h-10 px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Item Code (SKU) *</label>
+                <input
+                  name="code"
+                  type="text"
+                  required
+                  value={formData.code}
+                  onChange={handleChange}
+                  className="w-full h-10 px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Cost Price *</label>
+                  <input
+                    name="costPrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    value={formData.costPrice}
+                    onChange={handleChange}
+                    className="w-full h-10 px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Selling Price *</label>
+                  <input
+                    name="sellingPrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    value={formData.sellingPrice}
+                    onChange={handleChange}
+                    className="w-full h-10 px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Min Price (Optional)</label>
+                  <input
+                    name="minimumPrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.minimumPrice}
+                    onChange={handleChange}
+                    className="w-full h-10 px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Low Stock Level *</label>
+                  <input
+                    name="lowStockThreshold"
+                    type="number"
+                    min="0"
+                    required
+                    value={formData.lowStockThreshold}
+                    onChange={handleChange}
+                    className="w-full h-10 px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Category (Optional)</label>
+                <CustomSelect
+                  label="Select category (Optional)"
+                  options={[{ id: '', name: 'Uncategorized (None)' }, ...(categories?.map(c => ({ id: c.id, name: c.name })) || [])]}
+                  value={formData.categoryId}
+                  onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full p-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all resize-none"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Product Name *</label>
+                <input
+                  name="name"
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full h-10 px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Category (Optional)</label>
+                <CustomSelect
+                  label="Select category (Optional)"
+                  options={[{ id: '', name: 'Uncategorized (None)' }, ...(categories?.map(c => ({ id: c.id, name: c.name })) || [])]}
+                  value={formData.categoryId}
+                  onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full p-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all resize-none"
+                />
+              </div>
+            </>
+          )}
+
           <div>
             <ImageUploader
               label="Product Image (Optional)"

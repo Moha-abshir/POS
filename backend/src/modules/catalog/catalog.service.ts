@@ -2,7 +2,7 @@ import { eq, and, inArray, sql, or, ilike } from 'drizzle-orm';
 import { db } from '../../db';
 import { AppError } from '../../core/utils/AppError';
 import { categories, products, productVariants, variantUnits } from '../../db/schema';
-import { CreateCategoryInput, CreateProductInput, CreateVariantInput, CreateVariantUnitInput, UpdateProductInput, UpdateVariantInput, UpdateVariantUnitInput } from './catalog.schema';
+import { CreateCategoryInput, CreateProductInput, CreateVariantInput, CreateVariantUnitInput, UpdateProductInput, UpdateVariantInput, UpdateVariantUnitInput, CreateSimpleProductInput, UpdateSimpleProductInput } from './catalog.schema';
 import { InventoryService } from '../inventory/inventory.service';
 
 export class CatalogService {
@@ -358,6 +358,129 @@ export class CatalogService {
 
     if (!unit) throw new AppError('Variant unit not found', 404);
     return unit;
+  }
+
+  static async createSimpleProduct(data: CreateSimpleProductInput, businessId: string, userId: string) {
+    if (data.categoryId) {
+      const [category] = await db.select().from(categories).where(and(eq(categories.id, data.categoryId), eq(categories.businessId, businessId)));
+      if (!category) throw new AppError('Category not found or does not belong to this business', 400);
+    }
+
+    return await db.transaction(async (tx) => {
+      // 1. Insert product
+      const [product] = await tx.insert(products).values({
+        name: data.name,
+        description: data.description,
+        imageUrl: data.imageUrl,
+        categoryId: data.categoryId || null,
+        businessId,
+        createdBy: userId,
+      }).returning();
+
+      // 2. Insert variant (Standard)
+      const [variant] = await tx.insert(productVariants).values({
+        businessId,
+        productId: product.id,
+        name: 'Standard',
+        sku: data.code,
+        imageUrl: data.imageUrl,
+        costPrice: data.costPrice.toString(),
+        baseUnitName: 'Piece',
+        baseStockQuantity: '0',
+        lowStockThreshold: data.lowStockThreshold.toString(),
+      }).returning();
+
+      // 3. Insert unit (Piece)
+      const [unit] = await tx.insert(variantUnits).values({
+        businessId,
+        variantId: variant.id,
+        name: 'Piece',
+        sellingPrice: data.sellingPrice.toString(),
+        minimumPrice: data.minimumPrice ? data.minimumPrice.toString() : null,
+        conversionFactor: '1',
+        isDefault: true,
+      }).returning();
+
+      // 4. Record opening stock
+      if (data.initialStock && data.initialStock > 0) {
+        await InventoryService.recordMovement(tx, businessId, {
+          variantId: variant.id,
+          type: 'ADJUSTMENT',
+          quantityChange: data.initialStock,
+          notes: 'Opening stock',
+          userId,
+        });
+        variant.baseStockQuantity = data.initialStock.toString();
+      }
+
+      return {
+        ...product,
+        variants: [
+          {
+            ...variant,
+            units: [unit]
+          }
+        ]
+      };
+    });
+  }
+
+  static async updateSimpleProduct(productId: string, data: UpdateSimpleProductInput, businessId: string) {
+    if (data.categoryId) {
+      const [category] = await db.select().from(categories).where(and(eq(categories.id, data.categoryId), eq(categories.businessId, businessId)));
+      if (!category) throw new AppError('Category not found or does not belong to this business', 400);
+    }
+
+    return await db.transaction(async (tx) => {
+      // 1. Update product
+      const [product] = await tx.update(products)
+        .set({
+          name: data.name,
+          description: data.description,
+          imageUrl: data.imageUrl,
+          categoryId: data.categoryId || null,
+          isActive: data.isActive,
+        })
+        .where(and(eq(products.id, productId), eq(products.businessId, businessId)))
+        .returning();
+
+      if (!product) throw new AppError('Product not found', 404);
+
+      // 2. Find variant (Standard)
+      const [variant] = await tx.select().from(productVariants)
+        .where(and(eq(productVariants.productId, productId), eq(productVariants.businessId, businessId)))
+        .limit(1);
+
+      if (variant) {
+        // Update variant (Standard)
+        await tx.update(productVariants)
+          .set({
+            sku: data.code,
+            imageUrl: data.imageUrl,
+            costPrice: data.costPrice !== undefined ? data.costPrice.toString() : undefined,
+            lowStockThreshold: data.lowStockThreshold !== undefined ? data.lowStockThreshold.toString() : undefined,
+            isActive: data.isActive,
+          })
+          .where(eq(productVariants.id, variant.id));
+
+        // Find default unit
+        const [unit] = await tx.select().from(variantUnits)
+          .where(and(eq(variantUnits.variantId, variant.id), eq(variantUnits.isDefault, true)))
+          .limit(1);
+
+        if (unit) {
+          await tx.update(variantUnits)
+            .set({
+              sellingPrice: data.sellingPrice !== undefined ? data.sellingPrice.toString() : undefined,
+              minimumPrice: data.minimumPrice !== undefined ? (data.minimumPrice ? data.minimumPrice.toString() : null) : undefined,
+              isActive: data.isActive,
+            })
+            .where(eq(variantUnits.id, unit.id));
+        }
+      }
+
+      return product;
+    });
   }
 }
 

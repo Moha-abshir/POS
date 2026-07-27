@@ -134,6 +134,13 @@
       "when": 1785067089725,
       "tag": "0018_pretty_wraith",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1785135755144,
+      "tag": "0019_demonic_harrier",
+      "breakpoints": true
     }
   ]
 }

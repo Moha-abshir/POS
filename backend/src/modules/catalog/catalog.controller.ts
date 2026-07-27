@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { CatalogService } from './catalog.service';
-import { createCategorySchema, createProductSchema, updateProductSchema, createVariantSchema, updateVariantSchema, createVariantUnitSchema, updateVariantUnitSchema } from './catalog.schema';
+import { createCategorySchema, createProductSchema, updateProductSchema, createVariantSchema, updateVariantSchema, createVariantUnitSchema, updateVariantUnitSchema, createSimpleProductSchema, updateSimpleProductSchema } from './catalog.schema';
 import { flushPattern } from '../../core/cache/redis';
+import { db } from '../../db';
+import { businesses } from '../../db/schema';
+import { eq } from 'drizzle-orm';
 
 async function invalidateCatalogCache(businessId: string) {
   try {
@@ -40,12 +43,23 @@ export class CatalogController {
   // Products
   static async createProduct(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = createProductSchema.parse(req.body);
-      const userId = req.user!.id; // Available because of authenticate middleware
       const businessId = req.user!.businessId;
-      const product = await CatalogService.createProduct(data, businessId, userId);
-      await invalidateCatalogCache(businessId);
-      res.status(201).json({ success: true, data: product });
+      const [biz] = await db.select({ productMode: businesses.productMode }).from(businesses).where(eq(businesses.id, businessId)).limit(1);
+      
+      const isSimpleMode = biz?.productMode === 'SIMPLE';
+      const userId = req.user!.id; // Available because of authenticate middleware
+      
+      if (isSimpleMode) {
+        const data = createSimpleProductSchema.parse(req.body);
+        const product = await CatalogService.createSimpleProduct(data, businessId, userId);
+        await invalidateCatalogCache(businessId);
+        res.status(201).json({ success: true, data: product });
+      } else {
+        const data = createProductSchema.parse(req.body);
+        const product = await CatalogService.createProduct(data, businessId, userId);
+        await invalidateCatalogCache(businessId);
+        res.status(201).json({ success: true, data: product });
+      }
     } catch (error) {
       next(error);
     }
@@ -82,11 +96,22 @@ export class CatalogController {
   static async updateProduct(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      const data = updateProductSchema.parse(req.body);
       const businessId = req.user!.businessId;
-      const product = await CatalogService.updateProduct(id, data, businessId);
-      await invalidateCatalogCache(businessId);
-      res.json({ success: true, data: product });
+      const [biz] = await db.select({ productMode: businesses.productMode }).from(businesses).where(eq(businesses.id, businessId)).limit(1);
+      
+      const isSimpleMode = biz?.productMode === 'SIMPLE';
+      
+      if (isSimpleMode) {
+        const data = updateSimpleProductSchema.parse(req.body);
+        const product = await CatalogService.updateSimpleProduct(id, data, businessId);
+        await invalidateCatalogCache(businessId);
+        res.json({ success: true, data: product });
+      } else {
+        const data = updateProductSchema.parse(req.body);
+        const product = await CatalogService.updateProduct(id, data, businessId);
+        await invalidateCatalogCache(businessId);
+        res.json({ success: true, data: product });
+      }
     } catch (error) {
       next(error);
     }

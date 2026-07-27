@@ -84,3 +84,32 @@ export type CreateVariantInput = z.infer<typeof createVariantSchema>;
 export type UpdateVariantInput = z.infer<typeof updateVariantSchema>;
 export type CreateVariantUnitInput = z.infer<typeof createVariantUnitSchema>;
 export type UpdateVariantUnitInput = z.infer<typeof updateVariantUnitSchema>;
+
+export const createSimpleProductSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  code: z.string().min(1, 'Item code is required'),
+  costPrice: z.number().min(0, 'Cost price must be non-negative'),
+  sellingPrice: z.number().min(0, 'Selling price must be non-negative'),
+  minimumPrice: z.number().min(0, 'Minimum price must be non-negative').optional().nullable(),
+  lowStockThreshold: z.number().min(0).default(0),
+  categoryId: z.string().uuid('Invalid Category ID').or(z.literal('')).optional().nullable().transform(val => val === '' ? null : val),
+  description: z.string().optional(),
+  imageUrl: z.string().url('Invalid URL').or(z.literal('')).optional(),
+  initialStock: z.number().min(0, 'Initial stock cannot be negative').default(0),
+});
+
+export const updateSimpleProductSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  code: z.string().min(1, 'Item code is required'),
+  costPrice: z.number().min(0, 'Cost price must be non-negative'),
+  sellingPrice: z.number().min(0, 'Selling price must be non-negative'),
+  minimumPrice: z.number().min(0, 'Minimum price must be non-negative').optional().nullable(),
+  lowStockThreshold: z.number().min(0),
+  categoryId: z.string().uuid('Invalid Category ID').or(z.literal('')).optional().nullable().transform(val => val === '' ? null : val),
+  description: z.string().optional(),
+  imageUrl: z.string().url('Invalid URL').or(z.literal('')).optional(),
+  isActive: z.boolean(),
+}).partial();
+
+export type CreateSimpleProductInput = z.infer<typeof createSimpleProductSchema>;
+export type UpdateSimpleProductInput = z.infer<typeof updateSimpleProductSchema>;

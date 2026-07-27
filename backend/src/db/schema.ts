@@ -25,6 +25,7 @@ export const businesses = pgTable('businesses', {
   status: varchar('status', { length: 50 }).notNull().default('pending'),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   approvedBy: uuid('approved_by').references(() => admins.id, { onDelete: 'set null' }),
+  productMode: varchar('product_mode', { length: 50 }).notNull().default('ADVANCED'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
 });
@@ -130,6 +131,7 @@ export const variantUnits = pgTable('variant_units', {
   variantId: uuid('variant_id').notNull().references(() => productVariants.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 100 }).notNull(),
   sellingPrice: decimal('selling_price', { precision: 12, scale: 2 }).notNull(),
+  minimumPrice: decimal('minimum_price', { precision: 12, scale: 2 }),
   conversionFactor: decimal('conversion_factor', { precision: 10, scale: 4 }).notNull().default('1'),
   isDefault: boolean('is_default').notNull().default(false),
   isActive: boolean('is_active').notNull().default(true),

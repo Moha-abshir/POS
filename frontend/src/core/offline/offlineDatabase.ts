@@ -34,6 +34,7 @@ export interface LocalUnit {
   variantId: string;
   name: string;
   sellingPrice: string;
+  minimumPrice?: string;
   conversionFactor: string;
   isDefault: boolean;
 }

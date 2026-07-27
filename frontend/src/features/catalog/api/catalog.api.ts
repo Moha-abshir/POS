@@ -12,6 +12,7 @@ export interface Unit {
   id?: string;
   name: string;
   sellingPrice: string | number;
+  minimumPrice?: string | number;
   conversionFactor: string | number;
   isDefault: boolean;
 }
@@ -157,6 +158,7 @@ export const useProducts = () => {
                     variantId: v.id,
                     name: u.name,
                     sellingPrice: u.sellingPrice,
+                    minimumPrice: u.minimumPrice,
                     conversionFactor: u.conversionFactor,
                     isDefault: u.isDefault
                   });
@@ -233,7 +235,7 @@ export interface CreateProductInput {
 export const useCreateProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: CreateProductInput) => {
+    mutationFn: async (data: any) => {
       const response = await api.post('/catalog/products', data);
       return response.data;
     },
@@ -327,7 +329,7 @@ export interface UpdateProductInput {
 export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateProductInput }) => {
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
       const response = await api.patch(`/catalog/products/${id}`, data);
       return response.data;
     },
