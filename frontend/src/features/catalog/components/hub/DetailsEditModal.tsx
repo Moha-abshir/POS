@@ -240,7 +240,7 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
             <button type="button" onClick={onClose} className="px-4 py-2 text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">
               Cancel
             </button>
-            <button type="submit" disabled={updateProduct.isPending} className="h-10 px-6 bg-gray-900 hover:bg-black text-white text-[var(--text-sm)] font-medium rounded-[var(--radius-md)] transition-colors disabled:opacity-50">
+            <button type="submit" disabled={updateProduct.isPending} className="h-10 px-6 bg-black hover:bg-black text-white text-[var(--text-sm)] font-medium rounded-[var(--radius-md)] transition-colors disabled:opacity-50">
               {updateProduct.isPending ? 'Saving...' : 'Save Changes'}
             </button>
           </div>

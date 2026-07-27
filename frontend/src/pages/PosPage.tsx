@@ -201,67 +201,130 @@ export const PosPage = () => {
               <p className="text-base font-semibold">No products found</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 lg:gap-6">
-              {filteredProducts.map((product: any) => (
-                product.variants.filter((v: any) => v.isActive !== false).map((variant: any) => {
-                  const basePriceUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
-                  const priceToDisplay = basePriceUnit ? Number(basePriceUnit.sellingPrice) : 0;
-                  const stock = Number(variant.baseStockQuantity) || 0;
-                  const hasStock = stock > 0;
-                  
-                  return (
-                    <div 
-                      key={variant.id}
-                      onClick={() => handleVariantClick(product, variant)}
-                      className="group bg-white p-3 rounded-3xl cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col h-full relative overflow-hidden"
-                    >
-                      {/* Image / Icon container */}
-                      <div className="w-full aspect-square bg-[#F7F6F4] rounded-2xl mb-3 flex items-center justify-center overflow-hidden relative group-hover:bg-gray-50 transition-colors">
-                        {(() => {
-                          const posImageUrl = product.imageUrl || variant.imageUrl || product.variants?.[0]?.imageUrl;
-                          return posImageUrl ? (
-                            <img 
-                              src={posImageUrl} 
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                              alt={product.name} 
-                            />
-                          ) : (
-                            <Package className="w-10 h-10 text-gray-300 transition-transform duration-500 group-hover:scale-110" />
-                          );
-                        })()}
-                        <div className={`absolute top-2 right-2 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm backdrop-blur-md ${
-                          hasStock 
-                            ? 'bg-white/80 text-gray-800' 
-                            : 'bg-rose-50/90 text-rose-700'
-                        }`}>
-                          {hasStock ? `${stock} in stock` : 'Sold out'}
-                        </div>
-                      </div>
+            productMode === 'SIMPLE' ? (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200 text-xs text-left">
+                  <thead className="bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-200">
+                    <tr>
+                      <th scope="col" className="px-6 py-4">Product Name</th>
+                      <th scope="col" className="px-6 py-4">Item Code / SKU</th>
+                      <th scope="col" className="px-6 py-4 text-right">Price</th>
+                      <th scope="col" className="px-6 py-4 text-center">Stock</th>
+                      <th scope="col" className="px-6 py-4 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 bg-white font-medium text-gray-700">
+                    {filteredProducts.map((product: any) => (
+                      product.variants.filter((v: any) => v.isActive !== false).map((variant: any) => {
+                        const basePriceUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
+                        const priceToDisplay = basePriceUnit ? Number(basePriceUnit.sellingPrice) : 0;
+                        const stock = Number(variant.baseStockQuantity) || 0;
+                        const hasStock = stock > 0;
 
-                      {/* Name and description */}
-                      <div className="flex-1 px-1">
-                        <div className="font-bold text-sm text-gray-900 leading-snug line-clamp-2" title={product.name}>
-                          {product.name}
+                        return (
+                          <tr 
+                            key={variant.id}
+                            onClick={() => handleVariantClick(product, variant)}
+                            className="hover:bg-gray-50/50 transition-colors cursor-pointer group"
+                          >
+                            <td className="px-6 py-4 font-bold text-gray-900 text-sm">
+                              {product.name}
+                            </td>
+                            <td className="px-6 py-4 font-mono text-gray-500 font-semibold">
+                              {variant.sku || '-'}
+                            </td>
+                            <td className="px-6 py-4 text-right font-extrabold text-gray-900 text-sm">
+                              KSh {priceToDisplay.toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                                hasStock 
+                                  ? 'bg-green-50 text-green-700 border-green-100' 
+                                  : 'bg-rose-50 text-rose-700 border-rose-100'
+                              }`}>
+                                {hasStock ? `${stock} in stock` : 'Sold out'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex justify-center">
+                                <button 
+                                  onClick={() => handleVariantClick(product, variant)}
+                                  className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#D97706] group-hover:text-white text-gray-400 transition-colors cursor-pointer"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 lg:gap-6">
+                {filteredProducts.map((product: any) => (
+                  product.variants.filter((v: any) => v.isActive !== false).map((variant: any) => {
+                    const basePriceUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
+                    const priceToDisplay = basePriceUnit ? Number(basePriceUnit.sellingPrice) : 0;
+                    const stock = Number(variant.baseStockQuantity) || 0;
+                    const hasStock = stock > 0;
+                    
+                    return (
+                      <div 
+                        key={variant.id}
+                        onClick={() => handleVariantClick(product, variant)}
+                        className="group bg-white p-3 rounded-3xl cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col h-full relative overflow-hidden"
+                      >
+                        {/* Image / Icon container */}
+                        <div className="w-full aspect-square bg-[#F7F6F4] rounded-2xl mb-3 flex items-center justify-center overflow-hidden relative group-hover:bg-gray-50 transition-colors">
+                          {(() => {
+                            const posImageUrl = product.imageUrl || variant.imageUrl || product.variants?.[0]?.imageUrl;
+                            return posImageUrl ? (
+                              <img 
+                                src={posImageUrl} 
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                alt={product.name} 
+                              />
+                            ) : (
+                              <Package className="w-10 h-10 text-gray-300 transition-transform duration-500 group-hover:scale-110" />
+                            );
+                          })()}
+                          <div className={`absolute top-2 right-2 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm backdrop-blur-md ${
+                            hasStock 
+                              ? 'bg-white/80 text-gray-800' 
+                              : 'bg-rose-50/90 text-rose-700'
+                          }`}>
+                            {hasStock ? `${stock} in stock` : 'Sold out'}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500 font-medium mt-1">
-                          {variant.name === 'Default' ? 'Standard' : variant.name}
-                        </div>
-                      </div>
 
-                      {/* Price footer */}
-                      <div className="px-1 mt-3 flex items-center justify-between">
-                        <span className="text-sm font-extrabold text-gray-900">
-                          KSh {priceToDisplay.toLocaleString()}
-                        </span>
-                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#D97706] group-hover:text-white transition-colors text-gray-400">
-                           <Plus className="w-4 h-4" />
+                        {/* Name and description */}
+                        <div className="flex-1 px-1">
+                          <div className="font-bold text-sm text-gray-900 leading-snug line-clamp-2" title={product.name}>
+                            {product.name}
+                          </div>
+                          <div className="text-xs text-gray-500 font-medium mt-1">
+                            {variant.name === 'Default' ? 'Standard' : variant.name}
+                          </div>
+                        </div>
+
+                        {/* Price footer */}
+                        <div className="px-1 mt-3 flex items-center justify-between">
+                          <span className="text-sm font-extrabold text-gray-900">
+                            KSh {priceToDisplay.toLocaleString()}
+                          </span>
+                          <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#D97706] group-hover:text-white transition-colors text-gray-400">
+                             <Plus className="w-4 h-4" />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })
-              ))}
-            </div>
+                    );
+                  })
+                ))}
+              </div>
+            )
           )}
         </div>
       </div>
@@ -272,7 +335,7 @@ export const PosPage = () => {
       >
         <button
           onClick={() => setIsCartOpen(true)}
-          className="bg-gray-900 hover:bg-black text-white px-6 py-4 rounded-full shadow-2xl hover:shadow-black/20 flex items-center gap-4 transition-all hover:scale-105 active:scale-95 group border border-gray-800 cursor-pointer"
+          className="bg-black hover:bg-black text-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-4 transition-all hover:scale-105 active:scale-95 group border border-black cursor-pointer"
         >
           <div className="relative">
             <ShoppingCart className="w-6 h-6 text-white" />
@@ -468,7 +531,7 @@ export const PosPage = () => {
           <button 
             disabled={cart.length === 0 || hasStockError}
             onClick={handleCheckoutClick}
-            className="w-full h-14 bg-gray-900 hover:bg-black disabled:bg-gray-200 disabled:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base rounded-2xl transition-all shadow-lg  flex justify-center items-center gap-2 cursor-pointer active:scale-[0.98]"
+            className="w-full h-14 bg-black hover:bg-black disabled:bg-gray-200 disabled:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base rounded-2xl transition-all shadow-lg flex justify-center items-center gap-2 cursor-pointer active:scale-[0.98]"
           >
             <span>{hasStockError ? 'Stock Exceeded' : 'Proceed to Checkout'}</span>
             {!hasStockError && <ArrowRight className="w-5 h-5" />}
@@ -730,7 +793,7 @@ export const PosPage = () => {
                   }
                   setActiveCartEditItem(null);
                 }}
-                className="px-5 py-2.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-5 py-2.5 bg-black hover:bg-black text-white text-xs font-bold rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {activeCartEditItem.isEditingExisting ? 'Save Changes' : 'Add to Order'}
               </button>

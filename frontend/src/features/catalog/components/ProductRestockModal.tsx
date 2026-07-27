@@ -99,7 +99,7 @@ export const ProductRestockModal: React.FC<ProductRestockModalProps> = ({ produc
                           disabled={addToRestock.isPending}
                           className={`w-full h-8 md:h-9 flex items-center justify-center gap-1 md:gap-1.5 text-[10px] md:text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer ${
                             status.isLow
-                              ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                              ? 'bg-black hover:bg-black text-white'
                               : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200'
                           }`}
                         >

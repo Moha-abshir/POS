@@ -121,7 +121,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
               {Number(customer.balance) > 0 && (
                 <button
                   onClick={() => setIsPaymentModalOpen(true)}
-                  className="mt-3 w-full flex items-center justify-center gap-2 bg-gray-900 hover:bg-black text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition-colors shadow-sm cursor-pointer"
+                  className="mt-3 w-full flex items-center justify-center gap-2 bg-black hover:bg-black text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition-colors shadow-sm cursor-pointer"
                 >
                   <DollarSign className="w-4 h-4 text-emerald-400" />
                   {customer.type === 'EMPLOYEE' ? 'Deduct / Record Salary Payment' : 'Record Payment'}

@@ -140,10 +140,10 @@ export function SalesPage() {
             />
           </div>
           
-          <div className="relative">
+          <div>
             <button 
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`flex items-center gap-2.5 px-6 py-3 text-sm font-bold rounded-2xl transition-all cursor-pointer border border-transparent shadow-sm active:scale-95 bg-gray-900 text-white hover:bg-black`}
+              className="flex items-center gap-2.5 px-6 py-3 text-sm font-bold rounded-2xl transition-all cursor-pointer border border-transparent shadow-sm active:scale-95 bg-black hover:bg-black text-white"
             >
               <Filter size={18} className={isFilterOpen || Object.values(filters).some(v => v !== '') ? 'text-amber-500' : 'text-gray-300'} />
               Filters
@@ -154,82 +154,84 @@ export function SalesPage() {
               )}
             </button>
 
-            {/* Filter Dropdown (Glassmorphism Context Menu) */}
+            {/* Centered Filter Overlay Modal */}
             {isFilterOpen && (
-              <div className="absolute left-0 sm:left-auto sm:right-0 mt-3 w-[calc(100vw-2rem)] max-w-[340px] bg-white rounded-[24px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-gray-200 z-50 p-6 animate-in slide-in-from-top-2 fade-in duration-200">
-                <div className="flex justify-between items-center mb-5">
-                  <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
-                    <Filter size={18} className="text-amber-500" />
-                    Filter Sales
-                  </h3>
-                  <button onClick={() => setIsFilterOpen(false)} className="text-gray-400 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-all cursor-pointer">
-                    <X size={16} />
-                  </button>
-                </div>
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-lg border border-gray-200 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                  <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
+                    <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
+                      <Filter size={18} className="text-amber-500" />
+                      Filter Sales
+                    </h3>
+                    <button onClick={() => setIsFilterOpen(false)} className="text-gray-400 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition-all cursor-pointer">
+                      <X size={18} />
+                    </button>
+                  </div>
+                  
+                  <div className="p-6 space-y-5">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">Start Date</label>
+                        <input 
+                          type="date" 
+                          value={tempFilters.startDate}
+                          onChange={(e) => setTempFilters({...tempFilters, startDate: e.target.value})}
+                          className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">End Date</label>
+                        <input 
+                          type="date" 
+                          value={tempFilters.endDate}
+                          onChange={(e) => setTempFilters({...tempFilters, endDate: e.target.value})}
+                          className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                        />
+                      </div>
+                    </div>
 
-                <div className="space-y-5">
-                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">Start Date</label>
+                      <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">Payment Status</label>
+                      <select 
+                        value={tempFilters.paymentStatus}
+                        onChange={(e) => setTempFilters({...tempFilters, paymentStatus: e.target.value as any})}
+                        className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                      >
+                        <option value="">All Statuses</option>
+                        <option value="PAID">Paid in Full</option>
+                        <option value="PARTIAL">Partial Payment</option>
+                        <option value="UNPAID">Unpaid / Credit</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">Payment Method</label>
+                      <select 
+                        value={tempFilters.paymentMethod}
+                        onChange={(e) => setTempFilters({...tempFilters, paymentMethod: e.target.value as any})}
+                        className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                      >
+                        <option value="">All Methods</option>
+                        <option value="CASH">Cash</option>
+                        <option value="MPESA">M-Pesa</option>
+                        <option value="SPLIT">Split Payment</option>
+                        <option value="CREDIT">Credit</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">M-Pesa Reference</label>
                       <input 
-                        type="date" 
-                        value={tempFilters.startDate}
-                        onChange={(e) => setTempFilters({...tempFilters, startDate: e.target.value})}
-                        className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                        type="text" 
+                        placeholder="e.g. SGT8WQ12A"
+                        value={tempFilters.mpesaRef}
+                        onChange={(e) => setTempFilters({...tempFilters, mpesaRef: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all uppercase"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">End Date</label>
-                      <input 
-                        type="date" 
-                        value={tempFilters.endDate}
-                        onChange={(e) => setTempFilters({...tempFilters, endDate: e.target.value})}
-                        className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                      />
-                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">Payment Status</label>
-                    <select 
-                      value={tempFilters.paymentStatus}
-                      onChange={(e) => setTempFilters({...tempFilters, paymentStatus: e.target.value as any})}
-                      className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                    >
-                      <option value="">All Statuses</option>
-                      <option value="PAID">Paid in Full</option>
-                      <option value="PARTIAL">Partial Payment</option>
-                      <option value="UNPAID">Unpaid / Credit</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">Payment Method</label>
-                    <select 
-                      value={tempFilters.paymentMethod}
-                      onChange={(e) => setTempFilters({...tempFilters, paymentMethod: e.target.value as any})}
-                      className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                    >
-                      <option value="">All Methods</option>
-                      <option value="CASH">Cash</option>
-                      <option value="MPESA">M-Pesa</option>
-                      <option value="SPLIT">Split Payment</option>
-                      <option value="CREDIT">Credit</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">M-Pesa Reference</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. SGT8WQ12A"
-                      value={tempFilters.mpesaRef}
-                      onChange={(e) => setTempFilters({...tempFilters, mpesaRef: e.target.value})}
-                      className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all uppercase"
-                    />
-                  </div>
-
-                  <div className="flex gap-3 pt-2">
+                  <div className="p-5 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3 rounded-b-[24px]">
                     <button 
                       onClick={() => {
                         const empty = { startDate: '', endDate: '', paymentStatus: '' as any, paymentMethod: '' as any, mpesaRef: '' };
@@ -237,7 +239,7 @@ export function SalesPage() {
                         setFilters(empty);
                         setIsFilterOpen(false);
                       }}
-                      className="flex-1 px-4 py-3 text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all cursor-pointer"
+                      className="px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors"
                     >
                       Clear All
                     </button>
@@ -246,7 +248,7 @@ export function SalesPage() {
                         setFilters(tempFilters);
                         setIsFilterOpen(false);
                       }}
-                      className="flex-1 px-4 py-3 text-sm font-bold text-white bg-gray-900 hover:bg-black rounded-xl transition-all cursor-pointer"
+                      className="px-5 py-2.5 bg-black hover:bg-black text-white text-xs font-bold rounded-xl transition-colors shadow-sm"
                     >
                       Apply Filters
                     </button>

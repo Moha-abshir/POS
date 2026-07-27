@@ -118,7 +118,7 @@ export function SupplierModal({ isOpen, onClose, supplier }: SupplierModalProps)
             <button
               type="submit"
               disabled={createMutation.isPending || updateMutation.isPending}
-              className="flex-1 px-4 py-2 h-10 bg-gray-900 text-white rounded-[var(--radius-md)] hover:bg-black transition-colors font-medium disabled:opacity-50 cursor-pointer"
+              className="flex-1 px-4 py-2 h-10 bg-black hover:bg-black text-white rounded-[var(--radius-md)] transition-colors font-medium disabled:opacity-50 cursor-pointer"
             >
               {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save Supplier'}
             </button>

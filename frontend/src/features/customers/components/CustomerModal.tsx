@@ -306,8 +306,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
             disabled={!isFormValid || isPending}
             className={`px-4 h-9 text-sm font-medium text-white rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
               isFormValid && !isPending
-                ? 'bg-gray-900 hover:bg-black shadow-sm'
-                : 'bg-gray-900/50 cursor-not-allowed'
+                ? 'bg-black hover:bg-black shadow-sm'
+                : 'bg-black/50 cursor-not-allowed'
             }`}
           >
             {isPending ? 'Saving...' : customerToEdit ? 'Save Changes' : 'Save Customer'}
