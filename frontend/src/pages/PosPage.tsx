@@ -6,6 +6,7 @@ import { CheckoutModal } from '../features/sales/components/CheckoutModal';
 import { UnitSelectionModal } from '../features/sales/components/UnitSelectionModal';
 import { ReceiptModal } from '../features/sales/components/ReceiptModal';
 import { CardSkeleton } from '../components/ui/Loading';
+import toast from 'react-hot-toast';
 
 export const PosPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,6 +25,7 @@ export const PosPage = () => {
     localStorage.setItem('pos_cart', JSON.stringify(cart));
   }, [cart]);
   const [selectingUnitFor, setSelectingUnitFor] = useState<{product: any, variant: any} | null>(null);
+  const [priceViolations, setPriceViolations] = useState<any[]>([]);
   
   const [discount, setDiscount] = useState<number>(0);
   const [isEditingDiscount, setIsEditingDiscount] = useState(false);
@@ -56,9 +58,19 @@ export const PosPage = () => {
         unitName: unit.name,
         quantity: 1,
         sellingPrice: Number(unit.sellingPrice),
+        minimumPrice: unit.minimumPrice !== undefined && unit.minimumPrice !== null ? Number(unit.minimumPrice) : null,
         maxStock: Number(variant.baseStockQuantity) || 0,
       }];
     });
+  };
+
+  const updateItemPrice = (unitId: string, newPrice: number) => {
+    setCart((prev) => prev.map(item => {
+      if (item.unitId === unitId) {
+        return { ...item, sellingPrice: newPrice };
+      }
+      return item;
+    }));
   };
 
   const updateQuantity = (unitId: string, delta: number) => {
@@ -73,6 +85,15 @@ export const PosPage = () => {
 
   const removeFromCart = (unitId: string) => {
     setCart((prev) => prev.filter(item => item.unitId !== unitId));
+  };
+
+  const handleCheckoutClick = () => {
+    const violations = cart.filter(item => item.minimumPrice !== null && item.sellingPrice < item.minimumPrice);
+    if (violations.length > 0) {
+      setPriceViolations(violations);
+    } else {
+      setIsCheckoutOpen(true);
+    }
   };
 
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -287,7 +308,7 @@ export const PosPage = () => {
         </div>
 
         {/* Cart Items List */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-hide">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center gap-4">
               <div className="p-6 bg-[var(--color-bg-sunken)] rounded-full border border-[var(--color-border)] text-[var(--color-text-secondary)]">
@@ -299,7 +320,7 @@ export const PosPage = () => {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               {cart.map((item) => {
                 const product = products.find((p: any) => p.id === item.productId);
                 const variant = product?.variants?.find((v: any) => v.id === item.variantId);
@@ -309,48 +330,63 @@ export const PosPage = () => {
                 return (
                 <div 
                   key={item.unitId} 
-                  className="flex flex-col p-4 rounded-2xl transition-all group bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-sunken)] border border-[var(--color-border)]"
+                  className="flex flex-col p-2.5 rounded-xl transition-all group bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-sunken)] border border-[var(--color-border)]"
                 >
                   <div className="flex justify-between items-start">
-                    <div className="pr-3 flex-1 min-w-0">
-                      <div className="font-bold text-[var(--color-text-primary)] text-sm truncate" title={item.productName}>
+                    <div className="pr-2 flex-1 min-w-0">
+                      <div className="font-bold text-[var(--color-text-primary)] text-xs truncate" title={item.productName}>
                         {item.productName}
                       </div>
-                      <div className="text-xs text-[var(--color-text-secondary)] mt-1.5 font-medium flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.5 bg-[var(--color-border)] text-[var(--color-text-primary)] rounded-md">{variantNameText(item)}</span>
-                        <span>@ KSh {item.sellingPrice.toLocaleString()}</span>
+                      <div className="text-[10px] text-[var(--color-text-secondary)] mt-0.5 font-medium">
+                        {variantNameText(item)}
                       </div>
                     </div>
-                    <div className="font-extrabold text-[var(--color-text-primary)] text-sm shrink-0">
+                    <div className="font-extrabold text-[var(--color-text-primary)] text-xs shrink-0">
                       KSh {(item.quantity * item.sellingPrice).toLocaleString()}
                     </div>
                   </div>
                   
-                  {/* Quantity Adjustment Row */}
-                  <div className="flex items-center justify-between mt-5">
-                    <div className="flex items-center bg-[var(--color-bg-sunken)] rounded-xl border border-[var(--color-border)] p-1">
+                  {/* Compact Bottom Row: Price Edit + Quantity Adjust + Delete */}
+                  <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-[var(--color-border)]/50 gap-2">
+                    {/* Inline Price Editor */}
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-[var(--color-text-secondary)]">KSh</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.sellingPrice}
+                        onChange={(e) => updateItemPrice(item.unitId, Number(e.target.value))}
+                        className="w-16 h-7 px-1.5 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+                      />
+                    </div>
+
+                    {/* Quantity Controls */}
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex items-center bg-[var(--color-bg-sunken)] rounded-lg border border-[var(--color-border)] p-0.5">
+                        <button 
+                          onClick={() => updateQuantity(item.unitId, -1)}
+                          className="w-6 h-6 flex items-center justify-center rounded text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-base)] hover:text-[var(--color-text-primary)] transition-all cursor-pointer"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="font-bold text-xs w-8 text-center text-[var(--color-text-primary)]">{item.quantity}</span>
+                        <button 
+                          onClick={() => updateQuantity(item.unitId, 1)}
+                          className="w-6 h-6 flex items-center justify-center rounded text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-base)] hover:text-[var(--color-text-primary)] transition-all cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                      
                       <button 
-                        onClick={() => updateQuantity(item.unitId, -1)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-base)] hover:text-[var(--color-text-primary)] transition-all cursor-pointer"
+                        onClick={() => removeFromCart(item.unitId)} 
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all cursor-pointer"
+                        title="Remove item"
                       >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="font-bold text-sm w-10 text-center text-[var(--color-text-primary)]">{item.quantity}</span>
-                      <button 
-                        onClick={() => updateQuantity(item.unitId, 1)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-base)] hover:text-[var(--color-text-primary)] transition-all cursor-pointer"
-                      >
-                        <Plus className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                    
-                    <button 
-                      onClick={() => removeFromCart(item.unitId)} 
-                      className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all cursor-pointer"
-                      title="Remove item"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
                   </div>
                 </div>
                 );
@@ -418,7 +454,7 @@ export const PosPage = () => {
           {/* Pay Button */}
           <button 
             disabled={cart.length === 0 || hasStockError}
-            onClick={() => setIsCheckoutOpen(true)}
+            onClick={handleCheckoutClick}
             className="w-full h-14 bg-gray-900 hover:bg-black disabled:bg-gray-200 disabled:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base rounded-2xl transition-all shadow-lg  flex justify-center items-center gap-2 cursor-pointer active:scale-[0.98]"
           >
             <span>{hasStockError ? 'Stock Exceeded' : 'Proceed to Checkout'}</span>
@@ -459,6 +495,98 @@ export const PosPage = () => {
             addToCart(p, v, u);
           }}
         />
+      )}
+
+      {/* Price Violations Modal */}
+      {priceViolations.length > 0 && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px]" onClick={() => setPriceViolations([])} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[450px] m-4 flex flex-col transition-all duration-300">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h2 className="text-base font-bold text-red-600 flex items-center gap-2">
+                ⚠️ Price Violation Alert
+              </h2>
+              <button onClick={() => setPriceViolations([])} className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-gray-500 leading-relaxed">
+                The following products have been priced below their configured <strong>Minimum Price</strong>. Please correct the selling prices to proceed.
+              </p>
+              
+              <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1">
+                {priceViolations.map((item) => (
+                  <div key={item.unitId} className="p-3 bg-gray-50 border border-red-100 rounded-xl space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-bold text-gray-900 text-xs truncate max-w-[200px]" title={item.productName}>
+                          {item.productName}
+                        </div>
+                        <div className="text-[10px] text-gray-500 mt-0.5">
+                          {variantNameText(item)}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">
+                          Min: KSh {item.minimumPrice.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between gap-3 pt-1">
+                      <span className="text-[11px] text-gray-600 font-medium">New Price:</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-gray-400">KSh</span>
+                        <input
+                          type="number"
+                          min={item.minimumPrice}
+                          step="0.01"
+                          value={item.sellingPrice}
+                          onChange={(e) => {
+                            const newPrice = Number(e.target.value);
+                            updateItemPrice(item.unitId, newPrice);
+                            setPriceViolations(prev => prev.map(violation => 
+                              violation.unitId === item.unitId ? { ...violation, sellingPrice: newPrice } : violation
+                            ));
+                          }}
+                          className="w-24 h-8 px-2 bg-white border border-gray-200 rounded-lg text-gray-900 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-[#D97706]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="p-5 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3 rounded-b-2xl">
+              <button 
+                type="button" 
+                onClick={() => setPriceViolations([])} 
+                className="px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button"
+                onClick={() => {
+                  const remaining = cart.filter(item => item.minimumPrice !== null && item.sellingPrice < item.minimumPrice);
+                  if (remaining.length === 0) {
+                    setPriceViolations([]);
+                    setIsCheckoutOpen(true);
+                  } else {
+                    setPriceViolations(remaining);
+                    toast.error('Some products are still priced below their minimum price.');
+                  }
+                }}
+                className="px-5 py-2 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg transition-colors"
+              >
+                Resolve & Checkout
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
