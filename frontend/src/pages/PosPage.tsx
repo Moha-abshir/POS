@@ -693,29 +693,46 @@ export const PosPage = () => {
                 </p>
               </div>
 
-              {/* Price input */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">Selling Price (KSh)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">KSh</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={activeCartEditItem.sellingPrice}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setActiveCartEditItem(prev => prev ? { ...prev, sellingPrice: val } : null);
-                    }}
-                    className="w-full h-10 pl-11 pr-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm font-bold focus:outline-none focus:ring-1 focus:ring-[#D97706] focus:bg-white transition-all"
-                  />
+              {/* Price inputs */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Minimum Price */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">Min Price</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">KSh</span>
+                    <input
+                      type="text"
+                      readOnly
+                      value={activeCartEditItem.unit.minimumPrice ? Number(activeCartEditItem.unit.minimumPrice).toLocaleString() : 'N/A'}
+                      className="w-full h-10 pl-9 pr-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 text-sm font-bold cursor-not-allowed focus:outline-none"
+                    />
+                  </div>
                 </div>
-                {activeCartEditItem.unit.minimumPrice && activeCartEditItem.sellingPrice < Number(activeCartEditItem.unit.minimumPrice) && (
-                  <p className="text-[10px] text-red-500 font-medium mt-1">
-                    ⚠️ Selling price cannot be below minimum price (KSh {Number(activeCartEditItem.unit.minimumPrice).toLocaleString()})
-                  </p>
-                )}
+
+                {/* Selling Price */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">Selling Price</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">KSh</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={activeCartEditItem.sellingPrice}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setActiveCartEditItem(prev => prev ? { ...prev, sellingPrice: val } : null);
+                      }}
+                      className="w-full h-10 pl-9 pr-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm font-bold focus:outline-none focus:ring-1 focus:ring-black focus:bg-white transition-all"
+                    />
+                  </div>
+                </div>
               </div>
+              {activeCartEditItem.unit.minimumPrice && activeCartEditItem.sellingPrice < Number(activeCartEditItem.unit.minimumPrice) && (
+                <p className="text-[10px] text-red-500 font-medium mt-1">
+                  ⚠️ Selling price cannot be below minimum price (KSh {Number(activeCartEditItem.unit.minimumPrice).toLocaleString()})
+                </p>
+              )}
 
               {/* Quantity selector */}
               <div>
