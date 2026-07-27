@@ -136,7 +136,7 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Cost Price *</label>
+                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] h-10 flex items-end pb-1 leading-tight">Cost Price *</label>
                   <input
                     name="costPrice"
                     type="number"
@@ -149,7 +149,7 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
                   />
                 </div>
                 <div>
-                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Selling Price *</label>
+                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] h-10 flex items-end pb-1 leading-tight">Selling Price *</label>
                   <input
                     name="sellingPrice"
                     type="number"
@@ -164,7 +164,7 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Min Price (Optional)</label>
+                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] h-10 flex items-end pb-1 leading-tight">Min Price (Optional)</label>
                   <input
                     name="minimumPrice"
                     type="number"
@@ -176,7 +176,7 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
                   />
                 </div>
                 <div>
-                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Low Stock Level *</label>
+                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] h-10 flex items-end pb-1 leading-tight">Low Stock Level *</label>
                   <input
                     name="lowStockThreshold"
                     type="number"

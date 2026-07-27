@@ -3,13 +3,23 @@ import { ProductList } from '../features/catalog/components/ProductList';
 import { AddCategoryModal } from '../features/catalog/components/AddCategoryModal';
 import { AddProductModal } from '../features/catalog/components/AddProductModal';
 import { ProductHubModal } from '../features/catalog/components/ProductHubModal';
+import { DetailsEditModal } from '../features/catalog/components/hub/DetailsEditModal';
 import { useUpdateProduct, type Product } from '../features/catalog/api/catalog.api';
 import { ImportModal } from '../components/ui/ImportModal';
 import { api } from '../lib/api';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 
 export const CatalogPage: React.FC = () => {
+  const { data: meData } = useQuery({
+    queryKey: ['me'],
+    queryFn: async () => {
+      const res = await api.get('/auth/me');
+      return res.data.data;
+    },
+  });
+  const productMode = meData?.business?.productMode || 'ADVANCED';
+
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -84,13 +94,19 @@ export const CatalogPage: React.FC = () => {
         onClose={() => setIsProductModalOpen(false)} 
       />
 
-      <ProductHubModal
-        isOpen={!!editingProduct}
-        onClose={() => {
-          setEditingProduct(null);
-        }}
-        product={editingProduct}
-      />
+      {productMode === 'SIMPLE' ? (
+        <DetailsEditModal
+          isOpen={!!editingProduct}
+          onClose={() => setEditingProduct(null)}
+          product={editingProduct!}
+        />
+      ) : (
+        <ProductHubModal
+          isOpen={!!editingProduct}
+          onClose={() => setEditingProduct(null)}
+          product={editingProduct}
+        />
+      )}
 
       <ImportModal
         isOpen={isImportModalOpen}
