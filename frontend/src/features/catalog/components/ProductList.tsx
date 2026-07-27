@@ -5,6 +5,8 @@ import { CustomSelect } from '../../../components/ui/CustomSelect';
 import { TableSkeleton } from '../../../components/ui/Loading';
 import { ProductRestockModal } from './ProductRestockModal';
 import { useAuthStore } from '../../auth/stores/auth.store';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../../../lib/api';
 
 interface ProductListProps {
   onAddProduct: () => void;
@@ -26,6 +28,15 @@ export const ProductList: React.FC<ProductListProps> = ({
   const currentUser = useAuthStore((state) => state.user);
   const { data: products, isLoading, isError } = useProducts();
   const { data: categories, isError: isCategoriesError } = useCategories();
+
+  const { data: meData } = useQuery({
+    queryKey: ['me'],
+    queryFn: async () => {
+      const res = await api.get('/auth/me');
+      return res.data.data;
+    },
+  });
+  const productMode = meData?.business?.productMode || 'ADVANCED';
   
   const [restockProduct, setRestockProduct] = useState<any | null>(null);
   
@@ -76,21 +87,23 @@ export const ProductList: React.FC<ProductListProps> = ({
         {/* Filters and Actions */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto shrink-0">
           
-          <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-              <span className="text-xs sm:text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] whitespace-nowrap">Category:</span>
-              <div className="w-full sm:w-40 min-w-[120px]">
-                <CustomSelect 
-                  label="Category" 
-                  options={isCategoriesError ? [{ id: '', name: 'Error' }] : categories ? [{ id: '', name: 'All' }, ...categories.map(c => ({ id: c.id, name: c.name }))] : [{ id: '', name: 'All' }]} 
-                  value={selectedCategory} 
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  onActionClick={onAddCategory}
-                  actionLabel="New Category"
-                  className="w-full bg-white text-xs sm:text-sm"
-                />
+          <div className={`${productMode === 'SIMPLE' ? 'flex' : 'grid grid-cols-2 sm:flex'} items-center gap-2 w-full sm:w-auto`}>
+            {productMode !== 'SIMPLE' && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                <span className="text-xs sm:text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] whitespace-nowrap">Category:</span>
+                <div className="w-full sm:w-40 min-w-[120px]">
+                  <CustomSelect 
+                    label="Category" 
+                    options={isCategoriesError ? [{ id: '', name: 'Error' }] : categories ? [{ id: '', name: 'All' }, ...categories.map(c => ({ id: c.id, name: c.name }))] : [{ id: '', name: 'All' }]} 
+                    value={selectedCategory} 
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    onActionClick={onAddCategory}
+                    actionLabel="New Category"
+                    className="w-full bg-white text-xs sm:text-sm"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
               <span className="text-xs sm:text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] whitespace-nowrap">Status:</span>
@@ -182,8 +195,8 @@ export const ProductList: React.FC<ProductListProps> = ({
                 <thead className="bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100">
                   <tr>
                     <th className="px-5 py-4">Product Info</th>
-                    <th className="px-5 py-4">Category</th>
-                    <th className="px-5 py-4 text-center">Variants</th>
+                    {productMode !== 'SIMPLE' && <th className="px-5 py-4">Category</th>}
+                    {productMode !== 'SIMPLE' && <th className="px-5 py-4 text-center">Variants</th>}
                     <th className="px-5 py-4 text-right">Price / Range</th>
                     <th className="px-5 py-4 text-right">Total Stock</th>
                     <th className="px-5 py-4 text-center">Status</th>
@@ -238,14 +251,18 @@ export const ProductList: React.FC<ProductListProps> = ({
                             {primaryVariant?.sku && <div className="text-[10px] text-gray-400 font-semibold mt-0.5">SKU: {primaryVariant.sku}</div>}
                           </div>
                         </td>
-                        <td className="px-5 py-3">
-                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 uppercase tracking-wider">
-                            {product.categoryName || 'Unclassified'}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3 text-center font-semibold text-gray-800">
-                          {product.variants?.length || 0}
-                        </td>
+                        {productMode !== 'SIMPLE' && (
+                          <td className="px-5 py-3">
+                            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 uppercase tracking-wider">
+                              {product.categoryName || 'Unclassified'}
+                            </span>
+                          </td>
+                        )}
+                        {productMode !== 'SIMPLE' && (
+                          <td className="px-5 py-3 text-center font-semibold text-gray-800">
+                            {product.variants?.length || 0}
+                          </td>
+                        )}
                         <td className="px-5 py-3 text-right font-bold text-gray-900">
                           {priceLabel}
                         </td>
