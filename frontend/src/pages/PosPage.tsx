@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useCategories, useProducts } from '../features/catalog/api/catalog.api';
 import { ShoppingCart, Search, Plus, Minus, Trash2, Tag, ArrowRight, Package, ShoppingBag, X, Pencil } from 'lucide-react';
 import { api } from '../lib/api';
+import { useQuery } from '@tanstack/react-query';
 import { CheckoutModal } from '../features/sales/components/CheckoutModal';
 import { UnitSelectionModal } from '../features/sales/components/UnitSelectionModal';
 import { ReceiptModal } from '../features/sales/components/ReceiptModal';
@@ -9,6 +10,15 @@ import { CardSkeleton } from '../components/ui/Loading';
 import toast from 'react-hot-toast';
 
 export const PosPage = () => {
+  const { data: meData } = useQuery({
+    queryKey: ['me'],
+    queryFn: async () => {
+      const res = await api.get('/auth/me');
+      return res.data.data;
+    },
+  });
+  const productMode = meData?.business?.productMode || 'ADVANCED';
+
   const [searchTerm, setSearchTerm] = useState('');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -158,24 +168,26 @@ export const PosPage = () => {
               />
             </div>
             
-            <div className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-2 w-full md:w-auto pb-1 md:pb-0">
-              {categories.map((cat) => {
-                const cleanCatName = cat.replace(/\s+\d+$/, '');
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-5 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer ${
-                      selectedCategory === cat
-                        ? 'bg-gray-900 text-white shadow-md'
-                        : 'bg-white text-gray-600 hover:bg-gray-100 shadow-sm'
-                    }`}
-                  >
-                    {cleanCatName}
-                  </button>
-                );
-              })}
-            </div>
+            {productMode !== 'SIMPLE' && (
+              <div className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-2 w-full md:w-auto pb-1 md:pb-0">
+                {categories.map((cat) => {
+                  const cleanCatName = cat.replace(/\s+\d+$/, '');
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-5 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer ${
+                        selectedCategory === cat
+                          ? 'bg-gray-900 text-white shadow-md'
+                          : 'bg-white text-gray-600 hover:bg-gray-100 shadow-sm'
+                      }`}
+                    >
+                      {cleanCatName}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
