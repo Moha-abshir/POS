@@ -188,25 +188,6 @@ export const DetailsEditModal: React.FC<DetailsEditModalProps> = ({ isOpen, onCl
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Category (Optional)</label>
-                <CustomSelect
-                  label="Select category (Optional)"
-                  options={[{ id: '', name: 'Uncategorized (None)' }, ...(categories?.map(c => ({ id: c.id, name: c.name })) || [])]}
-                  value={formData.categoryId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-1">Description</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full p-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all resize-none"
-                />
-              </div>
             </>
           ) : (
             <>

@@ -262,14 +262,17 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
 
                   <div>
                     <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] h-10 flex items-end pb-1 leading-tight">
-                      Category (Optional)
+                      Initial Stock Quantity *
                     </label>
-                    <CustomSelect
-                      name="categoryId"
-                      label="Select a category (Optional)"
-                      options={[{ id: '', name: 'Uncategorized (None)' }, ...(categories?.map(cat => ({ id: cat.id, name: cat.name })) || [])]}
-                      value={formData.categoryId}
-                      onChange={handleChange as any}
+                    <input
+                      name="initialStock"
+                      type="number"
+                      min="0"
+                      required
+                      value={formData.initialStock}
+                      onChange={handleChange}
+                      placeholder="0"
+                      className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                     />
                   </div>
                 </div>
@@ -339,38 +342,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                       value={formData.lowStockThreshold}
                       onChange={handleChange}
                       placeholder="e.g., 1"
-                      className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] h-10 flex items-end pb-1 leading-tight">
-                      Initial Stock Quantity *
-                    </label>
-                    <input
-                      name="initialStock"
-                      type="number"
-                      min="0"
-                      required
-                      value={formData.initialStock}
-                      onChange={handleChange}
-                      placeholder="0"
-                      className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] h-10 flex items-end pb-1 leading-tight">
-                      Description (Optional)
-                    </label>
-                    <input
-                      name="description"
-                      type="text"
-                      value={formData.description}
-                      onChange={handleChange}
-                      placeholder="Product details..."
                       className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                     />
                   </div>

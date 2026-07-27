@@ -361,18 +361,29 @@ export class CatalogService {
   }
 
   static async createSimpleProduct(data: CreateSimpleProductInput, businessId: string, userId: string) {
-    if (data.categoryId) {
-      const [category] = await db.select().from(categories).where(and(eq(categories.id, data.categoryId), eq(categories.businessId, businessId)));
-      if (!category) throw new AppError('Category not found or does not belong to this business', 400);
-    }
-
     return await db.transaction(async (tx) => {
+      // Find or create 'uncategorised' category
+      const [existingCategory] = await tx.select()
+        .from(categories)
+        .where(and(eq(categories.name, 'uncategorised'), eq(categories.businessId, businessId)));
+      
+      let categoryId = null;
+      if (existingCategory) {
+        categoryId = existingCategory.id;
+      } else {
+        const [newCategory] = await tx.insert(categories).values({
+          name: 'uncategorised',
+          businessId,
+        }).returning();
+        categoryId = newCategory.id;
+      }
+
       // 1. Insert product
       const [product] = await tx.insert(products).values({
         name: data.name,
-        description: data.description,
+        description: 'none',
         imageUrl: data.imageUrl,
-        categoryId: data.categoryId || null,
+        categoryId,
         businessId,
         createdBy: userId,
       }).returning();
@@ -426,19 +437,30 @@ export class CatalogService {
   }
 
   static async updateSimpleProduct(productId: string, data: UpdateSimpleProductInput, businessId: string) {
-    if (data.categoryId) {
-      const [category] = await db.select().from(categories).where(and(eq(categories.id, data.categoryId), eq(categories.businessId, businessId)));
-      if (!category) throw new AppError('Category not found or does not belong to this business', 400);
-    }
-
     return await db.transaction(async (tx) => {
+      // Find or create 'uncategorised' category
+      const [existingCategory] = await tx.select()
+        .from(categories)
+        .where(and(eq(categories.name, 'uncategorised'), eq(categories.businessId, businessId)));
+      
+      let categoryId = null;
+      if (existingCategory) {
+        categoryId = existingCategory.id;
+      } else {
+        const [newCategory] = await tx.insert(categories).values({
+          name: 'uncategorised',
+          businessId,
+        }).returning();
+        categoryId = newCategory.id;
+      }
+
       // 1. Update product
       const [product] = await tx.update(products)
         .set({
           name: data.name,
-          description: data.description,
+          description: 'none',
           imageUrl: data.imageUrl,
-          categoryId: data.categoryId || null,
+          categoryId,
           isActive: data.isActive,
         })
         .where(and(eq(products.id, productId), eq(products.businessId, businessId)))
