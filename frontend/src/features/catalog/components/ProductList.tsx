@@ -80,7 +80,7 @@ export const ProductList: React.FC<ProductListProps> = ({
             placeholder="Search products by name or SKU..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-10 pl-9 pr-4 bg-[var(--color-bg-sunken)] border-transparent rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-transparent focus:ring-2 focus:ring-amber-500 transition-all placeholder:text-gray-400"
+            className="w-full h-10 pl-9 pr-4 bg-white border border-gray-200 rounded-md text-sm text-gray-900 outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all shadow-sm placeholder:text-gray-400"
           />
         </div>
 

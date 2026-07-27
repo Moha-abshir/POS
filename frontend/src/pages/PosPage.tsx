@@ -164,7 +164,7 @@ export const PosPage = () => {
                 placeholder="Search products by name or SKU..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-full pl-11 pr-4 bg-white border-transparent rounded-full focus:ring-2 focus:ring-[#D97706] focus:border-transparent outline-none text-gray-900 transition-all placeholder:text-gray-400 text-sm shadow-sm"
+                className="w-full h-full pl-11 pr-4 bg-white border border-gray-200 rounded-full focus:ring-1 focus:ring-black focus:border-black outline-none text-gray-900 transition-all placeholder:text-gray-400 text-sm shadow-sm"
               />
             </div>
             
