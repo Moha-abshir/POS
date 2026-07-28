@@ -151,10 +151,8 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
       const priceStr = Number(item.sellingPrice || item.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       const totalStr = Number(item.subtotal || item.totalPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-      // Row 1: Product name (full width, bold)
-      commands += ESC + 'E' + '\x01';
+      // Row 1: Product name (full width)
       commands += pName + '\n';
-      commands += ESC + 'E' + '\x00';
       // Row 2: Variant/unit info (smaller context)
       commands += variantLine + '\n';
       // Row 3: Qty, Price, Total (right-aligned columns)
@@ -471,7 +469,7 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
                       return (
                         <div key={item.id} className="text-[11px] flex flex-col">
                           <div className="flex justify-between items-start">
-                            <span className="w-2/5 font-bold text-gray-900 truncate pr-1">{pName}</span>
+                            <span className="w-2/5 font-normal text-[10px] text-gray-900 truncate pr-1">{pName}</span>
                             <span className="w-1/5 text-center text-gray-800">{qtyVal}</span>
                             <span className="w-1/5 text-right text-gray-800">{priceStr}</span>
                             <span className="w-1/5 text-right font-semibold text-gray-900">{totalStr}</span>
