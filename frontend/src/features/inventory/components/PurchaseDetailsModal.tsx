@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { inventoryApi } from '../api/inventory.api';
 import { X, Calendar, User, FileText, Smartphone, DollarSign, Package } from 'lucide-react';
 import { LoadingSpinner } from '../../../components/ui/Loading';
+import { api } from '../../../lib/api';
 
 interface PurchaseDetailsModalProps {
   isOpen: boolean;
@@ -11,6 +12,15 @@ interface PurchaseDetailsModalProps {
 }
 
 export const PurchaseDetailsModal: React.FC<PurchaseDetailsModalProps> = ({ isOpen, onClose, purchaseId }) => {
+  const { data: meData } = useQuery({
+    queryKey: ['me'],
+    queryFn: async () => {
+      const res = await api.get('/auth/me');
+      return res.data.data;
+    },
+  });
+  const productMode = meData?.business?.productMode || 'ADVANCED';
+
   const { data: purchase, isLoading, error } = useQuery({
     queryKey: ['purchase-details', purchaseId],
     queryFn: () => inventoryApi.getPurchaseDetails(purchaseId!),
@@ -108,7 +118,7 @@ export const PurchaseDetailsModal: React.FC<PurchaseDetailsModalProps> = ({ isOp
                 <div className="border border-gray-100 rounded-xl overflow-hidden shadow-2xs">
                   {/* Table Header */}
                   <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 p-3 bg-gray-50 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-wider items-center">
-                    <div>Product & Variant</div>
+                    <div>{productMode === 'SIMPLE' ? 'Product' : 'Product & Variant'}</div>
                     <div className="text-center">Quantity</div>
                     <div className="text-right">Unit Cost (KES)</div>
                     <div className="text-right">Subtotal (KES)</div>
@@ -121,14 +131,16 @@ export const PurchaseDetailsModal: React.FC<PurchaseDetailsModalProps> = ({ isOp
                         {/* Name */}
                         <div className="w-full text-left">
                           <p className="text-sm font-bold text-gray-900">{item.productName}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">Variant: {item.variantName}</p>
+                          {productMode !== 'SIMPLE' && item.variantName && (
+                            <p className="text-xs text-gray-500 mt-0.5">Variant: {item.variantName}</p>
+                          )}
                         </div>
                         
                         {/* Qty */}
                         <div className="w-full sm:text-center flex justify-between sm:justify-center items-center">
                           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider sm:hidden">Quantity</span>
                           <span className="text-sm font-semibold text-gray-700 font-mono">
-                            {Number(item.quantity).toFixed(1)} {item.unitName}
+                            {Number(item.quantity).toFixed(1)} {productMode !== 'SIMPLE' ? item.unitName : ''}
                           </span>
                         </div>
 

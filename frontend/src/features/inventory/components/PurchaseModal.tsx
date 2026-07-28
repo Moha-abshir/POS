@@ -5,6 +5,7 @@ import { useProducts } from '../../catalog/api/catalog.api';
 import { inventoryApi } from '../api/inventory.api';
 import { X, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
+import { api } from '../../../lib/api';
 
 interface PurchaseModalProps {
   onClose: () => void;
@@ -25,6 +26,15 @@ export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps)
   const [invoiceRef, setInvoiceRef] = useState('');
   const [mpesaRef, setMpesaRef] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  const { data: meData } = useQuery({
+    queryKey: ['me'],
+    queryFn: async () => {
+      const res = await api.get('/auth/me');
+      return res.data.data;
+    },
+  });
+  const productMode = meData?.business?.productMode || 'ADVANCED';
 
   const { data: suppliers = [] } = useQuery({
     queryKey: ['suppliers'],
@@ -166,7 +176,7 @@ export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps)
             <div className="p-4 space-y-3">
               {items.map((item, index) => (
                 <div key={index} className="flex flex-col sm:flex-row gap-3 sm:gap-3 items-stretch sm:items-end border-b border-gray-100 sm:border-0 pb-4 sm:pb-0">
-                  <div className="w-full sm:w-[20%]">
+                  <div className={productMode === 'SIMPLE' ? "w-full sm:w-[45%]" : "w-full sm:w-[20%]"}>
                     <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Product</label>
                     <CustomSelect
                       required
@@ -175,65 +185,84 @@ export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps)
                       options={products.map(p => ({ id: p.id, name: p.name }))}
                       value={item.productId || ''}
                       onChange={(e) => {
+                        const selectedProduct = products.find(p => p.id === e.target.value);
                         const newItems = [...items];
                         newItems[index].productId = e.target.value;
-                        newItems[index].variantId = '';
-                        newItems[index].unitId = '';
-                        setItems(newItems);
-                      }}
-                    />
-                  </div>
-                  <div className="w-full sm:w-[20%]">
-                    <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Variant</label>
-                    <CustomSelect
-                      required
-                      label="Select variant..."
-                      options={
-                        item.productId 
-                          ? (products.find(p => p.id === item.productId)?.variants || []).map(v => ({ id: v.id, name: v.name }))
-                          : []
-                      }
-                      value={item.variantId}
-                      onChange={(e) => {
-                        const selectedProduct = products.find(p => p.id === item.productId);
-                        const selectedVar = selectedProduct?.variants?.find(v => v.id === e.target.value);
-                        const newItems = [...items];
-                        newItems[index].variantId = e.target.value;
-                        const defaultUnit = selectedVar?.units?.find((u: any) => u.isDefault) || selectedVar?.units?.[0];
-                        newItems[index].unitId = defaultUnit?.id || '';
-                        if (selectedVar && newItems[index].costPrice === '') {
-                          const factor = Number(defaultUnit?.conversionFactor || 1);
-                          newItems[index].costPrice = Number(selectedVar.costPrice) * factor;
+                        if (productMode === 'SIMPLE') {
+                          const defaultVar = selectedProduct?.variants?.[0];
+                          const defaultUnit = defaultVar?.units?.find((u: any) => u.isDefault) || defaultVar?.units?.[0];
+                          newItems[index].variantId = defaultVar?.id || '';
+                          newItems[index].unitId = defaultUnit?.id || '';
+                          if (defaultVar) {
+                            const factor = Number(defaultUnit?.conversionFactor || 1);
+                            newItems[index].costPrice = Number(defaultVar.costPrice || 0) * factor;
+                          }
+                        } else {
+                          newItems[index].variantId = '';
+                          newItems[index].unitId = '';
                         }
                         setItems(newItems);
                       }}
                     />
                   </div>
-                  <div className="w-full sm:w-[15%]">
-                    <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Unit</label>
-                    <CustomSelect
-                      required
-                      label="Select unit..."
-                      options={
-                        item.productId && item.variantId 
-                          ? (products.find(p => p.id === item.productId)?.variants?.find(v => v.id === item.variantId)?.units || []).map((u: any) => ({ id: u.id, name: u.name }))
-                          : []
-                      }
-                      value={item.unitId}
-                      onChange={(e) => {
-                        const newItems = [...items];
-                        newItems[index].unitId = e.target.value;
-                        const selectedProduct = products.find(p => p.id === item.productId);
-                        const selectedVar = selectedProduct?.variants?.find(v => v.id === newItems[index].variantId);
-                        const selectedUnit = selectedVar?.units?.find((u: any) => u.id === e.target.value);
-                        if (selectedVar && selectedUnit) {
-                          newItems[index].costPrice = Number(selectedVar.costPrice) * Number(selectedUnit.conversionFactor || 1);
+
+                  {productMode !== 'SIMPLE' && (
+                    <div className="w-full sm:w-[20%]">
+                      <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Variant</label>
+                      <CustomSelect
+                        required
+                        label="Select variant..."
+                        options={
+                          item.productId 
+                            ? (products.find(p => p.id === item.productId)?.variants || []).map(v => ({ id: v.id, name: v.name }))
+                            : []
                         }
-                        setItems(newItems);
-                      }}
-                    />
-                  </div>
-                  <div className="w-full sm:w-[10%] sm:min-w-[60px]">
+                        value={item.variantId}
+                        onChange={(e) => {
+                          const selectedProduct = products.find(p => p.id === item.productId);
+                          const selectedVar = selectedProduct?.variants?.find(v => v.id === e.target.value);
+                          const newItems = [...items];
+                          newItems[index].variantId = e.target.value;
+                          const defaultUnit = selectedVar?.units?.find((u: any) => u.isDefault) || selectedVar?.units?.[0];
+                          newItems[index].unitId = defaultUnit?.id || '';
+                          if (selectedVar && newItems[index].costPrice === '') {
+                            const factor = Number(defaultUnit?.conversionFactor || 1);
+                            newItems[index].costPrice = Number(selectedVar.costPrice) * factor;
+                          }
+                          setItems(newItems);
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {productMode !== 'SIMPLE' && (
+                    <div className="w-full sm:w-[15%]">
+                      <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Unit</label>
+                      <CustomSelect
+                        required
+                        label="Select unit..."
+                        options={
+                          item.productId && item.variantId 
+                            ? (products.find(p => p.id === item.productId)?.variants?.find(v => v.id === item.variantId)?.units || []).map((u: any) => ({ id: u.id, name: u.name }))
+                            : []
+                        }
+                        value={item.unitId}
+                        onChange={(e) => {
+                          const newItems = [...items];
+                          newItems[index].unitId = e.target.value;
+                          const selectedProduct = products.find(p => p.id === item.productId);
+                          const selectedVar = selectedProduct?.variants?.find(v => v.id === newItems[index].variantId);
+                          const selectedUnit = selectedVar?.units?.find((u: any) => u.id === e.target.value);
+                          if (selectedVar && selectedUnit) {
+                            newItems[index].costPrice = Number(selectedVar.costPrice) * Number(selectedUnit.conversionFactor || 1);
+                          }
+                          setItems(newItems);
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <div className={productMode === 'SIMPLE' ? "w-full sm:w-[15%] sm:min-w-[60px]" : "w-full sm:w-[10%] sm:min-w-[60px]"}>
                     <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Qty</label>
                     <input
                       type="number"
