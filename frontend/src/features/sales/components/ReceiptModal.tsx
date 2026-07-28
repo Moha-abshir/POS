@@ -66,16 +66,36 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
   const generateEscPosData = (sale: any, meData: any, customerDetails: any) => {
     const ESC = '\x1b';
     const GS = '\x1d';
+    const LINE_WIDTH = 42; // Standard 80mm thermal printer character width
+    const SEPARATOR = '-'.repeat(LINE_WIDTH) + '\n';
     
+    // Helper: pad a row so label is left-aligned and value is right-aligned within LINE_WIDTH
+    const alignRow = (label: string, value: string) => {
+      const gap = Math.max(1, LINE_WIDTH - label.length - value.length);
+      return label + ' '.repeat(gap) + value + '\n';
+    };
+
+    // Helper: format a line-item data row (qty, price, total) right-aligned
+    const formatItemDataRow = (qty: string, price: string, total: string) => {
+      // Layout: [blank space] [qty right 6] [price right 12] [total right 12]
+      const qtyCol = qty.padStart(6, ' ');
+      const priceCol = price.padStart(12, ' ');
+      const totalCol = total.padStart(12, ' ');
+      const row = qtyCol + priceCol + totalCol;
+      // Left-pad to fill LINE_WIDTH
+      const leftPad = Math.max(0, LINE_WIDTH - row.length);
+      return ' '.repeat(leftPad) + row + '\n';
+    };
+
     let commands = '';
-    commands += ESC + '@'; // Initialize
+    commands += ESC + '@'; // Initialize printer
     
-    // Header (Centered, Bold) - Fully Dynamic SaaS Multi-tenant
-    commands += ESC + 'a' + '\x01';
-    commands += ESC + 'E' + '\x01';
+    // ── Header (Centered, Bold) ──
+    commands += ESC + 'a' + '\x01'; // Center align
+    commands += ESC + 'E' + '\x01'; // Bold ON
     const businessName = meData?.business?.name || 'STORE RECEIPT';
     commands += businessName.toUpperCase() + '\n';
-    commands += ESC + 'E' + '\x00';
+    commands += ESC + 'E' + '\x00'; // Bold OFF
     
     if (meData?.business?.sector) commands += meData.business.sector.toUpperCase() + '\n';
     if (meData?.business?.email) commands += meData.business.email + '\n';
@@ -84,33 +104,39 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     if (meData?.business?.tillNumber) commands += 'BUY GOODS : ' + meData.business.tillNumber + '\n';
     commands += '\n';
 
-    // Title
+    // ── Sale Type Title ──
     const isCredit = sale.paymentMethod === 'CREDIT' || (Number(sale.amountPaid) < Number(sale.totalAmount));
     const saleTypeTitle = isCredit ? 'CREDIT SALE' : (sale.paymentMethod === 'SPLIT' ? 'SPLIT SALE' : 'CASH SALE');
     commands += ESC + 'E' + '\x01';
     commands += saleTypeTitle + '\n';
     commands += ESC + 'E' + '\x00';
-    commands += '------------------------------------------------\n';
+    commands += SEPARATOR;
 
-    // Metadata (Left aligned)
-    commands += ESC + 'a' + '\x00';
+    // ── Metadata (Left aligned) ──
+    commands += ESC + 'a' + '\x00'; // Left align
     const invoiceNo = `#${sale.id.slice(0, 8).toUpperCase()}`;
     const customerName = sale.customerName || customerDetails?.name || 'Walk-in Customer';
     const dateStr = format(new Date(sale.soldAt), 'dd/MM/yyyy');
     const timeStr = format(new Date(sale.soldAt), 'hh:mm:ss a');
 
-    commands += `Invoice No : ${invoiceNo}\n`;
-    commands += `Customer   : ${customerName}\n`;
-    commands += `Date       : ${dateStr}\n`;
-    commands += `Time       : ${timeStr}\n`;
-    commands += '------------------------------------------------\n';
+    commands += alignRow('Invoice No', invoiceNo);
+    commands += alignRow('Customer', customerName);
+    commands += alignRow('Date', dateStr);
+    commands += alignRow('Time', timeStr);
+    commands += SEPARATOR;
 
-    // Table Header (48 chars wide)
-    // Name (20 chars) | Qnty (6 chars) | Price (10 chars) | Total (12 chars)
-    commands += 'Name                   Qnty      Price       Total\n';
-    commands += '------------------------------------------------\n';
+    // ── Table Header ──
+    // Columns: Name (left, full width first line) | Qty (6) | Price (12) | Total (12)
+    const hdrQty = 'Qty'.padStart(6, ' ');
+    const hdrPrice = 'Price'.padStart(12, ' ');
+    const hdrTotal = 'Total'.padStart(12, ' ');
+    const hdrRight = hdrQty + hdrPrice + hdrTotal;
+    const hdrName = 'Name';
+    const hdrLeftPad = Math.max(1, LINE_WIDTH - hdrName.length - hdrRight.length);
+    commands += hdrName + ' '.repeat(hdrLeftPad) + hdrRight + '\n';
+    commands += SEPARATOR;
 
-    // Line items
+    // ── Line Items ──
     sale.items?.forEach((item: any) => {
       const pName = (item.productName || 'Item').toUpperCase();
       
@@ -125,25 +151,18 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
       const priceStr = Number(item.sellingPrice || item.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       const totalStr = Number(item.subtotal || item.totalPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+      // Row 1: Product name (full width, bold)
+      commands += ESC + 'E' + '\x01';
       commands += pName + '\n';
+      commands += ESC + 'E' + '\x00';
+      // Row 2: Variant/unit info (smaller context)
       commands += variantLine + '\n';
-
-      const pBlank = ''.padEnd(20, ' ');
-      const pQty = qtyVal.padStart(6, ' ');
-      const pPrice = priceStr.padStart(10, ' ');
-      const pTotal = totalStr.padStart(12, ' ');
-      commands += pBlank + pQty + pPrice + pTotal + '\n';
+      // Row 3: Qty, Price, Total (right-aligned columns)
+      commands += formatItemDataRow(qtyVal, priceStr, totalStr);
     });
-    commands += '------------------------------------------------\n';
+    commands += SEPARATOR;
 
-    // Totals block
-    const formatTotalRow = (label: string, value: string) => {
-      const pad = Math.max(1, 48 - label.length - value.length);
-      let padStr = '';
-      for (let i = 0; i < pad; i++) padStr += ' ';
-      return label + padStr + value + '\n';
-    };
-
+    // ── Totals Block ──
     const currentTotal = Number(sale.totalAmount || 0);
     const paidAmount = Number(sale.amountPaid || 0);
     const addedCredit = Math.max(0, currentTotal - paidAmount);
@@ -151,27 +170,27 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     const prevBal = Math.max(0, currentCustBal - addedCredit);
     const totalBal = currentCustBal > 0 ? currentCustBal : (prevBal + addedCredit);
 
-    commands += formatTotalRow('Total Amount :', currentTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-    commands += formatTotalRow('Amount Paid :', paidAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    commands += alignRow('Total Amount', currentTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    commands += alignRow('Amount Paid', paidAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
     if (isCredit || sale.customerId) {
-      commands += formatTotalRow('Previous Balance :', prevBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      commands += alignRow('Previous Balance', prevBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
       commands += ESC + 'E' + '\x01';
-      commands += formatTotalRow('New Total Balance :', totalBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      commands += alignRow('New Total Balance', totalBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
       commands += ESC + 'E' + '\x00';
     }
-    commands += '------------------------------------------------\n';
+    commands += SEPARATOR;
 
-    // Footer
+    // ── Footer (Centered) ──
     commands += ESC + 'a' + '\x01';
     const cashierName = ((meData?.user?.firstName || '') + ' ' + (meData?.user?.lastName || '')).trim() || 'Cashier';
     commands += `You were served by : ${cashierName}\n\n`;
     commands += `Thank you for shopping with us!\n`;
 
-    // Cut & Cash Drawer Kick
+    // ── Paper Feed, Cut & Cash Drawer Kick ──
     commands += '\n\n\n\n';
-    commands += GS + 'V' + '\x42' + '\x00';
-    commands += ESC + 'p' + '\x00' + '\x19' + '\xfa';
+    commands += GS + 'V' + '\x42' + '\x00'; // Partial cut
+    commands += ESC + 'p' + '\x00' + '\x19' + '\xfa'; // Cash drawer kick
 
     return btoa(unescape(encodeURIComponent(commands)));
   };

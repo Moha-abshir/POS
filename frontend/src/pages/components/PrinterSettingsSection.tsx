@@ -40,9 +40,11 @@ export const PrinterSettingsSection: React.FC = () => {
   const handleTestPrint = async () => {
     setIsTesting(true);
     try {
-      // Create ESC/POS test receipt format aligned to 48 columns with cash drawer kick & cut
+      // Create ESC/POS test receipt format aligned to 42 columns with cash drawer kick & cut
       const ESC = '\x1B';
       const GS = '\x1D';
+      const SEP = '-'.repeat(42) + '\n';
+      const DBL_SEP = '='.repeat(42) + '\n';
       
       let testText = '';
       testText += `${ESC}@`; // Initialize
@@ -51,20 +53,20 @@ export const PrinterSettingsSection: React.FC = () => {
       testText += `SMART STORE POS\n`;
       testText += `PRINTER DIAGNOSTIC TEST\n`;
       testText += `${ESC}E\x00`; // Bold OFF
-      testText += `------------------------------------------------\n`;
+      testText += SEP;
       testText += `${ESC}a\x00`; // Left align
       testText += `Date/Time: ${new Date().toLocaleString()}\n`;
       testText += `Printer  : ${selectedPrinter || 'Thermal Printer'}\n`;
       testText += `Agent    : Local Windows Spooler Agent\n`;
-      testText += `------------------------------------------------\n`;
-      testText += `1x Test Receipt Item           KSh 1.00\n`;
-      testText += `------------------------------------------------\n`;
+      testText += SEP;
+      testText += `1x Test Receipt Item        KSh 1.00\n`;
+      testText += SEP;
       testText += `${ESC}a\x01`; // Center text
       testText += `${ESC}E\x01`; // Bold ON
       testText += `TEST STATUS: SUCCESSFUL!\n`;
       testText += `Cash drawer kick & paper cut issued.\n`;
       testText += `${ESC}E\x00`; // Bold OFF
-      testText += `================================================\n\n\n\n\n`;
+      testText += DBL_SEP + '\n\n\n\n';
 
       // ESC p 0 25 250 (Kick cash drawer pulse)
       const drawerKick = `${ESC}\x70\x00\x19\xFA`;

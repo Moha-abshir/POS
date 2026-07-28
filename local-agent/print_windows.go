@@ -8,14 +8,15 @@ import (
 )
 
 var (
-	winspool             = syscall.NewLazyDLL("winspool.drv")
-	procOpenPrinter    = winspool.NewProc("OpenPrinterW")
-	procClosePrinter   = winspool.NewProc("ClosePrinter")
-	procStartDocPrinter = winspool.NewProc("StartDocPrinterW")
-	procEndDocPrinter  = winspool.NewProc("EndDocPrinter")
-	procStartPagePrinter = winspool.NewProc("StartPagePrinter")
-	procEndPagePrinter  = winspool.NewProc("EndPagePrinter")
-	procWritePrinter   = winspool.NewProc("WritePrinter")
+	winspool              = syscall.NewLazyDLL("winspool.drv")
+	procOpenPrinter       = winspool.NewProc("OpenPrinterW")
+	procClosePrinter      = winspool.NewProc("ClosePrinter")
+	procStartDocPrinter   = winspool.NewProc("StartDocPrinterW")
+	procEndDocPrinter     = winspool.NewProc("EndDocPrinter")
+	procStartPagePrinter  = winspool.NewProc("StartPagePrinter")
+	procEndPagePrinter    = winspool.NewProc("EndPagePrinter")
+	procWritePrinter      = winspool.NewProc("WritePrinter")
+	procEnumPrinters      = winspool.NewProc("EnumPrintersW")
 )
 
 type DOC_INFO_1 struct {
@@ -24,10 +25,84 @@ type DOC_INFO_1 struct {
 	Datatype   *uint16
 }
 
+// PRINTER_INFO_2W struct (simplified — we only read pPrinterName)
+// Full struct is large but we parse the name pointer at offset 0.
+type PRINTER_INFO_2 struct {
+	ServerName         *uint16
+	PrinterName        *uint16
+	ShareName          *uint16
+	PortName           *uint16
+	DriverName         *uint16
+	Comment            *uint16
+	Location           *uint16
+	DevMode            uintptr
+	SepFile            *uint16
+	PrintProcessor     *uint16
+	Datatype           *uint16
+	Parameters         *uint16
+	SecurityDescriptor uintptr
+	Attributes         uint32
+	Priority           uint32
+	DefaultPriority    uint32
+	StartTime          uint32
+	UntilTime          uint32
+	Status             uint32
+	Jobs               uint32
+	AveragePPM         uint32
+}
+
+const (
+	PRINTER_ENUM_LOCAL      = 0x00000002
+	PRINTER_ENUM_CONNECTIONS = 0x00000004
+)
+
 func getWindowsPrinters() []string {
-	// A basic list of common standard printer names. 
-	// In production Go, full EnumPrintersW would be called, but listing common local printer names is robust.
-	return []string{"E-POS ECO250", "POS-80", "XP-80", "POS Printer"}
+	var needed, returned uint32
+
+	// First call: get required buffer size
+	procEnumPrinters.Call(
+		uintptr(PRINTER_ENUM_LOCAL|PRINTER_ENUM_CONNECTIONS),
+		0, // Name (nil = local machine)
+		2, // Level 2 = PRINTER_INFO_2
+		0, // nil buffer
+		0, // buffer size 0
+		uintptr(unsafe.Pointer(&needed)),
+		uintptr(unsafe.Pointer(&returned)),
+	)
+
+	if needed == 0 {
+		return []string{}
+	}
+
+	buf := make([]byte, needed)
+
+	r1, _, _ := procEnumPrinters.Call(
+		uintptr(PRINTER_ENUM_LOCAL|PRINTER_ENUM_CONNECTIONS),
+		0,
+		2,
+		uintptr(unsafe.Pointer(&buf[0])),
+		uintptr(needed),
+		uintptr(unsafe.Pointer(&needed)),
+		uintptr(unsafe.Pointer(&returned)),
+	)
+
+	if r1 == 0 {
+		return []string{}
+	}
+
+	var printers []string
+	infoSize := unsafe.Sizeof(PRINTER_INFO_2{})
+	for i := uint32(0); i < returned; i++ {
+		info := (*PRINTER_INFO_2)(unsafe.Pointer(&buf[uintptr(i)*infoSize]))
+		if info.PrinterName != nil {
+			name := syscall.UTF16ToString((*[256]uint16)(unsafe.Pointer(info.PrinterName))[:])
+			if name != "" {
+				printers = append(printers, name)
+			}
+		}
+	}
+
+	return printers
 }
 
 func printRawWindows(printerName string, data []byte) error {
