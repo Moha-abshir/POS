@@ -90,19 +90,23 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     let commands = '';
     commands += ESC + '@'; // Initialize printer
     
+    const isHeaderless = localStorage.getItem('receipt_headerless') === 'true';
+
     // ── Header (Centered, Bold) ──
-    commands += ESC + 'a' + '\x01'; // Center align
-    commands += ESC + 'E' + '\x01'; // Bold ON
-    const businessName = meData?.business?.name || 'STORE RECEIPT';
-    commands += businessName.toUpperCase() + '\n';
-    commands += ESC + 'E' + '\x00'; // Bold OFF
-    
-    if (meData?.business?.sector) commands += meData.business.sector.toUpperCase() + '\n';
-    if (meData?.business?.email) commands += meData.business.email + '\n';
-    if (meData?.business?.location) commands += meData.business.location + '\n';
-    if (meData?.business?.phone) commands += 'TEL: ' + meData.business.phone + '\n';
-    if (meData?.business?.tillNumber) commands += 'BUY GOODS : ' + meData.business.tillNumber + '\n';
-    commands += '\n';
+    if (!isHeaderless) {
+      commands += ESC + 'a' + '\x01'; // Center align
+      commands += ESC + 'E' + '\x01'; // Bold ON
+      const businessName = meData?.business?.name || 'STORE RECEIPT';
+      commands += businessName.toUpperCase() + '\n';
+      commands += ESC + 'E' + '\x00'; // Bold OFF
+      
+      if (meData?.business?.sector) commands += meData.business.sector.toUpperCase() + '\n';
+      if (meData?.business?.email) commands += meData.business.email + '\n';
+      if (meData?.business?.location) commands += meData.business.location + '\n';
+      if (meData?.business?.phone) commands += 'TEL: ' + meData.business.phone + '\n';
+      if (meData?.business?.tillNumber) commands += 'BUY GOODS : ' + meData.business.tillNumber + '\n';
+      commands += '\n';
+    }
 
     // ── Sale Type Title ──
     const isCredit = sale.paymentMethod === 'CREDIT' || (Number(sale.amountPaid) < Number(sale.totalAmount));
@@ -391,26 +395,28 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
                 <div className="px-6 py-6 font-mono text-xs leading-relaxed">
                   
                   {/* Store Header (Dynamic Multi-Tenant SaaS) */}
-                  <div className="text-center space-y-0.5 mb-4">
-                    <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-900">
-                      {meData?.business?.name || 'STORE RECEIPT'}
-                    </h3>
-                    {meData?.business?.sector && (
-                      <p className="text-[11px] text-gray-600 uppercase tracking-widest">{meData.business.sector}</p>
-                    )}
-                    {meData?.business?.email && (
-                      <p className="text-[11px] text-gray-600">{meData.business.email}</p>
-                    )}
-                    {meData?.business?.location && (
-                      <p className="text-[11px] text-gray-600">{meData.business.location}</p>
-                    )}
-                    {meData?.business?.phone && (
-                      <p className="text-[11px] text-gray-700 font-bold">TEL: {meData.business.phone}</p>
-                    )}
-                    {meData?.business?.tillNumber && (
-                      <p className="text-[11px] font-extrabold text-gray-900">BUY GOODS : {meData.business.tillNumber}</p>
-                    )}
-                  </div>
+                  {localStorage.getItem('receipt_headerless') !== 'true' && (
+                    <div className="text-center space-y-0.5 mb-4">
+                      <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-900">
+                        {meData?.business?.name || 'STORE RECEIPT'}
+                      </h3>
+                      {meData?.business?.sector && (
+                        <p className="text-[11px] text-gray-600 uppercase tracking-widest">{meData.business.sector}</p>
+                      )}
+                      {meData?.business?.email && (
+                        <p className="text-[11px] text-gray-600">{meData.business.email}</p>
+                      )}
+                      {meData?.business?.location && (
+                        <p className="text-[11px] text-gray-600">{meData.business.location}</p>
+                      )}
+                      {meData?.business?.phone && (
+                        <p className="text-[11px] text-gray-700 font-bold">TEL: {meData.business.phone}</p>
+                      )}
+                      {meData?.business?.tillNumber && (
+                        <p className="text-[11px] font-extrabold text-gray-900">BUY GOODS : {meData.business.tillNumber}</p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Receipt Type */}
                   <div className="text-center my-3">

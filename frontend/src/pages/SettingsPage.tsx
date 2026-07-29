@@ -9,6 +9,7 @@ import { CustomSelect } from '../components/ui/CustomSelect';
 import { MpesaSettingsSection } from './components/MpesaSettingsSection';
 import { AppearanceSettingsSection } from './components/AppearanceSettingsSection';
 import { PrinterSettingsSection } from './components/PrinterSettingsSection';
+import { ReceiptSettingsSection } from './components/ReceiptSettingsSection';
 import { ProductModeSettingsSection } from './components/ProductModeSettingsSection';
 
 export const SettingsPage: React.FC = () => {
@@ -222,6 +223,8 @@ export const SettingsPage: React.FC = () => {
       )}
 
       <PrinterSettingsSection />
+
+      <ReceiptSettingsSection />
 
       <AppearanceSettingsSection />
 
