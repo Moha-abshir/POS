@@ -45,7 +45,7 @@ export const SyncHistoryModal: React.FC<SyncHistoryModalProps> = ({ isOpen, onCl
           <button
             onClick={triggerSync}
             disabled={syncing || !navigator.onLine}
-            className="px-5 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
+            className="px-5 py-2.5 bg-black hover:bg-black text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
           >
             <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
             {syncing ? 'Syncing Now...' : 'Sync Pending Items'}
