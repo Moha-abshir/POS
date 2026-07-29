@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { db } from '../../db/db';
+import { db } from '../../db';
 import { businesses } from '../../db/schema';
 import { eq } from 'drizzle-orm';
-import { AppError } from '../../core/middleware/errorHandler';
+import { AppError } from '../../core/utils/AppError';
 
 export class BusinessesController {
   static async enableBanking(req: Request, res: Response) {
