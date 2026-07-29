@@ -241,7 +241,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                     required
                     value={formData.name}
                     onChange={handleChange}
-                    placeholder="e.g., Dola Maize Flour"
                     className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                   />
                 </div>
@@ -271,7 +270,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                       required
                       value={formData.initialStock}
                       onChange={handleChange}
-                      placeholder="0"
                       className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                     />
                   </div>
@@ -290,7 +288,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                       required
                       value={formData.costPrice}
                       onChange={handleChange}
-                      placeholder="e.g. 6150"
                       className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                     />
                   </div>
@@ -307,7 +304,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                       required
                       value={formData.sellingPrice}
                       onChange={handleChange}
-                      placeholder="e.g. 6350"
                       className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                     />
                   </div>
@@ -325,7 +321,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                       step="0.01"
                       value={formData.minimumPrice}
                       onChange={handleChange}
-                      placeholder="e.g. 6250"
                       className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                     />
                   </div>
@@ -341,7 +336,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                       required
                       value={formData.lowStockThreshold}
                       onChange={handleChange}
-                      placeholder="e.g., 1"
                       className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                     />
                   </div>
@@ -361,7 +355,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                       required
                       value={formData.name}
                       onChange={handleChange}
-                      placeholder="e.g., Portland Cement"
                       className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                     />
                   </div>
@@ -388,7 +381,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                         type="text"
                         value={formData.description}
                         onChange={handleChange}
-                        placeholder="Product details..."
                         className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                       />
                     </div>
@@ -425,7 +417,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                         required
                         value={formData.variantName}
                         onChange={handleChange}
-                        placeholder="e.g., Standard, 50kg"
                         className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                       />
                     </div>
@@ -439,7 +430,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                         required
                         value={formData.baseUnitName}
                         onChange={handleChange}
-                        placeholder="e.g., Piece, Kg, L"
                         className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                       />
                     </div>
@@ -458,7 +448,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                         required
                         value={formData.costPrice}
                         onChange={handleChange}
-                        placeholder="0.00"
                         className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                       />
                     </div>
@@ -473,7 +462,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                         required
                         value={formData.initialStock}
                         onChange={handleChange}
-                        placeholder="0"
                         className="block w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                       />
                     </div>
@@ -490,7 +478,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                       required
                       value={formData.lowStockThreshold}
                       onChange={handleChange}
-                      placeholder="10"
                       className="block w-full sm:w-1/2 h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                     />
                   </div>
@@ -526,7 +513,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                               required
                               value={unit.name}
                               onChange={(e) => handleUnitChange(unit.id, 'name', e.target.value)}
-                              placeholder="e.g. Bag, Box, Pallet"
                               className="block w-full h-9 px-3 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                             />
                           </div>
@@ -542,7 +528,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                               required
                               value={unit.sellingPrice}
                               onChange={(e) => handleUnitChange(unit.id, 'sellingPrice', e.target.value)}
-                              placeholder="0.00"
                               className="block w-full h-9 px-3 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                             />
                           </div>
@@ -565,7 +550,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                               disabled={index === 0 && unit.isDefault}
                               value={unit.conversionFactor}
                               onChange={(e) => handleUnitChange(unit.id, 'conversionFactor', e.target.value)}
-                              placeholder="1"
                               className="block w-full h-9 px-3 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                           </div>

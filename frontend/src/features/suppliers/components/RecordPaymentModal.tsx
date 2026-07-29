@@ -95,7 +95,6 @@ export function RecordPaymentModal({ supplier, onClose }: RecordPaymentModalProp
                 value={amount === '' ? '' : amount}
                 onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))}
                 className="w-full h-10 pl-12 pr-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all shadow-sm"
-                placeholder="0.00"
               />
             </div>
           </div>
@@ -125,7 +124,6 @@ export function RecordPaymentModal({ supplier, onClose }: RecordPaymentModalProp
                 value={mpesaReceiptNumber}
                 onChange={(e) => setMpesaReceiptNumber(e.target.value)}
                 className="w-full h-10 px-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all shadow-sm"
-                placeholder="e.g. QWE123RTY"
                 maxLength={20}
               />
             </div>

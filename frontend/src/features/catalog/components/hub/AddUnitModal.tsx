@@ -76,7 +76,6 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({ isOpen, onClose, pro
               name="name"
               type="text"
               required
-              placeholder="e.g., Dozen"
               value={formData.name}
               onChange={handleChange}
               className="w-full h-10 px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all"
@@ -92,7 +91,6 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({ isOpen, onClose, pro
                 required
                 min="0.0001"
                 step="any"
-                placeholder="e.g., 12"
                 value={formData.conversionFactor}
                 onChange={handleChange}
                 className="w-full h-10 pl-3 pr-12 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] text-[var(--text-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all"

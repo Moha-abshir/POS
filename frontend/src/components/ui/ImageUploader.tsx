@@ -137,7 +137,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ value, onChange, l
               type="text"
               value={value}
               onChange={(e) => onChange(e.target.value)}
-              placeholder="https://example.com/image.jpg"
               className="w-full h-8 px-2 bg-[var(--color-bg-inset)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-[var(--color-text-primary)] text-[var(--text-xs)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
             />
           </div>

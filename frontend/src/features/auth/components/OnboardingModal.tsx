@@ -96,7 +96,6 @@ export const OnboardingModal: React.FC = () => {
                 required
                 value={formData.firstName}
                 onChange={handleChange}
-                placeholder="e.g. John"
                 className="block w-full h-11 px-4 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
               />
             </div>
@@ -111,7 +110,6 @@ export const OnboardingModal: React.FC = () => {
                 required
                 value={formData.lastName}
                 onChange={handleChange}
-                placeholder="e.g. Doe"
                 className="block w-full h-11 px-4 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
               />
             </div>
@@ -126,7 +124,6 @@ export const OnboardingModal: React.FC = () => {
                 required
                 value={formData.mobileNumber}
                 onChange={handleChange}
-                placeholder="e.g. 0712345678 or +254712345678"
                 className="block w-full h-11 px-4 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
               />
             </div>
@@ -150,7 +147,6 @@ export const OnboardingModal: React.FC = () => {
                     required
                     value={formData.organizationName}
                     onChange={handleChange}
-                    placeholder="e.g. Mohammed Shop"
                     className="block w-full h-11 px-4 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                   />
                 </div>
@@ -179,7 +175,6 @@ export const OnboardingModal: React.FC = () => {
                     required
                     value={formData.businessPhone}
                     onChange={handleChange}
-                    placeholder="Store contact number"
                     className="block w-full h-11 px-4 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors"
                   />
                 </div>
@@ -194,7 +189,6 @@ export const OnboardingModal: React.FC = () => {
                     rows={2}
                     value={formData.location}
                     onChange={handleChange}
-                    placeholder="Full store address"
                     className="block w-full p-4 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors resize-none"
                   />
                 </div>

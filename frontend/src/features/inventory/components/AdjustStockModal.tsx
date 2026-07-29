@@ -157,7 +157,6 @@ export function AdjustStockModal({ onClose, initialVariantId }: AdjustStockModal
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
-              placeholder="e.g. Physical count"
             />
           </div>
 

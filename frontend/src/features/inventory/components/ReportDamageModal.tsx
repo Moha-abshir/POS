@@ -154,7 +154,6 @@ export function ReportDamageModal({ onClose }: ReportDamageModalProps) {
                 value={customReason}
                 onChange={(e) => setCustomReason(e.target.value)}
                 className="w-full h-10 px-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all shadow-sm"
-                placeholder="Type specific reason here"
               />
             </div>
           )}
@@ -183,7 +182,6 @@ export function ReportDamageModal({ onClose }: ReportDamageModalProps) {
               value={quantity === '' ? '' : quantity}
               onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
               className="w-full h-10 px-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all shadow-sm"
-              placeholder="e.g., 5"
             />
             {typeof quantity === 'number' && selectedVariant && (
               (() => {
@@ -210,7 +208,6 @@ export function ReportDamageModal({ onClose }: ReportDamageModalProps) {
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all resize-none shadow-sm"
-              placeholder="Provide specific context or audit trails..."
             />
           </div>
 

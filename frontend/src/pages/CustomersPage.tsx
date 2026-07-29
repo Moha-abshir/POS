@@ -221,7 +221,6 @@ export const CustomersPage = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--color-text-muted)]" />
             <input
               type="text"
-              placeholder="Search by name or phone..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);

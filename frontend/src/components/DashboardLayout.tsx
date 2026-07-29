@@ -420,7 +420,6 @@ export const DashboardLayout: React.FC = () => {
                       type="number" 
                       value={openingFloat}
                       onChange={(e) => setOpeningFloat(e.target.value)}
-                      placeholder="e.g. 5,000"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] font-semibold text-gray-900"
                     />
                   </div>
@@ -527,7 +526,6 @@ export const DashboardLayout: React.FC = () => {
                       <textarea
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Add any notes about this shift close..."
                         className="w-full p-2 border border-gray-300 rounded-lg text-xs font-normal focus:outline-none text-gray-900 bg-white"
                         rows={2}
                       />

@@ -217,7 +217,6 @@ export const ProductHubModal: React.FC<ProductHubModalProps> = ({ isOpen, onClos
                         type="text"
                         value={variantNameInput}
                         onChange={(e) => setVariantNameInput(e.target.value)}
-                        placeholder="e.g. Size L, Blue"
                         className="w-full h-9 bg-white border border-gray-200 text-gray-900 text-xs md:text-sm rounded-lg px-3 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       />
                     </div>

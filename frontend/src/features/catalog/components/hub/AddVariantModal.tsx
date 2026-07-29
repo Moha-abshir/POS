@@ -169,7 +169,6 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                     required
                     value={formData.name}
                     onChange={handleChange}
-                    placeholder="e.g. Red, XL, 500ML"
                     className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
                   />
                 </div>
@@ -185,7 +184,6 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                     value={formData.costPrice}
                     onChange={handleChange}
                     className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm font-mono"
-                    placeholder="0.00"
                   />
                 </div>
                 
@@ -198,7 +196,6 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                     value={formData.initialStock}
                     onChange={handleChange}
                     className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm font-mono"
-                    placeholder="0"
                   />
                 </div>
  
@@ -211,7 +208,6 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                     value={formData.lowStockThreshold}
                     onChange={handleChange}
                     className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm font-mono"
-                    placeholder="0"
                   />
                 </div>
               </div>
@@ -273,7 +269,6 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                                 handleUnitChange(unit.id, 'name', e.target.value);
                                 if (index === 0) setFormData(prev => ({...prev, baseUnitName: e.target.value}));
                               }}
-                              placeholder={index === 0 ? "e.g. Piece" : "e.g. Dozen"}
                               required
                               className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
                             />
@@ -288,7 +283,6 @@ export const AddVariantModal: React.FC<AddVariantModalProps> = ({ isOpen, onClos
                               step="0.01"
                               value={unit.sellingPrice}
                               onChange={(e) => handleUnitChange(unit.id, 'sellingPrice', e.target.value)}
-                              placeholder="0.00"
                               required
                               className={`w-full bg-white border text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm font-mono ${isNegative ? 'border-red-300 text-red-900' : 'border-gray-200 text-gray-900'}`}
                             />

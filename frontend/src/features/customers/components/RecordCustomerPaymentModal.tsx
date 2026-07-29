@@ -357,7 +357,6 @@ export function RecordCustomerPaymentModal({ customer, onClose }: RecordCustomer
                 value={amount === '' ? '' : amount}
                 onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))}
                 className="w-full h-10 pl-12 pr-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-sm"
-                placeholder="0.00"
               />
             </div>
           </div>
@@ -414,7 +413,6 @@ export function RecordCustomerPaymentModal({ customer, onClose }: RecordCustomer
                       value={mpesaPhoneNumber}
                       onChange={(e) => setMpesaPhoneNumber(e.target.value)}
                       className="w-full h-10 pl-10 pr-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-sm"
-                      placeholder="e.g. 07XXXXXXXX"
                     />
                   </div>
                 </div>
@@ -429,7 +427,6 @@ export function RecordCustomerPaymentModal({ customer, onClose }: RecordCustomer
                     value={mpesaReceiptNumber}
                     onChange={(e) => setMpesaReceiptNumber(e.target.value)}
                     className="w-full h-10 px-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-sm"
-                    placeholder="e.g. QWE123RTY"
                     maxLength={20}
                   />
                 </div>

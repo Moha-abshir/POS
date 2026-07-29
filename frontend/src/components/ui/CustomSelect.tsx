@@ -93,7 +93,6 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full h-8 pl-8 pr-3 text-sm bg-gray-50 border border-gray-200 rounded outline-none focus:border-[var(--color-accent)]"

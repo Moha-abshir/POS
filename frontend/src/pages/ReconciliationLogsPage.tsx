@@ -504,7 +504,6 @@ export const ReconciliationLogsPage: React.FC = () => {
                               <textarea
                                 value={resNotes}
                                 onChange={(e) => setResNotes(e.target.value)}
-                                placeholder="Describe why or how this discrepancy was settled..."
                                 className="w-full p-2 border border-gray-300 rounded-lg text-xs font-normal focus:outline-none text-gray-900 bg-white"
                                 rows={2}
                               />

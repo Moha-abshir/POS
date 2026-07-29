@@ -82,7 +82,6 @@ export const LoginForm: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="block w-full h-10 pl-10 pr-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] transition-colors text-[var(--color-text-primary)] outline-none focus:ring-4"
-                placeholder="owner@store.com"
               />
             </div>
           </div>
@@ -118,7 +117,6 @@ export const LoginForm: React.FC = () => {
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                 className="block w-full h-10 pl-10 pr-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-lg)] tracking-[0.4em] font-mono transition-colors text-[var(--color-text-primary)] outline-none focus:ring-4"
-                placeholder="123456"
               />
             </div>
           </div>

@@ -84,7 +84,6 @@ export function SupplierModal({ isOpen, onClose, supplier }: SupplierModalProps)
             <input
               {...register('name', { required: true })}
               className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
-              placeholder="e.g. Acme Hardware"
             />
           </div>
           
@@ -93,7 +92,6 @@ export function SupplierModal({ isOpen, onClose, supplier }: SupplierModalProps)
             <input
               {...register('phone')}
               className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
-              placeholder="e.g. 0700 000 000"
             />
           </div>
 
@@ -103,7 +101,6 @@ export function SupplierModal({ isOpen, onClose, supplier }: SupplierModalProps)
               type="email"
               {...register('email')}
               className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
-              placeholder="e.g. contact@acme.com"
             />
           </div>
 

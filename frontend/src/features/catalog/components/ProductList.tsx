@@ -77,7 +77,6 @@ export const ProductList: React.FC<ProductListProps> = ({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input 
             type="text" 
-            placeholder="Search products by name or SKU..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full h-10 pl-9 pr-4 bg-white border border-gray-200 rounded-md text-sm text-gray-900 outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all shadow-sm placeholder:text-gray-400"

@@ -194,7 +194,6 @@ export function RefundModal({ sale, onClose }: RefundModalProps) {
                         step="any"
                         value={isSelected ? inputQty : ''}
                         disabled={!isSelected}
-                        placeholder={maxQty.toString()}
                         onChange={(e) => handleQtyChange(item, e.target.value)}
                         className="w-18 h-9 text-center bg-white border border-gray-300 rounded-[var(--radius-md)] text-sm font-semibold text-gray-900 outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400"
                       />
@@ -210,7 +209,6 @@ export function RefundModal({ sale, onClose }: RefundModalProps) {
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Refund Reason</label>
             <textarea
-              placeholder="Provide a reason for the return (e.g. damaged goods, wrong order)..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}

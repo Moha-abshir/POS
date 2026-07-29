@@ -146,7 +146,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
                 <label className="block text-xs font-medium text-gray-600 mb-1">Full Name *</label>
                 <input
                   type="text"
-                  placeholder={formData.type === 'BUSINESS' ? "e.g., Acme Hardware Ltd" : formData.type === 'EMPLOYEE' ? "e.g., Jane Wanjiku (Staff)" : "e.g., John Kamau"}
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400"
@@ -158,7 +157,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., 0712 345 678"
                   value={formData.phone}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                   className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400"
@@ -186,7 +184,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
                     type="number"
                     min="0"
                     step="any"
-                    placeholder="e.g., 30000"
                     value={formData.baseSalary}
                     onChange={(e) => setFormData(prev => ({ ...prev, baseSalary: e.target.value }))}
                     className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400"
@@ -213,7 +210,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
                   type="number"
                   min="0"
                   step="any"
-                  placeholder="0.00"
                   value={formData.amountOwed}
                   onChange={(e) => setFormData(prev => ({ ...prev, amountOwed: e.target.value }))}
                   className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400"
@@ -274,7 +270,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="e.g., Contractor, usually buys in bulk"
                   value={formData.notes}
                   onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                   className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400 resize-none"

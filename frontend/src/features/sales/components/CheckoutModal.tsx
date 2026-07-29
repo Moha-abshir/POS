@@ -620,7 +620,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
                             setMpesaAmount(rem);
                           }
                         }}
-                        placeholder="0"
                         className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all shadow-sm text-sm font-bold"
                       />
                     </div>
@@ -641,7 +640,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
                             setCashAmount(rem);
                           }
                         }}
-                        placeholder="0"
                         className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all shadow-sm text-sm font-bold"
                       />
                     </div>
@@ -705,7 +703,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
                         type="text"
                         value={mpesaRef}
                         onChange={(e) => setMpesaRef(e.target.value.toUpperCase())}
-                        placeholder="e.g. SGT8WQ12A"
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#D97706] focus:border-transparent outline-none transition-all shadow-sm text-sm"
                       />
                     </div>
@@ -718,7 +715,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
                       type="text"
                       value={mpesaPhoneNumber}
                       onChange={(e) => setMpesaPhoneNumber(e.target.value)}
-                      placeholder="e.g. 254712345678"
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#D97706] focus:border-transparent outline-none transition-all shadow-sm text-sm"
                       required={isStkPush}
                     />

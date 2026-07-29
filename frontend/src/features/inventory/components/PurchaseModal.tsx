@@ -285,7 +285,6 @@ export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps)
                       required
                       min="0"
                       step="any"
-                      placeholder="0.00"
                       value={item.costPrice === '' ? '' : item.costPrice}
                       onChange={(e) => {
                         const newItems = [...items];
@@ -348,7 +347,6 @@ export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps)
                     type="number"
                     min="0"
                     step="any"
-                    placeholder="0.00"
                     value={amountPaid === '' ? '' : amountPaid}
                     onChange={(e) => setAmountPaid(e.target.value === '' ? '' : Number(e.target.value))}
                     className="w-full h-10 px-3 bg-white border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"
@@ -377,7 +375,6 @@ export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps)
                     <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">M-Pesa Ref</label>
                     <input
                       type="text"
-                      placeholder="e.g. QWE123RTY"
                       value={mpesaRef}
                       onChange={(e) => setMpesaRef(e.target.value)}
                       className="w-full h-10 px-3 bg-white border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all uppercase"
@@ -392,7 +389,6 @@ export function PurchaseModal({ onClose, initialVariantId }: PurchaseModalProps)
               <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Invoice Ref (Optional)</label>
               <input
                 type="text"
-                placeholder="e.g. INV-2023-001"
                 value={invoiceRef}
                 onChange={(e) => setInvoiceRef(e.target.value)}
                 className="w-full h-10 px-3 bg-[var(--color-bg-sunken)] border border-transparent rounded-[var(--radius-sm)] text-sm text-[var(--color-text-primary)] outline-none focus:bg-white focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-all"

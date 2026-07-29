@@ -133,7 +133,6 @@ export function SalesPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-amber-500 transition-colors" size={20} />
             <input
               type="text"
-              placeholder="Search receipts, customers, or amounts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-12 pl-12 pr-4 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium placeholder:text-gray-400 text-gray-900 outline-none focus:bg-white focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition-all shadow-sm"
@@ -222,8 +221,7 @@ export function SalesPage() {
                     <div>
                       <label className="block text-[10px] font-extrabold text-gray-500 mb-1.5 uppercase tracking-wider">M-Pesa Reference</label>
                       <input 
-                        type="text" 
-                        placeholder="e.g. SGT8WQ12A"
+                        type="text"
                         value={tempFilters.mpesaRef}
                         onChange={(e) => setTempFilters({...tempFilters, mpesaRef: e.target.value})}
                         className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all uppercase"
