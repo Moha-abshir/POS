@@ -37,7 +37,7 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = ({ variant = 'pill' }
     <>
       <button
         onClick={() => setModalOpen(true)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-full border bg-white border-gray-200 hover:bg-gray-50 text-gray-700 shadow-sm text-xs font-semibold transition-all hover:scale-105 active:scale-95 cursor-pointer"
+        className="flex items-center gap-2 px-4 py-2 bg-black text-white font-semibold rounded-[var(--radius-md)] cursor-pointer select-none text-xs"
       >
         {syncing ? (
           <>

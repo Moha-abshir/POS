@@ -83,4 +83,27 @@ export class CustomersController {
       next(error);
     }
   }
+
+  static async recordBankingTransaction(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await CustomersService.recordBankingTransaction(
+        req.user!.businessId,
+        req.user!.id,
+        req.params.id as string,
+        req.body
+      );
+      res.status(200).json({ status: 'success', message: 'Banking transaction recorded successfully', data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getCustomerLedger(req: Request, res: Response, next: NextFunction) {
+    try {
+      const ledger = await CustomersService.getCustomerLedger(req.user!.businessId, req.params.id as string);
+      res.status(200).json({ status: 'success', message: 'Customer ledger retrieved successfully', data: ledger });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

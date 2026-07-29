@@ -14,5 +14,7 @@ router.delete('/:id', CustomersController.deleteCustomer);
 router.get('/:id/purchases', CustomersController.getCustomerPurchases);
 router.post('/:id/payments', CustomersController.recordPayment);
 router.get('/:id/payments', CustomersController.getCustomerPayments);
+router.post('/:id/banking', CustomersController.recordBankingTransaction);
+router.get('/:id/ledger', CustomersController.getCustomerLedger);
 
 export default router;

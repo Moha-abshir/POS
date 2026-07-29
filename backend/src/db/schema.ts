@@ -26,6 +26,7 @@ export const businesses = pgTable('businesses', {
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   approvedBy: uuid('approved_by').references(() => admins.id, { onDelete: 'set null' }),
   productMode: varchar('product_mode', { length: 50 }).notNull().default('ADVANCED'),
+  isBankingEnabled: boolean('is_banking_enabled').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
 });
@@ -486,4 +487,18 @@ export const notifications = pgTable('notifications', {
   isReadIdx: index('notifications_is_read_idx').on(table.isRead),
 }));
 
-
+export const bankingTransactions = pgTable('banking_transactions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  customerId: uuid('customer_id').notNull().references(() => customers.id, { onDelete: 'restrict' }),
+  type: varchar('type', { length: 20 }).notNull(), // 'DEPOSIT' or 'WITHDRAWAL'
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  balanceAfter: decimal('balance_after', { precision: 12, scale: 2 }).notNull(),
+  notes: text('notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  createdBy: uuid('created_by').references(() => users.id),
+}, (table) => ({
+  businessIdx: index('banking_transactions_business_idx').on(table.businessId),
+  customerIdx: index('banking_transactions_customer_idx').on(table.customerId),
+  createdAtIdx: index('banking_transactions_created_at_idx').on(table.createdAt),
+}));

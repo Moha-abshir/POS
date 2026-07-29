@@ -141,6 +141,13 @@
       "when": 1785135755144,
       "tag": "0019_demonic_harrier",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1785308409947,
+      "tag": "0020_first_forgotten_one",
+      "breakpoints": true
     }
   ]
 }

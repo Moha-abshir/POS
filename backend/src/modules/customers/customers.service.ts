@@ -1,6 +1,6 @@
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { eq, and, sql, desc, inArray } from 'drizzle-orm';
 import { db } from '../../db';
-import { customers, sales, payments } from '../../db/schema';
+import { customers, sales, payments, bankingTransactions } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 import { getCache, setCache, flushPattern } from '../../core/cache/redis';
 
@@ -394,5 +394,127 @@ export class CustomersService {
         eq(payments.status, 'COMPLETED')
       ))
       .orderBy(desc(payments.paidAt));
+  }
+
+  static async recordBankingTransaction(
+    businessId: string,
+    userId: string,
+    customerId: string,
+    data: { type: 'DEPOSIT' | 'WITHDRAWAL'; amount: number; notes?: string }
+  ) {
+    if (data.amount <= 0) throw new AppError('Amount must be greater than zero', 400);
+
+    return await db.transaction(async (tx) => {
+      const [customer] = await tx.select()
+        .from(customers)
+        .where(and(eq(customers.id, customerId), eq(customers.businessId, businessId)));
+
+      if (!customer) throw new AppError('Customer not found', 404);
+
+      const balanceNum = Number(customer.balance);
+      let newBalance = balanceNum;
+
+      if (data.type === 'WITHDRAWAL') {
+        newBalance = balanceNum + data.amount;
+      } else if (data.type === 'DEPOSIT') {
+        newBalance = balanceNum - data.amount;
+      }
+
+      const [updatedCustomer] = await tx.update(customers)
+        .set({
+          balance: newBalance.toString(),
+          hasActiveCredit: newBalance > 0,
+          updatedAt: new Date()
+        })
+        .where(eq(customers.id, customerId))
+        .returning();
+
+      const [transaction] = await tx.insert(bankingTransactions).values({
+        businessId,
+        customerId,
+        type: data.type,
+        amount: data.amount.toString(),
+        balanceAfter: newBalance.toString(),
+        notes: data.notes,
+        createdBy: userId,
+      }).returning();
+
+      return { transaction, customer: updatedCustomer };
+    });
+  }
+
+  static async getCustomerLedger(businessId: string, customerId: string) {
+    const salesList = await db.select().from(sales).where(and(eq(sales.businessId, businessId), eq(sales.customerId, customerId)));
+    const saleIds = salesList.map(s => s.id);
+    
+    let salePaymentsList: any[] = [];
+    if (saleIds.length > 0) {
+      salePaymentsList = await db.select().from(payments).where(and(
+        eq(payments.businessId, businessId), 
+        eq(payments.referenceType, 'SALE'), 
+        inArray(payments.referenceId, saleIds),
+        eq(payments.status, 'COMPLETED')
+      ));
+    }
+
+    const [debtPaymentsList, bankingList] = await Promise.all([
+      db.select().from(payments).where(and(eq(payments.businessId, businessId), eq(payments.referenceType, 'CUSTOMER_DEBT'), eq(payments.referenceId, customerId), eq(payments.status, 'COMPLETED'))),
+      db.select().from(bankingTransactions).where(and(eq(bankingTransactions.businessId, businessId), eq(bankingTransactions.customerId, customerId)))
+    ]);
+
+    const ledger: any[] = [];
+    
+    salesList.forEach(s => {
+      const sp = salePaymentsList.filter(p => p.referenceId === s.id);
+      const initialAmountPaid = sp.reduce((sum, p) => sum + Number(p.amount), 0);
+      const debt = Number(s.totalAmount) - initialAmountPaid;
+      
+      if (debt > 0) {
+        ledger.push({
+          id: s.id,
+          date: s.soldAt,
+          transNo: s.id.substring(0, 8).toUpperCase(),
+          type: 'SALE_CREDIT',
+          loan: debt,
+          payment: 0,
+          notes: 'Credit Sale'
+        });
+      }
+    });
+
+    debtPaymentsList.forEach(p => {
+      ledger.push({
+        id: p.id,
+        date: p.paidAt,
+        transNo: p.mpesaReceiptNumber || p.id.substring(0, 8).toUpperCase(),
+        type: 'CUSTOMER_DEBT_PAYMENT',
+        loan: 0,
+        payment: Number(p.amount),
+        notes: `Payment (${p.method})`
+      });
+    });
+
+    bankingList.forEach(b => {
+      ledger.push({
+        id: b.id,
+        date: b.createdAt,
+        transNo: b.id.substring(0, 8).toUpperCase(),
+        type: b.type === 'DEPOSIT' ? 'BANKING_DEPOSIT' : 'BANKING_WITHDRAWAL',
+        loan: b.type === 'WITHDRAWAL' ? Number(b.amount) : 0,
+        payment: b.type === 'DEPOSIT' ? Number(b.amount) : 0,
+        notes: b.notes || (b.type === 'DEPOSIT' ? 'Deposit' : 'Withdrawal')
+      });
+    });
+
+    ledger.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    let runningBalance = 0;
+    ledger.forEach(entry => {
+      runningBalance += entry.loan;
+      runningBalance -= entry.payment;
+      entry.runningBalance = runningBalance;
+    });
+
+    return ledger.reverse();
   }
 }

@@ -19,7 +19,8 @@ import {
   RefreshCw,
   Calculator,
   AlertTriangle,
-  Menu
+  Menu,
+  Landmark
 } from 'lucide-react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { api } from '../lib/api';
@@ -41,6 +42,9 @@ export const DashboardLayout: React.FC = () => {
       { name: 'Customers', path: '/customers', icon: Users },
       { name: 'Team', path: '/team', icon: Contact },
       { name: 'Reports', path: '/reports', icon: FileText }
+    ] : []),
+    ...(user?.isBankingEnabled ? [
+      { name: 'Banking', path: '/banking', icon: Landmark }
     ] : [])
   ];
 

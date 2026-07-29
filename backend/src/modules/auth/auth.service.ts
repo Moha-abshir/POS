@@ -82,6 +82,7 @@ export class AuthService {
       let [user] = await tx.select().from(users).where(eq(users.email, email));
       let businessId: string;
       let isSetupComplete = false;
+      let isBankingEnabled = false;
       let businessName = 'Smart Store POS';
       let businessStatus = 'pending';
 
@@ -92,6 +93,7 @@ export class AuthService {
 
         businessId = newBusiness.id;
         isSetupComplete = newBusiness.isSetupComplete;
+        isBankingEnabled = newBusiness.isBankingEnabled;
         businessStatus = newBusiness.status;
 
         const [newUser] = await tx.insert(users).values({
@@ -109,6 +111,7 @@ export class AuthService {
         const [business] = await tx.select().from(businesses).where(eq(businesses.id, businessId));
         if (business) {
           isSetupComplete = business.isSetupComplete;
+          isBankingEnabled = business.isBankingEnabled;
           businessName = business.name;
           businessStatus = business.status;
         }
@@ -146,6 +149,7 @@ export class AuthService {
           businessId: user.businessId,
           businessName,
           isSetupComplete,
+          isBankingEnabled,
           businessStatus
         }
       };

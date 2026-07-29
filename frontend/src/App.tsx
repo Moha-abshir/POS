@@ -12,6 +12,7 @@ import { PosPage } from './pages/PosPage';
 import { SalesPage } from './pages/SalesPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { BankingPage } from './pages/BankingPage';
 import { ReconciliationLogsPage } from './pages/ReconciliationLogsPage';
 
 // Import New Pages
@@ -160,6 +161,7 @@ function App() {
             <Route path="/purchasing" element={<PurchasingPage />} />
             <Route path="/sales" element={<SalesPage />} />
             <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/banking" element={user?.isBankingEnabled ? <BankingPage /> : <Navigate to="/" replace />} />
             
             {/* 404 Catch-all */}
             <Route path="*" element={<NotFound />} />

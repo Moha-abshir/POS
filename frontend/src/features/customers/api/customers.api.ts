@@ -165,13 +165,23 @@ export const customersApi = {
     return data.data;
   },
 
-  recordPayment: async (id: string, paymentData: { amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string }) => {
-    const { data } = await api.post(`/customers/${id}/payments`, paymentData);
+  recordPayment: async (id: string, data: { amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string }) => {
+    const response = await api.post(`/customers/${id}/payments`, data);
+    return response.data;
+  },
+  
+  getCustomerPayments: async (id: string) => {
+    const { data } = await api.get(`/customers/${id}/payments`);
     return data.data;
   },
 
-  getCustomerPayments: async (id: string) => {
-    const { data } = await api.get(`/customers/${id}/payments`);
+  recordBankingTransaction: async (id: string, data: { type: 'DEPOSIT' | 'WITHDRAWAL'; amount: number; notes?: string }) => {
+    const response = await api.post(`/customers/${id}/banking`, data);
+    return response.data;
+  },
+  
+  getCustomerLedger: async (id: string) => {
+    const { data } = await api.get(`/customers/${id}/ledger`);
     return data.data;
   },
 
@@ -261,3 +271,24 @@ export const useCustomerPayments = (id?: string) => {
     enabled: !!id,
   });
 };
+
+export const useRecordBankingTransaction = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string; type: 'DEPOSIT' | 'WITHDRAWAL'; amount: number; notes?: string }) => 
+      customersApi.recordBankingTransaction(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'ledger'] });
+    },
+  });
+};
+
+export const useCustomerLedger = (id?: string) => {
+  return useQuery<any[]>({
+    queryKey: ['customers', id, 'ledger'],
+    queryFn: () => id ? customersApi.getCustomerLedger(id) : Promise.resolve([]),
+    enabled: !!id,
+  });
+};
+

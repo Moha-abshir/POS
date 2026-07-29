@@ -530,7 +530,7 @@ export const PosPage = () => {
           <button 
             disabled={cart.length === 0 || hasStockError}
             onClick={handleCheckoutClick}
-            className="w-full h-14 bg-black hover:bg-black disabled:bg-gray-200 disabled:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base rounded-2xl transition-all shadow-lg flex justify-center items-center gap-2 cursor-pointer active:scale-[0.98]"
+            className="w-full py-3.5 bg-black disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold text-base rounded-[var(--radius-md)] cursor-pointer select-none flex justify-center items-center gap-2"
           >
             <span>{hasStockError ? 'Stock Exceeded' : 'Proceed to Checkout'}</span>
             {!hasStockError && <ArrowRight className="w-5 h-5" />}

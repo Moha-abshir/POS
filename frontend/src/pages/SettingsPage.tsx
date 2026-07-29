@@ -11,6 +11,7 @@ import { AppearanceSettingsSection } from './components/AppearanceSettingsSectio
 import { PrinterSettingsSection } from './components/PrinterSettingsSection';
 import { ReceiptSettingsSection } from './components/ReceiptSettingsSection';
 import { ProductModeSettingsSection } from './components/ProductModeSettingsSection';
+import { BankingSettingsSection } from './components/BankingSettingsSection';
 
 export const SettingsPage: React.FC = () => {
   const { user, accessToken, setAuth } = useAuthStore();
@@ -220,6 +221,10 @@ export const SettingsPage: React.FC = () => {
 
       {user?.role === 'OWNER' && (
         <ProductModeSettingsSection />
+      )}
+
+      {user?.role === 'OWNER' && (
+        <BankingSettingsSection />
       )}
 
       <PrinterSettingsSection />

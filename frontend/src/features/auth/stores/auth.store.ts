@@ -13,6 +13,7 @@ interface User {
   businessId?: string;
   businessName?: string;
   isSetupComplete?: boolean;
+  isBankingEnabled?: boolean;
   businessStatus?: string;
   type?: 'user' | 'admin';
 }
