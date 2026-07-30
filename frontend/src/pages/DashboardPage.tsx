@@ -635,11 +635,11 @@ export const DashboardPage: React.FC = () => {
                   <div key={item.id} className="border border-gray-100 rounded-lg p-3 space-y-1 hover:bg-gray-50/50 transition-colors">
                     <div className="flex justify-between text-xs font-bold text-gray-900">
                       <span>{item.productName}</span>
-                      <span className="text-red-600 font-bold">{Number(item.stock).toFixed(0)} left</span>
+                      <span className="text-red-600 font-bold">{Number(item.baseStockQuantity).toFixed(0)} left</span>
                     </div>
                     <div className="flex justify-between text-[10px] text-gray-400">
                       <span>Variant: {item.variantName} {item.sku ? `• SKU: ${item.sku}` : ''}</span>
-                      <span>Threshold: {Number(item.threshold).toFixed(0)}</span>
+                      <span>Threshold: {Number(item.lowStockThreshold).toFixed(0)}</span>
                     </div>
                   </div>
                 ))
