@@ -89,6 +89,7 @@ export class SalesService {
   static async getSaleDetails(businessId: string, saleId: string) {
     const [sale] = await db.select({
       id: sales.id,
+      customerId: sales.customerId,
       totalAmount: sales.totalAmount,
       amountPaid: sales.amountPaid,
       discountAmount: sales.discountAmount,
@@ -99,6 +100,7 @@ export class SalesService {
       soldAt: sales.soldAt,
       customerName: customers.name,
       customerPhone: customers.phone,
+      customerBalance: customers.balance,
     })
       .from(sales)
       .leftJoin(customers, eq(sales.customerId, customers.id))

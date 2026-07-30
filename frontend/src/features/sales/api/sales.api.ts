@@ -208,6 +208,7 @@ export const salesApi = {
           paymentMethod: p.paymentMethod || 'CASH',
           soldAt: p.soldAt || new Date().toISOString(),
           customerName: 'Offline Customer',
+          customerId: p.customerId,
           items: p.items?.map((item: any) => ({
             id: item.variantId,
             variantId: item.variantId,

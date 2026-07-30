@@ -168,7 +168,9 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     const currentTotal = Number(sale.totalAmount || 0);
     const paidAmount = Number(sale.amountPaid || 0);
     const addedCredit = Math.max(0, currentTotal - paidAmount);
-    const currentCustBal = Number(customerDetails?.balance || 0);
+    const currentCustBal = sale?.customerBalance !== undefined && sale?.customerBalance !== null
+      ? Number(sale.customerBalance)
+      : Number(customerDetails?.balance || 0);
     const prevBal = Math.max(0, currentCustBal - addedCredit);
     const totalBal = currentCustBal > 0 ? currentCustBal : (prevBal + addedCredit);
 
@@ -263,7 +265,11 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
   const currentTotal = sale ? Number(sale.totalAmount || 0) : 0;
   const paidAmount = sale ? Number(sale.amountPaid || 0) : 0;
   const addedCredit = Math.max(0, currentTotal - paidAmount);
-  const currentCustBal = Number(customerDetails?.balance || 0);
+  // currentCustBal should be the balance from the sale (if available) or fallback to fetched details
+  const currentCustBal = sale?.customerBalance !== undefined && sale?.customerBalance !== null 
+    ? Number(sale.customerBalance) 
+    : Number(customerDetails?.balance || 0);
+
   const prevBal = Math.max(0, currentCustBal - addedCredit);
   const totalBal = currentCustBal > 0 ? currentCustBal : (prevBal + addedCredit);
 

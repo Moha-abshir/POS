@@ -161,7 +161,7 @@ function App() {
             <Route path="/purchasing" element={<PurchasingPage />} />
             <Route path="/sales" element={<SalesPage />} />
             <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/banking" element={user?.isBankingEnabled ? <BankingPage /> : <Navigate to="/" replace />} />
+            <Route path="/banking" element={user?.role === 'OWNER' && user?.isBankingEnabled ? <BankingPage /> : <Navigate to="/" replace />} />
             
             {/* 404 Catch-all */}
             <Route path="*" element={<NotFound />} />

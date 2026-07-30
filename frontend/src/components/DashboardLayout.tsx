@@ -43,7 +43,7 @@ export const DashboardLayout: React.FC = () => {
       { name: 'Team', path: '/team', icon: Contact },
       { name: 'Reports', path: '/reports', icon: FileText }
     ] : []),
-    ...(user?.isBankingEnabled ? [
+    ...(user?.role === 'OWNER' && user?.isBankingEnabled ? [
       { name: 'Banking', path: '/banking', icon: Landmark }
     ] : [])
   ];
