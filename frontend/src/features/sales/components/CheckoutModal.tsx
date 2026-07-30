@@ -67,10 +67,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
     onCloseRef.current();
   };
 
-  // Reset amount paid to total when not a credit sale
+  // Reset amount paid to total when not a credit sale, or 0 when credit sale
   useEffect(() => {
     if (!isCreditSale) {
       setAmountPaid(totalAmount);
+    } else {
+      setAmountPaid(0);
     }
   }, [isCreditSale, totalAmount]);
 
@@ -85,16 +87,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
       if (!isCreditSale) {
         setCashAmount(totalAmount);
         setMpesaAmount(0);
+      } else {
+        setCashAmount(0);
+        setMpesaAmount(0);
       }
     }
   }, [isCreditSale, paymentMethod, totalAmount]);
-
-  useEffect(() => {
-    if (paymentMethod === 'SPLIT') {
-      setCashAmount(totalAmount);
-      setMpesaAmount(0);
-    }
-  }, [paymentMethod, totalAmount]);
 
   const createSaleMutation = useMutation({
     mutationFn: salesApi.createSale,
