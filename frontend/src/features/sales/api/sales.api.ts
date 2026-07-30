@@ -14,6 +14,8 @@ export interface Sale {
   mpesaRef?: string;
   soldAt: string;
   customerName?: string;
+  customerBalance?: number | string;
+  customerBalanceAtSale?: number | string;
 }
 
 export interface SaleItemData {
@@ -83,10 +85,19 @@ export const salesApi = {
           // Remove undefined values to prevent DataCloneError in IndexedDB
           const cleanSaleData = JSON.parse(JSON.stringify(saleData));
 
+          let customerBalanceAtSale = 0;
+          if (saleData.customerId) {
+            const customer = await db.customers.get(saleData.customerId);
+            if (customer) {
+              customerBalanceAtSale = Number(customer.balance) || 0;
+            }
+          }
+
           // 1. Queue the transaction in Dexie syncQueue
           console.log('[Offline Sync] Writing checkout details to Dexie queue...');
           await queueManager.addToQueue('SALE', {
             ...cleanSaleData,
+            customerBalanceAtSale,
             localId,
             soldAt: new Date().toISOString()
           }, localId);
@@ -209,6 +220,7 @@ export const salesApi = {
           soldAt: p.soldAt || new Date().toISOString(),
           customerName: 'Offline Customer',
           customerId: p.customerId,
+          customerBalanceAtSale: p.customerBalanceAtSale,
           items: p.items?.map((item: any) => ({
             id: item.variantId,
             variantId: item.variantId,

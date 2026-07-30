@@ -168,12 +168,20 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     const currentTotal = Number(sale.totalAmount || 0);
     const paidAmount = Number(sale.amountPaid || 0);
     const addedCredit = Math.max(0, currentTotal - paidAmount);
-    const currentCustBal = sale?.customerBalance !== undefined && sale?.customerBalance !== null
-      ? Number(sale.customerBalance)
-      : Number(customerDetails?.balance || 0);
-    const prevBal = Math.max(0, currentCustBal - addedCredit);
-    const totalBal = currentCustBal > 0 ? currentCustBal : (prevBal + addedCredit);
-
+    let prevBal = 0;
+    let totalBal = 0;
+    
+    if (sale?.customerBalanceAtSale !== undefined && sale?.customerBalanceAtSale !== null) {
+      prevBal = Number(sale.customerBalanceAtSale);
+      totalBal = prevBal + addedCredit;
+    } else {
+      // Fallback for older receipts
+      const currentCustBal = sale?.customerBalance !== undefined && sale?.customerBalance !== null
+        ? Number(sale.customerBalance)
+        : Number(customerDetails?.balance || 0);
+      prevBal = Math.max(0, currentCustBal - addedCredit);
+      totalBal = currentCustBal > 0 ? currentCustBal : (prevBal + addedCredit);
+    }
     commands += alignRow('Total Amount', currentTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
     commands += alignRow('Amount Paid', paidAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
@@ -265,13 +273,20 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
   const currentTotal = sale ? Number(sale.totalAmount || 0) : 0;
   const paidAmount = sale ? Number(sale.amountPaid || 0) : 0;
   const addedCredit = Math.max(0, currentTotal - paidAmount);
-  // currentCustBal should be the balance from the sale (if available) or fallback to fetched details
-  const currentCustBal = sale?.customerBalance !== undefined && sale?.customerBalance !== null 
-    ? Number(sale.customerBalance) 
-    : Number(customerDetails?.balance || 0);
-
-  const prevBal = Math.max(0, currentCustBal - addedCredit);
-  const totalBal = currentCustBal > 0 ? currentCustBal : (prevBal + addedCredit);
+  let prevBal = 0;
+  let totalBal = 0;
+  
+  if (sale?.customerBalanceAtSale !== undefined && sale?.customerBalanceAtSale !== null) {
+    prevBal = Number(sale.customerBalanceAtSale);
+    totalBal = prevBal + addedCredit;
+  } else {
+    // Fallback for older receipts
+    const currentCustBal = sale?.customerBalance !== undefined && sale?.customerBalance !== null 
+      ? Number(sale.customerBalance) 
+      : Number(customerDetails?.balance || 0);
+    prevBal = Math.max(0, currentCustBal - addedCredit);
+    totalBal = currentCustBal > 0 ? currentCustBal : (prevBal + addedCredit);
+  }
 
   const invoiceNo = sale ? `#${sale.id.slice(0, 8).toUpperCase()}` : '';
   const customerName = sale ? (sale.customerName || customerDetails?.name || 'Walk-in Customer') : '';

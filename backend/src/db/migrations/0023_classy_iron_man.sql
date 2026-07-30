@@ -1,0 +1,1 @@
+ALTER TABLE "sales" ADD COLUMN "customer_balance_at_sale" numeric(12, 2);

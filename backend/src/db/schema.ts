@@ -313,6 +313,7 @@ export const sales = pgTable('sales', {
   paymentMethod: extendedPaymentMethodEnum('payment_method').notNull(),
   mpesaRef: varchar('mpesa_ref', { length: 50 }),
   mpesaPhoneNumber: varchar('mpesa_phone_number', { length: 50 }),
+  customerBalanceAtSale: decimal('customer_balance_at_sale', { precision: 12, scale: 2 }),
   soldAt: timestamp('sold_at', { withTimezone: true }).defaultNow().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   createdBy: uuid('created_by').references(() => users.id),

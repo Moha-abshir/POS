@@ -101,6 +101,7 @@ export class SalesService {
       customerName: customers.name,
       customerPhone: customers.phone,
       customerBalance: customers.balance,
+      customerBalanceAtSale: sales.customerBalanceAtSale,
     })
       .from(sales)
       .leftJoin(customers, eq(sales.customerId, customers.id))
@@ -231,6 +232,16 @@ export class SalesService {
       : data.amountPaid;
 
     const result = await transactionWithRetry(async (tx) => {
+      let currentCustomerBalance = '0';
+      if (data.customerId) {
+        const [customer] = await tx.select({ balance: customers.balance })
+          .from(customers)
+          .where(and(eq(customers.id, data.customerId), eq(customers.businessId, businessId)));
+        if (customer) {
+          currentCustomerBalance = customer.balance;
+        }
+      }
+
       // 1. Create Sale Record
       const [newSale] = await tx.insert(sales).values({
         businessId,
@@ -242,6 +253,7 @@ export class SalesService {
         paymentMethod: data.paymentMethod,
         mpesaRef: data.paymentMethod === 'SPLIT' ? (data.splitDetails?.isStkPush ? undefined : data.splitDetails?.mpesaRef) : data.mpesaRef,
         mpesaPhoneNumber: data.paymentMethod === 'SPLIT' ? data.splitDetails?.mpesaPhoneNumber : data.mpesaPhoneNumber,
+        customerBalanceAtSale: currentCustomerBalance,
         createdBy: userId,
       }).returning();
 
