@@ -41,18 +41,18 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = ({ variant = 'pill' }
       >
         {syncing ? (
           <>
-            <RefreshCw className="w-3.5 h-3.5 text-amber-500 animate-spin" />
-            <span className="text-gray-600">Syncing...</span>
+            <RefreshCw className="w-3.5 h-3.5 text-white animate-spin" />
+            <span className="text-white">Syncing...</span>
           </>
         ) : pendingCount > 0 ? (
           <>
-            <AlertCircle className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-            <span className="text-amber-700">{pendingCount} sale{pendingCount > 1 ? 's' : ''} waiting</span>
+            <AlertCircle className="w-3.5 h-3.5 text-white animate-pulse" />
+            <span className="text-white">{pendingCount} sale{pendingCount > 1 ? 's' : ''} waiting</span>
           </>
         ) : (
           <>
-            <CheckCircle className="w-3.5 h-3.5 text-green-600" />
-            <span className="text-green-700 font-medium">All Synced</span>
+            <CheckCircle className="w-3.5 h-3.5 text-white" />
+            <span className="text-white font-medium">All Synced</span>
           </>
         )}
       </button>

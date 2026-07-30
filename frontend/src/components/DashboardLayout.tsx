@@ -216,7 +216,7 @@ export const DashboardLayout: React.FC = () => {
           <Store className="text-[var(--color-accent)] w-5 h-5" />
         </div>
 
-        <nav className="flex-1 w-full flex flex-col space-y-2 overflow-y-auto no-scrollbar">
+        <nav className="flex-1 min-h-0 w-full flex flex-col space-y-2 overflow-y-auto no-scrollbar">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path || (location.pathname.startsWith(item.path) && item.path !== '/');
             const Icon = item.icon;
@@ -583,7 +583,7 @@ export const DashboardLayout: React.FC = () => {
               </button>
             </div>
 
-            <nav className="flex-1 w-full flex flex-col space-y-1.5 overflow-y-auto pr-1">
+            <nav className="flex-1 min-h-0 w-full flex flex-col space-y-1.5 overflow-y-auto pr-1">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path || (location.pathname.startsWith(item.path) && item.path !== '/');
                 const Icon = item.icon;

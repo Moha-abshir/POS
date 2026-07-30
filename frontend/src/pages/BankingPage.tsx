@@ -1,36 +1,41 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { customersApi, useCustomerLedger } from '../features/customers/api/customers.api';
-import { Search, ArrowDownToLine, ArrowUpFromLine, User, Landmark, Loader2 } from 'lucide-react';
+import { useBankingCustomers, useBankingLedger } from '../features/banking/api/banking.api';
+import { Search, ArrowDownToLine, ArrowUpFromLine, User, Landmark, Loader2, Plus, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { BankingTransactionModal } from '../features/banking/components/BankingTransactionModal';
+import { BankingCustomerModal } from '../features/banking/components/BankingCustomerModal';
+import { ImportModal } from '../components/ui/ImportModal';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const BankingPage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'BANKER' | 'LOAN_CLIENT'>('BANKER');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
-  const [transactionModal, setTransactionModal] = useState<{ isOpen: boolean; type: 'DEPOSIT' | 'WITHDRAWAL' | null }>({ isOpen: false, type: null });
+  
+  const [transactionModal, setTransactionModal] = useState<{ isOpen: boolean; type: 'DEPOSIT' | 'WITHDRAWAL' | 'LOAN_ISSUED' | 'LOAN_REPAYMENT' | null }>({ isOpen: false, type: null });
+  const [customerModalOpen, setCustomerModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  
+  const queryClient = useQueryClient();
 
-  const { data: customersData, isLoading: customersLoading } = useQuery({
-    queryKey: ['customers'],
-    queryFn: () => customersApi.getCustomers({ limit: 1000 }),
-  });
+  const { data: customers = [], isLoading: customersLoading } = useBankingCustomers(activeTab);
 
-  const customers = customersData?.data || [];
-  const selectedCustomer = customers.find((c: any) => c.id === selectedCustomerId);
+  const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
 
   const filteredCustomers = useMemo(() => {
     if (!searchTerm) return customers;
     const lowerSearch = searchTerm.toLowerCase();
-    return customers.filter((c: any) => 
+    return customers.filter((c) => 
       c.name.toLowerCase().includes(lowerSearch) || 
       (c.phone && c.phone.includes(lowerSearch))
     );
   }, [customers, searchTerm]);
 
-  const { data: ledger, isLoading: ledgerLoading } = useCustomerLedger(selectedCustomerId || undefined);
+  const { data: ledgerEntry, isLoading: ledgerLoading } = useBankingLedger(selectedCustomerId);
+  const ledger = ledgerEntry?.transactions || [];
 
-  const formatKES = (amount: number) => {
-    return amount.toLocaleString('en-KE', { style: 'currency', currency: 'KES' });
+  const formatKES = (amount: number | string) => {
+    return Number(amount).toLocaleString('en-KE', { style: 'currency', currency: 'KES' });
   };
 
   return (
@@ -38,15 +43,49 @@ export const BankingPage: React.FC = () => {
       {/* Left Sidebar - Customer List */}
       <div className="w-full md:w-80 lg:w-96 bg-white border-r border-[var(--color-border)] flex flex-col h-[40vh] md:h-full shrink-0">
         <div className="p-4 border-b border-[var(--color-border)]">
-          <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
-            <Landmark className="w-5 h-5 text-[var(--color-accent)]" />
-            Banking Ledger
+          <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Landmark className="w-5 h-5 text-[var(--color-accent)]" />
+              Banking
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setImportModalOpen(true)}
+                className="p-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                title="Import"
+              >
+                <Upload className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setCustomerModalOpen(true)}
+                className="p-1.5 bg-[var(--color-accent)] text-white rounded-md hover:bg-[var(--color-accent-hover)] transition-colors"
+                title="Add New"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
           </h2>
+
+          {/* Tabs */}
+          <div className="flex rounded-md bg-[var(--color-bg-sunken)] p-1 mb-4">
+            <button
+              onClick={() => { setActiveTab('BANKER'); setSelectedCustomerId(null); }}
+              className={`flex-1 py-1.5 text-sm font-semibold rounded ${activeTab === 'BANKER' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Bankers
+            </button>
+            <button
+              onClick={() => { setActiveTab('LOAN_CLIENT'); setSelectedCustomerId(null); }}
+              className={`flex-1 py-1.5 text-sm font-semibold rounded ${activeTab === 'LOAN_CLIENT' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Loans
+            </button>
+          </div>
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search customers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-4 py-2 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] transition-shadow"
@@ -58,10 +97,10 @@ export const BankingPage: React.FC = () => {
           {customersLoading ? (
             <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
           ) : filteredCustomers.length === 0 ? (
-            <div className="text-center p-8 text-sm text-gray-500">No customers found</div>
+            <div className="text-center p-8 text-sm text-gray-500">No records found</div>
           ) : (
             <div className="space-y-1">
-              {filteredCustomers.map((customer: any) => (
+              {filteredCustomers.map((customer) => (
                 <button
                   key={customer.id}
                   onClick={() => setSelectedCustomerId(customer.id)}
@@ -76,8 +115,8 @@ export const BankingPage: React.FC = () => {
                     <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{customer.phone || 'No phone'}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className={`text-sm font-bold ${Number(customer.balance) > 0 ? 'text-[var(--color-danger)]' : Number(customer.balance) < 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-text-primary)]'}`}>
-                      {formatKES(Number(customer.balance))}
+                    <p className={`text-sm font-bold ${Number(customer.balance) > 0 ? 'text-[var(--color-success)]' : Number(customer.balance) < 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-primary)]'}`}>
+                      {formatKES(customer.balance)}
                     </p>
                   </div>
                 </button>
@@ -92,7 +131,7 @@ export const BankingPage: React.FC = () => {
         {!selectedCustomer ? (
           <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
             <User className="w-16 h-16 mb-4 opacity-20" />
-            <p className="text-lg">Select a customer to view their ledger</p>
+            <p className="text-lg">Select a record to view details</p>
           </div>
         ) : (
           <>
@@ -108,24 +147,43 @@ export const BankingPage: React.FC = () => {
               
               <div className="flex items-center gap-6">
                 <div className="text-right">
-                  <p className="text-sm font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wider">Current Balance</p>
-                  <p className={`text-3xl font-black ${Number(selectedCustomer.balance) > 0 ? 'text-[var(--color-danger)]' : Number(selectedCustomer.balance) < 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-text-primary)]'}`}>
-                    {formatKES(Number(selectedCustomer.balance))}
+                  <p className="text-sm font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wider">Balance</p>
+                  <p className={`text-3xl font-black ${Number(selectedCustomer.balance) > 0 ? 'text-[var(--color-success)]' : Number(selectedCustomer.balance) < 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-primary)]'}`}>
+                    {formatKES(selectedCustomer.balance)}
                   </p>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => setTransactionModal({ isOpen: true, type: 'WITHDRAWAL' })}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-black text-white hover:bg-gray-800 rounded-[var(--radius-md)] font-semibold text-sm transition-colors"
-                  >
-                    <ArrowUpFromLine className="w-4 h-4" /> Withdraw (Loan)
-                  </button>
-                  <button
-                    onClick={() => setTransactionModal({ isOpen: true, type: 'DEPOSIT' })}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-[var(--color-success)] text-white hover:bg-green-700 rounded-[var(--radius-md)] font-semibold text-sm transition-colors"
-                  >
-                    <ArrowDownToLine className="w-4 h-4" /> Deposit (Pay)
-                  </button>
+                  {activeTab === 'BANKER' ? (
+                    <>
+                      <button
+                        onClick={() => setTransactionModal({ isOpen: true, type: 'DEPOSIT' })}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-[var(--color-success)] text-white hover:bg-green-700 rounded-[var(--radius-md)] font-semibold text-sm transition-colors"
+                      >
+                        <ArrowDownToLine className="w-4 h-4" /> Deposit
+                      </button>
+                      <button
+                        onClick={() => setTransactionModal({ isOpen: true, type: 'WITHDRAWAL' })}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-black text-white hover:bg-gray-800 rounded-[var(--radius-md)] font-semibold text-sm transition-colors"
+                      >
+                        <ArrowUpFromLine className="w-4 h-4" /> Withdraw
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setTransactionModal({ isOpen: true, type: 'LOAN_REPAYMENT' })}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-[var(--color-success)] text-white hover:bg-green-700 rounded-[var(--radius-md)] font-semibold text-sm transition-colors"
+                      >
+                        <ArrowDownToLine className="w-4 h-4" /> Pay Loan
+                      </button>
+                      <button
+                        onClick={() => setTransactionModal({ isOpen: true, type: 'LOAN_ISSUED' })}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-black text-white hover:bg-gray-800 rounded-[var(--radius-md)] font-semibold text-sm transition-colors"
+                      >
+                        <ArrowUpFromLine className="w-4 h-4" /> Issue Loan
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -138,31 +196,51 @@ export const BankingPage: React.FC = () => {
                     <thead>
                       <tr className="bg-[var(--color-bg-sunken)] text-[var(--color-text-secondary)] text-xs uppercase tracking-wider">
                         <th className="px-6 py-4 font-semibold border-b border-[var(--color-border)]">Date</th>
-                        <th className="px-6 py-4 font-semibold border-b border-[var(--color-border)]">Trans No</th>
+                        <th className="px-6 py-4 font-semibold border-b border-[var(--color-border)]">Type</th>
                         <th className="px-6 py-4 font-semibold border-b border-[var(--color-border)]">Notes</th>
-                        <th className="px-6 py-4 font-semibold border-b border-[var(--color-border)] text-right">Loan</th>
-                        <th className="px-6 py-4 font-semibold border-b border-[var(--color-border)] text-right">Payment</th>
+                        <th className="px-6 py-4 font-semibold border-b border-[var(--color-border)] text-right">Amount</th>
                         <th className="px-6 py-4 font-semibold border-b border-[var(--color-border)] text-right">Balance</th>
                       </tr>
                     </thead>
                     <tbody className="text-sm divide-y divide-[var(--color-border)]">
                       {ledgerLoading ? (
                         <tr>
-                          <td colSpan={6} className="px-6 py-8 text-center"><Loader2 className="w-6 h-6 animate-spin text-[var(--color-accent)] mx-auto" /></td>
+                          <td colSpan={5} className="px-6 py-12 text-center text-[var(--color-text-secondary)]">
+                            <div className="flex justify-center items-center gap-2">
+                              <Loader2 className="w-5 h-5 animate-spin" /> Loading ledger...
+                            </div>
+                          </td>
                         </tr>
-                      ) : !ledger || ledger.length === 0 ? (
+                      ) : ledger.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-6 py-8 text-center text-gray-500">No transactions recorded yet.</td>
+                          <td colSpan={5} className="px-6 py-12 text-center text-[var(--color-text-secondary)]">
+                            No transactions found for this customer.
+                          </td>
                         </tr>
                       ) : (
-                        ledger.map((entry: any) => (
-                          <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 text-gray-900 whitespace-nowrap">{format(new Date(entry.date), 'dd/MM/yyyy HH:mm')}</td>
-                            <td className="px-6 py-4 font-mono text-gray-500">{entry.transNo}</td>
-                            <td className="px-6 py-4 text-gray-600 truncate max-w-[200px]">{entry.notes}</td>
-                            <td className="px-6 py-4 text-right font-medium text-red-600">{entry.loan > 0 ? formatKES(entry.loan) : '-'}</td>
-                            <td className="px-6 py-4 text-right font-medium text-green-600">{entry.payment > 0 ? formatKES(entry.payment) : '-'}</td>
-                            <td className="px-6 py-4 text-right font-bold text-gray-900">{formatKES(entry.runningBalance)}</td>
+                        ledger.map((entry) => (
+                          <tr key={entry.id} className="hover:bg-[var(--color-bg-sunken)] transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap text-[var(--color-text-primary)]">
+                              {format(new Date(entry.createdAt), 'MMM d, yyyy HH:mm')}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-semibold ${
+                                ['DEPOSIT', 'LOAN_REPAYMENT'].includes(entry.type)
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {entry.type.replace('_', ' ')}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-[var(--color-text-secondary)]">
+                              {entry.notes || '-'}
+                            </td>
+                            <td className="px-6 py-4 text-right whitespace-nowrap font-medium text-[var(--color-text-primary)]">
+                              {formatKES(entry.amount)}
+                            </td>
+                            <td className="px-6 py-4 text-right whitespace-nowrap font-bold text-[var(--color-text-primary)]">
+                              {formatKES(entry.balanceAfter)}
+                            </td>
                           </tr>
                         ))
                       )}
@@ -175,13 +253,33 @@ export const BankingPage: React.FC = () => {
         )}
       </div>
 
-      {transactionModal.isOpen && selectedCustomer && (
+      {transactionModal.isOpen && transactionModal.type && selectedCustomer && (
         <BankingTransactionModal
           customer={selectedCustomer}
-          type={transactionModal.type!}
+          type={transactionModal.type}
           onClose={() => setTransactionModal({ isOpen: false, type: null })}
         />
       )}
+
+      <BankingCustomerModal
+        isOpen={customerModalOpen}
+        onClose={() => setCustomerModalOpen(false)}
+        type={activeTab}
+      />
+
+      <ImportModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        title="Import Banking Customers"
+        templateHeaders={['Name', 'Phone', 'Type', 'Balance']}
+        sampleRow={['John Doe', '0700000000', 'BANKER', '5000']}
+        importUrl="/banking/customers/import"
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['bankingCustomers'] });
+          setImportModalOpen(false);
+        }}
+      />
     </div>
   );
 };
+

@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { X, Loader2, ArrowUpFromLine, ArrowDownToLine } from 'lucide-react';
-import { useRecordBankingTransaction } from '../../customers/api/customers.api';
+import { useProcessBankingTransaction } from '../api/banking.api';
 import toast from 'react-hot-toast';
 
 interface BankingTransactionModalProps {
   customer: any;
-  type: 'DEPOSIT' | 'WITHDRAWAL';
+  type: 'DEPOSIT' | 'WITHDRAWAL' | 'LOAN_ISSUED' | 'LOAN_REPAYMENT';
   onClose: () => void;
 }
 
 export const BankingTransactionModal: React.FC<BankingTransactionModalProps> = ({ customer, type, onClose }) => {
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
-  const recordTransactionMutation = useRecordBankingTransaction();
+  const recordTransactionMutation = useProcessBankingTransaction();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,9 +24,11 @@ export const BankingTransactionModal: React.FC<BankingTransactionModalProps> = (
     try {
       await recordTransactionMutation.mutateAsync({
         id: customer.id,
-        type,
-        amount: Number(amount),
-        notes: notes.trim()
+        data: {
+          type,
+          amount: Number(amount),
+          notes: notes.trim()
+        }
       });
       toast.success(`${type === 'DEPOSIT' ? 'Deposit' : 'Withdrawal'} recorded successfully`);
       onClose();
@@ -35,7 +37,8 @@ export const BankingTransactionModal: React.FC<BankingTransactionModalProps> = (
     }
   };
 
-  const isDeposit = type === 'DEPOSIT';
+  const isDeposit = type === 'DEPOSIT' || type === 'LOAN_REPAYMENT';
+  const label = type === 'DEPOSIT' ? 'Deposit' : type === 'WITHDRAWAL' ? 'Withdrawal' : type === 'LOAN_ISSUED' ? 'Loan Issued' : 'Loan Repayment';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -43,7 +46,7 @@ export const BankingTransactionModal: React.FC<BankingTransactionModalProps> = (
         <div className={`p-4 border-b flex justify-between items-center ${isDeposit ? 'bg-green-50 border-green-100 text-green-900' : 'bg-red-50 border-red-100 text-red-900'}`}>
           <h2 className="text-lg font-bold flex items-center gap-2">
             {isDeposit ? <ArrowDownToLine className="w-5 h-5 text-green-600" /> : <ArrowUpFromLine className="w-5 h-5 text-red-600" />}
-            {isDeposit ? 'Deposit (Payment)' : 'Withdrawal (Loan)'}
+            {label}
           </h2>
           <button onClick={onClose} className="p-1 hover:bg-black/5 rounded-md transition-colors">
             <X className="w-5 h-5" />
@@ -65,7 +68,6 @@ export const BankingTransactionModal: React.FC<BankingTransactionModalProps> = (
               step="any"
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              placeholder="e.g. 5000"
               className="w-full px-4 py-3 bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] text-lg font-bold text-gray-900 outline-none focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
             />
           </div>
@@ -76,7 +78,6 @@ export const BankingTransactionModal: React.FC<BankingTransactionModalProps> = (
               type="text"
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder={isDeposit ? "e.g. Cash payment" : "e.g. M-PESA float withdrawal"}
               className="w-full px-4 py-2.5 bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] outline-none focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
             />
           </div>
@@ -97,7 +98,7 @@ export const BankingTransactionModal: React.FC<BankingTransactionModalProps> = (
               }`}
             >
               {recordTransactionMutation.isPending && <Loader2 className="w-5 h-5 animate-spin" />}
-              Confirm {isDeposit ? 'Deposit' : 'Withdrawal'}
+              Confirm {label}
             </button>
           </div>
         </form>

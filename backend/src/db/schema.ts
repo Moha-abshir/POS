@@ -487,10 +487,27 @@ export const notifications = pgTable('notifications', {
   isReadIdx: index('notifications_is_read_idx').on(table.isRead),
 }));
 
+export const bankingCustomerTypeEnum = pgEnum('banking_customer_type', ['BANKER', 'LOAN_CLIENT']);
+
+export const bankingCustomers = pgTable('banking_customers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  phone: varchar('phone', { length: 50 }),
+  type: bankingCustomerTypeEnum('type').notNull().default('BANKER'),
+  balance: decimal('balance', { precision: 12, scale: 2 }).notNull().default('0'), // Positive = Float/Deposit, Negative = Loan/Debt
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
+}, (table) => ({
+  businessIdx: index('banking_customers_business_idx').on(table.businessId),
+  phoneUnique: uniqueIndex('banking_customers_phone_unique').on(table.businessId, table.phone).where(sql`${table.deletedAt} IS NULL AND ${table.phone} IS NOT NULL AND ${table.phone} != ''`),
+}));
+
 export const bankingTransactions = pgTable('banking_transactions', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
-  customerId: uuid('customer_id').notNull().references(() => customers.id, { onDelete: 'restrict' }),
+  bankingCustomerId: uuid('banking_customer_id').notNull().references(() => bankingCustomers.id, { onDelete: 'restrict' }),
   type: varchar('type', { length: 20 }).notNull(), // 'DEPOSIT' or 'WITHDRAWAL'
   amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
   balanceAfter: decimal('balance_after', { precision: 12, scale: 2 }).notNull(),
@@ -499,6 +516,6 @@ export const bankingTransactions = pgTable('banking_transactions', {
   createdBy: uuid('created_by').references(() => users.id),
 }, (table) => ({
   businessIdx: index('banking_transactions_business_idx').on(table.businessId),
-  customerIdx: index('banking_transactions_customer_idx').on(table.customerId),
+  customerIdx: index('banking_transactions_customer_idx').on(table.bankingCustomerId),
   createdAtIdx: index('banking_transactions_created_at_idx').on(table.createdAt),
 }));

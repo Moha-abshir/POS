@@ -396,52 +396,7 @@ export class CustomersService {
       .orderBy(desc(payments.paidAt));
   }
 
-  static async recordBankingTransaction(
-    businessId: string,
-    userId: string,
-    customerId: string,
-    data: { type: 'DEPOSIT' | 'WITHDRAWAL'; amount: number; notes?: string }
-  ) {
-    if (data.amount <= 0) throw new AppError('Amount must be greater than zero', 400);
 
-    return await db.transaction(async (tx) => {
-      const [customer] = await tx.select()
-        .from(customers)
-        .where(and(eq(customers.id, customerId), eq(customers.businessId, businessId)));
-
-      if (!customer) throw new AppError('Customer not found', 404);
-
-      const balanceNum = Number(customer.balance);
-      let newBalance = balanceNum;
-
-      if (data.type === 'WITHDRAWAL') {
-        newBalance = balanceNum + data.amount;
-      } else if (data.type === 'DEPOSIT') {
-        newBalance = balanceNum - data.amount;
-      }
-
-      const [updatedCustomer] = await tx.update(customers)
-        .set({
-          balance: newBalance.toString(),
-          hasActiveCredit: newBalance > 0,
-          updatedAt: new Date()
-        })
-        .where(eq(customers.id, customerId))
-        .returning();
-
-      const [transaction] = await tx.insert(bankingTransactions).values({
-        businessId,
-        customerId,
-        type: data.type,
-        amount: data.amount.toString(),
-        balanceAfter: newBalance.toString(),
-        notes: data.notes,
-        createdBy: userId,
-      }).returning();
-
-      return { transaction, customer: updatedCustomer };
-    });
-  }
 
   static async getCustomerLedger(businessId: string, customerId: string) {
     const salesList = await db.select().from(sales).where(and(eq(sales.businessId, businessId), eq(sales.customerId, customerId)));
@@ -457,10 +412,7 @@ export class CustomersService {
       ));
     }
 
-    const [debtPaymentsList, bankingList] = await Promise.all([
-      db.select().from(payments).where(and(eq(payments.businessId, businessId), eq(payments.referenceType, 'CUSTOMER_DEBT'), eq(payments.referenceId, customerId), eq(payments.status, 'COMPLETED'))),
-      db.select().from(bankingTransactions).where(and(eq(bankingTransactions.businessId, businessId), eq(bankingTransactions.customerId, customerId)))
-    ]);
+    const debtPaymentsList = await db.select().from(payments).where(and(eq(payments.businessId, businessId), eq(payments.referenceType, 'CUSTOMER_DEBT'), eq(payments.referenceId, customerId), eq(payments.status, 'COMPLETED')));
 
     const ledger: any[] = [];
     
@@ -491,18 +443,6 @@ export class CustomersService {
         loan: 0,
         payment: Number(p.amount),
         notes: `Payment (${p.method})`
-      });
-    });
-
-    bankingList.forEach(b => {
-      ledger.push({
-        id: b.id,
-        date: b.createdAt,
-        transNo: b.id.substring(0, 8).toUpperCase(),
-        type: b.type === 'DEPOSIT' ? 'BANKING_DEPOSIT' : 'BANKING_WITHDRAWAL',
-        loan: b.type === 'WITHDRAWAL' ? Number(b.amount) : 0,
-        payment: b.type === 'DEPOSIT' ? Number(b.amount) : 0,
-        notes: b.notes || (b.type === 'DEPOSIT' ? 'Deposit' : 'Withdrawal')
       });
     });
 

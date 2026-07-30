@@ -148,6 +148,20 @@
       "when": 1785308409947,
       "tag": "0020_first_forgotten_one",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1785325526978,
+      "tag": "0021_glossy_ultragirl",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1785325598728,
+      "tag": "0022_bright_katie_power",
+      "breakpoints": true
     }
   ]
 }

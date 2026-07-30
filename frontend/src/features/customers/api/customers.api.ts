@@ -175,15 +175,7 @@ export const customersApi = {
     return data.data;
   },
 
-  recordBankingTransaction: async (id: string, data: { type: 'DEPOSIT' | 'WITHDRAWAL'; amount: number; notes?: string }) => {
-    const response = await api.post(`/customers/${id}/banking`, data);
-    return response.data;
-  },
-  
-  getCustomerLedger: async (id: string) => {
-    const { data } = await api.get(`/customers/${id}/ledger`);
-    return data.data;
-  },
+
 
   deleteCustomer: async (id: string) => {
     const { data } = await api.delete(`/customers/${id}`);
@@ -268,26 +260,6 @@ export const useCustomerPayments = (id?: string) => {
   return useQuery<CustomerPayment[]>({
     queryKey: ['customers', id, 'payments'],
     queryFn: () => id ? customersApi.getCustomerPayments(id) : Promise.resolve([]),
-    enabled: !!id,
-  });
-};
-
-export const useRecordBankingTransaction = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, ...data }: { id: string; type: 'DEPOSIT' | 'WITHDRAWAL'; amount: number; notes?: string }) => 
-      customersApi.recordBankingTransaction(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-      queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'ledger'] });
-    },
-  });
-};
-
-export const useCustomerLedger = (id?: string) => {
-  return useQuery<any[]>({
-    queryKey: ['customers', id, 'ledger'],
-    queryFn: () => id ? customersApi.getCustomerLedger(id) : Promise.resolve([]),
     enabled: !!id,
   });
 };

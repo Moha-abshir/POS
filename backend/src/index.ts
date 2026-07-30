@@ -44,6 +44,7 @@ import expensesRoutes from './modules/expenses/expenses.routes';
 import uploadRoutes from './modules/upload/upload.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import businessesRoutes from './modules/businesses/businesses.routes';
+import bankingRoutes from './modules/banking/banking.routes';
 import { errorHandler } from './core/middleware/errorHandler';
 import { authenticate, requireActiveBusiness } from './core/middleware/auth';
 
@@ -109,6 +110,7 @@ app.use('/export', authenticate, requireActiveBusiness, globalLimiter, exportRou
 app.use('/expenses', authenticate, requireActiveBusiness, globalLimiter, expensesRoutes);
 app.use('/upload', authenticate, requireActiveBusiness, globalLimiter, uploadRoutes);
 app.use('/businesses', authenticate, requireActiveBusiness, globalLimiter, businessesRoutes);
+app.use('/banking', authenticate, requireActiveBusiness, globalLimiter, bankingRoutes);
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
