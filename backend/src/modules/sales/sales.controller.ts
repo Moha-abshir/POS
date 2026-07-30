@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { SalesService } from './sales.service';
 import { CashSessionsService } from '../cash-sessions/cash-sessions.service';
+import { flushPattern } from '../../core/cache/redis';
 
 export class SalesController {
   static async getSales(req: Request, res: Response, next: NextFunction) {
@@ -34,6 +35,9 @@ export class SalesController {
       }
 
       const sale = await SalesService.createSale(req.user!.businessId, req.user!.id, req.body);
+      if (req.body.customerId) {
+        await flushPattern(`cache:${req.user!.businessId}:/api/customers*`);
+      }
       res.status(201).json({ status: 'success', message: 'Sale recorded successfully', data: sale });
     } catch (error) {
       next(error);
@@ -72,6 +76,7 @@ export class SalesController {
         saleId,
         req.body
       );
+      await flushPattern(`cache:${req.user!.businessId}:/api/customers*`);
       res.status(201).json({ status: 'success', message: 'Refund processed successfully', data: refund });
     } catch (error) {
       next(error);
