@@ -4,6 +4,7 @@ import { type Customer, useCustomerPurchases, useCustomerPayments } from '../api
 import { format } from 'date-fns';
 import { LoadingSpinner } from '../../../components/ui/Loading';
 import { RecordCustomerPaymentModal } from './RecordCustomerPaymentModal';
+import { ReceiptModal } from '../../sales/components/ReceiptModal';
 
 interface CustomerDetailsModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface CustomerDetailsModalProps {
 export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOpen, onClose, customer }) => {
   const [activeTab, setActiveTab] = useState<'purchases' | 'payments'>('purchases');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [receiptSaleId, setReceiptSaleId] = useState<string | null>(null);
 
   const { data: purchases, isLoading: isPurchasesLoading } = useCustomerPurchases(customer?.id);
   const { data: paymentsList, isLoading: isPaymentsLoading } = useCustomerPayments(customer?.id);
@@ -219,7 +221,11 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                   ) : purchases && purchases.length > 0 ? (
                     <div className="space-y-3">
                       {purchases.map((purchase: any) => (
-                        <div key={purchase.id} className="p-3 border border-gray-100 rounded-md hover:bg-gray-50 transition-colors">
+                        <div 
+                          key={purchase.id} 
+                          onClick={() => setReceiptSaleId(purchase.id)}
+                          className="p-3 border border-gray-100 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
+                        >
                           <div className="flex justify-between items-start mb-1">
                             <span className="text-sm font-medium text-gray-900">
                               {format(new Date(purchase.createdAt), 'MMM d, yyyy - h:mm a')}
@@ -326,10 +332,14 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
 
       {isPaymentModalOpen && (
         <RecordCustomerPaymentModal
-          customer={customer}
           onClose={() => setIsPaymentModalOpen(false)}
+          customer={customer}
         />
       )}
+      <ReceiptModal 
+        saleId={receiptSaleId} 
+        onClose={() => setReceiptSaleId(null)} 
+      />
     </div>
   );
 };
