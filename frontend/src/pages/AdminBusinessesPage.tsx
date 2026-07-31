@@ -3,7 +3,7 @@ import { api } from '../lib/api';
 import { AdminHeader } from '../components/AdminHeader';
 import { 
   Building2, Check, X, ShieldAlert, Ban, RefreshCw, 
-  MapPin, Phone, Mail, FileText, CheckCircle2, User 
+  MapPin, Phone, Mail, FileText, CheckCircle2, User, Trash2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -49,10 +49,18 @@ export const AdminBusinessesPage: React.FC = () => {
     fetchBusinesses(filter);
   }, [filter]);
 
-  const handleAction = async (businessId: string, action: 'approve' | 'reject' | 'suspend' | 'reactivate') => {
+  const handleAction = async (businessId: string, action: 'approve' | 'reject' | 'suspend' | 'reactivate' | 'delete') => {
     setActionLoading(businessId);
     try {
-      await api.post(`/admin/businesses/${businessId}/${action}`);
+      if (action === 'delete') {
+        if (!window.confirm('Are you sure you want to permanently delete this business? This action cannot be undone.')) {
+           setActionLoading(null);
+           return;
+        }
+        await api.delete(`/admin/businesses/${businessId}`);
+      } else {
+        await api.post(`/admin/businesses/${businessId}/${action}`);
+      }
       toast.success(`Business ${action}ed successfully!`);
       // Refresh current list
       fetchBusinesses(filter);
@@ -286,6 +294,15 @@ export const AdminBusinessesPage: React.FC = () => {
                               Approve
                             </button>
                           )}
+                          
+                          <button
+                            onClick={() => handleAction(biz.id, 'delete')}
+                            disabled={actionLoading !== null}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-[var(--radius-md)] text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer select-none ml-2"
+                            title="Delete Business Permanently"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>

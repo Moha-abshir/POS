@@ -260,4 +260,15 @@ export class AdminService {
 
     return updated;
   }
+
+  static async deleteBusiness(businessId: string) {
+    const [business] = await db.select().from(businesses).where(eq(businesses.id, businessId));
+    if (!business) throw new AppError('Business not found', 404);
+
+    const [deleted] = await db.delete(businesses)
+      .where(eq(businesses.id, businessId))
+      .returning();
+
+    return deleted;
+  }
 }

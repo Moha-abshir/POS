@@ -17,5 +17,6 @@ router.post('/businesses/:id/approve', authenticate, requireAdmin, AdminControll
 router.post('/businesses/:id/reject', authenticate, requireAdmin, AdminController.reject);
 router.post('/businesses/:id/suspend', authenticate, requireAdmin, AdminController.suspend);
 router.post('/businesses/:id/reactivate', authenticate, requireAdmin, AdminController.reactivate);
+router.delete('/businesses/:id', authenticate, requireAdmin, AdminController.deleteBusiness);
 
 export default router;

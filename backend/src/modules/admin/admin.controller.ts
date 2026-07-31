@@ -123,4 +123,18 @@ export class AdminController {
       next(error);
     }
   }
+
+  static async deleteBusiness(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const data = await AdminService.deleteBusiness(id);
+      res.json({
+        success: true,
+        message: 'Business deleted successfully',
+        data
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
