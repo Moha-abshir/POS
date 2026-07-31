@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuthStore } from '../features/auth/stores/auth.store';
-import { AlertOctagon, Mail, Phone, LogOut } from 'lucide-react';
+import { AlertOctagon, Phone, LogOut, MessageCircle } from 'lucide-react';
 
 export const AccountSuspendedPage: React.FC = () => {
   const { logout } = useAuthStore();
@@ -35,11 +35,11 @@ export const AccountSuspendedPage: React.FC = () => {
               Contact Support
             </h4>
             <div className="grid grid-cols-1 gap-2 text-[var(--text-sm)] text-[var(--color-text-secondary)]">
-              <a href="mailto:support@yourpos.com" className="flex items-center gap-2 hover:text-[var(--color-accent)] transition-colors">
-                <Mail className="w-4 h-4" /> support@yourpos.com
+              <a href="tel:+254714731331" className="flex items-center gap-2 hover:text-[var(--color-accent)] transition-colors">
+                <Phone className="w-4 h-4" /> +254 714 731 331
               </a>
-              <a href="tel:+254700000000" className="flex items-center gap-2 hover:text-[var(--color-accent)] transition-colors">
-                <Phone className="w-4 h-4" /> +254 700 000 000
+              <a href="https://wa.me/254714731331" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-[var(--color-accent)] transition-colors">
+                <MessageCircle className="w-4 h-4 text-green-500" /> WhatsApp Support
               </a>
             </div>
           </div>

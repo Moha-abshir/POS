@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../features/auth/stores/auth.store';
 import { api } from '../lib/api';
-import { Clock, Mail, Phone, MessageCircle, LogOut, RefreshCw } from 'lucide-react';
+import { Clock, Phone, MessageCircle, LogOut, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const AwaitingApprovalPage: React.FC = () => {
@@ -120,13 +120,10 @@ export const AwaitingApprovalPage: React.FC = () => {
               Need assistance? Contact Support
             </h4>
             <div className="grid grid-cols-1 gap-2 text-[var(--text-sm)] text-[var(--color-text-secondary)]">
-              <a href="mailto:support@yourpos.com" className="flex items-center gap-2 hover:text-[var(--color-accent)] transition-colors">
-                <Mail className="w-4 h-4" /> support@yourpos.com
+              <a href="tel:+254714731331" className="flex items-center gap-2 hover:text-[var(--color-accent)] transition-colors">
+                <Phone className="w-4 h-4" /> +254 714 731 331
               </a>
-              <a href="tel:+254700000000" className="flex items-center gap-2 hover:text-[var(--color-accent)] transition-colors">
-                <Phone className="w-4 h-4" /> +254 700 000 000
-              </a>
-              <a href="https://wa.me/254700000000" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-[var(--color-accent)] transition-colors">
+              <a href="https://wa.me/254714731331" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-[var(--color-accent)] transition-colors">
                 <MessageCircle className="w-4 h-4 text-green-500" /> WhatsApp Support
               </a>
             </div>
