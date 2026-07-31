@@ -167,6 +167,7 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     // ── Totals Block ──
     const currentTotal = Number(sale.totalAmount || 0);
     const paidAmount = Number(sale.amountPaid || 0);
+    const totalRefunded = (sale.refunds || []).reduce((sum: number, r: any) => sum + Number(r.totalAmount), 0);
     const addedCredit = Math.max(0, currentTotal - paidAmount);
     let prevBal = 0;
     let totalBal = 0;
@@ -183,6 +184,40 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
       totalBal = currentCustBal > 0 ? currentCustBal : (prevBal + addedCredit);
     }
     commands += alignRow('Total Amount', currentTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    
+    if (totalRefunded > 0) {
+      commands += SEPARATOR;
+      commands += ESC + 'a' + '\x01'; // Center
+      commands += ESC + 'E' + '\x01'; // Bold
+      commands += 'REFUNDS / RETURNS\n';
+      commands += ESC + 'E' + '\x00';
+      commands += ESC + 'a' + '\x00'; // Left align
+      commands += SEPARATOR;
+      
+      sale.refunds.forEach((refund: any) => {
+        refund.items?.forEach((ri: any) => {
+          const originalItem = sale.items?.find((i: any) => i.variantId === ri.variantId && i.unitId === ri.unitId);
+          const pName = (originalItem?.productName || 'Returned Item').toUpperCase();
+          const unitName = originalItem?.unitName || 'Piece';
+          const isGeneric = !originalItem?.variantName || ['DEFAULT', 'STANDARD', 'STANDARD VARIANT'].includes(originalItem.variantName.toUpperCase());
+          const variantLine = isGeneric ? unitName : `${originalItem.variantName} / ${unitName}`;
+
+          const qtyNum = Number(ri.quantity) || 0;
+          const qtyVal = '-' + (Number.isInteger(qtyNum) ? qtyNum.toString() : qtyNum.toFixed(2));
+          const priceStr = Number(ri.unitPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const totalStr = '-' + Number(ri.subtotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+          commands += pName + '\n';
+          commands += variantLine + '\n';
+          commands += formatItemDataRow(qtyVal, priceStr, totalStr);
+        });
+      });
+      commands += SEPARATOR;
+      commands += alignRow('Total Refunded', '-' + totalRefunded.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      commands += alignRow('Net Amount', (currentTotal - totalRefunded).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      commands += SEPARATOR;
+    }
+
     commands += alignRow('Amount Paid', paidAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
     if (isCredit || sale.customerId) {
@@ -272,6 +307,7 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
 
   const currentTotal = sale ? Number(sale.totalAmount || 0) : 0;
   const paidAmount = sale ? Number(sale.amountPaid || 0) : 0;
+  const totalRefunded = sale?.refunds ? sale.refunds.reduce((sum: number, r: any) => sum + Number(r.totalAmount), 0) : 0;
   const addedCredit = Math.max(0, currentTotal - paidAmount);
   let prevBal = 0;
   let totalBal = 0;
@@ -509,6 +545,48 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
                     })}
                   </div>
 
+                  {sale.refunds && sale.refunds.length > 0 && (
+                    <>
+                      <div className="text-gray-400 text-[10px]">------------------------------------------------</div>
+                      <div className="text-center font-extrabold text-[11px] py-1 text-gray-900">
+                        REFUNDS / RETURNS
+                      </div>
+                      <div className="text-gray-400 text-[10px]">------------------------------------------------</div>
+                      <div className="space-y-3 my-2 text-red-700">
+                        {sale.refunds.map((refund: any) => (
+                          <React.Fragment key={refund.id}>
+                            {refund.items?.map((ri: any) => {
+                              const originalItem = sale.items?.find((i: any) => i.variantId === ri.variantId && i.unitId === ri.unitId);
+                              const pName = (originalItem?.productName || 'Returned Item').toUpperCase();
+                              const unitName = originalItem?.unitName || 'Piece';
+                              const isGeneric = !originalItem?.variantName || ['DEFAULT', 'STANDARD', 'STANDARD VARIANT'].includes(originalItem.variantName.toUpperCase());
+                              const variantLine = isGeneric ? unitName : `${originalItem.variantName} / ${unitName}`;
+
+                              const qtyNum = Number(ri.quantity) || 0;
+                              const qtyVal = '-' + (Number.isInteger(qtyNum) ? qtyNum.toString() : qtyNum.toFixed(2));
+                              const priceStr = Number(ri.unitPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                              const totalStr = '-' + Number(ri.subtotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                              return (
+                                <div key={ri.id} className="text-[11px] flex flex-col">
+                                  <div className="flex justify-between items-start">
+                                    <span className="w-2/5 font-normal text-[10px] truncate pr-1">{pName}</span>
+                                    <span className="w-1/5 text-center">{qtyVal}</span>
+                                    <span className="w-1/5 text-right">{priceStr}</span>
+                                    <span className="w-1/5 text-right font-semibold">{totalStr}</span>
+                                  </div>
+                                  <div className="text-[10px] opacity-75 font-normal pl-0.5 mt-0.5">
+                                    {variantLine}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    </>
+                  )}
+
                   <div className="text-gray-400 text-[10px]">------------------------------------------------</div>
 
                   {/* Totals & Credit Balance Summary */}
@@ -517,6 +595,19 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
                       <span>Total Amount :</span>
                       <span className="font-bold">{currentTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
+                    
+                    {totalRefunded > 0 && (
+                      <>
+                        <div className="flex justify-between text-red-700">
+                          <span>Total Refunded :</span>
+                          <span className="font-bold">-{totalRefunded.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between font-bold text-gray-950 pt-1 mt-1 border-t border-dashed border-gray-300">
+                          <span>Net Amount :</span>
+                          <span>{(currentTotal - totalRefunded).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                      </>
+                    )}
 
                     <div className="flex justify-between">
                       <span>Amount Paid :</span>
