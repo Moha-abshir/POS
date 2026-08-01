@@ -17,6 +17,7 @@ export const onboardingSchema = z.object({
   sector: z.string().min(1, 'Sector is required').max(100),
   businessPhone: z.string().regex(/^(?:\+254|0)[17]\d{8}$/, 'Invalid business phone format. Must be a valid Kenyan number (e.g. 07... or +254...).'),
   location: z.string().min(1, 'Location is required'),
+  productMode: z.enum(['ADVANCED', 'SIMPLE']).default('ADVANCED'),
 });
 
 export type RequestOtpInput = z.infer<typeof requestOtpSchema>;

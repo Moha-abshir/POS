@@ -80,7 +80,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
           value={value}
           onChange={() => {}}
           required={required}
-          className="absolute opacity-0 pointer-events-none w-0 h-0"
+          className="absolute inset-0 w-full h-full opacity-0 pointer-events-none -z-10"
           tabIndex={-1}
         />
       )}

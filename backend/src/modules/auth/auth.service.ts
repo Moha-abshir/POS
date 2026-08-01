@@ -164,6 +164,7 @@ export class AuthService {
     sector: string;
     businessPhone: string;
     location: string;
+    productMode?: 'ADVANCED' | 'SIMPLE';
   }) {
     // Get user to find businessId
     const [user] = await db.select().from(users).where(eq(users.id, userId));
@@ -186,6 +187,7 @@ export class AuthService {
         sector: data.sector,
         phone: data.businessPhone,
         location: data.location,
+        productMode: data.productMode || 'ADVANCED',
         isSetupComplete: true,
         updatedAt: new Date()
       })

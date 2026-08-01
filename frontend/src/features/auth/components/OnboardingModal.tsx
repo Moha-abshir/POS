@@ -16,6 +16,7 @@ export const OnboardingModal: React.FC = () => {
     sector: '',
     businessPhone: '',
     location: '',
+    productMode: 'ADVANCED',
   });
 
   const [errorMsg, setErrorMsg] = useState('');
@@ -191,6 +192,25 @@ export const OnboardingModal: React.FC = () => {
                     onChange={handleChange}
                     className="block w-full p-4 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] text-[var(--text-base)] text-[var(--color-text-primary)] outline-none focus:ring-4 transition-colors resize-none"
                   />
+                </div>
+
+                <div className="col-span-2 mt-2">
+                  <label className="block text-[var(--text-sm)] font-medium text-[var(--color-text-secondary)] mb-3">
+                    Product View Mode *
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label className={`relative flex flex-col p-4 cursor-pointer border rounded-xl transition-all ${formData.productMode === 'SIMPLE' ? 'border-[var(--color-accent)] bg-amber-50 ring-1 ring-[var(--color-accent)]' : 'border-[var(--color-border)] hover:border-gray-400 bg-[var(--color-bg-sunken)]'}`}>
+                      <input type="radio" name="productMode" value="SIMPLE" checked={formData.productMode === 'SIMPLE'} onChange={handleChange} className="sr-only" />
+                      <span className="font-semibold text-[var(--text-base)] text-[var(--color-text-primary)] mb-1">Simple Mode</span>
+                      <span className="text-[var(--text-sm)] text-[var(--color-text-secondary)]">Best for fast checkouts and basic inventory. Single price per item, no complex variants or composites.</span>
+                    </label>
+
+                    <label className={`relative flex flex-col p-4 cursor-pointer border rounded-xl transition-all ${formData.productMode === 'ADVANCED' ? 'border-[var(--color-accent)] bg-amber-50 ring-1 ring-[var(--color-accent)]' : 'border-[var(--color-border)] hover:border-gray-400 bg-[var(--color-bg-sunken)]'}`}>
+                      <input type="radio" name="productMode" value="ADVANCED" checked={formData.productMode === 'ADVANCED'} onChange={handleChange} className="sr-only" />
+                      <span className="font-semibold text-[var(--text-base)] text-[var(--color-text-primary)] mb-1">Advanced Mode</span>
+                      <span className="text-[var(--text-sm)] text-[var(--color-text-secondary)]">Full retail features including product variants (size/color), multiple unit measurements, and advanced tracking.</span>
+                    </label>
+                  </div>
                 </div>
               </>
             )}
