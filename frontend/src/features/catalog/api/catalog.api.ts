@@ -116,7 +116,7 @@ export const useProducts = () => {
         if (!navigator.onLine) {
           throw new Error('Offline');
         }
-        const response = await api.get<{ data: Product[] }>('/catalog/products');
+        const response = await api.get<{ data: Product[] }>('/catalog/products?limit=10000');
         const data = response.data.data;
         await IndexedDBCache.set('catalog_products', { products: data, timestamp: Date.now() });
 

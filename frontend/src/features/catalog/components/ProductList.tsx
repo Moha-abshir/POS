@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useProducts, useCategories } from '../api/catalog.api';
-import { Package, Plus, Search, Loader2, Upload, Download } from 'lucide-react';
+import { Package, Plus, Search, Loader2, Upload, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
 import { TableSkeleton } from '../../../components/ui/Loading';
 import { ProductRestockModal } from './ProductRestockModal';
@@ -43,6 +43,12 @@ export const ProductList: React.FC<ProductListProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 100;
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, selectedStatus]);
 
   const statusOptions = [
     { id: 'active', name: 'Active' },
@@ -65,6 +71,9 @@ export const ProductList: React.FC<ProductListProps> = ({
     
     return matchesSearch && matchesCategory && matchesStatus;
   });
+
+  const totalPages = Math.ceil((filteredProducts?.length || 0) / itemsPerPage);
+  const paginatedProducts = filteredProducts?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-[var(--color-border)] overflow-visible md:overflow-hidden flex flex-col h-auto md:h-full flex-1">
@@ -203,7 +212,7 @@ export const ProductList: React.FC<ProductListProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white font-medium text-gray-700">
-                  {filteredProducts.map((product) => {
+                  {paginatedProducts.map((product) => {
                     const primaryVariant = product.variants?.[0];
                     const totalStock = product.variants?.reduce((sum, v) => sum + parseFloat(v.baseStockQuantity as string), 0) || 0;
                     const hasMultipleVariants = (product.variants?.length || 0) > 1;
@@ -291,6 +300,58 @@ export const ProductList: React.FC<ProductListProps> = ({
                 </tbody>
               </table>
             </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
+                <div className="flex flex-1 justify-between sm:hidden">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    Next
+                  </button>
+                </div>
+                <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredProducts?.length || 0)}</span> of <span className="font-medium">{filteredProducts?.length || 0}</span> results
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-white hover:text-gray-700 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <span className="sr-only">Previous</span>
+                        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                      
+                      <div className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                        {currentPage} / {totalPages}
+                      </div>
+                      
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-white hover:text-gray-700 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <span className="sr-only">Next</span>
+                        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    </nav>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
