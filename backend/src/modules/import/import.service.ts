@@ -79,6 +79,7 @@ export class ImportService {
     const costPriceIdx = findHeaderIdx(['cost price', 'cost_price', 'cost']);
     const baseUnitIdx = findHeaderIdx(['base unit name', 'unit name', 'unit']);
     const sellingPriceIdx = findHeaderIdx(['selling price', 'selling_price', 'price']);
+    const minimumPriceIdx = findHeaderIdx(['minimum price', 'minimum_price', 'min price', 'min_price']);
     const thresholdIdx = findHeaderIdx(['low stock threshold', 'threshold', 'reorder level']);
     const stockIdx = findHeaderIdx(['initial stock', 'stock', 'qty', 'quantity']);
 
@@ -114,6 +115,7 @@ export class ImportService {
         const sku = skuIdx !== -1 ? row[skuIdx]?.trim() || undefined : undefined;
         const costPrice = costPriceIdx !== -1 ? Number(row[costPriceIdx]?.trim() || 0) : 0;
         const baseUnitName = baseUnitIdx !== -1 ? (row[baseUnitIdx]?.trim() || 'Piece') : 'Piece';
+        const minimumPrice = minimumPriceIdx !== -1 ? Number(row[minimumPriceIdx]?.trim() || sellingPrice) : sellingPrice;
         const lowStockThreshold = thresholdIdx !== -1 ? Number(row[thresholdIdx]?.trim() || 0) : 0;
         const initialStock = stockIdx !== -1 ? Number(row[stockIdx]?.trim() || 0) : 0;
 
@@ -166,6 +168,7 @@ export class ImportService {
           variantId: variant.id,
           name: baseUnitName || 'Piece',
           sellingPrice: sellingPrice.toString(),
+          minimumPrice: (!isNaN(minimumPrice) && minimumPrice > 0) ? minimumPrice.toString() : null,
           conversionFactor: '1',
           isDefault: true,
         });
