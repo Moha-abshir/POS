@@ -86,7 +86,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     reader.onload = async (e) => {
       try {
         const csvText = e.target?.result as string;
-        const { data } = await api.post(importUrl, { csvText });
+        const { data } = await api.post(importUrl, { csvText }, { timeout: 300000 });
         
         setResult({
           successCount: data.successCount,

@@ -5,7 +5,7 @@ export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 export const api = axios.create({
   baseURL: API_URL,
   withCredentials: true, // For sending/receiving HttpOnly cookies (refresh token)
-  timeout: 8000, // 8 seconds timeout
+  timeout: 30000, // 30 seconds timeout default
 });
 
 // Add an interceptor to inject the Access Token if we have it in memory
