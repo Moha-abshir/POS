@@ -61,10 +61,10 @@ export const OnboardingModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 backdrop-blur-sm">
-      <div className="relative bg-[var(--color-bg-surface)] rounded-[var(--radius-xl)] shadow-2xl w-full max-w-[700px] m-4 my-8 flex flex-col scale-100 opacity-100 transition-all border border-[var(--color-border)]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4">
+      <div className="relative bg-[var(--color-bg-surface)] rounded-[var(--radius-xl)] shadow-2xl w-full max-w-[700px] max-h-[90vh] flex flex-col scale-100 opacity-100 transition-all border border-[var(--color-border)]">
         {/* Header */}
-        <div className="flex flex-col items-center justify-center p-8 pb-6 border-b border-[var(--color-border)] text-center">
+        <div className="flex flex-col items-center justify-center p-6 sm:p-8 pb-6 border-b border-[var(--color-border)] text-center shrink-0">
           <div className="w-16 h-16 bg-[var(--color-accent)] text-white rounded-[var(--radius-lg)] flex items-center justify-center text-3xl font-bold shadow-lg shadow-amber-500/20 mb-4">
             SS
           </div>
@@ -77,7 +77,7 @@ export const OnboardingModal: React.FC = () => {
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="p-8">
+        <form onSubmit={handleSubmit} className="p-6 sm:p-8 overflow-y-auto flex-1">
           <div className="grid grid-cols-2 gap-6">
             
             {/* Personal Details Section */}
