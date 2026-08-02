@@ -1,33 +1,92 @@
-import React, { useState, useMemo } from 'react';
-import { useBankingCustomers, useBankingLedger } from '../features/banking/api/banking.api';
-import { Search, ArrowDownToLine, ArrowUpFromLine, User, Landmark, Loader2, Plus, Upload } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import {
+  useBankingCustomers,
+  useBankingLedger,
+  useUpdateBankingCustomer,
+  useDeleteBankingCustomer,
+  useProcessBankingTransaction
+} from '../features/banking/api/banking.api';
+import {
+  Search,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  User,
+  Landmark,
+  Loader2,
+  Plus,
+  Upload,
+  Save,
+  Trash2,
+  RefreshCw
+} from 'lucide-react';
 import { format } from 'date-fns';
-import { BankingTransactionModal } from '../features/banking/components/BankingTransactionModal';
 import { BankingCustomerModal } from '../features/banking/components/BankingCustomerModal';
 import { ImportModal } from '../components/ui/ImportModal';
 import { useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 
 export const BankingPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'BANKER' | 'LOAN_CLIENT'>('BANKER');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
-  
-  const [transactionModal, setTransactionModal] = useState<{ isOpen: boolean; type: 'DEPOSIT' | 'WITHDRAWAL' | 'LOAN_ISSUED' | 'LOAN_REPAYMENT' | null }>({ isOpen: false, type: null });
+
+  // Editable Bio Data Form state for selected customer
+  const [formCode, setFormCode] = useState('');
+  const [formName, setFormName] = useState('');
+  const [formPhone, setFormPhone] = useState('');
+  const [formIdNumber, setFormIdNumber] = useState('');
+
+  // Transaction Inputs
+  const [transType, setTransType] = useState<'DEPOSIT' | 'WITHDRAWAL'>('DEPOSIT');
+  const [transAmount, setTransAmount] = useState('');
+
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
-  
+
   const queryClient = useQueryClient();
 
-  const { data: customers = [], isLoading: customersLoading } = useBankingCustomers(activeTab);
+  const { data: responseData, isLoading: customersLoading } = useBankingCustomers();
+  const customers = responseData?.customers || [];
+  const totalBalance = responseData?.totalBalance || '0.00';
 
-  const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
+  const updateCustomerMutation = useUpdateBankingCustomer();
+  const deleteCustomerMutation = useDeleteBankingCustomer();
+  const processTransactionMutation = useProcessBankingTransaction();
+
+  // Auto select first customer if none selected
+  useEffect(() => {
+    if (customers.length > 0 && !selectedCustomerId) {
+      setSelectedCustomerId(customers[0].id);
+    }
+  }, [customers, selectedCustomerId]);
+
+  const selectedCustomer = useMemo(() => {
+    return customers.find((c) => c.id === selectedCustomerId) || null;
+  }, [customers, selectedCustomerId]);
+
+  // Sync form inputs when selected customer changes
+  useEffect(() => {
+    if (selectedCustomer) {
+      setFormCode(selectedCustomer.code || '');
+      setFormName(selectedCustomer.name || '');
+      setFormPhone(selectedCustomer.phone || '');
+      setFormIdNumber(selectedCustomer.idNumber || '');
+    } else {
+      setFormCode('');
+      setFormName('');
+      setFormPhone('');
+      setFormIdNumber('');
+    }
+  }, [selectedCustomer]);
 
   const filteredCustomers = useMemo(() => {
     if (!searchTerm) return customers;
     const lowerSearch = searchTerm.toLowerCase();
-    return customers.filter((c) => 
-      c.name.toLowerCase().includes(lowerSearch) || 
-      (c.phone && c.phone.includes(lowerSearch))
+    return customers.filter(
+      (c) =>
+        c.name.toLowerCase().includes(lowerSearch) ||
+        (c.code && c.code.toLowerCase().includes(lowerSearch)) ||
+        (c.phone && c.phone.includes(lowerSearch)) ||
+        (c.idNumber && c.idNumber.toLowerCase().includes(lowerSearch))
     );
   }, [customers, searchTerm]);
 
@@ -35,214 +94,406 @@ export const BankingPage: React.FC = () => {
   const ledger = ledgerEntry?.transactions || [];
 
   const formatKES = (amount: number | string) => {
-    return Number(amount).toLocaleString('en-KE', { style: 'currency', currency: 'KES' });
+    const num = Number(amount);
+    return num.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const handleSaveCustomer = async () => {
+    if (!selectedCustomer) return;
+    if (!formName.trim()) {
+      toast.error('Customer name is required');
+      return;
+    }
+    try {
+      await updateCustomerMutation.mutateAsync({
+        id: selectedCustomer.id,
+        data: {
+          code: formCode.trim() || undefined,
+          name: formName.trim(),
+          phone: formPhone.trim() || undefined,
+          idNumber: formIdNumber.trim() || undefined,
+        },
+      });
+      toast.success('Customer details updated');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update customer');
+    }
+  };
+
+  const handleDeleteCustomer = async () => {
+    if (!selectedCustomer) return;
+    if (!window.confirm(`Are you sure you want to delete banking account for "${selectedCustomer.name}"?`)) {
+      return;
+    }
+    try {
+      await deleteCustomerMutation.mutateAsync(selectedCustomer.id);
+      toast.success('Banking customer deleted');
+      setSelectedCustomerId(null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete customer');
+    }
+  };
+
+  const handleExecuteTransaction = async (overrideType?: 'DEPOSIT' | 'WITHDRAWAL') => {
+    if (!selectedCustomer) {
+      toast.error('Please select a customer first');
+      return;
+    }
+    const typeToUse = overrideType || transType;
+    const amountVal = Number(transAmount);
+    if (!transAmount || isNaN(amountVal) || amountVal <= 0) {
+      toast.error('Please enter a valid positive amount');
+      return;
+    }
+
+    try {
+      await processTransactionMutation.mutateAsync({
+        id: selectedCustomer.id,
+        data: {
+          type: typeToUse,
+          amount: amountVal,
+        },
+      });
+      toast.success(`${typeToUse === 'DEPOSIT' ? 'Deposit' : 'Withdrawal'} of KES ${formatKES(amountVal)} processed`);
+      setTransAmount('');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to process transaction');
+    }
   };
 
   return (
-    <div className="h-full flex flex-col md:flex-row overflow-hidden">
-      {/* Left Sidebar - Customer List */}
-      <div className="w-full md:w-80 lg:w-96 bg-white border-r border-[var(--color-border)] flex flex-col h-[40vh] md:h-full shrink-0">
-        <div className="p-4 border-b border-[var(--color-border)]">
-          <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Landmark className="w-5 h-5 text-[var(--color-accent)]" />
-              Banking
-            </div>
-            <div className="flex items-center gap-2">
+    <div className="h-full flex flex-col md:flex-row overflow-hidden bg-gray-100">
+      {/* Left Sidebar - Bio Data Account List */}
+      <div className="w-full md:w-80 lg:w-96 bg-white border-r border-gray-300 flex flex-col h-[40vh] md:h-full shrink-0 shadow-sm">
+        {/* Header */}
+        <div className="p-3 border-b border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-bold text-gray-800 text-sm tracking-wide uppercase flex items-center gap-1.5">
+              <Landmark className="w-4 h-4 text-blue-600" /> Bio Data
+            </span>
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setImportModalOpen(true)}
-                className="p-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
-                title="Import"
+                className="p-1.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                title="Import Accounts"
               >
-                <Upload className="w-4 h-4" />
+                <Upload className="w-3.5 h-3.5" /> Import
               </button>
               <button
                 onClick={() => setCustomerModalOpen(true)}
-                className="p-1.5 bg-[var(--color-accent)] text-white rounded-md hover:bg-[var(--color-accent-hover)] transition-colors"
-                title="Add New"
+                className="p-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                title="Add New Account"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" /> New
               </button>
             </div>
-          </h2>
-
-          {/* Tabs */}
-          <div className="flex rounded-md bg-[var(--color-bg-sunken)] p-1 mb-4">
-            <button
-              onClick={() => { setActiveTab('BANKER'); setSelectedCustomerId(null); }}
-              className={`flex-1 py-1.5 text-sm font-semibold rounded ${activeTab === 'BANKER' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-700'}`}
-            >
-              Bankers
-            </button>
-            <button
-              onClick={() => { setActiveTab('LOAN_CLIENT'); setSelectedCustomerId(null); }}
-              className={`flex-1 py-1.5 text-sm font-semibold rounded ${activeTab === 'LOAN_CLIENT' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-700'}`}
-            >
-              Loans
-            </button>
           </div>
 
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
+              placeholder="Search by Code, Name, Phone, ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] transition-shadow"
+              className="w-full pl-8 pr-3 py-1.5 bg-white border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
-        
-        <div className="flex-1 overflow-y-auto p-2">
+
+        {/* Customer Accounts Table */}
+        <div className="flex-1 overflow-y-auto">
           {customersLoading ? (
-            <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
-          ) : filteredCustomers.length === 0 ? (
-            <div className="text-center p-8 text-sm text-gray-500">No records found</div>
-          ) : (
-            <div className="space-y-1">
-              {filteredCustomers.map((customer) => (
-                <button
-                  key={customer.id}
-                  onClick={() => setSelectedCustomerId(customer.id)}
-                  className={`w-full text-left p-3 rounded-[var(--radius-md)] transition-colors flex justify-between items-center ${
-                    selectedCustomerId === customer.id 
-                      ? 'bg-[var(--color-accent-subtle)] border border-[var(--color-accent)]' 
-                      : 'hover:bg-[var(--color-bg-sunken)] border border-transparent'
-                  }`}
-                >
-                  <div className="truncate pr-2">
-                    <p className="font-semibold text-[var(--color-text-primary)] truncate text-sm">{customer.name}</p>
-                    <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{customer.phone || 'No phone'}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className={`text-sm font-bold ${Number(customer.balance) > 0 ? 'text-[var(--color-success)]' : Number(customer.balance) < 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-primary)]'}`}>
-                      {formatKES(customer.balance)}
-                    </p>
-                  </div>
-                </button>
-              ))}
+            <div className="flex justify-center p-8">
+              <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
             </div>
+          ) : filteredCustomers.length === 0 ? (
+            <div className="text-center p-8 text-xs text-gray-500">No banking accounts found</div>
+          ) : (
+            <table className="w-full text-left border-collapse text-xs">
+              <thead className="sticky top-0 bg-gray-200 text-gray-700 font-bold border-b border-gray-300">
+                <tr>
+                  <th className="py-2 px-2.5 w-20">Code</th>
+                  <th className="py-2 px-2.5">Name</th>
+                  <th className="py-2 px-2.5 text-right w-24">Balance</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredCustomers.map((c) => {
+                  const bal = Number(c.balance);
+                  const isSelected = selectedCustomerId === c.id;
+                  return (
+                    <tr
+                      key={c.id}
+                      onClick={() => setSelectedCustomerId(c.id)}
+                      className={`cursor-pointer transition-colors ${
+                        isSelected ? 'bg-blue-100 font-semibold text-blue-900' : 'hover:bg-gray-50 text-gray-800'
+                      }`}
+                    >
+                      <td className="py-2 px-2.5 font-mono text-[11px] text-gray-600">{c.code || 'N/A'}</td>
+                      <td className="py-2 px-2.5 truncate max-w-[140px]" title={c.name}>
+                        {c.name}
+                      </td>
+                      <td
+                        className={`py-2 px-2.5 text-right font-mono font-bold whitespace-nowrap ${
+                          bal > 0 ? 'text-green-700' : bal < 0 ? 'text-red-600' : 'text-gray-600'
+                        }`}
+                      >
+                        {formatKES(bal)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
+        </div>
+
+        {/* Total Balance Footer */}
+        <div className="p-3 border-t border-gray-300 bg-gray-100 flex justify-between items-center text-xs">
+          <span className="font-bold text-gray-700 uppercase tracking-wide">Total Balance</span>
+          <span className="font-mono font-black text-sm text-gray-900">KES {formatKES(totalBalance)}</span>
         </div>
       </div>
 
-      {/* Right Content - Ledger Details */}
-      <div className="flex-1 flex flex-col h-[60vh] md:h-full bg-[var(--color-bg-base)]">
+      {/* Right Main Content */}
+      <div className="flex-1 flex flex-col h-[60vh] md:h-full overflow-hidden">
         {!selectedCustomer ? (
           <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
             <User className="w-16 h-16 mb-4 opacity-20" />
-            <p className="text-lg">Select a record to view details</p>
+            <p className="text-sm">Select an account from the left list to manage banking details</p>
           </div>
         ) : (
           <>
-            {/* Header */}
-            <div className="bg-white p-6 border-b border-[var(--color-border)] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div>
-                <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">{selectedCustomer.name}</h1>
-                <div className="flex items-center gap-4 mt-2 text-sm text-[var(--color-text-secondary)]">
-                  <span className="bg-[var(--color-bg-sunken)] px-2 py-1 rounded">Code: {selectedCustomer.id.substring(0,8).toUpperCase()}</span>
-                  <span>{selectedCustomer.phone}</span>
+            {/* Top Form Section - Selected Account Bio & Transaction Control */}
+            <div className="bg-white border-b border-gray-300 p-4 shadow-sm">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                {/* Bank Details Inputs (Left 8 Cols) */}
+                <div className="lg:col-span-8 space-y-3">
+                  <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-600">Bank Account Details</h3>
+                    <span className="text-xs text-gray-500 font-mono">ID: {selectedCustomer.id.substring(0, 8)}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Code</label>
+                      <input
+                        type="text"
+                        value={formCode}
+                        onChange={(e) => setFormCode(e.target.value)}
+                        className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-300 rounded text-xs font-mono font-bold text-gray-800 focus:bg-white focus:ring-1 focus:ring-blue-500 uppercase"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Name</label>
+                      <input
+                        type="text"
+                        value={formName}
+                        onChange={(e) => setFormName(e.target.value)}
+                        className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-300 rounded text-xs font-semibold text-gray-800 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Phone</label>
+                      <input
+                        type="text"
+                        value={formPhone}
+                        onChange={(e) => setFormPhone(e.target.value)}
+                        className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-300 rounded text-xs text-gray-800 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Id No.</label>
+                      <input
+                        type="text"
+                        value={formIdNumber}
+                        onChange={(e) => setFormIdNumber(e.target.value)}
+                        className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-300 rounded text-xs text-gray-800 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Transaction Inputs Row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Transaction Type</label>
+                      <select
+                        value={transType}
+                        onChange={(e) => setTransType(e.target.value as 'DEPOSIT' | 'WITHDRAWAL')}
+                        className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-300 rounded text-xs font-semibold text-gray-800 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="DEPOSIT">DEPOSIT (+)</option>
+                        <option value="WITHDRAWAL">WITHDRAWAL (-)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Amount (KES)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        step="any"
+                        placeholder="Enter amount..."
+                        value={transAmount}
+                        onChange={(e) => setTransAmount(e.target.value)}
+                        className="w-full px-2.5 py-1.5 bg-white border border-gray-400 rounded text-xs font-bold text-gray-900 focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <p className="text-sm font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wider">Balance</p>
-                  <p className={`text-3xl font-black ${Number(selectedCustomer.balance) > 0 ? 'text-[var(--color-success)]' : Number(selectedCustomer.balance) < 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-primary)]'}`}>
-                    {formatKES(selectedCustomer.balance)}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2">
-                  {activeTab === 'BANKER' ? (
-                    <>
-                      <button
-                        onClick={() => setTransactionModal({ isOpen: true, type: 'DEPOSIT' })}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-[var(--color-success)] text-white hover:bg-green-700 rounded-[var(--radius-md)] font-semibold text-sm transition-colors"
+
+                {/* Big Balance Box & Action Buttons (Right 4 Cols) */}
+                <div className="lg:col-span-4 flex flex-col justify-between gap-3 h-full">
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Running Balance</label>
+                    <div className="w-full p-3 bg-gray-900 text-white rounded border border-gray-800 shadow-inner flex flex-col justify-center">
+                      <span className="text-[10px] text-gray-400 uppercase tracking-widest">
+                        {Number(selectedCustomer.balance) >= 0 ? 'Customer Owed' : 'Customer Owes'}
+                      </span>
+                      <span
+                        className={`text-2xl font-mono font-black tracking-tight ${
+                          Number(selectedCustomer.balance) >= 0 ? 'text-green-400' : 'text-red-400'
+                        }`}
                       >
-                        <ArrowDownToLine className="w-4 h-4" /> Deposit
-                      </button>
-                      <button
-                        onClick={() => setTransactionModal({ isOpen: true, type: 'WITHDRAWAL' })}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-black text-white hover:bg-gray-800 rounded-[var(--radius-md)] font-semibold text-sm transition-colors"
-                      >
-                        <ArrowUpFromLine className="w-4 h-4" /> Withdraw
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => setTransactionModal({ isOpen: true, type: 'LOAN_REPAYMENT' })}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-[var(--color-success)] text-white hover:bg-green-700 rounded-[var(--radius-md)] font-semibold text-sm transition-colors"
-                      >
-                        <ArrowDownToLine className="w-4 h-4" /> Pay Loan
-                      </button>
-                      <button
-                        onClick={() => setTransactionModal({ isOpen: true, type: 'LOAN_ISSUED' })}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-black text-white hover:bg-gray-800 rounded-[var(--radius-md)] font-semibold text-sm transition-colors"
-                      >
-                        <ArrowUpFromLine className="w-4 h-4" /> Issue Loan
-                      </button>
-                    </>
-                  )}
+                        KES {formatKES(selectedCustomer.balance)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons Toolbar */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleSaveCustomer}
+                      disabled={updateCustomerMutation.isPending}
+                      className="px-3 py-1.5 bg-gray-700 text-white rounded font-bold text-xs flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                      style={{ backgroundColor: '#374151', color: '#ffffff', opacity: 1 }}
+                      title="Save Customer Details"
+                    >
+                      <Save className="w-3.5 h-3.5" /> Save
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleDeleteCustomer}
+                      disabled={deleteCustomerMutation.isPending}
+                      className="px-3 py-1.5 bg-red-700 text-white rounded font-bold text-xs flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                      style={{ backgroundColor: '#b91c1c', color: '#ffffff', opacity: 1 }}
+                      title="Delete Customer Account"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleExecuteTransaction('DEPOSIT')}
+                      disabled={processTransactionMutation.isPending}
+                      style={{
+                        backgroundColor: '#16a34a',
+                        color: '#ffffff',
+                        opacity: 1,
+                        cursor: 'pointer'
+                      }}
+                      className="px-3 py-2 text-white rounded font-bold text-xs flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 shadow-sm"
+                      title="Deposit Money"
+                    >
+                      <ArrowDownToLine className="w-3.5 h-3.5" /> Deposit
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleExecuteTransaction('WITHDRAWAL')}
+                      disabled={processTransactionMutation.isPending}
+                      style={{
+                        backgroundColor: '#1f2937',
+                        color: '#ffffff',
+                        opacity: 1,
+                        cursor: 'pointer'
+                      }}
+                      className="px-3 py-2 text-white rounded font-bold text-xs flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 shadow-sm"
+                      title="Withdraw Money"
+                    >
+                      <ArrowUpFromLine className="w-3.5 h-3.5" /> Withdraw
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Ledger Grid */}
-            <div className="flex-1 p-4 md:p-6 overflow-y-auto">
-              <div className="bg-white rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] border border-[var(--color-border)] overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-[var(--color-bg-sunken)] text-[var(--color-text-secondary)] text-xs uppercase tracking-wider">
-                        <th className="px-6 py-4 font-semibold border-b border-[var(--color-border)]">Date</th>
-                        <th className="px-6 py-4 font-semibold border-b border-[var(--color-border)]">Type</th>
-                        <th className="px-6 py-4 font-semibold border-b border-[var(--color-border)]">Notes</th>
-                        <th className="px-6 py-4 font-semibold border-b border-[var(--color-border)] text-right">Amount</th>
-                        <th className="px-6 py-4 font-semibold border-b border-[var(--color-border)] text-right">Balance</th>
+            {/* Bottom Transaction Ledger Table */}
+            <div className="flex-1 p-3 overflow-y-auto bg-gray-100">
+              <div className="bg-white rounded border border-gray-300 shadow-sm overflow-hidden h-full flex flex-col">
+                <div className="p-2.5 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Transaction History for {selectedCustomer.name} ({selectedCustomer.code || 'N/A'})
+                  </span>
+                  <button
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ['bankingLedger', selectedCustomer.id] })}
+                    className="p-1 text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
+                    title="Refresh Ledger"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead className="sticky top-0 bg-gray-200 text-gray-700 font-bold border-b border-gray-300">
+                      <tr>
+                        <th className="py-2 px-3 w-32">Date</th>
+                        <th className="py-2 px-3 w-24">TransNo</th>
+                        <th className="py-2 px-3 text-right">Deposit</th>
+                        <th className="py-2 px-3 text-right">Withdraw</th>
+                        <th className="py-2 px-3 text-right">Balance</th>
                       </tr>
                     </thead>
-                    <tbody className="text-sm divide-y divide-[var(--color-border)]">
+                    <tbody className="divide-y divide-gray-200 font-mono">
                       {ledgerLoading ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-12 text-center text-[var(--color-text-secondary)]">
+                          <td colSpan={5} className="py-8 text-center text-gray-500">
                             <div className="flex justify-center items-center gap-2">
-                              <Loader2 className="w-5 h-5 animate-spin" /> Loading ledger...
+                              <Loader2 className="w-4 h-4 animate-spin" /> Loading transaction history...
                             </div>
                           </td>
                         </tr>
                       ) : ledger.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-12 text-center text-[var(--color-text-secondary)]">
-                            No transactions found for this customer.
+                          <td colSpan={5} className="py-8 text-center text-gray-500 font-sans">
+                            No transactions recorded for this account.
                           </td>
                         </tr>
                       ) : (
-                        ledger.map((entry) => (
-                          <tr key={entry.id} className="hover:bg-[var(--color-bg-sunken)] transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap text-[var(--color-text-primary)]">
-                              {format(new Date(entry.createdAt), 'MMM d, yyyy HH:mm')}
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-semibold ${
-                                ['DEPOSIT', 'LOAN_REPAYMENT'].includes(entry.type)
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
-                                {entry.type.replace('_', ' ')}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-[var(--color-text-secondary)]">
-                              {entry.notes || '-'}
-                            </td>
-                            <td className="px-6 py-4 text-right whitespace-nowrap font-medium text-[var(--color-text-primary)]">
-                              {formatKES(entry.amount)}
-                            </td>
-                            <td className="px-6 py-4 text-right whitespace-nowrap font-bold text-[var(--color-text-primary)]">
-                              {formatKES(entry.balanceAfter)}
-                            </td>
-                          </tr>
-                        ))
+                        ledger.map((tx) => {
+                          const dep = Number(tx.depositAmount || (tx.type === 'DEPOSIT' ? tx.amount : 0));
+                          const wd = Number(tx.withdrawAmount || (tx.type === 'WITHDRAWAL' ? tx.amount : 0));
+                          const bal = Number(tx.balanceAfter);
+
+                          return (
+                            <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="py-2 px-3 whitespace-nowrap text-gray-700 font-sans">
+                                {format(new Date(tx.createdAt), 'dd/MM/yyyy')}
+                              </td>
+                              <td className="py-2 px-3 font-bold text-gray-800">{tx.transNo || '-'}</td>
+                              <td className="py-2 px-3 text-right font-bold text-green-700">
+                                {dep > 0 ? formatKES(dep) : '0.00'}
+                              </td>
+                              <td className="py-2 px-3 text-right font-bold text-gray-900">
+                                {wd > 0 ? formatKES(wd) : '0.00'}
+                              </td>
+                              <td
+                                className={`py-2 px-3 text-right font-bold ${
+                                  bal >= 0 ? 'text-gray-900' : 'text-red-600'
+                                }`}
+                              >
+                                {formatKES(bal)}
+                              </td>
+                            </tr>
+                          );
+                        })
                       )}
                     </tbody>
                   </table>
@@ -253,26 +504,14 @@ export const BankingPage: React.FC = () => {
         )}
       </div>
 
-      {transactionModal.isOpen && transactionModal.type && selectedCustomer && (
-        <BankingTransactionModal
-          customer={selectedCustomer}
-          type={transactionModal.type}
-          onClose={() => setTransactionModal({ isOpen: false, type: null })}
-        />
-      )}
-
-      <BankingCustomerModal
-        isOpen={customerModalOpen}
-        onClose={() => setCustomerModalOpen(false)}
-        type={activeTab}
-      />
+      <BankingCustomerModal isOpen={customerModalOpen} onClose={() => setCustomerModalOpen(false)} />
 
       <ImportModal
         isOpen={importModalOpen}
         onClose={() => setImportModalOpen(false)}
         title="Import Banking Customers"
-        templateHeaders={['Name', 'Phone', 'Type', 'Balance']}
-        sampleRow={['John Doe', '0700000000', 'BANKER', '5000']}
+        templateHeaders={['Code', 'Name', 'Phone', 'IdNumber', 'Balance']}
+        sampleRow={['BK001', 'John Doe', '0700000000', '12345678', '5000']}
         importUrl="/banking/customers/import"
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['bankingCustomers'] });
@@ -282,4 +521,3 @@ export const BankingPage: React.FC = () => {
     </div>
   );
 };
-

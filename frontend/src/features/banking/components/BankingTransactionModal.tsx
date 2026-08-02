@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 interface BankingTransactionModalProps {
   customer: any;
-  type: 'DEPOSIT' | 'WITHDRAWAL' | 'LOAN_ISSUED' | 'LOAN_REPAYMENT';
+  type: 'DEPOSIT' | 'WITHDRAWAL';
   onClose: () => void;
 }
 
@@ -37,26 +37,25 @@ export const BankingTransactionModal: React.FC<BankingTransactionModalProps> = (
     }
   };
 
-  const isDeposit = type === 'DEPOSIT' || type === 'LOAN_REPAYMENT';
-  const label = type === 'DEPOSIT' ? 'Deposit' : type === 'WITHDRAWAL' ? 'Withdrawal' : type === 'LOAN_ISSUED' ? 'Loan Issued' : 'Loan Repayment';
+  const isDeposit = type === 'DEPOSIT';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        <div className={`p-4 border-b flex justify-between items-center ${isDeposit ? 'bg-green-50 border-green-100 text-green-900' : 'bg-red-50 border-red-100 text-red-900'}`}>
+        <div className={`p-4 border-b flex justify-between items-center ${isDeposit ? 'bg-green-50 border-green-100 text-green-900' : 'bg-gray-100 border-gray-200 text-gray-900'}`}>
           <h2 className="text-lg font-bold flex items-center gap-2">
-            {isDeposit ? <ArrowDownToLine className="w-5 h-5 text-green-600" /> : <ArrowUpFromLine className="w-5 h-5 text-red-600" />}
-            {label}
+            {isDeposit ? <ArrowDownToLine className="w-5 h-5 text-green-600" /> : <ArrowUpFromLine className="w-5 h-5 text-gray-800" />}
+            {isDeposit ? 'Deposit' : 'Withdrawal'}
           </h2>
-          <button onClick={onClose} className="p-1 hover:bg-black/5 rounded-md transition-colors">
+          <button onClick={onClose} className="p-1 hover:bg-black/5 rounded-md transition-colors cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="bg-[var(--color-bg-sunken)] p-3 rounded-[var(--radius-md)] flex justify-between items-center text-sm border border-[var(--color-border)]">
-            <span className="text-[var(--color-text-secondary)]">Customer</span>
-            <span className="font-bold text-[var(--color-text-primary)]">{customer.name}</span>
+            <span className="text-[var(--color-text-secondary)]">Client Account</span>
+            <span className="font-bold text-[var(--color-text-primary)]">{customer.code ? `${customer.code} - ${customer.name}` : customer.name}</span>
           </div>
 
           <div>
@@ -68,7 +67,7 @@ export const BankingTransactionModal: React.FC<BankingTransactionModalProps> = (
               step="any"
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] text-lg font-bold text-gray-900 outline-none focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
+              className="w-full px-4 py-3 bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] text-lg font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[var(--color-accent)] transition-all"
             />
           </div>
 
@@ -78,7 +77,7 @@ export const BankingTransactionModal: React.FC<BankingTransactionModalProps> = (
               type="text"
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] outline-none focus:ring-4 focus:ring-[var(--color-accent-subtle)] focus:border-[var(--color-accent)] transition-all"
+              className="w-full px-4 py-2.5 bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] outline-none focus:ring-2 focus:ring-[var(--color-accent)] transition-all"
             />
           </div>
 
@@ -86,19 +85,22 @@ export const BankingTransactionModal: React.FC<BankingTransactionModalProps> = (
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 bg-[var(--color-bg-sunken)] hover:bg-gray-200 text-gray-700 font-semibold rounded-[var(--radius-md)] transition-colors"
+              className="flex-1 px-4 py-2.5 bg-[var(--color-bg-sunken)] text-gray-700 font-semibold rounded-[var(--radius-md)] cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={recordTransactionMutation.isPending}
-              className={`flex-1 px-4 py-2.5 font-bold rounded-[var(--radius-md)] transition-colors flex justify-center items-center gap-2 text-white disabled:opacity-50 ${
-                isDeposit ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
-              }`}
+              style={{
+                backgroundColor: isDeposit ? '#16a34a' : '#1f2937',
+                color: '#ffffff',
+                opacity: 1
+              }}
+              className="flex-1 px-4 py-2.5 font-bold rounded-[var(--radius-md)] cursor-pointer disabled:opacity-50 flex justify-center items-center gap-2"
             >
               {recordTransactionMutation.isPending && <Loader2 className="w-5 h-5 animate-spin" />}
-              Confirm {label}
+              Confirm {isDeposit ? 'Deposit' : 'Withdrawal'}
             </button>
           </div>
         </form>

@@ -3,20 +3,29 @@ import { api } from '../../../lib/api';
 
 export interface BankingCustomer {
   id: string;
+  code: string | null;
   name: string;
   phone: string | null;
-  type: 'BANKER' | 'LOAN_CLIENT';
+  idNumber: string | null;
   balance: string;
   createdAt: string;
 }
 
 export interface BankingTransaction {
   id: string;
-  type: 'DEPOSIT' | 'WITHDRAWAL' | 'LOAN_ISSUED' | 'LOAN_REPAYMENT';
+  transNo: number | null;
+  type: 'DEPOSIT' | 'WITHDRAWAL';
   amount: string;
+  depositAmount: string;
+  withdrawAmount: string;
   balanceAfter: string;
   notes: string | null;
   createdAt: string;
+}
+
+export interface BankingCustomersResponse {
+  customers: BankingCustomer[];
+  totalBalance: string;
 }
 
 export interface BankingLedgerEntry {
@@ -25,14 +34,24 @@ export interface BankingLedgerEntry {
 }
 
 export const bankingApi = {
-  getCustomers: async (type?: 'BANKER' | 'LOAN_CLIENT') => {
-    const { data } = await api.get('/banking/customers', { params: { type } });
-    return data.data as BankingCustomer[];
+  getCustomers: async () => {
+    const { data } = await api.get('/banking/customers');
+    return data.data as BankingCustomersResponse;
   },
 
-  createCustomer: async (customer: { name: string; phone?: string; type: 'BANKER' | 'LOAN_CLIENT' }) => {
+  createCustomer: async (customer: { code?: string; name: string; phone?: string; idNumber?: string }) => {
     const { data } = await api.post('/banking/customers', customer);
     return data.data as BankingCustomer;
+  },
+
+  updateCustomer: async ({ id, data }: { id: string; data: { code?: string; name: string; phone?: string; idNumber?: string } }) => {
+    const res = await api.put(`/banking/customers/${id}`, data);
+    return res.data.data as BankingCustomer;
+  },
+
+  deleteCustomer: async (id: string) => {
+    const res = await api.delete(`/banking/customers/${id}`);
+    return res.data.data;
   },
 
   getLedger: async (id: string) => {
@@ -40,21 +59,21 @@ export const bankingApi = {
     return data.data as BankingLedgerEntry;
   },
 
-  processTransaction: async ({ id, data }: { id: string, data: { type: string, amount: number, notes?: string } }) => {
+  processTransaction: async ({ id, data }: { id: string; data: { type: 'DEPOSIT' | 'WITHDRAWAL'; amount: number; notes?: string } }) => {
     const res = await api.post(`/banking/customers/${id}/transactions`, data);
     return res.data.data;
   },
 
-  importCustomers: async (customers: any[]) => {
-    const { data } = await api.post('/banking/customers/import', { customers });
+  importCustomers: async (csvText: string) => {
+    const { data } = await api.post('/banking/customers/import', { csvText });
     return data.data;
   }
 };
 
-export const useBankingCustomers = (type?: 'BANKER' | 'LOAN_CLIENT') => {
+export const useBankingCustomers = () => {
   return useQuery({
-    queryKey: ['bankingCustomers', type],
-    queryFn: () => bankingApi.getCustomers(type),
+    queryKey: ['bankingCustomers'],
+    queryFn: () => bankingApi.getCustomers(),
   });
 };
 
@@ -68,10 +87,31 @@ export const useCreateBankingCustomer = () => {
   });
 };
 
+export const useUpdateBankingCustomer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: bankingApi.updateCustomer,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['bankingCustomers'] });
+      queryClient.invalidateQueries({ queryKey: ['bankingLedger', variables.id] });
+    },
+  });
+};
+
+export const useDeleteBankingCustomer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: bankingApi.deleteCustomer,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bankingCustomers'] });
+    },
+  });
+};
+
 export const useBankingLedger = (id: string | null) => {
   return useQuery({
     queryKey: ['bankingLedger', id],
-    queryFn: () => id ? bankingApi.getLedger(id) : null,
+    queryFn: () => (id ? bankingApi.getLedger(id) : null),
     enabled: !!id,
   });
 };
@@ -82,16 +122,6 @@ export const useProcessBankingTransaction = () => {
     mutationFn: bankingApi.processTransaction,
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['bankingLedger', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['bankingCustomers'] });
-    },
-  });
-};
-
-export const useImportBankingCustomers = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: bankingApi.importCustomers,
-    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bankingCustomers'] });
     },
   });

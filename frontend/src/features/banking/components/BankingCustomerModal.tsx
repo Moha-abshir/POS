@@ -5,12 +5,13 @@ import { useCreateBankingCustomer } from '../api/banking.api';
 interface BankingCustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  type: 'BANKER' | 'LOAN_CLIENT';
 }
 
-export const BankingCustomerModal: React.FC<BankingCustomerModalProps> = ({ isOpen, onClose, type }) => {
+export const BankingCustomerModal: React.FC<BankingCustomerModalProps> = ({ isOpen, onClose }) => {
+  const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [idNumber, setIdNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const { mutateAsync: createCustomer, isPending } = useCreateBankingCustomer();
@@ -21,12 +22,14 @@ export const BankingCustomerModal: React.FC<BankingCustomerModalProps> = ({ isOp
     e.preventDefault();
     setError(null);
     try {
-      await createCustomer({ name, phone, type });
+      await createCustomer({ code: code || undefined, name, phone: phone || undefined, idNumber: idNumber || undefined });
+      setCode('');
       setName('');
       setPhone('');
+      setIdNumber('');
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create customer');
+      setError(err.response?.data?.message || 'Failed to create banking account');
     }
   };
 
@@ -35,7 +38,7 @@ export const BankingCustomerModal: React.FC<BankingCustomerModalProps> = ({ isOp
       <div className="bg-white rounded-[var(--radius-lg)] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="flex justify-between items-center p-6 border-b border-[var(--color-border)]">
           <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
-            {type === 'BANKER' ? 'New Banker' : 'New Loan Client'}
+            New Bank Account
           </h2>
           <button 
             onClick={onClose}
@@ -51,6 +54,19 @@ export const BankingCustomerModal: React.FC<BankingCustomerModalProps> = ({ isOp
               {error}
             </div>
           )}
+
+          <div>
+            <label className="block text-sm font-semibold text-[var(--color-text-secondary)] mb-1.5">
+              Account Code (Optional - e.g. BK014)
+            </label>
+            <input
+              type="text"
+              placeholder="Auto-generated if left blank"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className="w-full px-4 py-2.5 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] transition-all uppercase"
+            />
+          </div>
           
           <div>
             <label className="block text-sm font-semibold text-[var(--color-text-secondary)] mb-1.5">
@@ -77,6 +93,18 @@ export const BankingCustomerModal: React.FC<BankingCustomerModalProps> = ({ isOp
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-semibold text-[var(--color-text-secondary)] mb-1.5">
+              ID / Passport Number
+            </label>
+            <input
+              type="text"
+              value={idNumber}
+              onChange={(e) => setIdNumber(e.target.value)}
+              className="w-full px-4 py-2.5 bg-[var(--color-bg-sunken)] border border-[var(--color-border)] rounded-[var(--radius-md)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] transition-all"
+            />
+          </div>
+
           <div className="pt-4 flex gap-3">
             <button
               type="button"
@@ -88,10 +116,10 @@ export const BankingCustomerModal: React.FC<BankingCustomerModalProps> = ({ isOp
             <button
               type="submit"
               disabled={isPending || !name}
-              className="flex-1 px-4 py-2.5 bg-black text-white font-semibold rounded-[var(--radius-md)] hover:bg-gray-800 disabled:opacity-50 transition-colors flex justify-center items-center gap-2"
+              className="flex-1 px-4 py-2.5 bg-black text-white font-semibold rounded-[var(--radius-md)] disabled:opacity-50 transition-colors flex justify-center items-center gap-2 cursor-pointer"
             >
               {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-              Create
+              Save
             </button>
           </div>
         </form>
