@@ -1,9 +1,10 @@
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, inArray } from 'drizzle-orm';
 import { db } from '../../db';
-import { categories, products, productVariants, variantUnits, customers, suppliers } from '../../db/schema';
+import { categories, products, productVariants, variantUnits, stockMovements, customers, suppliers } from '../../db/schema';
 import { InventoryService } from '../inventory/inventory.service';
 import { CustomersService } from '../customers/customers.service';
 import { AppError } from '../../core/utils/AppError';
+import { flushPattern } from '../../core/cache/redis';
 
 export interface ImportResult {
   successCount: number;
@@ -68,28 +69,50 @@ export class ImportService {
     }
 
     const headers = rows[0].map(h => h.replace(/^\uFEFF/, '').toLowerCase().trim());
-    const findHeaderIdx = (patterns: string[]) => {
-      return headers.findIndex(h => patterns.some(p => h === p || h.includes(p)));
+    
+    // Strict header matching helper
+    const findHeaderIdx = (exactPatterns: string[], fallbackSubstring?: string) => {
+      let idx = headers.findIndex(h => exactPatterns.some(p => h === p));
+      if (idx !== -1) return idx;
+      if (fallbackSubstring) {
+        idx = headers.findIndex(h => h.includes(fallbackSubstring));
+      }
+      return idx;
     };
 
-    const nameIdx = findHeaderIdx(['name', 'product']);
-    const descIdx = findHeaderIdx(['description', 'desc']);
-    const catIdx = findHeaderIdx(['category', 'cat']);
-    const skuIdx = findHeaderIdx(['sku', 'code', 'barcode']);
-    const costPriceIdx = findHeaderIdx(['cost price', 'cost_price', 'cost']);
-    const baseUnitIdx = findHeaderIdx(['base unit name', 'unit name', 'unit']);
-    const sellingPriceIdx = findHeaderIdx(['selling price', 'selling_price', 'price']);
+    const nameIdx = findHeaderIdx(['name', 'product name', 'product_name'], 'name');
+    const descIdx = findHeaderIdx(['description', 'desc'], 'desc');
+    const catIdx = findHeaderIdx(['category', 'category name', 'category_name'], 'cat');
+    const skuIdx = findHeaderIdx(['sku', 'item code', 'barcode', 'code'], 'sku');
+    const costPriceIdx = findHeaderIdx(['cost price', 'cost_price', 'purchase price', 'purchase_price', 'cost']);
+    const baseUnitIdx = findHeaderIdx(['base unit name', 'unit name', 'base unit', 'unit']);
+    const sellingPriceIdx = findHeaderIdx(['selling price', 'selling_price', 'selling', 'price']);
     const minimumPriceIdx = findHeaderIdx(['minimum price', 'minimum_price', 'min price', 'min_price']);
     const thresholdIdx = findHeaderIdx(['low stock threshold', 'threshold', 'reorder level']);
-    const stockIdx = findHeaderIdx(['initial stock', 'stock', 'qty', 'quantity']);
+    const stockIdx = findHeaderIdx(['initial stock', 'initial stock quantity', 'stock', 'qty', 'quantity']);
 
     if (nameIdx === -1 || catIdx === -1 || sellingPriceIdx === -1) {
       throw new AppError('CSV must contain at least "Name", "Category", and "Selling Price" columns', 400);
     }
 
-    let successCount = 0;
-    let failureCount = 0;
+    interface ValidatedRow {
+      rowNum: number;
+      name: string;
+      categoryName: string;
+      sellingPrice: number;
+      costPrice: number;
+      minimumPrice: number | null;
+      description: string | null;
+      sku: string | null;
+      baseUnitName: string;
+      lowStockThreshold: number;
+      initialStock: number;
+    }
+
+    const validatedRows: ValidatedRow[] = [];
     const errors: { row: number; name: string; message: string }[] = [];
+    const seenNamesInCSV = new Set<string>();
+    const seenSkusInCSV = new Set<string>();
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
@@ -108,86 +131,48 @@ export class ImportService {
 
         const sellingPrice = Number(sellingPriceStr);
         if (isNaN(sellingPrice) || sellingPrice < 0) {
-          throw new Error('Selling Price must be a positive number');
+          throw new Error('Selling Price must be a non-negative number');
         }
 
-        const description = descIdx !== -1 ? row[descIdx]?.trim() || '' : '';
-        const sku = skuIdx !== -1 ? row[skuIdx]?.trim() || undefined : undefined;
-        const costPrice = costPriceIdx !== -1 ? Number(row[costPriceIdx]?.trim() || 0) : 0;
+        if (seenNamesInCSV.has(name.toLowerCase())) {
+          throw new Error(`Duplicate product name "${name}" in CSV`);
+        }
+        seenNamesInCSV.add(name.toLowerCase());
+
+        const sku = skuIdx !== -1 ? row[skuIdx]?.trim() || null : null;
+        if (sku) {
+          if (seenSkusInCSV.has(sku.toLowerCase())) {
+            throw new Error(`Duplicate SKU "${sku}" in CSV`);
+          }
+          seenSkusInCSV.add(sku.toLowerCase());
+        }
+
+        const description = descIdx !== -1 ? row[descIdx]?.trim() || null : null;
+        const costPrice = costPriceIdx !== -1 && row[costPriceIdx]?.trim() ? Number(row[costPriceIdx]?.trim()) : 0;
         const baseUnitName = baseUnitIdx !== -1 ? (row[baseUnitIdx]?.trim() || 'Piece') : 'Piece';
-        const minimumPrice = minimumPriceIdx !== -1 ? Number(row[minimumPriceIdx]?.trim() || sellingPrice) : sellingPrice;
-        const lowStockThreshold = thresholdIdx !== -1 ? Number(row[thresholdIdx]?.trim() || 0) : 0;
-        const initialStock = stockIdx !== -1 ? Number(row[stockIdx]?.trim() || 0) : 0;
+        const rawMinPrice = minimumPriceIdx !== -1 && row[minimumPriceIdx]?.trim() ? Number(row[minimumPriceIdx]?.trim()) : null;
+        const minimumPrice = (rawMinPrice !== null && !isNaN(rawMinPrice) && rawMinPrice > 0) ? rawMinPrice : sellingPrice;
+        const lowStockThreshold = thresholdIdx !== -1 && row[thresholdIdx]?.trim() ? Number(row[thresholdIdx]?.trim()) : 0;
+        const initialStock = stockIdx !== -1 && row[stockIdx]?.trim() ? Number(row[stockIdx]?.trim()) : 0;
 
         if (isNaN(costPrice) || costPrice < 0) throw new Error('Cost Price must be non-negative');
         if (isNaN(lowStockThreshold) || lowStockThreshold < 0) throw new Error('Low Stock Threshold must be non-negative');
         if (isNaN(initialStock) || initialStock < 0) throw new Error('Initial Stock must be non-negative');
 
-        if (sku) {
-          const [existingSku] = await db.select()
-            .from(productVariants)
-            .where(and(eq(productVariants.sku, sku), eq(productVariants.businessId, businessId)))
-            .limit(1);
-          if (existingSku) {
-            throw new Error(`SKU "${sku}" already exists`);
-          }
-        }
-
-        let [category] = await db.select()
-          .from(categories)
-          .where(and(eq(sql`LOWER(${categories.name})`, categoryName.toLowerCase()), eq(categories.businessId, businessId)))
-          .limit(1);
-
-        if (!category) {
-          [category] = await db.insert(categories).values({
-            businessId,
-            name: categoryName,
-          }).returning();
-        }
-
-        const [product] = await db.insert(products).values({
-          businessId,
-          categoryId: category.id,
+        validatedRows.push({
+          rowNum,
           name,
-          description: description || null,
-        }).returning();
-
-        const [variant] = await db.insert(productVariants).values({
-          productId: product.id,
-          businessId,
-          name: 'Standard',
-          sku: sku || null,
-          costPrice: costPrice.toString(),
-          baseUnitName: baseUnitName || 'Piece',
-          baseStockQuantity: '0',
-          lowStockThreshold: lowStockThreshold.toString(),
-        }).returning();
-
-        await db.insert(variantUnits).values({
-          businessId,
-          variantId: variant.id,
-          name: baseUnitName || 'Piece',
-          sellingPrice: sellingPrice.toString(),
-          minimumPrice: (!isNaN(minimumPrice) && minimumPrice > 0) ? minimumPrice.toString() : null,
-          conversionFactor: '1',
-          isDefault: true,
+          categoryName,
+          sellingPrice,
+          costPrice,
+          minimumPrice,
+          description,
+          sku,
+          baseUnitName,
+          lowStockThreshold,
+          initialStock,
         });
-
-        if (initialStock > 0) {
-          await InventoryService.manualAdjustment(
-            businessId,
-            userId,
-            {
-              variantId: variant.id,
-              newQuantity: initialStock,
-              notes: 'CSV Bulk Import Initial Stock',
-            }
-          );
-        }
-
-        successCount++;
       } catch (err: any) {
-        failureCount++;
         errors.push({
           row: rowNum,
           name: row[nameIdx] || `Row ${rowNum}`,
@@ -196,7 +181,138 @@ export class ImportService {
       }
     }
 
-    return { successCount, failureCount, errors };
+    if (errors.length > 0) {
+      return {
+        successCount: 0,
+        failureCount: errors.length,
+        errors,
+      };
+    }
+
+    if (validatedRows.length === 0) {
+      throw new AppError('No valid rows found in CSV', 400);
+    }
+
+    // Single fast database transaction for bulk inserts
+    await db.transaction(async (tx) => {
+      // 1. Pre-check existing SKUs in DB
+      const skusToCheck = validatedRows.map(r => r.sku).filter(Boolean) as string[];
+      if (skusToCheck.length > 0) {
+        const existingVariants = await tx.select({ sku: productVariants.sku })
+          .from(productVariants)
+          .where(and(eq(productVariants.businessId, businessId), inArray(productVariants.sku, skusToCheck)));
+        if (existingVariants.length > 0) {
+          throw new AppError(`SKU "${existingVariants[0].sku}" already exists in your catalog`, 400);
+        }
+      }
+
+      // 2. Pre-check existing Product Names in DB
+      const namesToCheck = validatedRows.map(r => r.name);
+      const existingProducts = await tx.select({ name: products.name })
+        .from(products)
+        .where(and(eq(products.businessId, businessId), inArray(products.name, namesToCheck)));
+      if (existingProducts.length > 0) {
+        throw new AppError(`Product "${existingProducts[0].name}" already exists in your catalog`, 400);
+      }
+
+      // 3. Resolve Categories
+      const uniqueCategoryNames = Array.from(new Set(validatedRows.map(r => r.categoryName)));
+      const existingCats = await tx.select()
+        .from(categories)
+        .where(and(eq(categories.businessId, businessId), inArray(categories.name, uniqueCategoryNames)));
+
+      const categoryMap = new Map<string, string>();
+      existingCats.forEach(c => categoryMap.set(c.name.toLowerCase(), c.id));
+
+      const missingCategoryNames = uniqueCategoryNames.filter(cName => !categoryMap.has(cName.toLowerCase()));
+      if (missingCategoryNames.length > 0) {
+        const insertedCats = await tx.insert(categories).values(
+          missingCategoryNames.map(cName => ({
+            businessId,
+            name: cName,
+          }))
+        ).returning();
+        insertedCats.forEach(c => categoryMap.set(c.name.toLowerCase(), c.id));
+      }
+
+      // 4. Bulk Insert Products
+      const productsToInsert = validatedRows.map(r => ({
+        businessId,
+        categoryId: categoryMap.get(r.categoryName.toLowerCase())!,
+        name: r.name,
+        description: r.description,
+        createdBy: userId,
+      }));
+
+      const insertedProducts = await tx.insert(products).values(productsToInsert).returning();
+
+      // 5. Bulk Insert Variants
+      const variantsToInsert = insertedProducts.map((p, idx) => {
+        const r = validatedRows[idx];
+        return {
+          productId: p.id,
+          businessId,
+          name: 'Standard',
+          sku: r.sku,
+          costPrice: r.costPrice.toString(),
+          baseUnitName: r.baseUnitName,
+          baseStockQuantity: r.initialStock.toString(),
+          lowStockThreshold: r.lowStockThreshold.toString(),
+        };
+      });
+
+      const insertedVariants = await tx.insert(productVariants).values(variantsToInsert).returning();
+
+      // 6. Bulk Insert Units & Stock Movements
+      const variantUnitsToInsert = [];
+      const stockMovementsToInsert = [];
+
+      for (let idx = 0; idx < validatedRows.length; idx++) {
+        const r = validatedRows[idx];
+        const variant = insertedVariants[idx];
+
+        variantUnitsToInsert.push({
+          businessId,
+          variantId: variant.id,
+          name: r.baseUnitName,
+          sellingPrice: r.sellingPrice.toString(),
+          minimumPrice: r.minimumPrice !== null ? r.minimumPrice.toString() : null,
+          conversionFactor: '1',
+          isDefault: true,
+        });
+
+        if (r.initialStock > 0) {
+          stockMovementsToInsert.push({
+            businessId,
+            variantId: variant.id,
+            type: 'ADJUSTMENT' as const,
+            quantityChange: r.initialStock.toString(),
+            notes: 'CSV Bulk Import Initial Stock',
+            createdBy: userId,
+          });
+        }
+      }
+
+      if (variantUnitsToInsert.length > 0) {
+        await tx.insert(variantUnits).values(variantUnitsToInsert);
+      }
+
+      if (stockMovementsToInsert.length > 0) {
+        await tx.insert(stockMovements).values(stockMovementsToInsert);
+      }
+    });
+
+    try {
+      await flushPattern(`cache:${businessId}:/catalog*`);
+    } catch (err) {
+      console.error('Failed to flush catalog cache on import:', err);
+    }
+
+    return {
+      successCount: validatedRows.length,
+      failureCount: 0,
+      errors: [],
+    };
   }
 
   static async importCustomers(businessId: string, userId: string, csvText: string): Promise<ImportResult> {
