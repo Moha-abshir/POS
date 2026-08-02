@@ -493,10 +493,12 @@ export const bankingCustomerTypeEnum = pgEnum('banking_customer_type', ['BANKER'
 export const bankingCustomers = pgTable('banking_customers', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  code: varchar('code', { length: 50 }),
   name: varchar('name', { length: 255 }).notNull(),
   phone: varchar('phone', { length: 50 }),
+  idNumber: varchar('id_number', { length: 50 }),
   type: bankingCustomerTypeEnum('type').notNull().default('BANKER'),
-  balance: decimal('balance', { precision: 12, scale: 2 }).notNull().default('0'), // Positive = Float/Deposit, Negative = Loan/Debt
+  balance: decimal('balance', { precision: 12, scale: 2 }).notNull().default('0'), // Positive = Float/Deposit (Owed), Negative = Debt/Loan (Owes)
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
   deletedAt: timestamp('deleted_at', { withTimezone: true }),
@@ -509,8 +511,11 @@ export const bankingTransactions = pgTable('banking_transactions', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
   bankingCustomerId: uuid('banking_customer_id').notNull().references(() => bankingCustomers.id, { onDelete: 'restrict' }),
+  transNo: integer('trans_no'),
   type: varchar('type', { length: 20 }).notNull(), // 'DEPOSIT' or 'WITHDRAWAL'
   amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  depositAmount: decimal('deposit_amount', { precision: 12, scale: 2 }).notNull().default('0'),
+  withdrawAmount: decimal('withdraw_amount', { precision: 12, scale: 2 }).notNull().default('0'),
   balanceAfter: decimal('balance_after', { precision: 12, scale: 2 }).notNull(),
   notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
