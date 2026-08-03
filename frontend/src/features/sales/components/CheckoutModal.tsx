@@ -477,7 +477,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
         `}</style>
         <div className="bg-[#1C1F24] rounded-3xl w-full max-w-sm p-8 flex flex-col items-center text-white border border-white/10 shadow-2xl">
           <div className="w-16 h-16 border-4 rounded-full spinner-accent animate-[spin-slow_1.5s_linear_infinite] mb-6"></div>
-          <h3 className="text-lg font-bold mb-2">Initiating M-Pesa STK Push</h3>
           <p className="text-sm text-white/60 text-center leading-relaxed">
             Please wait while we request the payment prompt for phone <span className="font-semibold text-amber-400">{mpesaPhoneNumber}</span>...
           </p>
@@ -488,30 +487,32 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
 
   // ── Render 1: Main Checkout Form Redesign ──────────────────────────────────
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-50 p-4 transition-all duration-300">
-      <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh] border border-gray-100">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-50 p-3 sm:p-4 transition-all duration-300">
+      <div className={`bg-white rounded-3xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[92vh] border border-gray-100 transition-all duration-300 ${
+        isCustomerRequired ? 'max-w-lg lg:max-w-4xl' : 'max-w-lg'
+      }`}>
         
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-[#F7F6F4]/60">
+        <div className="flex justify-between items-center px-5 py-3.5 border-b border-gray-100 bg-[#F7F6F4]/60 shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 tracking-tight">Checkout</h2>
-            <p className="text-sm text-gray-500">Choose payment method & finalize order</p>
+            <h2 className="text-lg font-bold text-gray-900 tracking-tight">Checkout</h2>
+            <p className="text-xs text-gray-500">Choose payment method & finalize order</p>
           </div>
           <button 
             onClick={handleClose} 
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all"
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto p-6 flex-1 space-y-6">
+        <div className="overflow-y-auto p-4 sm:p-5 flex-1 space-y-4">
           
           {/* Credit & B2B Toggles */}
-          <div className="flex gap-4">
-            <label className="flex-1 flex items-center justify-between p-3.5 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
-              <span className="text-sm font-semibold text-gray-700">Credit Sale</span>
+          <div className="flex gap-3">
+            <label className="flex-1 flex items-center justify-between px-3 py-2.5 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
+              <span className="text-xs font-semibold text-gray-700">Credit Sale</span>
               <div className="relative inline-flex items-center">
                 <input 
                   type="checkbox" 
@@ -519,13 +520,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
                   checked={isCreditSale}
                   onChange={(e) => setIsCreditSale(e.target.checked)}
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#D97706]"></div>
+                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#D97706]"></div>
               </div>
             </label>
-            <label className="flex-1 flex items-center justify-between p-3.5 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-semibold text-gray-700">B2B Sale</span>
+            <label className="flex-1 flex items-center justify-between px-3 py-2.5 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
+              <div className="flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-gray-500" />
+                <span className="text-xs font-semibold text-gray-700">B2B Sale</span>
               </div>
               <div className="relative inline-flex items-center">
                 <input 
@@ -534,251 +535,274 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
                   checked={isBusinessSale}
                   onChange={(e) => setIsBusinessSale(e.target.checked)}
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#D97706]"></div>
+                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#D97706]"></div>
               </div>
             </label>
           </div>
 
-          {/* Total Amount Banner (Beautiful Premium Gradient matching Amber brand) */}
-          <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 rounded-2xl p-5 flex justify-between items-center border border-amber-200/60 shadow-sm">
-            <div className="space-y-1">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-800">Total Amount Due</span>
-              {discountAmount > 0 && (
-                <p className="text-xs text-amber-700/70">
-                  Discount applied: KSh {discountAmount.toLocaleString()}
-                </p>
-              )}
-            </div>
-            <span className="text-3xl font-extrabold text-[#D97706] tracking-tight">KSh {totalAmount.toLocaleString()}</span>
-          </div>
-
-          <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
-            
-            {/* Payment Method Selector */}
-            <div>
-              <label className="block text-sm font-bold text-gray-800 mb-3 uppercase tracking-wider">Payment Method</label>
-              <div className="grid grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('CASH')}
-                  className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all shadow-sm ${
-                    paymentMethod === 'CASH' 
-                      ? 'border-[#D97706] bg-amber-50/50 text-[#D97706]' 
-                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <CreditCard className="w-5 h-5" />
-                  <span className="font-semibold text-xs">Cash Payment</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('MPESA')}
-                  className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all shadow-sm ${
-                    paymentMethod === 'MPESA' 
-                      ? 'border-green-600 bg-green-50/40 text-green-700' 
-                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <CreditCard className="w-5 h-5" />
-                  <span className="font-semibold text-xs">M-Pesa Mobile</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('SPLIT')}
-                  className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all shadow-sm ${
-                    paymentMethod === 'SPLIT' 
-                      ? 'border-purple-600 bg-purple-50/40 text-purple-700' 
-                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <CreditCard className="w-5 h-5" />
-                  <span className="font-semibold text-xs">Split Payment</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Split Payment Details */}
-            {paymentMethod === 'SPLIT' && (
-              <div className="p-5 bg-purple-50/30 rounded-2xl border border-purple-200/50 space-y-4 shadow-sm">
-                <h4 className="text-sm font-bold text-purple-900 uppercase tracking-wider">Split Payment Details</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Cash Amount</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">KSh</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={cashAmount}
-                        onChange={(e) => {
-                          const val = e.target.value === '' ? '' : Number(e.target.value);
-                          setCashAmount(val);
-                          if (!isCreditSale && val !== '') {
-                            const rem = Math.max(0, totalAmount - Number(val));
-                            setMpesaAmount(rem);
-                          }
-                        }}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all shadow-sm text-sm font-bold"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">M-Pesa Amount</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">KSh</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={mpesaAmount}
-                        onChange={(e) => {
-                          const val = e.target.value === '' ? '' : Number(e.target.value);
-                          setMpesaAmount(val);
-                          if (!isCreditSale && val !== '') {
-                            const rem = Math.max(0, totalAmount - Number(val));
-                            setCashAmount(rem);
-                          }
-                        }}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all shadow-sm text-sm font-bold"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-xs font-semibold flex justify-between items-center px-1">
-                  <span className="text-gray-500">Split Total:</span>
-                  <span className={`font-bold ${
-                    (!isCreditSale && Number(cashAmount) + Number(mpesaAmount) !== totalAmount) || (isCreditSale && Number(cashAmount) + Number(mpesaAmount) > totalAmount)
-                      ? 'text-red-600'
-                      : 'text-green-600'
-                  }`}>
-                    KSh {(Number(cashAmount) + Number(mpesaAmount)).toLocaleString()} / {totalAmount.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* M-Pesa Settings View */}
-            {(paymentMethod === 'MPESA' || (paymentMethod === 'SPLIT' && Number(mpesaAmount) > 0)) && (
-              <div className="p-5 bg-green-50/40 rounded-2xl border border-green-200/50 space-y-4 shadow-inner">
-                {!navigator.onLine && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium">
-                    ⚠️ Offline Mode: Automated STK Push is unavailable. Please ask the customer to pay directly via USSD/Paybill and manually enter their transaction reference below.
-                  </div>
-                )}
-                <div className="flex gap-5 mb-2 border-b border-green-200 pb-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="mpesaType" 
-                      checked={!isStkPush} 
-                      onChange={() => setIsStkPush(false)} 
-                      className="text-green-600 focus:ring-green-500 h-4 w-4" 
-                    />
-                    <span className="text-sm font-semibold text-green-800">Manual Reference Entry</span>
-                  </label>
-                  <label className={`flex items-center gap-2 ${!navigator.onLine ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
-                    <input 
-                      type="radio" 
-                      name="mpesaType" 
-                      checked={isStkPush} 
-                      onChange={() => {
-                        if (navigator.onLine) {
-                          setIsStkPush(true);
-                        }
-                      }} 
-                      disabled={!navigator.onLine}
-                      className="text-green-600 focus:ring-green-500 h-4 w-4" 
-                    />
-                    <span className="text-sm font-semibold text-green-800">Send STK Push Request</span>
-                  </label>
-                </div>
+          <form id="checkout-form" onSubmit={handleSubmit}>
+            <div className={`space-y-4 ${isCustomerRequired ? 'lg:grid lg:grid-cols-12 lg:gap-5 lg:space-y-0' : ''}`}>
+              
+              {/* Main Payment Section (Full width or Left Column on LG) */}
+              <div className={`space-y-4 ${isCustomerRequired ? 'lg:col-span-7' : ''}`}>
                 
-                <div className="flex flex-col gap-4">
-                  {!isStkPush && (
-                    <div>
-                      <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">M-Pesa Ref (Optional)</label>
-                      <input
-                        type="text"
-                        value={mpesaRef}
-                        onChange={(e) => setMpesaRef(e.target.value.toUpperCase())}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#D97706] focus:border-transparent outline-none transition-all shadow-sm text-sm"
-                      />
-                    </div>
-                  )}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">
-                      Phone Number {isStkPush ? '*' : '(Optional)'}
-                    </label>
-                    <input
-                      type="text"
-                      value={mpesaPhoneNumber}
-                      onChange={(e) => setMpesaPhoneNumber(e.target.value)}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#D97706] focus:border-transparent outline-none transition-all shadow-sm text-sm"
-                      required={isStkPush}
-                    />
-                    {isStkPush && <p className="text-xs text-green-700 mt-1.5 font-medium">Format: 2547XXXXXXXX or 07XXXXXXXX</p>}
+                {/* Total Amount Banner */}
+                <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 rounded-xl p-3.5 flex justify-between items-center border border-amber-200/60 shadow-sm">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">Total Amount Due</span>
+                    {discountAmount > 0 && (
+                      <p className="text-[10px] text-amber-700/70">
+                        Discount applied: KSh {discountAmount.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                  <span className="text-2xl font-extrabold text-[#D97706] tracking-tight">KSh {totalAmount.toLocaleString()}</span>
+                </div>
+
+                {/* Payment Method Selector */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-2 uppercase tracking-wider">Payment Method</label>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('CASH')}
+                      className={`p-2.5 rounded-xl border-2 flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer ${
+                        paymentMethod === 'CASH' 
+                          ? 'border-[#D97706] bg-amber-50/50 text-[#D97706]' 
+                          : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      <span className="font-semibold text-xs">Cash</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('MPESA')}
+                      className={`p-2.5 rounded-xl border-2 flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer ${
+                        paymentMethod === 'MPESA' 
+                          ? 'border-green-600 bg-green-50/40 text-green-700' 
+                          : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      <span className="font-semibold text-xs">M-Pesa</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('SPLIT')}
+                      className={`p-2.5 rounded-xl border-2 flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer ${
+                        paymentMethod === 'SPLIT' 
+                          ? 'border-purple-600 bg-purple-50/40 text-purple-700' 
+                          : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      <span className="font-semibold text-xs">Split</span>
+                    </button>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* Amount Paid Field */}
-            <div className={`${!isCreditSale ? 'opacity-65 cursor-not-allowed' : ''}`}>
-              <label className="block text-sm font-bold text-gray-800 mb-1.5 uppercase tracking-wider">
-                Amount Paid {isCreditSale && <span className="text-[#D97706] text-xs font-semibold ml-2">(Editable for Credit)</span>}
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">KSh</span>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  disabled={!isCreditSale}
-                  value={amountPaid}
-                  onChange={(e) => setAmountPaid(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full pl-12 pr-4 py-3.5 text-lg font-bold border border-gray-300 rounded-2xl focus:ring-2 focus:ring-[#D97706] focus:border-transparent outline-none disabled:bg-[#F7F6F4]/80 disabled:text-gray-500 transition-all shadow-sm"
-                />
-              </div>
-            </div>
+                {/* Split Payment Details */}
+                {paymentMethod === 'SPLIT' && (
+                  <div className="p-3.5 bg-purple-50/30 rounded-xl border border-purple-200/50 space-y-3 shadow-sm">
+                    <h4 className="text-xs font-bold text-purple-900 uppercase tracking-wider">Split Payment Details</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-700 mb-1 uppercase tracking-wider">Cash Amount</label>
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">KSh</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={cashAmount}
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? '' : Number(e.target.value);
+                              setCashAmount(val);
+                              if (!isCreditSale && val !== '') {
+                                const rem = Math.max(0, totalAmount - Number(val));
+                                setMpesaAmount(rem);
+                              }
+                            }}
+                            className="w-full pl-9 pr-2.5 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none shadow-sm text-xs font-bold"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-700 mb-1 uppercase tracking-wider">M-Pesa Amount</label>
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">KSh</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={mpesaAmount}
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? '' : Number(e.target.value);
+                              setMpesaAmount(val);
+                              if (!isCreditSale && val !== '') {
+                                const rem = Math.max(0, totalAmount - Number(val));
+                                setCashAmount(rem);
+                              }
+                            }}
+                            className="w-full pl-9 pr-2.5 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none shadow-sm text-xs font-bold"
+                          />
+                        </div>
+                      </div>
+                    </div>
 
-            {/* Customer Dropdown */}
-            {isCustomerRequired && (
-              <div className="p-5 bg-amber-50/50 rounded-2xl border border-amber-200/50 mt-4 shadow-sm transition-all">
-                <label className="flex items-center text-sm font-bold text-amber-900 mb-2 uppercase tracking-wider">
-                  {isBusinessSale ? <Building2 className="w-4 h-4 mr-2" /> : <User className="w-4 h-4 mr-2" />}
-                  {isBusinessSale ? 'Select Business' : 'Select Customer'} 
-                  <span className="text-red-500 ml-1.5 font-semibold text-xs">*Required</span>
-                </label>
-                <CustomSelect
-                  label={`-- Choose a ${isBusinessSale ? 'Business' : 'Customer'} --`}
-                  options={filteredCustomers.map((c: any) => ({
-                    id: c.id,
-                    name: `${c.name} ${c.phone ? `(${c.phone})` : ''}`
-                  }))}
-                  value={customerId}
-                  onChange={(e) => setCustomerId(e.target.value)}
-                  searchable={true}
-                  required={isCustomerRequired}
-                  className="w-full"
-                />
-                {!customerId && (
-                  <p className="mt-2 text-xs text-red-600 flex items-center font-medium">
-                    <AlertCircle className="w-4 h-4 mr-1.5" />
-                    {isBusinessSale ? 'A business must be attached to this sale.' : 'A customer must be attached to a credit sale.'}
-                  </p>
+                    <div className="text-[11px] font-semibold flex justify-between items-center px-0.5">
+                      <span className="text-gray-500">Split Total:</span>
+                      <span className={`font-bold ${
+                        (!isCreditSale && Number(cashAmount) + Number(mpesaAmount) !== totalAmount) || (isCreditSale && Number(cashAmount) + Number(mpesaAmount) > totalAmount)
+                          ? 'text-red-600'
+                          : 'text-green-600'
+                      }`}>
+                        KSh {(Number(cashAmount) + Number(mpesaAmount)).toLocaleString()} / {totalAmount.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
                 )}
-              </div>
-            )}
 
+                {/* M-Pesa Settings View */}
+                {(paymentMethod === 'MPESA' || (paymentMethod === 'SPLIT' && Number(mpesaAmount) > 0)) && (
+                  <div className="p-3.5 bg-green-50/40 rounded-xl border border-green-200/50 space-y-3 shadow-inner">
+                    {!navigator.onLine && (
+                      <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 font-medium">
+                        ⚠️ Offline Mode: Automated STK Push is unavailable. Please ask the customer to pay via Paybill and enter reference below.
+                      </div>
+                    )}
+                    <div className="flex gap-4 border-b border-green-200/60 pb-2">
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input 
+                          type="radio" 
+                          name="mpesaType" 
+                          checked={!isStkPush} 
+                          onChange={() => setIsStkPush(false)} 
+                          className="text-green-600 focus:ring-green-500 h-3.5 w-3.5" 
+                        />
+                        <span className="text-xs font-semibold text-green-800">Manual Entry</span>
+                      </label>
+                      <label className={`flex items-center gap-1.5 ${!navigator.onLine ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                        <input 
+                          type="radio" 
+                          name="mpesaType" 
+                          checked={isStkPush} 
+                          onChange={() => {
+                            if (navigator.onLine) {
+                              setIsStkPush(true);
+                            }
+                          }} 
+                          disabled={!navigator.onLine}
+                          className="text-green-600 focus:ring-green-500 h-3.5 w-3.5" 
+                        />
+                        <span className="text-xs font-semibold text-green-800">STK Push Request</span>
+                      </label>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {!isStkPush && (
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-700 mb-1 uppercase tracking-wider">M-Pesa Ref (Optional)</label>
+                          <input
+                            type="text"
+                            value={mpesaRef}
+                            onChange={(e) => setMpesaRef(e.target.value.toUpperCase())}
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D97706] outline-none shadow-sm text-xs font-bold"
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-700 mb-1 uppercase tracking-wider">
+                          Phone Number {isStkPush ? '*' : '(Optional)'}
+                        </label>
+                        <input
+                          type="text"
+                          value={mpesaPhoneNumber}
+                          onChange={(e) => setMpesaPhoneNumber(e.target.value)}
+                          className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D97706] outline-none shadow-sm text-xs font-bold"
+                          required={isStkPush}
+                        />
+                        {isStkPush && <p className="text-[10px] text-green-700 mt-1 font-medium">Format: 2547XXXXXXXX or 07XXXXXXXX</p>}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Amount Paid Field */}
+                <div className={`${!isCreditSale ? 'opacity-70 cursor-not-allowed' : ''}`}>
+                  <label className="block text-xs font-bold text-gray-800 mb-1 uppercase tracking-wider">
+                    Amount Paid {isCreditSale && <span className="text-[#D97706] text-[11px] font-semibold ml-2">(Editable for Credit)</span>}
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">KSh</span>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      disabled={!isCreditSale}
+                      value={amountPaid}
+                      onChange={(e) => setAmountPaid(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full pl-11 pr-3 py-2.5 text-base font-bold border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#D97706] outline-none disabled:bg-[#F7F6F4]/80 disabled:text-gray-500 shadow-sm"
+                    />
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Secondary Customer/Business Panel (Right Column on LG when Credit or B2B is active) */}
+              {isCustomerRequired && (
+                <div className="lg:col-span-5 flex flex-col h-full justify-between">
+                  <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-200/60 shadow-sm h-full flex flex-col justify-between space-y-3">
+                    <div>
+                      <label className="flex items-center text-xs font-bold text-amber-900 mb-2 uppercase tracking-wider">
+                        {isBusinessSale ? <Building2 className="w-4 h-4 mr-1.5 text-amber-700" /> : <User className="w-4 h-4 mr-1.5 text-amber-700" />}
+                        {isBusinessSale ? 'Select Business Account' : 'Select Customer Account'} 
+                        <span className="text-red-500 ml-1.5 font-semibold text-[10px]">*Required</span>
+                      </label>
+                      <CustomSelect
+                        label={`-- Choose a ${isBusinessSale ? 'Business' : 'Customer'} --`}
+                        options={filteredCustomers.map((c: any) => ({
+                          id: c.id,
+                          name: `${c.name} ${c.phone ? `(${c.phone})` : ''}`
+                        }))}
+                        value={customerId}
+                        onChange={(e) => setCustomerId(e.target.value)}
+                        searchable={true}
+                        required={isCustomerRequired}
+                        className="w-full"
+                      />
+                      {!customerId ? (
+                        <p className="mt-2.5 text-xs text-red-600 flex items-center font-medium">
+                          <AlertCircle className="w-3.5 h-3.5 mr-1 shrink-0" />
+                          {isBusinessSale ? 'Attach a business account to log this B2B invoice.' : 'Attach a customer account for credit recording.'}
+                        </p>
+                      ) : (
+                        <div className="mt-3 p-3 bg-white/80 rounded-xl border border-amber-200/80 text-xs space-y-1">
+                          <span className="font-bold text-amber-900 uppercase text-[10px] tracking-wide block">Selected Account</span>
+                          <p className="font-bold text-gray-900">{customers.find((c: any) => c.id === customerId)?.name}</p>
+                          {customers.find((c: any) => c.id === customerId)?.phone && (
+                            <p className="text-gray-500 font-mono text-[11px]">{customers.find((c: any) => c.id === customerId)?.phone}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-amber-200/40 text-[11px] text-amber-800/80 font-medium">
+                      💡 Tip: Use the search box above to quickly find registered {isBusinessSale ? 'businesses' : 'customers'} by name or phone.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
           </form>
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 border-t border-gray-100 bg-[#F7F6F4]/60 flex gap-4">
+        <div className="px-5 py-3 border-t border-gray-100 bg-[#F7F6F4]/60 flex gap-3 shrink-0">
           <button
             type="button"
             onClick={handleClose}
-            className="flex-1 px-6 py-3.5 border border-gray-300 text-gray-700 hover:text-gray-900 rounded-xl hover:bg-gray-100 font-semibold text-sm transition-all cursor-pointer"
+            className="flex-1 px-5 py-2.5 border border-gray-300 text-gray-700 hover:text-gray-900 rounded-xl hover:bg-gray-100 font-semibold text-xs transition-all cursor-pointer"
           >
             Cancel
           </button>
@@ -786,12 +810,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
             form="checkout-form"
             type="submit"
             disabled={createSaleMutation.isPending || isPolling || isInitiatingPush || (isCustomerRequired && !customerId)}
-            className="flex-1 px-6 py-3.5 bg-black hover:bg-black text-white rounded-xl font-semibold text-sm transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-1.5 cursor-pointer"
+            className="flex-1 px-5 py-2.5 bg-black hover:bg-black text-white rounded-xl font-semibold text-xs transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-1.5 cursor-pointer"
           >
             {createSaleMutation.isPending ? 'Processing...' : (
               <>
                 Complete Sale
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-3.5 h-3.5" />
               </>
             )}
           </button>
