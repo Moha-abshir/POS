@@ -269,14 +269,27 @@ export const PosPage = () => {
     setSearchInputVal('');
     setTimeout(() => {
       searchInputRef.current?.focus();
-    }, 60);
+    }, 50);
   };
+
+  // Global modal Enter listener: pressing Enter anywhere inside modal places order, closes modal, and focuses search input
+  useEffect(() => {
+    if (!activeCartEditItem) return;
+    const handleModalEnter = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleConfirmAddToCart();
+      }
+    };
+    window.addEventListener('keydown', handleModalEnter);
+    return () => window.removeEventListener('keydown', handleModalEnter);
+  }, [activeCartEditItem]);
 
   const handleCloseModal = () => {
     setActiveCartEditItem(null);
     setTimeout(() => {
       searchInputRef.current?.focus();
-    }, 60);
+    }, 50);
   };
 
   return (
