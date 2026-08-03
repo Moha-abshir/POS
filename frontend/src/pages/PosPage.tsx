@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useCategories, useProducts } from '../features/catalog/api/catalog.api';
 import { ShoppingCart, Search, Plus, Minus, Trash2, Tag, ArrowRight, Package, ShoppingBag, X, Pencil } from 'lucide-react';
 import { api } from '../lib/api';
@@ -34,6 +34,7 @@ export const PosPage = () => {
   useEffect(() => {
     localStorage.setItem('pos_cart', JSON.stringify(cart));
   }, [cart]);
+
   const [selectingUnitFor, setSelectingUnitFor] = useState<{product: any, variant: any} | null>(null);
   const [priceViolations, setPriceViolations] = useState<any[]>([]);
   const [activeCartEditItem, setActiveCartEditItem] = useState<any | null>(null);
@@ -41,6 +42,10 @@ export const PosPage = () => {
   const [discount, setDiscount] = useState<number>(0);
   const [isEditingDiscount, setIsEditingDiscount] = useState(false);
   const [discountInput, setDiscountInput] = useState('');
+
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const rowRefs = useRef<{ [key: number]: HTMLTableRowElement | HTMLDivElement | null }>({});
 
   const handleVariantClick = (product: any, variant: any) => {
     if (!variant.units || variant.units.length === 0) return;
@@ -91,16 +96,6 @@ export const PosPage = () => {
     }));
   };
 
-  const updateQuantity = (unitId: string, delta: number) => {
-    setCart((prev) => prev.map(item => {
-      if (item.unitId === unitId) {
-        const newQ = item.quantity + delta;
-        return newQ > 0 ? { ...item, quantity: newQ } : item;
-      }
-      return item;
-    }));
-  };
-
   const removeFromCart = (unitId: string) => {
     setCart((prev) => prev.filter(item => item.unitId !== unitId));
   };
@@ -114,11 +109,8 @@ export const PosPage = () => {
     }
   };
 
-  const [selectedCategory, setSelectedCategory] = useState('All');
-
   const cartSubtotal = cart.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
   const cartTotal = Math.max(0, cartSubtotal - discount);
-
   const hasStockError = false;
 
   const handleApplyDiscount = () => {
@@ -129,14 +121,14 @@ export const PosPage = () => {
     setIsEditingDiscount(false);
   };
 
-  // Extract categories from API or fallback
+  // Extract categories
   const categories = ['All', ...(fetchedCategories?.map(c => c.name) || Array.from(new Set<string>(products.map((p: any) => p.categoryName || 'Uncategorized'))))];
 
   const filteredProducts = products.filter((p: any) => {
     if (p.isActive === false) return false;
     if (selectedCategory !== 'All' && p.categoryName !== selectedCategory && (p.categoryName || 'Uncategorized') !== selectedCategory) return false;
     
-    // Client-side search matching by product name, variant name, or SKU
+    // Search matching by product name, variant name, or SKU
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.variants?.some((v: any) => 
         v.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -144,10 +136,117 @@ export const PosPage = () => {
       );
     if (!matchesSearch) return false;
 
-    // Check if the product has at least one active variant
     if (!p.variants?.some((v: any) => v.isActive !== false)) return false;
     return true;
   });
+
+  // Flattened list of product-variant pairs for keyboard navigation
+  const flatItems = useMemo(() => {
+    const list: { product: any; variant: any }[] = [];
+    filteredProducts.forEach((product: any) => {
+      product.variants?.forEach((variant: any) => {
+        if (variant.isActive !== false) {
+          list.push({ product, variant });
+        }
+      });
+    });
+    return list;
+  }, [filteredProducts]);
+
+  // Reset keyboard selection index when search or category changes
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchTerm, selectedCategory]);
+
+  // Scroll focused element into view
+  useEffect(() => {
+    const el = rowRefs.current[selectedIndex];
+    if (el) {
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [selectedIndex]);
+
+  // Keyboard navigation for main list (Up/Down/Enter)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // If modal is open, don't hijack navigation
+      if (activeCartEditItem || selectingUnitFor || isCheckoutOpen || priceViolations.length > 0) {
+        return;
+      }
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex((prev) => Math.min(prev + 1, flatItems.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex((prev) => Math.max(prev - 1, 0));
+      } else if (e.key === 'Enter') {
+        if (flatItems.length > 0 && selectedIndex >= 0 && selectedIndex < flatItems.length) {
+          e.preventDefault();
+          const target = flatItems[selectedIndex];
+          handleVariantClick(target.product, target.variant);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [flatItems, selectedIndex, activeCartEditItem, selectingUnitFor, isCheckoutOpen, priceViolations]);
+
+  // Confirm Add to Cart logic
+  const handleConfirmAddToCart = () => {
+    if (!activeCartEditItem) return;
+
+    if (activeCartEditItem.unit.minimumPrice && activeCartEditItem.sellingPrice < Number(activeCartEditItem.unit.minimumPrice)) {
+      toast.error(`Selling price cannot be below minimum price (KSh ${Number(activeCartEditItem.unit.minimumPrice).toLocaleString()})`);
+      return;
+    }
+
+    if (activeCartEditItem.isEditingExisting && activeCartEditItem.cartUnitId) {
+      setCart((prev) => prev.map((item) => 
+        item.unitId === activeCartEditItem.cartUnitId 
+          ? { ...item, sellingPrice: activeCartEditItem.sellingPrice, quantity: activeCartEditItem.quantity }
+          : item
+      ));
+    } else {
+      setCart((prev) => {
+        const existing = prev.find((item) => item.unitId === activeCartEditItem.unit.id);
+        if (existing) {
+          return prev.map((item) => 
+            item.unitId === activeCartEditItem.unit.id 
+              ? { ...item, quantity: activeCartEditItem.quantity, sellingPrice: activeCartEditItem.sellingPrice } 
+              : item
+          );
+        }
+        return [...prev, {
+          productId: activeCartEditItem.product.id,
+          productName: activeCartEditItem.product.name,
+          variantId: activeCartEditItem.variant.id,
+          variantName: activeCartEditItem.variant.name,
+          unitId: activeCartEditItem.unit.id,
+          unitName: activeCartEditItem.unit.name,
+          quantity: activeCartEditItem.quantity,
+          sellingPrice: activeCartEditItem.sellingPrice,
+          minimumPrice: activeCartEditItem.unit.minimumPrice ? Number(activeCartEditItem.unit.minimumPrice) : null,
+          maxStock: Number(activeCartEditItem.variant.baseStockQuantity) || 0,
+        }];
+      });
+    }
+    setActiveCartEditItem(null);
+  };
+
+  // Listen for Enter key inside activeCartEditItem Modal
+  useEffect(() => {
+    if (!activeCartEditItem) return;
+    const handleModalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleConfirmAddToCart();
+      }
+    };
+    window.addEventListener('keydown', handleModalKeyDown);
+    return () => window.removeEventListener('keydown', handleModalKeyDown);
+  }, [activeCartEditItem]);
 
   return (
     <div className="h-full w-full bg-[#F7F6F4] relative overflow-hidden">
@@ -161,9 +260,11 @@ export const PosPage = () => {
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
+                autoFocus
+                placeholder="Search products by Name or SKU..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-full pl-11 pr-4 bg-white border border-gray-200 rounded-full focus:ring-1 focus:ring-black focus:border-black outline-none text-gray-900 transition-all placeholder:text-gray-400 text-sm shadow-sm"
+                className="w-full h-full pl-11 pr-4 bg-white border border-gray-200 rounded-full focus:ring-2 focus:ring-black focus:border-black outline-none text-gray-900 transition-all placeholder:text-gray-400 text-sm shadow-sm font-semibold"
               />
             </div>
             
@@ -190,7 +291,7 @@ export const PosPage = () => {
           </div>
         </div>
 
-        {/* Product Grid */}
+        {/* Product List / Grid */}
         <div className="flex-1 overflow-y-auto px-4 lg:px-8 py-6 scrollbar-hide pb-32">
           {isLoading ? (
             <CardSkeleton count={10} />
@@ -203,125 +304,167 @@ export const PosPage = () => {
             productMode === 'SIMPLE' ? (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200 text-xs text-left">
-                  <thead className="bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-200">
+                  <thead className="bg-gray-100 text-[11px] font-extrabold uppercase tracking-wider text-gray-700 border-b border-gray-300">
                     <tr>
+                      <th scope="col" className="px-6 py-4 w-36">Item Code / SKU</th>
                       <th scope="col" className="px-6 py-4">Product Name</th>
-                      <th scope="col" className="px-6 py-4">Item Code / SKU</th>
                       <th scope="col" className="px-6 py-4 text-right">Price</th>
                       <th scope="col" className="px-6 py-4 text-center">Stock</th>
                       <th scope="col" className="px-6 py-4 text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white font-medium text-gray-700">
-                    {filteredProducts.map((product: any) => (
-                      product.variants.filter((v: any) => v.isActive !== false).map((variant: any) => {
-                        const basePriceUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
-                        const priceToDisplay = basePriceUnit ? Number(basePriceUnit.sellingPrice) : 0;
-                        const stock = Number(variant.baseStockQuantity) || 0;
-                        const hasStock = stock > 0;
+                    {(() => {
+                      let globalItemIndex = 0;
+                      return filteredProducts.map((product: any) =>
+                        product.variants
+                          .filter((v: any) => v.isActive !== false)
+                          .map((variant: any) => {
+                            const flatIndex = globalItemIndex++;
+                            const isFocused = selectedIndex === flatIndex;
 
-                        return (
-                          <tr 
-                            key={variant.id}
-                            onClick={() => handleVariantClick(product, variant)}
-                            className="hover:bg-gray-50/50 transition-colors cursor-pointer group"
-                          >
-                            <td className="px-6 py-4 font-bold text-gray-900 text-sm">
-                              {product.name}
-                            </td>
-                            <td className="px-6 py-4 font-mono text-gray-500 font-semibold">
-                              {variant.sku || '-'}
-                            </td>
-                            <td className="px-6 py-4 text-right font-extrabold text-gray-900 text-sm">
-                              KSh {priceToDisplay.toLocaleString()}
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                                hasStock 
-                                  ? 'bg-green-50 text-green-700 border-green-100' 
-                                  : 'bg-rose-50 text-rose-700 border-rose-100'
-                              }`}>
-                                {hasStock ? `${stock} in stock` : 'Sold out'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex justify-center">
-                                <button 
-                                  onClick={() => handleVariantClick(product, variant)}
-                                  className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#D97706] group-hover:text-white text-gray-400 transition-colors cursor-pointer"
-                                >
-                                  <Plus className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    ))}
+                            const basePriceUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
+                            const priceToDisplay = basePriceUnit ? Number(basePriceUnit.sellingPrice) : 0;
+                            const stock = Number(variant.baseStockQuantity) || 0;
+                            const hasStock = stock > 0;
+
+                            return (
+                              <tr 
+                                key={variant.id}
+                                ref={(el) => (rowRefs.current[flatIndex] = el)}
+                                onClick={() => {
+                                  setSelectedIndex(flatIndex);
+                                  handleVariantClick(product, variant);
+                                }}
+                                className={`transition-all cursor-pointer group ${
+                                  isFocused
+                                    ? 'bg-amber-100/80 font-bold text-gray-900 border-l-4 border-[#D97706]'
+                                    : 'hover:bg-gray-50'
+                                }`}
+                              >
+                                {/* Column 1: Item Code / SKU First */}
+                                <td className="px-6 py-4 font-mono font-extrabold text-sm text-gray-900">
+                                  {variant.sku || '-'}
+                                </td>
+                                {/* Column 2: Product Name */}
+                                <td className="px-6 py-4 font-bold text-gray-900 text-sm">
+                                  {product.name}
+                                </td>
+                                {/* Column 3: Price */}
+                                <td className="px-6 py-4 text-right font-extrabold text-gray-900 text-sm">
+                                  KSh {priceToDisplay.toLocaleString()}
+                                </td>
+                                {/* Column 4: Stock */}
+                                <td className="px-6 py-4 text-center">
+                                  <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                                    hasStock 
+                                      ? 'bg-green-50 text-green-700 border-green-100' 
+                                      : 'bg-rose-50 text-rose-700 border-rose-100'
+                                  }`}>
+                                    {hasStock ? `${stock} in stock` : 'Sold out'}
+                                  </span>
+                                </td>
+                                {/* Column 5: Action */}
+                                <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                                  <div className="flex justify-center">
+                                    <button 
+                                      onClick={() => handleVariantClick(product, variant)}
+                                      className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#D97706] group-hover:text-white text-gray-400 transition-colors cursor-pointer"
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                      );
+                    })()}
                   </tbody>
                 </table>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 lg:gap-6">
-                {filteredProducts.map((product: any) => (
-                  product.variants.filter((v: any) => v.isActive !== false).map((variant: any) => {
-                    const basePriceUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
-                    const priceToDisplay = basePriceUnit ? Number(basePriceUnit.sellingPrice) : 0;
-                    const stock = Number(variant.baseStockQuantity) || 0;
-                    const hasStock = stock > 0;
-                    
-                    return (
-                      <div 
-                        key={variant.id}
-                        onClick={() => handleVariantClick(product, variant)}
-                        className="group bg-white p-3 rounded-3xl cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col h-full relative overflow-hidden"
-                      >
-                        {/* Image / Icon container */}
-                        <div className="w-full aspect-square bg-[#F7F6F4] rounded-2xl mb-3 flex items-center justify-center overflow-hidden relative group-hover:bg-gray-50 transition-colors">
-                          {(() => {
-                            const posImageUrl = product.imageUrl || variant.imageUrl || product.variants?.[0]?.imageUrl;
-                            return posImageUrl ? (
-                              <img 
-                                src={posImageUrl} 
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                                alt={product.name} 
-                              />
-                            ) : (
-                              <Package className="w-10 h-10 text-gray-300 transition-transform duration-500 group-hover:scale-110" />
-                            );
-                          })()}
-                          <div className={`absolute top-2 right-2 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm backdrop-blur-md ${
-                            hasStock 
-                              ? 'bg-white/80 text-gray-800' 
-                              : 'bg-rose-50/90 text-rose-700'
-                          }`}>
-                            {hasStock ? `${stock} in stock` : 'Sold out'}
-                          </div>
-                        </div>
+                {(() => {
+                  let globalGridIndex = 0;
+                  return filteredProducts.map((product: any) =>
+                    product.variants
+                      .filter((v: any) => v.isActive !== false)
+                      .map((variant: any) => {
+                        const flatIndex = globalGridIndex++;
+                        const isFocused = selectedIndex === flatIndex;
 
-                        {/* Name and description */}
-                        <div className="flex-1 px-1">
-                          <div className="font-bold text-sm text-gray-900 leading-snug line-clamp-2" title={product.name}>
-                            {product.name}
-                          </div>
-                          <div className="text-xs text-gray-500 font-medium mt-1">
-                            {variant.name === 'Default' ? 'Standard' : variant.name}
-                          </div>
-                        </div>
+                        const basePriceUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
+                        const priceToDisplay = basePriceUnit ? Number(basePriceUnit.sellingPrice) : 0;
+                        const stock = Number(variant.baseStockQuantity) || 0;
+                        const hasStock = stock > 0;
+                        
+                        return (
+                          <div 
+                            key={variant.id}
+                            ref={(el) => (rowRefs.current[flatIndex] = el)}
+                            onClick={() => {
+                              setSelectedIndex(flatIndex);
+                              handleVariantClick(product, variant);
+                            }}
+                            className={`group bg-white p-3 rounded-3xl cursor-pointer hover:shadow-xl transition-all duration-300 flex flex-col h-full relative overflow-hidden ${
+                              isFocused ? 'ring-4 ring-[#D97706] scale-[1.02]' : ''
+                            }`}
+                          >
+                            {/* SKU Badge */}
+                            {variant.sku && (
+                              <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-gray-900 text-white shadow-sm">
+                                SKU: {variant.sku}
+                              </div>
+                            )}
 
-                        {/* Price footer */}
-                        <div className="px-1 mt-3 flex items-center justify-between">
-                          <span className="text-sm font-extrabold text-gray-900">
-                            KSh {priceToDisplay.toLocaleString()}
-                          </span>
-                          <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#D97706] group-hover:text-white transition-colors text-gray-400">
-                             <Plus className="w-4 h-4" />
+                            {/* Image / Icon container */}
+                            <div className="w-full aspect-square bg-[#F7F6F4] rounded-2xl mb-3 flex items-center justify-center overflow-hidden relative group-hover:bg-gray-50 transition-colors">
+                              {(() => {
+                                const posImageUrl = product.imageUrl || variant.imageUrl || product.variants?.[0]?.imageUrl;
+                                return posImageUrl ? (
+                                  <img 
+                                    src={posImageUrl} 
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                    alt={product.name} 
+                                  />
+                                ) : (
+                                  <Package className="w-10 h-10 text-gray-300 transition-transform duration-500 group-hover:scale-110" />
+                                );
+                              })()}
+                              <div className={`absolute top-2 right-2 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm backdrop-blur-md ${
+                                hasStock 
+                                  ? 'bg-white/80 text-gray-800' 
+                                  : 'bg-rose-50/90 text-rose-700'
+                              }`}>
+                                {hasStock ? `${stock} in stock` : 'Sold out'}
+                              </div>
+                            </div>
+
+                            {/* Name and description */}
+                            <div className="flex-1 px-1">
+                              <div className="font-bold text-sm text-gray-900 leading-snug line-clamp-2" title={product.name}>
+                                {product.name}
+                              </div>
+                              <div className="text-xs text-gray-500 font-medium mt-1">
+                                {variant.name === 'Default' ? 'Standard' : variant.name}
+                              </div>
+                            </div>
+
+                            {/* Price footer */}
+                            <div className="px-1 mt-3 flex items-center justify-between">
+                              <span className="text-sm font-extrabold text-gray-900">
+                                KSh {priceToDisplay.toLocaleString()}
+                              </span>
+                              <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#D97706] group-hover:text-white transition-colors text-gray-400">
+                                 <Plus className="w-4 h-4" />
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ))}
+                        );
+                      })
+                  );
+                })()}
               </div>
             )
           )}
@@ -406,8 +549,6 @@ export const PosPage = () => {
               {cart.map((item) => {
                 const product = products.find((p: any) => p.id === item.productId);
                 const variant = product?.variants?.find((v: any) => v.id === item.variantId);
-                const maxStock = variant ? (Number(variant.baseStockQuantity) || 0) : (item.maxStock ?? Infinity);
-                const isOverStock = false; // Add real logic here if needed
 
                 return (
                 <div 
@@ -480,7 +621,7 @@ export const PosPage = () => {
               <span className="text-[var(--color-text-primary)] font-bold">KSh {cartSubtotal.toLocaleString()}</span>
             </div>
             
-            {/* Discount Row (Interactive Design) */}
+            {/* Discount Row */}
             {isEditingDiscount ? (
               <div className="flex justify-between items-center text-sm text-zinc-400">
                 <span className="font-medium">Discount</span>
@@ -671,6 +812,8 @@ export const PosPage = () => {
           </div>
         </div>
       )}
+
+      {/* Add to Cart / Edit Item Modal */}
       {activeCartEditItem && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px]" onClick={() => setActiveCartEditItem(null)} />
@@ -679,7 +822,7 @@ export const PosPage = () => {
               <h2 className="text-base font-bold text-gray-900">
                 {activeCartEditItem.isEditingExisting ? 'Edit Item Details' : 'Add to Cart'}
               </h2>
-              <button onClick={() => setActiveCartEditItem(null)} className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors">
+              <button onClick={() => setActiveCartEditItem(null)} className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -687,7 +830,8 @@ export const PosPage = () => {
             <div className="p-5 space-y-4">
               <div>
                 <h3 className="font-bold text-sm text-gray-900">{activeCartEditItem.product.name}</h3>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-1 font-medium">
+                  {activeCartEditItem.variant.sku ? `SKU: ${activeCartEditItem.variant.sku} • ` : ''}
                   {activeCartEditItem.variant.name === 'Default' ? 'Standard' : activeCartEditItem.variant.name} • {activeCartEditItem.unit.name}
                 </p>
               </div>
@@ -722,7 +866,7 @@ export const PosPage = () => {
                         const val = Number(e.target.value);
                         setActiveCartEditItem(prev => prev ? { ...prev, sellingPrice: val } : null);
                       }}
-                      className="w-full h-10 pl-9 pr-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm font-bold focus:outline-none focus:ring-1 focus:ring-black focus:bg-white transition-all"
+                      className="w-full h-10 pl-9 pr-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-black focus:bg-white transition-all"
                     />
                   </div>
                 </div>
@@ -769,49 +913,17 @@ export const PosPage = () => {
               <button 
                 type="button" 
                 onClick={() => setActiveCartEditItem(null)} 
-                className="px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors"
+                className="px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button 
                 type="button"
                 disabled={activeCartEditItem.unit.minimumPrice && activeCartEditItem.sellingPrice < Number(activeCartEditItem.unit.minimumPrice)}
-                onClick={() => {
-                  if (activeCartEditItem.isEditingExisting && activeCartEditItem.cartUnitId) {
-                    setCart(prev => prev.map(item => 
-                      item.unitId === activeCartEditItem.cartUnitId 
-                        ? { ...item, sellingPrice: activeCartEditItem.sellingPrice, quantity: activeCartEditItem.quantity }
-                        : item
-                    ));
-                  } else {
-                    setCart(prev => {
-                      const existing = prev.find(item => item.unitId === activeCartEditItem.unit.id);
-                      if (existing) {
-                        return prev.map(item => 
-                          item.unitId === activeCartEditItem.unit.id 
-                            ? { ...item, quantity: activeCartEditItem.quantity, sellingPrice: activeCartEditItem.sellingPrice } 
-                            : item
-                        );
-                      }
-                      return [...prev, {
-                        productId: activeCartEditItem.product.id,
-                        productName: activeCartEditItem.product.name,
-                        variantId: activeCartEditItem.variant.id,
-                        variantName: activeCartEditItem.variant.name,
-                        unitId: activeCartEditItem.unit.id,
-                        unitName: activeCartEditItem.unit.name,
-                        quantity: activeCartEditItem.quantity,
-                        sellingPrice: activeCartEditItem.sellingPrice,
-                        minimumPrice: activeCartEditItem.unit.minimumPrice ? Number(activeCartEditItem.unit.minimumPrice) : null,
-                        maxStock: Number(activeCartEditItem.variant.baseStockQuantity) || 0,
-                      }];
-                    });
-                  }
-                  setActiveCartEditItem(null);
-                }}
-                className="px-5 py-2.5 bg-black hover:bg-black text-white text-xs font-bold rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={handleConfirmAddToCart}
+                className="px-5 py-2.5 bg-black hover:bg-black text-white text-xs font-bold rounded-xl transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {activeCartEditItem.isEditingExisting ? 'Save Changes' : 'Add to Order'}
+                {activeCartEditItem.isEditingExisting ? 'Save Changes' : 'Add to Order (Enter ↵)'}
               </button>
             </div>
           </div>
