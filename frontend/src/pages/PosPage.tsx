@@ -51,6 +51,10 @@ export const PosPage = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const rowRefs = useRef<{ [key: number]: HTMLTableRowElement | HTMLDivElement | null }>({});
 
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const priceInputRef = useRef<HTMLInputElement>(null);
+  const quantityInputRef = useRef<HTMLInputElement>(null);
+
   const handleVariantClick = (product: any, variant: any) => {
     if (!variant.units || variant.units.length === 0) return;
     
@@ -180,6 +184,19 @@ export const PosPage = () => {
     }
   }, [selectedIndex]);
 
+  // When Add to Cart modal opens, auto-focus selling price and select text
+  useEffect(() => {
+    if (activeCartEditItem) {
+      const timer = setTimeout(() => {
+        if (priceInputRef.current) {
+          priceInputRef.current.focus();
+          priceInputRef.current.select();
+        }
+      }, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [activeCartEditItem]);
+
   // Keyboard navigation for main list (Up/Down/Enter)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -207,7 +224,7 @@ export const PosPage = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [flatItems, selectedIndex, activeCartEditItem, selectingUnitFor, isCheckoutOpen, priceViolations]);
 
-  // Confirm Add to Cart logic
+  // Confirm Add to Cart logic & refocus empty search bar
   const handleConfirmAddToCart = () => {
     if (!activeCartEditItem) return;
 
@@ -246,21 +263,21 @@ export const PosPage = () => {
         }];
       });
     }
+
+    // Close modal, clear search input, and refocus search input for next item
     setActiveCartEditItem(null);
+    setSearchInputVal('');
+    setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 60);
   };
 
-  // Listen for Enter key inside activeCartEditItem Modal
-  useEffect(() => {
-    if (!activeCartEditItem) return;
-    const handleModalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleConfirmAddToCart();
-      }
-    };
-    window.addEventListener('keydown', handleModalKeyDown);
-    return () => window.removeEventListener('keydown', handleModalKeyDown);
-  }, [activeCartEditItem]);
+  const handleCloseModal = () => {
+    setActiveCartEditItem(null);
+    setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 60);
+  };
 
   return (
     <div className="h-full w-full bg-[#F7F6F4] relative overflow-hidden">
@@ -273,6 +290,7 @@ export const PosPage = () => {
             <div className="relative w-full md:w-[400px] h-[46px] shrink-0">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
+                ref={searchInputRef}
                 type="text"
                 autoFocus
                 placeholder="Search products by Name or SKU..."
@@ -345,7 +363,7 @@ export const PosPage = () => {
                           }}
                           className={`transition-all cursor-pointer group ${
                             isFocused
-                              ? 'bg-amber-100/80 font-bold text-gray-900 border-l-4 border-[#D97706]'
+                              ? 'ring-2 ring-black ring-inset bg-gray-50 font-extrabold text-gray-900'
                               : 'hover:bg-gray-50'
                           }`}
                         >
@@ -406,7 +424,7 @@ export const PosPage = () => {
                         handleVariantClick(product, variant);
                       }}
                       className={`group bg-white p-3 rounded-3xl cursor-pointer hover:shadow-xl transition-all duration-300 flex flex-col h-full relative overflow-hidden ${
-                        isFocused ? 'ring-4 ring-[#D97706] scale-[1.02]' : ''
+                        isFocused ? 'ring-2 ring-black scale-[1.01]' : ''
                       }`}
                     >
                       {/* SKU Badge */}
@@ -812,13 +830,13 @@ export const PosPage = () => {
       {/* Add to Cart / Edit Item Modal */}
       {activeCartEditItem && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px]" onClick={() => setActiveCartEditItem(null)} />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px]" onClick={handleCloseModal} />
           <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[400px] m-4 flex flex-col transition-all duration-300">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h2 className="text-base font-bold text-gray-900">
                 {activeCartEditItem.isEditingExisting ? 'Edit Item Details' : 'Add to Cart'}
               </h2>
-              <button onClick={() => setActiveCartEditItem(null)} className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+              <button onClick={handleCloseModal} className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -854,6 +872,7 @@ export const PosPage = () => {
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">KSh</span>
                     <input
+                      ref={priceInputRef}
                       type="number"
                       min="0"
                       step="0.01"
@@ -861,6 +880,13 @@ export const PosPage = () => {
                       onChange={(e) => {
                         const val = Number(e.target.value);
                         setActiveCartEditItem(prev => prev ? { ...prev, sellingPrice: val } : null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          quantityInputRef.current?.focus();
+                          quantityInputRef.current?.select();
+                        }
                       }}
                       className="w-full h-10 pl-9 pr-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-black focus:bg-white transition-all"
                     />
@@ -885,12 +911,19 @@ export const PosPage = () => {
                     <Minus className="w-4 h-4" />
                   </button>
                   <input
+                    ref={quantityInputRef}
                     type="number"
                     min="1"
                     value={activeCartEditItem.quantity}
                     onChange={(e) => {
                       const val = Math.max(1, parseInt(e.target.value) || 1);
                       setActiveCartEditItem(prev => prev ? { ...prev, quantity: val } : null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleConfirmAddToCart();
+                      }
                     }}
                     className="w-12 text-center bg-transparent border-none text-gray-900 text-sm font-bold outline-none"
                   />
@@ -908,7 +941,7 @@ export const PosPage = () => {
             <div className="p-5 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3 rounded-b-2xl">
               <button 
                 type="button" 
-                onClick={() => setActiveCartEditItem(null)} 
+                onClick={handleCloseModal} 
                 className="px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
               >
                 Cancel
