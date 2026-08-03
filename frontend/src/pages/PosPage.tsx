@@ -272,19 +272,6 @@ export const PosPage = () => {
     }, 50);
   };
 
-  // Global modal Enter listener: pressing Enter anywhere inside modal places order, closes modal, and focuses search input
-  useEffect(() => {
-    if (!activeCartEditItem) return;
-    const handleModalEnter = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleConfirmAddToCart();
-      }
-    };
-    window.addEventListener('keydown', handleModalEnter);
-    return () => window.removeEventListener('keydown', handleModalEnter);
-  }, [activeCartEditItem]);
-
   const handleCloseModal = () => {
     setActiveCartEditItem(null);
     setTimeout(() => {
@@ -897,6 +884,7 @@ export const PosPage = () => {
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
+                          e.stopPropagation();
                           quantityInputRef.current?.focus();
                           quantityInputRef.current?.select();
                         }
@@ -935,6 +923,7 @@ export const PosPage = () => {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
+                        e.stopPropagation();
                         handleConfirmAddToCart();
                       }
                     }}
