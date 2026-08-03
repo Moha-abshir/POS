@@ -334,14 +334,16 @@ export const BankingPage: React.FC = () => {
                 <div className="lg:col-span-4 flex flex-col justify-between gap-3 h-full">
                   <div>
                     <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Running Balance</label>
-                    <div className="w-full p-3 bg-gray-900 text-white rounded border border-gray-800 shadow-inner flex flex-col justify-center">
-                      <span className="text-[10px] text-gray-400 uppercase tracking-widest">
+                    <div 
+                      className="w-full p-3 text-white rounded shadow-inner flex flex-col justify-center"
+                      style={{ backgroundColor: '#000000', opacity: 1 }}
+                    >
+                      <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">
                         {Number(selectedCustomer.balance) >= 0 ? 'Customer Owed' : 'Customer Owes'}
                       </span>
                       <span
-                        className={`text-2xl font-mono font-black tracking-tight ${
-                          Number(selectedCustomer.balance) >= 0 ? 'text-green-400' : 'text-red-400'
-                        }`}
+                        className="text-2xl font-mono font-black tracking-tight"
+                        style={{ color: '#16a34a' }}
                       >
                         KES {formatKES(selectedCustomer.balance)}
                       </span>
