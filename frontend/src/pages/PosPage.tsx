@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
 import { useCategories, useProducts } from '../features/catalog/api/catalog.api';
 import { ShoppingCart, Search, Plus, Minus, Trash2, Tag, ArrowRight, Package, ShoppingBag, X, Pencil } from 'lucide-react';
 import { api } from '../lib/api';
@@ -19,7 +19,11 @@ export const PosPage = () => {
   });
   const productMode = meData?.business?.productMode || 'ADVANCED';
 
-  const [searchTerm, setSearchTerm] = useState('');
+  // Input value state (instant UI reaction)
+  const [searchInputVal, setSearchInputVal] = useState('');
+  // Deferred search query (prevents input typing lag)
+  const deferredSearchTerm = useDeferredValue(searchInputVal);
+
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [completedSaleId, setCompletedSaleId] = useState<string | null>(null);
@@ -124,39 +128,49 @@ export const PosPage = () => {
   // Extract categories
   const categories = ['All', ...(fetchedCategories?.map(c => c.name) || Array.from(new Set<string>(products.map((p: any) => p.categoryName || 'Uncategorized'))))];
 
-  const filteredProducts = products.filter((p: any) => {
-    if (p.isActive === false) return false;
-    if (selectedCategory !== 'All' && p.categoryName !== selectedCategory && (p.categoryName || 'Uncategorized') !== selectedCategory) return false;
-    
-    // Search matching by product name, variant name, or SKU
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.variants?.some((v: any) => 
-        v.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        v.sku?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    if (!matchesSearch) return false;
+  // Pre-index product search keys for 1,800+ catalog items (lightning fast matching)
+  const indexedItems = useMemo(() => {
+    const items: { product: any; variant: any; searchStr: string }[] = [];
+    products.forEach((product: any) => {
+      if (product.isActive === false) return;
+      const prodName = (product.name || '').toLowerCase();
+      const catName = (product.categoryName || 'Uncategorized').toLowerCase();
 
-    if (!p.variants?.some((v: any) => v.isActive !== false)) return false;
-    return true;
-  });
-
-  // Flattened list of product-variant pairs for keyboard navigation
-  const flatItems = useMemo(() => {
-    const list: { product: any; variant: any }[] = [];
-    filteredProducts.forEach((product: any) => {
       product.variants?.forEach((variant: any) => {
-        if (variant.isActive !== false) {
-          list.push({ product, variant });
-        }
+        if (variant.isActive === false) return;
+        const varName = (variant.name || '').toLowerCase();
+        const sku = (variant.sku || '').toLowerCase();
+
+        items.push({
+          product,
+          variant,
+          searchStr: `${prodName} ${sku} ${varName} ${catName}`
+        });
       });
     });
-    return list;
-  }, [filteredProducts]);
+    return items;
+  }, [products]);
+
+  // Fast filtered & limited list of items (max 100 for instant 60fps rendering)
+  const flatItems = useMemo(() => {
+    const query = deferredSearchTerm.trim().toLowerCase();
+    let filtered = indexedItems;
+
+    if (selectedCategory !== 'All') {
+      filtered = filtered.filter((item) => (item.product.categoryName || 'Uncategorized') === selectedCategory);
+    }
+
+    if (query) {
+      filtered = filtered.filter((item) => item.searchStr.includes(query));
+    }
+
+    return filtered.slice(0, 100);
+  }, [indexedItems, deferredSearchTerm, selectedCategory]);
 
   // Reset keyboard selection index when search or category changes
   useEffect(() => {
     setSelectedIndex(0);
-  }, [searchTerm, selectedCategory]);
+  }, [deferredSearchTerm, selectedCategory]);
 
   // Scroll focused element into view
   useEffect(() => {
@@ -262,8 +276,8 @@ export const PosPage = () => {
                 type="text"
                 autoFocus
                 placeholder="Search products by Name or SKU..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchInputVal}
+                onChange={(e) => setSearchInputVal(e.target.value)}
                 className="w-full h-full pl-11 pr-4 bg-white border border-gray-200 rounded-full focus:ring-2 focus:ring-black focus:border-black outline-none text-gray-900 transition-all placeholder:text-gray-400 text-sm shadow-sm font-semibold"
               />
             </div>
@@ -295,7 +309,7 @@ export const PosPage = () => {
         <div className="flex-1 overflow-y-auto px-4 lg:px-8 py-6 scrollbar-hide pb-32">
           {isLoading ? (
             <CardSkeleton count={10} />
-          ) : filteredProducts.length === 0 ? (
+          ) : flatItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-3">
               <ShoppingBag className="w-12 h-12 opacity-30" />
               <p className="text-base font-semibold">No products found</p>
@@ -314,157 +328,139 @@ export const PosPage = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white font-medium text-gray-700">
-                    {(() => {
-                      let globalItemIndex = 0;
-                      return filteredProducts.map((product: any) =>
-                        product.variants
-                          .filter((v: any) => v.isActive !== false)
-                          .map((variant: any) => {
-                            const flatIndex = globalItemIndex++;
-                            const isFocused = selectedIndex === flatIndex;
+                    {flatItems.map(({ product, variant }, flatIndex) => {
+                      const isFocused = selectedIndex === flatIndex;
+                      const basePriceUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
+                      const priceToDisplay = basePriceUnit ? Number(basePriceUnit.sellingPrice) : 0;
+                      const stock = Number(variant.baseStockQuantity) || 0;
+                      const hasStock = stock > 0;
 
-                            const basePriceUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
-                            const priceToDisplay = basePriceUnit ? Number(basePriceUnit.sellingPrice) : 0;
-                            const stock = Number(variant.baseStockQuantity) || 0;
-                            const hasStock = stock > 0;
-
-                            return (
-                              <tr 
-                                key={variant.id}
-                                ref={(el) => (rowRefs.current[flatIndex] = el)}
-                                onClick={() => {
-                                  setSelectedIndex(flatIndex);
-                                  handleVariantClick(product, variant);
-                                }}
-                                className={`transition-all cursor-pointer group ${
-                                  isFocused
-                                    ? 'bg-amber-100/80 font-bold text-gray-900 border-l-4 border-[#D97706]'
-                                    : 'hover:bg-gray-50'
-                                }`}
+                      return (
+                        <tr 
+                          key={variant.id}
+                          ref={(el) => (rowRefs.current[flatIndex] = el)}
+                          onClick={() => {
+                            setSelectedIndex(flatIndex);
+                            handleVariantClick(product, variant);
+                          }}
+                          className={`transition-all cursor-pointer group ${
+                            isFocused
+                              ? 'bg-amber-100/80 font-bold text-gray-900 border-l-4 border-[#D97706]'
+                              : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          {/* Column 1: Item Code / SKU First */}
+                          <td className="px-6 py-4 font-mono font-extrabold text-sm text-gray-900">
+                            {variant.sku || '-'}
+                          </td>
+                          {/* Column 2: Product Name */}
+                          <td className="px-6 py-4 font-bold text-gray-900 text-sm">
+                            {product.name}
+                          </td>
+                          {/* Column 3: Price */}
+                          <td className="px-6 py-4 text-right font-extrabold text-gray-900 text-sm">
+                            KSh {priceToDisplay.toLocaleString()}
+                          </td>
+                          {/* Column 4: Stock */}
+                          <td className="px-6 py-4 text-center">
+                            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                              hasStock 
+                                ? 'bg-green-50 text-green-700 border-green-100' 
+                                : 'bg-rose-50 text-rose-700 border-rose-100'
+                            }`}>
+                              {hasStock ? `${stock} in stock` : 'Sold out'}
+                            </span>
+                          </td>
+                          {/* Column 5: Action */}
+                          <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex justify-center">
+                              <button 
+                                onClick={() => handleVariantClick(product, variant)}
+                                className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#D97706] group-hover:text-white text-gray-400 transition-colors cursor-pointer"
                               >
-                                {/* Column 1: Item Code / SKU First */}
-                                <td className="px-6 py-4 font-mono font-extrabold text-sm text-gray-900">
-                                  {variant.sku || '-'}
-                                </td>
-                                {/* Column 2: Product Name */}
-                                <td className="px-6 py-4 font-bold text-gray-900 text-sm">
-                                  {product.name}
-                                </td>
-                                {/* Column 3: Price */}
-                                <td className="px-6 py-4 text-right font-extrabold text-gray-900 text-sm">
-                                  KSh {priceToDisplay.toLocaleString()}
-                                </td>
-                                {/* Column 4: Stock */}
-                                <td className="px-6 py-4 text-center">
-                                  <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                                    hasStock 
-                                      ? 'bg-green-50 text-green-700 border-green-100' 
-                                      : 'bg-rose-50 text-rose-700 border-rose-100'
-                                  }`}>
-                                    {hasStock ? `${stock} in stock` : 'Sold out'}
-                                  </span>
-                                </td>
-                                {/* Column 5: Action */}
-                                <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                                  <div className="flex justify-center">
-                                    <button 
-                                      onClick={() => handleVariantClick(product, variant)}
-                                      className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#D97706] group-hover:text-white text-gray-400 transition-colors cursor-pointer"
-                                    >
-                                      <Plus className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
                       );
-                    })()}
+                    })}
                   </tbody>
                 </table>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 lg:gap-6">
-                {(() => {
-                  let globalGridIndex = 0;
-                  return filteredProducts.map((product: any) =>
-                    product.variants
-                      .filter((v: any) => v.isActive !== false)
-                      .map((variant: any) => {
-                        const flatIndex = globalGridIndex++;
-                        const isFocused = selectedIndex === flatIndex;
+                {flatItems.map(({ product, variant }, flatIndex) => {
+                  const isFocused = selectedIndex === flatIndex;
+                  const basePriceUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
+                  const priceToDisplay = basePriceUnit ? Number(basePriceUnit.sellingPrice) : 0;
+                  const stock = Number(variant.baseStockQuantity) || 0;
+                  const hasStock = stock > 0;
+                  
+                  return (
+                    <div 
+                      key={variant.id}
+                      ref={(el) => (rowRefs.current[flatIndex] = el)}
+                      onClick={() => {
+                        setSelectedIndex(flatIndex);
+                        handleVariantClick(product, variant);
+                      }}
+                      className={`group bg-white p-3 rounded-3xl cursor-pointer hover:shadow-xl transition-all duration-300 flex flex-col h-full relative overflow-hidden ${
+                        isFocused ? 'ring-4 ring-[#D97706] scale-[1.02]' : ''
+                      }`}
+                    >
+                      {/* SKU Badge */}
+                      {variant.sku && (
+                        <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-gray-900 text-white shadow-sm">
+                          SKU: {variant.sku}
+                        </div>
+                      )}
 
-                        const basePriceUnit = variant.units?.find((u: any) => u.isDefault) || variant.units?.[0];
-                        const priceToDisplay = basePriceUnit ? Number(basePriceUnit.sellingPrice) : 0;
-                        const stock = Number(variant.baseStockQuantity) || 0;
-                        const hasStock = stock > 0;
-                        
-                        return (
-                          <div 
-                            key={variant.id}
-                            ref={(el) => (rowRefs.current[flatIndex] = el)}
-                            onClick={() => {
-                              setSelectedIndex(flatIndex);
-                              handleVariantClick(product, variant);
-                            }}
-                            className={`group bg-white p-3 rounded-3xl cursor-pointer hover:shadow-xl transition-all duration-300 flex flex-col h-full relative overflow-hidden ${
-                              isFocused ? 'ring-4 ring-[#D97706] scale-[1.02]' : ''
-                            }`}
-                          >
-                            {/* SKU Badge */}
-                            {variant.sku && (
-                              <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-gray-900 text-white shadow-sm">
-                                SKU: {variant.sku}
-                              </div>
-                            )}
+                      {/* Image / Icon container */}
+                      <div className="w-full aspect-square bg-[#F7F6F4] rounded-2xl mb-3 flex items-center justify-center overflow-hidden relative group-hover:bg-gray-50 transition-colors">
+                        {(() => {
+                          const posImageUrl = product.imageUrl || variant.imageUrl || product.variants?.[0]?.imageUrl;
+                          return posImageUrl ? (
+                            <img 
+                              src={posImageUrl} 
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                              alt={product.name} 
+                            />
+                          ) : (
+                            <Package className="w-10 h-10 text-gray-300 transition-transform duration-500 group-hover:scale-110" />
+                          );
+                        })()}
+                        <div className={`absolute top-2 right-2 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm backdrop-blur-md ${
+                          hasStock 
+                            ? 'bg-white/80 text-gray-800' 
+                            : 'bg-rose-50/90 text-rose-700'
+                        }`}>
+                          {hasStock ? `${stock} in stock` : 'Sold out'}
+                        </div>
+                      </div>
 
-                            {/* Image / Icon container */}
-                            <div className="w-full aspect-square bg-[#F7F6F4] rounded-2xl mb-3 flex items-center justify-center overflow-hidden relative group-hover:bg-gray-50 transition-colors">
-                              {(() => {
-                                const posImageUrl = product.imageUrl || variant.imageUrl || product.variants?.[0]?.imageUrl;
-                                return posImageUrl ? (
-                                  <img 
-                                    src={posImageUrl} 
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                                    alt={product.name} 
-                                  />
-                                ) : (
-                                  <Package className="w-10 h-10 text-gray-300 transition-transform duration-500 group-hover:scale-110" />
-                                );
-                              })()}
-                              <div className={`absolute top-2 right-2 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm backdrop-blur-md ${
-                                hasStock 
-                                  ? 'bg-white/80 text-gray-800' 
-                                  : 'bg-rose-50/90 text-rose-700'
-                              }`}>
-                                {hasStock ? `${stock} in stock` : 'Sold out'}
-                              </div>
-                            </div>
+                      {/* Name and description */}
+                      <div className="flex-1 px-1">
+                        <div className="font-bold text-sm text-gray-900 leading-snug line-clamp-2" title={product.name}>
+                          {product.name}
+                        </div>
+                        <div className="text-xs text-gray-500 font-medium mt-1">
+                          {variant.name === 'Default' ? 'Standard' : variant.name}
+                        </div>
+                      </div>
 
-                            {/* Name and description */}
-                            <div className="flex-1 px-1">
-                              <div className="font-bold text-sm text-gray-900 leading-snug line-clamp-2" title={product.name}>
-                                {product.name}
-                              </div>
-                              <div className="text-xs text-gray-500 font-medium mt-1">
-                                {variant.name === 'Default' ? 'Standard' : variant.name}
-                              </div>
-                            </div>
-
-                            {/* Price footer */}
-                            <div className="px-1 mt-3 flex items-center justify-between">
-                              <span className="text-sm font-extrabold text-gray-900">
-                                KSh {priceToDisplay.toLocaleString()}
-                              </span>
-                              <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#D97706] group-hover:text-white transition-colors text-gray-400">
-                                 <Plus className="w-4 h-4" />
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
+                      {/* Price footer */}
+                      <div className="px-1 mt-3 flex items-center justify-between">
+                        <span className="text-sm font-extrabold text-gray-900">
+                          KSh {priceToDisplay.toLocaleString()}
+                        </span>
+                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#D97706] group-hover:text-white transition-colors text-gray-400">
+                           <Plus className="w-4 h-4" />
+                        </div>
+                      </div>
+                    </div>
                   );
-                })()}
+                })}
               </div>
             )
           )}
