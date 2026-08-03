@@ -48,7 +48,7 @@ export const PosPage = () => {
   const [discountInput, setDiscountInput] = useState('');
 
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const rowRefs = useRef<{ [key: number]: HTMLTableRowElement | HTMLDivElement | null }>({});
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -171,16 +171,22 @@ export const PosPage = () => {
     return filtered.slice(0, 100);
   }, [indexedItems, deferredSearchTerm, selectedCategory]);
 
-  // Reset keyboard selection index when search or category changes
+  // Only auto-select row 0 when user actively types a search query; reset to -1 when search is empty
   useEffect(() => {
-    setSelectedIndex(0);
+    if (deferredSearchTerm.trim() !== '') {
+      setSelectedIndex(0);
+    } else {
+      setSelectedIndex(-1);
+    }
   }, [deferredSearchTerm, selectedCategory]);
 
   // Scroll focused element into view
   useEffect(() => {
-    const el = rowRefs.current[selectedIndex];
-    if (el) {
-      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (selectedIndex >= 0) {
+      const el = rowRefs.current[selectedIndex];
+      if (el) {
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
     }
   }, [selectedIndex]);
 
@@ -207,12 +213,19 @@ export const PosPage = () => {
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setSelectedIndex((prev) => Math.min(prev + 1, flatItems.length - 1));
+        setSelectedIndex((prev) => {
+          if (prev < 0) return 0;
+          return Math.min(prev + 1, flatItems.length - 1);
+        });
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        setSelectedIndex((prev) => Math.max(prev - 1, 0));
+        setSelectedIndex((prev) => {
+          if (prev < 0) return 0;
+          return Math.max(prev - 1, 0);
+        });
       } else if (e.key === 'Enter') {
-        if (flatItems.length > 0 && selectedIndex >= 0 && selectedIndex < flatItems.length) {
+        // Only open modal if an item is explicitly selected (selectedIndex >= 0)
+        if (selectedIndex >= 0 && selectedIndex < flatItems.length) {
           e.preventDefault();
           const target = flatItems[selectedIndex];
           handleVariantClick(target.product, target.variant);
@@ -264,9 +277,10 @@ export const PosPage = () => {
       });
     }
 
-    // Close modal, clear search input, and refocus search input for next item
+    // Close modal, clear search input, reset selection, and refocus search input for next item
     setActiveCartEditItem(null);
     setSearchInputVal('');
+    setSelectedIndex(-1);
     setTimeout(() => {
       searchInputRef.current?.focus();
     }, 50);
@@ -274,6 +288,7 @@ export const PosPage = () => {
 
   const handleCloseModal = () => {
     setActiveCartEditItem(null);
+    setSelectedIndex(-1);
     setTimeout(() => {
       searchInputRef.current?.focus();
     }, 50);
