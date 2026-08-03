@@ -36,7 +36,6 @@ export const BankingPage: React.FC = () => {
   const [formIdNumber, setFormIdNumber] = useState('');
 
   // Transaction Inputs
-  const [transType, setTransType] = useState<'DEPOSIT' | 'WITHDRAWAL'>('DEPOSIT');
   const [transAmount, setTransAmount] = useState('');
 
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
@@ -134,12 +133,11 @@ export const BankingPage: React.FC = () => {
     }
   };
 
-  const handleExecuteTransaction = async (overrideType?: 'DEPOSIT' | 'WITHDRAWAL') => {
+  const handleExecuteTransaction = async (typeToUse: 'DEPOSIT' | 'WITHDRAWAL') => {
     if (!selectedCustomer) {
       toast.error('Please select a customer first');
       return;
     }
-    const typeToUse = overrideType || transType;
     const amountVal = Number(transAmount);
     if (!transAmount || isNaN(amountVal) || amountVal <= 0) {
       toast.error('Please enter a valid positive amount');
@@ -317,32 +315,18 @@ export const BankingPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Transaction Inputs Row */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Transaction Type</label>
-                      <select
-                        value={transType}
-                        onChange={(e) => setTransType(e.target.value as 'DEPOSIT' | 'WITHDRAWAL')}
-                        className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-300 rounded text-xs font-semibold text-gray-800 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                      >
-                        <option value="DEPOSIT">DEPOSIT (+)</option>
-                        <option value="WITHDRAWAL">WITHDRAWAL (-)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Amount (KES)</label>
-                      <input
-                        type="number"
-                        min="1"
-                        step="any"
-                        placeholder="Enter amount..."
-                        value={transAmount}
-                        onChange={(e) => setTransAmount(e.target.value)}
-                        className="w-full px-2.5 py-1.5 bg-white border border-gray-400 rounded text-xs font-bold text-gray-900 focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
+                  {/* Transaction Amount Input */}
+                  <div className="pt-1">
+                    <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Amount (KES)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      step="any"
+                      placeholder="Enter amount..."
+                      value={transAmount}
+                      onChange={(e) => setTransAmount(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-gray-400 rounded text-xs font-bold text-gray-900 focus:ring-2 focus:ring-blue-500 shadow-sm"
+                    />
                   </div>
                 </div>
 
