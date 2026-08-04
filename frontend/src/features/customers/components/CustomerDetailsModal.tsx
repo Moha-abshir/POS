@@ -220,38 +220,51 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                     </div>
                   ) : purchases && purchases.length > 0 ? (
                     <div className="space-y-3">
-                      {purchases.map((purchase: any) => (
-                        <div 
-                          key={purchase.id} 
-                          onClick={() => setReceiptSaleId(purchase.id)}
-                          className="p-3 border border-gray-100 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
-                        >
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="text-sm font-medium text-gray-900">
-                              {format(new Date(purchase.createdAt), 'MMM d, yyyy - h:mm a')}
-                            </span>
-                            <span className="text-sm font-semibold text-gray-900">
-                              Total: KSH {Number(purchase.totalAmount).toLocaleString()}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-start mb-1 text-xs">
-                            <span className="text-green-600 font-medium">
-                              Paid: KSH {Number(purchase.amountPaid).toLocaleString()}
-                            </span>
-                            {Number(purchase.totalAmount) > Number(purchase.amountPaid) && (
-                              <span className="text-amber-600 font-medium">
-                                Debt: KSH {(Number(purchase.totalAmount) - Number(purchase.amountPaid)).toLocaleString()}
+                      {purchases.map((purchase: any) => {
+                        const refundsTotal = (purchase.refunds || []).reduce((sum: number, r: any) => sum + Number(r.totalAmount), 0);
+                        const netTotal = Math.max(0, Number(purchase.totalAmount) - refundsTotal);
+                        const netDebt = Math.max(0, netTotal - Number(purchase.amountPaid));
+
+                        return (
+                          <div 
+                            key={purchase.id} 
+                            onClick={() => setReceiptSaleId(purchase.id)}
+                            className="p-3 border border-gray-100 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
+                          >
+                            <div className="flex justify-between items-start mb-1">
+                              <span className="text-sm font-medium text-gray-900">
+                                {format(new Date(purchase.createdAt), 'MMM d, yyyy - h:mm a')}
                               </span>
-                            )}
+                              <div className="text-right">
+                                <span className="text-sm font-semibold text-gray-900">
+                                  Total: KSH {netTotal.toLocaleString()}
+                                </span>
+                                {refundsTotal > 0 && (
+                                  <span className="text-[11px] text-red-600 font-normal block">
+                                    (Refunded: KSH {refundsTotal.toLocaleString()})
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex justify-between items-start mb-1 text-xs">
+                              <span className="text-green-600 font-medium">
+                                Paid: KSH {Number(purchase.amountPaid).toLocaleString()}
+                              </span>
+                              {netDebt > 0 && (
+                                <span className="text-amber-600 font-medium">
+                                  Debt: KSH {netDebt.toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex justify-between text-xs text-gray-500 mt-1 pt-1 border-t border-gray-100">
+                              <span>Receipt #{purchase.receiptNumber || purchase.id.slice(0, 8)}</span>
+                              <span className={purchase.paymentMethod === 'CREDIT' ? 'text-amber-600 font-medium' : ''}>
+                                {purchase.paymentMethod}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex justify-between text-xs text-gray-500 mt-1 pt-1 border-t border-gray-100">
-                            <span>Receipt #{purchase.receiptNumber || purchase.id.slice(0, 8)}</span>
-                            <span className={purchase.paymentMethod === 'CREDIT' ? 'text-amber-600 font-medium' : ''}>
-                              {purchase.paymentMethod}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-200">

@@ -1,6 +1,6 @@
 import { eq, and, sql, desc, inArray } from 'drizzle-orm';
 import { db } from '../../db';
-import { customers, sales, payments, bankingTransactions } from '../../db/schema';
+import { customers, sales, payments, bankingTransactions, refunds } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 import { getCache, setCache, flushPattern } from '../../core/cache/redis';
 
@@ -193,13 +193,28 @@ export class CustomersService {
   }
 
   static async getCustomerPurchases(businessId: string, customerId: string) {
-    return await db.select()
+    const customerSales = await db.select()
       .from(sales)
       .where(and(
         eq(sales.businessId, businessId),
         eq(sales.customerId, customerId)
       ))
       .orderBy(desc(sales.soldAt));
+
+    const salesWithRefunds = await Promise.all(customerSales.map(async (sale) => {
+      const saleRefunds = await db.select({
+        id: refunds.id,
+        totalAmount: refunds.totalAmount,
+        reason: refunds.reason,
+        refundedAt: refunds.refundedAt,
+      })
+      .from(refunds)
+      .where(and(eq(refunds.saleId, sale.id), eq(refunds.businessId, businessId)));
+
+      return { ...sale, refunds: saleRefunds };
+    }));
+
+    return salesWithRefunds;
   }
 
   static async recordPayment(
