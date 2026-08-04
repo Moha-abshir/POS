@@ -173,7 +173,8 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     const currentTotal = Number(sale.totalAmount || 0);
     const paidAmount = Number(sale.amountPaid || 0);
     const totalRefunded = (sale.refunds || []).reduce((sum: number, r: any) => sum + Number(r.totalAmount), 0);
-    const addedCredit = Math.max(0, currentTotal - paidAmount);
+    const netTotal = currentTotal - totalRefunded;
+    const addedCredit = Math.max(0, netTotal - paidAmount);
     let prevBal = 0;
     let totalBal = 0;
     
@@ -315,7 +316,8 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
   const currentTotal = sale ? Number(sale.totalAmount || 0) : 0;
   const paidAmount = sale ? Number(sale.amountPaid || 0) : 0;
   const totalRefunded = sale?.refunds ? sale.refunds.reduce((sum: number, r: any) => sum + Number(r.totalAmount), 0) : 0;
-  const addedCredit = Math.max(0, currentTotal - paidAmount);
+  const netTotal = currentTotal - totalRefunded;
+  const addedCredit = Math.max(0, netTotal - paidAmount);
   let prevBal = 0;
   let totalBal = 0;
   
