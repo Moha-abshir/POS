@@ -29,6 +29,8 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     enabled: !!saleId,
   });
 
+  const productMode = meData?.business?.productMode || 'ADVANCED';
+
   // Fetch customer details from Dexie or API when sale is loaded
   useEffect(() => {
     if (sale?.customerId) {
