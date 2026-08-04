@@ -68,6 +68,7 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     const GS = '\x1d';
     const LINE_WIDTH = 42; // Standard 80mm thermal printer character width
     const SEPARATOR = '-'.repeat(LINE_WIDTH) + '\n';
+    const productMode = meData?.business?.productMode || 'ADVANCED';
     
     // Helper: pad a row so label is left-aligned and value is right-aligned within LINE_WIDTH
     const alignRow = (label: string, value: string) => {
@@ -157,8 +158,10 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
 
       // Row 1: Product name (full width)
       commands += pName + '\n';
-      // Row 2: Variant/unit info (smaller context)
-      commands += variantLine + '\n';
+      // Row 2: Variant/unit info (only in ADVANCED mode)
+      if (productMode !== 'SIMPLE') {
+        commands += variantLine + '\n';
+      }
       // Row 3: Qty, Price, Total (right-aligned columns)
       commands += formatItemDataRow(qtyVal, priceStr, totalStr);
     });
@@ -208,7 +211,9 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
           const totalStr = '-' + Number(ri.subtotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
           commands += pName + '\n';
-          commands += variantLine + '\n';
+          if (productMode !== 'SIMPLE') {
+            commands += variantLine + '\n';
+          }
           commands += formatItemDataRow(qtyVal, priceStr, totalStr);
         });
       });
@@ -537,9 +542,11 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
                             <span className="w-1/5 text-right text-gray-800">{priceStr}</span>
                             <span className="w-1/5 text-right font-semibold text-gray-900">{totalStr}</span>
                           </div>
-                          <div className="text-[10px] text-gray-500 font-normal pl-0.5 mt-0.5">
-                            {variantLine}
-                          </div>
+                          {productMode !== 'SIMPLE' && (
+                            <div className="text-[10px] text-gray-500 font-normal pl-0.5 mt-0.5">
+                              {variantLine}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -575,9 +582,11 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
                                     <span className="w-1/5 text-right">{priceStr}</span>
                                     <span className="w-1/5 text-right font-semibold">{totalStr}</span>
                                   </div>
-                                  <div className="text-[10px] opacity-75 font-normal pl-0.5 mt-0.5">
-                                    {variantLine}
-                                  </div>
+                                  {productMode !== 'SIMPLE' && (
+                                    <div className="text-[10px] opacity-75 font-normal pl-0.5 mt-0.5">
+                                      {variantLine}
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}
