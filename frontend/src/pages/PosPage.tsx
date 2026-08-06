@@ -376,30 +376,33 @@ export const PosPage = () => {
                             setSelectedIndex(flatIndex);
                             handleVariantClick(product, variant);
                           }}
+                          style={isFocused ? { backgroundColor: '#D97706', color: '#ffffff' } : {}}
                           className={`transition-all cursor-pointer group ${
                             isFocused
-                              ? 'ring-2 ring-black ring-inset bg-gray-50 font-extrabold text-gray-900'
-                              : 'hover:bg-gray-50'
+                              ? 'font-extrabold text-white shadow-md'
+                              : 'hover:bg-gray-50 text-gray-700'
                           }`}
                         >
                           {/* Column 1: Item Code / SKU First */}
-                          <td className="px-6 py-4 font-mono font-extrabold text-sm text-gray-900">
+                          <td className={`px-6 py-4 font-mono font-extrabold text-sm ${isFocused ? 'text-white' : 'text-gray-900'}`}>
                             {variant.sku || '-'}
                           </td>
                           {/* Column 2: Product Name */}
-                          <td className="px-6 py-4 font-bold text-gray-900 text-sm">
+                          <td className={`px-6 py-4 font-bold text-sm ${isFocused ? 'text-white' : 'text-gray-900'}`}>
                             {product.name}
                           </td>
                           {/* Column 3: Price */}
-                          <td className="px-6 py-4 text-right font-extrabold text-gray-900 text-sm">
+                          <td className={`px-6 py-4 text-right font-extrabold text-sm ${isFocused ? 'text-white' : 'text-gray-900'}`}>
                             KSh {priceToDisplay.toLocaleString()}
                           </td>
                           {/* Column 4: Stock */}
                           <td className="px-6 py-4 text-center">
                             <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                              hasStock 
-                                ? 'bg-green-50 text-green-700 border-green-100' 
-                                : 'bg-rose-50 text-rose-700 border-rose-100'
+                              isFocused
+                                ? 'bg-white text-[#D97706] border-white shadow-sm font-extrabold'
+                                : hasStock 
+                                  ? 'bg-green-50 text-green-700 border-green-100' 
+                                  : 'bg-rose-50 text-rose-700 border-rose-100'
                             }`}>
                               {hasStock ? `${stock} in stock` : 'Sold out'}
                             </span>
@@ -409,7 +412,11 @@ export const PosPage = () => {
                             <div className="flex justify-center">
                               <button 
                                 onClick={() => handleVariantClick(product, variant)}
-                                className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#D97706] group-hover:text-white text-gray-400 transition-colors cursor-pointer"
+                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+                                  isFocused
+                                    ? 'bg-white text-[#D97706] font-bold shadow-sm'
+                                    : 'bg-gray-50 text-gray-400 group-hover:bg-[#D97706] group-hover:text-white'
+                                }`}
                               >
                                 <Plus className="w-4 h-4" />
                               </button>
@@ -438,19 +445,24 @@ export const PosPage = () => {
                         setSelectedIndex(flatIndex);
                         handleVariantClick(product, variant);
                       }}
-                      className={`group bg-white p-3 rounded-3xl cursor-pointer hover:shadow-xl transition-all duration-300 flex flex-col h-full relative overflow-hidden ${
-                        isFocused ? 'ring-2 ring-black scale-[1.01]' : ''
+                      style={isFocused ? { backgroundColor: '#D97706', color: '#ffffff' } : {}}
+                      className={`group p-3 rounded-3xl cursor-pointer hover:shadow-xl transition-all duration-300 flex flex-col h-full relative overflow-hidden ${
+                        isFocused ? 'scale-[1.02] shadow-xl text-white' : 'bg-white'
                       }`}
                     >
                       {/* SKU Badge */}
                       {variant.sku && (
-                        <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-gray-900 text-white shadow-sm">
+                        <div className={`absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-mono font-black shadow-sm ${
+                          isFocused ? 'bg-white text-[#D97706]' : 'bg-gray-900 text-white'
+                        }`}>
                           SKU: {variant.sku}
                         </div>
                       )}
 
                       {/* Image / Icon container */}
-                      <div className="w-full aspect-square bg-[#F7F6F4] rounded-2xl mb-3 flex items-center justify-center overflow-hidden relative group-hover:bg-gray-50 transition-colors">
+                      <div className={`w-full aspect-square rounded-2xl mb-3 flex items-center justify-center overflow-hidden relative transition-colors ${
+                        isFocused ? 'bg-white/10' : 'bg-[#F7F6F4] group-hover:bg-gray-50'
+                      }`}>
                         {(() => {
                           const posImageUrl = product.imageUrl || variant.imageUrl || product.variants?.[0]?.imageUrl;
                           return posImageUrl ? (
@@ -460,13 +472,17 @@ export const PosPage = () => {
                               alt={product.name} 
                             />
                           ) : (
-                            <Package className="w-10 h-10 text-gray-300 transition-transform duration-500 group-hover:scale-110" />
+                            <Package className={`w-10 h-10 transition-transform duration-500 group-hover:scale-110 ${
+                              isFocused ? 'text-white/80' : 'text-gray-300'
+                            }`} />
                           );
                         })()}
                         <div className={`absolute top-2 right-2 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm backdrop-blur-md ${
-                          hasStock 
-                            ? 'bg-white/80 text-gray-800' 
-                            : 'bg-rose-50/90 text-rose-700'
+                          isFocused
+                            ? 'bg-white text-[#D97706] font-extrabold'
+                            : hasStock 
+                              ? 'bg-white/80 text-gray-800' 
+                              : 'bg-rose-50/90 text-rose-700'
                         }`}>
                           {hasStock ? `${stock} in stock` : 'Sold out'}
                         </div>
@@ -474,20 +490,24 @@ export const PosPage = () => {
 
                       {/* Name and description */}
                       <div className="flex-1 px-1">
-                        <div className="font-bold text-sm text-gray-900 leading-snug line-clamp-2" title={product.name}>
+                        <div className={`font-bold text-sm leading-snug line-clamp-2 ${isFocused ? 'text-white' : 'text-gray-900'}`} title={product.name}>
                           {product.name}
                         </div>
-                        <div className="text-xs text-gray-500 font-medium mt-1">
+                        <div className={`text-xs font-medium mt-1 ${isFocused ? 'text-white/80' : 'text-gray-500'}`}>
                           {variant.name === 'Default' ? 'Standard' : variant.name}
                         </div>
                       </div>
 
                       {/* Price footer */}
                       <div className="px-1 mt-3 flex items-center justify-between">
-                        <span className="text-sm font-extrabold text-gray-900">
+                        <span className={`text-sm font-extrabold ${isFocused ? 'text-white' : 'text-gray-900'}`}>
                           KSh {priceToDisplay.toLocaleString()}
                         </span>
-                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#D97706] group-hover:text-white transition-colors text-gray-400">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                          isFocused
+                            ? 'bg-white text-[#D97706] font-bold shadow-sm'
+                            : 'bg-gray-50 text-gray-400 group-hover:bg-[#D97706] group-hover:text-white'
+                        }`}>
                            <Plus className="w-4 h-4" />
                         </div>
                       </div>
