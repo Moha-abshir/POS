@@ -190,18 +190,18 @@ export const PosPage = () => {
     }
   }, [selectedIndex]);
 
-  // When Add to Cart modal opens, auto-focus selling price and select text
+  // When Add to Cart modal opens, auto-focus quantity input first and select text
   useEffect(() => {
     if (activeCartEditItem) {
       const timer = setTimeout(() => {
-        if (priceInputRef.current) {
-          priceInputRef.current.focus();
-          priceInputRef.current.select();
+        if (quantityInputRef.current) {
+          quantityInputRef.current.focus();
+          quantityInputRef.current.select();
         }
       }, 60);
       return () => clearTimeout(timer);
     }
-  }, [activeCartEditItem]);
+  }, [activeCartEditItem?.product?.id, activeCartEditItem?.variant?.id, activeCartEditItem?.unit?.id]);
 
   // Keyboard navigation for main list (Up/Down/Enter)
   useEffect(() => {
@@ -241,17 +241,18 @@ export const PosPage = () => {
   const handleConfirmAddToCart = () => {
     if (!activeCartEditItem) return;
 
-    if (activeCartEditItem.unit.minimumPrice && activeCartEditItem.sellingPrice < Number(activeCartEditItem.unit.minimumPrice)) {
+    const numSellingPrice = Number(activeCartEditItem.sellingPrice) || 0;
+    const numQuantity = Math.max(0.001, Number(activeCartEditItem.quantity) || 1);
+
+    if (activeCartEditItem.unit.minimumPrice && numSellingPrice < Number(activeCartEditItem.unit.minimumPrice)) {
       toast.error(`Selling price cannot be below minimum price (KSh ${Number(activeCartEditItem.unit.minimumPrice).toLocaleString()})`);
       return;
     }
 
-    const qty = Math.max(0.001, Number(activeCartEditItem.quantity) || 1);
-
     if (activeCartEditItem.isEditingExisting && activeCartEditItem.cartUnitId) {
       setCart((prev) => prev.map((item) => 
         item.unitId === activeCartEditItem.cartUnitId 
-          ? { ...item, sellingPrice: activeCartEditItem.sellingPrice, quantity: qty }
+          ? { ...item, sellingPrice: numSellingPrice, quantity: numQuantity }
           : item
       ));
     } else {
@@ -260,7 +261,7 @@ export const PosPage = () => {
         if (existing) {
           return prev.map((item) => 
             item.unitId === activeCartEditItem.unit.id 
-              ? { ...item, quantity: qty, sellingPrice: activeCartEditItem.sellingPrice } 
+              ? { ...item, quantity: numQuantity, sellingPrice: numSellingPrice } 
               : item
           );
         }
@@ -271,8 +272,8 @@ export const PosPage = () => {
           variantName: activeCartEditItem.variant.name,
           unitId: activeCartEditItem.unit.id,
           unitName: activeCartEditItem.unit.name,
-          quantity: qty,
-          sellingPrice: activeCartEditItem.sellingPrice,
+          quantity: numQuantity,
+          sellingPrice: numSellingPrice,
           minimumPrice: activeCartEditItem.unit.minimumPrice ? Number(activeCartEditItem.unit.minimumPrice) : null,
           maxStock: Number(activeCartEditItem.variant.baseStockQuantity) || 0,
         }];
@@ -866,144 +867,148 @@ export const PosPage = () => {
 
       {/* Add to Cart / Edit Item Modal */}
       {activeCartEditItem && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px]" onClick={handleCloseModal} />
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[400px] m-4 flex flex-col transition-all duration-300">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <h2 className="text-base font-bold text-gray-900">
-                {activeCartEditItem.isEditingExisting ? 'Edit Item Details' : 'Add to Cart'}
-              </h2>
-              <button onClick={handleCloseModal} className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
-                <X className="w-4 h-4" />
+        <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-black/60">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[640px] m-4 flex flex-col border border-gray-200">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-[#F7F6F4]">
+              <div>
+                <h2 className="text-base font-bold text-gray-900">
+                  {activeCartEditItem.isEditingExisting ? 'Edit Item Details' : 'Add to Cart'}
+                </h2>
+                <p className="text-xs text-gray-600 font-medium mt-0.5">
+                  <span className="font-bold text-gray-900">{activeCartEditItem.product.name}</span>
+                  {activeCartEditItem.variant.sku ? ` • SKU: ${activeCartEditItem.variant.sku}` : ''}
+                  {activeCartEditItem.variant.name !== 'Default' ? ` • ${activeCartEditItem.variant.name}` : ''}
+                  {` • ${activeCartEditItem.unit.name}`}
+                </p>
+              </div>
+              <button onClick={handleCloseModal} className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full cursor-pointer transition-colors">
+                <X className="w-5 h-5" />
               </button>
             </div>
             
-            <div className="p-5 space-y-4">
-              <div>
-                <h3 className="font-bold text-sm text-gray-900">{activeCartEditItem.product.name}</h3>
-                <p className="text-xs text-gray-500 mt-1 font-medium">
-                  {activeCartEditItem.variant.sku ? `SKU: ${activeCartEditItem.variant.sku} • ` : ''}
-                  {activeCartEditItem.variant.name === 'Default' ? 'Standard' : activeCartEditItem.variant.name} • {activeCartEditItem.unit.name}
-                </p>
-              </div>
-
-              {/* Price inputs */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* Minimum Price */}
+            {/* Body: Straight Line Inputs (Quantity -> Selling Price -> Total Calculated Price) */}
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                
+                {/* 1. Quantity Input (Focused First) */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">Min Price</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">KSh</span>
-                    <input
-                      type="text"
-                      readOnly
-                      value={activeCartEditItem.unit.minimumPrice ? Number(activeCartEditItem.unit.minimumPrice).toLocaleString() : 'N/A'}
-                      className="w-full h-10 pl-9 pr-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 text-sm font-bold cursor-not-allowed focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Selling Price */}
-                <div>
-                  <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">Selling Price</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">KSh</span>
-                    <input
-                      ref={priceInputRef}
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={activeCartEditItem.sellingPrice}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setActiveCartEditItem(prev => prev ? { ...prev, sellingPrice: val } : null);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          quantityInputRef.current?.focus();
-                          quantityInputRef.current?.select();
-                        }
-                      }}
-                      className="w-full h-10 pl-9 pr-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-black focus:bg-white transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-              {activeCartEditItem.unit.minimumPrice && activeCartEditItem.sellingPrice < Number(activeCartEditItem.unit.minimumPrice) && (
-                <p className="text-[10px] text-red-500 font-medium mt-1">
-                  ⚠️ Selling price cannot be below minimum price (KSh {Number(activeCartEditItem.unit.minimumPrice).toLocaleString()})
-                </p>
-              )}
-
-              {/* Quantity selector */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">Quantity</label>
-                <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl p-1 w-fit">
-                  <button 
-                    type="button"
-                    onClick={() => setActiveCartEditItem(prev => {
-                      if (!prev) return null;
-                      const currentQty = Number(prev.quantity) || 1;
-                      const newQty = Math.max(0.01, Number((currentQty - 1).toFixed(3)));
-                      return { ...prev, quantity: newQty };
-                    })}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-white hover:text-gray-900 transition-all cursor-pointer shadow-sm"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                    Quantity <span className="text-[#D97706]">*</span>
+                  </label>
                   <input
                     ref={quantityInputRef}
-                    type="number"
-                    min="0.01"
-                    step="any"
+                    type="text"
+                    inputMode="decimal"
                     value={activeCartEditItem.quantity}
                     onChange={(e) => {
-                      const val = e.target.value === '' ? '' : parseFloat(e.target.value);
-                      setActiveCartEditItem(prev => prev ? { ...prev, quantity: val as any } : null);
+                      const val = e.target.value;
+                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                        setActiveCartEditItem(prev => prev ? { ...prev, quantity: val as any } : null);
+                      }
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleConfirmAddToCart();
+                        priceInputRef.current?.focus();
+                        priceInputRef.current?.select();
                       }
                     }}
-                    className="w-16 text-center bg-transparent border-none text-gray-900 text-sm font-bold outline-none"
+                    className="w-full h-11 px-3.5 bg-white border-2 border-gray-300 rounded-xl text-gray-900 text-base font-extrabold focus:outline-none focus:border-black focus:ring-0 shadow-sm"
+                    placeholder="e.g. 1 or 0.5"
                   />
-                  <button 
-                    type="button"
-                    onClick={() => setActiveCartEditItem(prev => {
-                      if (!prev) return null;
-                      const currentQty = Number(prev.quantity) || 0;
-                      const newQty = Number((currentQty + 1).toFixed(3));
-                      return { ...prev, quantity: newQty };
-                    })}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-white hover:text-gray-900 transition-all cursor-pointer shadow-sm"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
                 </div>
+
+                {/* 2. Unit Selling Price (Focused Second) */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                    Selling Price <span className="text-[#D97706]">*</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">KSh</span>
+                    <input
+                      ref={priceInputRef}
+                      type="text"
+                      inputMode="decimal"
+                      value={activeCartEditItem.sellingPrice}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                          setActiveCartEditItem(prev => prev ? { ...prev, sellingPrice: val as any } : null);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleConfirmAddToCart();
+                        }
+                      }}
+                      className="w-full h-11 pl-11 pr-3.5 bg-white border-2 border-gray-300 rounded-xl text-gray-900 text-base font-extrabold focus:outline-none focus:border-black focus:ring-0 shadow-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Total Price (Read-only, calculated in real-time) */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                    Total Price
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">KSh</span>
+                    <input
+                      type="text"
+                      readOnly
+                      tabIndex={-1}
+                      value={
+                        isNaN(Number(activeCartEditItem.quantity) * Number(activeCartEditItem.sellingPrice))
+                          ? '0'
+                          : (Number(activeCartEditItem.quantity) * Number(activeCartEditItem.sellingPrice)).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+                      }
+                      className="w-full h-11 pl-11 pr-3.5 bg-gray-100 border border-gray-200 rounded-xl text-gray-900 text-base font-black cursor-not-allowed select-none outline-none"
+                    />
+                  </div>
+                </div>
+
               </div>
+
+              {activeCartEditItem.unit.minimumPrice && Number(activeCartEditItem.sellingPrice) < Number(activeCartEditItem.unit.minimumPrice) && (
+                <p className="text-xs text-red-600 font-bold flex items-center gap-1 mt-1">
+                  ⚠️ Selling price cannot be below minimum price (KSh {Number(activeCartEditItem.unit.minimumPrice).toLocaleString()})
+                </p>
+              )}
             </div>
             
-            <div className="p-5 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3 rounded-b-2xl">
-              <button 
-                type="button" 
-                onClick={handleCloseModal} 
-                className="px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button 
-                type="button"
-                disabled={activeCartEditItem.unit.minimumPrice && activeCartEditItem.sellingPrice < Number(activeCartEditItem.unit.minimumPrice)}
-                onClick={handleConfirmAddToCart}
-                className="px-5 py-2.5 bg-black hover:bg-black text-white text-xs font-bold rounded-xl transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {activeCartEditItem.isEditingExisting ? 'Save Changes' : 'Add to Order (Enter ↵)'}
-              </button>
+            {/* Footer: Min Price on Far Left, Cancel & Add to Order on Right */}
+            <div className="px-6 py-4 border-t border-gray-200 bg-[#F7F6F4] flex items-center justify-between rounded-b-2xl">
+              <div>
+                <div className="px-3.5 py-1.5 bg-white border border-gray-300 rounded-xl text-xs font-bold text-gray-800 shadow-sm inline-flex items-center gap-1.5">
+                  <span className="text-gray-500 uppercase tracking-wider text-[10px]">Min Price:</span>
+                  <span className="text-gray-900 font-extrabold">
+                    {activeCartEditItem.unit.minimumPrice ? `KSh ${Number(activeCartEditItem.unit.minimumPrice).toLocaleString()}` : 'N/A'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button 
+                  type="button" 
+                  onClick={handleCloseModal} 
+                  className="px-5 py-2.5 text-xs font-bold text-gray-600 hover:text-gray-900 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button"
+                  disabled={activeCartEditItem.unit.minimumPrice && Number(activeCartEditItem.sellingPrice) < Number(activeCartEditItem.unit.minimumPrice)}
+                  onClick={handleConfirmAddToCart}
+                  className="px-6 py-2.5 bg-black hover:bg-gray-900 text-white text-xs font-bold rounded-xl transition-colors shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {activeCartEditItem.isEditingExisting ? 'Save Changes' : 'Add to Order (Enter ↵)'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
