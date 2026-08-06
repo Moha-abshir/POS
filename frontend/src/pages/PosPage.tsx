@@ -246,10 +246,12 @@ export const PosPage = () => {
       return;
     }
 
+    const qty = Math.max(0.001, Number(activeCartEditItem.quantity) || 1);
+
     if (activeCartEditItem.isEditingExisting && activeCartEditItem.cartUnitId) {
       setCart((prev) => prev.map((item) => 
         item.unitId === activeCartEditItem.cartUnitId 
-          ? { ...item, sellingPrice: activeCartEditItem.sellingPrice, quantity: activeCartEditItem.quantity }
+          ? { ...item, sellingPrice: activeCartEditItem.sellingPrice, quantity: qty }
           : item
       ));
     } else {
@@ -258,7 +260,7 @@ export const PosPage = () => {
         if (existing) {
           return prev.map((item) => 
             item.unitId === activeCartEditItem.unit.id 
-              ? { ...item, quantity: activeCartEditItem.quantity, sellingPrice: activeCartEditItem.sellingPrice } 
+              ? { ...item, quantity: qty, sellingPrice: activeCartEditItem.sellingPrice } 
               : item
           );
         }
@@ -269,7 +271,7 @@ export const PosPage = () => {
           variantName: activeCartEditItem.variant.name,
           unitId: activeCartEditItem.unit.id,
           unitName: activeCartEditItem.unit.name,
-          quantity: activeCartEditItem.quantity,
+          quantity: qty,
           sellingPrice: activeCartEditItem.sellingPrice,
           minimumPrice: activeCartEditItem.unit.minimumPrice ? Number(activeCartEditItem.unit.minimumPrice) : null,
           maxStock: Number(activeCartEditItem.variant.baseStockQuantity) || 0,
@@ -941,7 +943,12 @@ export const PosPage = () => {
                 <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl p-1 w-fit">
                   <button 
                     type="button"
-                    onClick={() => setActiveCartEditItem(prev => prev ? { ...prev, quantity: Math.max(1, prev.quantity - 1) } : null)}
+                    onClick={() => setActiveCartEditItem(prev => {
+                      if (!prev) return null;
+                      const currentQty = Number(prev.quantity) || 1;
+                      const newQty = Math.max(0.01, Number((currentQty - 1).toFixed(3)));
+                      return { ...prev, quantity: newQty };
+                    })}
                     className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-white hover:text-gray-900 transition-all cursor-pointer shadow-sm"
                   >
                     <Minus className="w-4 h-4" />
@@ -949,11 +956,12 @@ export const PosPage = () => {
                   <input
                     ref={quantityInputRef}
                     type="number"
-                    min="1"
+                    min="0.01"
+                    step="any"
                     value={activeCartEditItem.quantity}
                     onChange={(e) => {
-                      const val = Math.max(1, parseInt(e.target.value) || 1);
-                      setActiveCartEditItem(prev => prev ? { ...prev, quantity: val } : null);
+                      const val = e.target.value === '' ? '' : parseFloat(e.target.value);
+                      setActiveCartEditItem(prev => prev ? { ...prev, quantity: val as any } : null);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
@@ -962,11 +970,16 @@ export const PosPage = () => {
                         handleConfirmAddToCart();
                       }
                     }}
-                    className="w-12 text-center bg-transparent border-none text-gray-900 text-sm font-bold outline-none"
+                    className="w-16 text-center bg-transparent border-none text-gray-900 text-sm font-bold outline-none"
                   />
                   <button 
                     type="button"
-                    onClick={() => setActiveCartEditItem(prev => prev ? { ...prev, quantity: prev.quantity + 1 } : null)}
+                    onClick={() => setActiveCartEditItem(prev => {
+                      if (!prev) return null;
+                      const currentQty = Number(prev.quantity) || 0;
+                      const newQty = Number((currentQty + 1).toFixed(3));
+                      return { ...prev, quantity: newQty };
+                    })}
                     className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-white hover:text-gray-900 transition-all cursor-pointer shadow-sm"
                   >
                     <Plus className="w-4 h-4" />
