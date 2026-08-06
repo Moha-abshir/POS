@@ -609,13 +609,13 @@ export const PosPage = () => {
                 >
                   <div className="flex justify-between items-start">
                     <div className="pr-2 flex-1 min-w-0">
-                      <div className="font-bold text-[var(--color-text-primary)] text-xs truncate" title={item.productName}>
+                      <div className="font-extrabold text-[var(--color-text-primary)] text-sm truncate" title={item.productName}>
                         {item.productName}
                       </div>
-                      <div className="text-[10px] text-[var(--color-text-secondary)] mt-0.5 font-medium flex items-center gap-1.5">
+                      <div className="text-xs text-[var(--color-text-secondary)] mt-1 font-bold flex items-center gap-1.5 flex-wrap">
                         <span>{variantNameText(item)}</span>
                         <span>•</span>
-                        <span>{item.quantity} x KSh {item.sellingPrice.toLocaleString()}</span>
+                        <span className="text-gray-900 font-extrabold">{item.quantity} x KSh {item.sellingPrice.toLocaleString()}</span>
                       </div>
                     </div>
                     <div className="font-extrabold text-[var(--color-text-primary)] text-xs shrink-0 text-right">
