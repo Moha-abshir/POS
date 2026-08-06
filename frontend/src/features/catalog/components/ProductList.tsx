@@ -44,11 +44,25 @@ export const ProductList: React.FC<ProductListProps> = ({
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const rowRefs = React.useRef<(HTMLTableRowElement | null)[]>([]);
   const itemsPerPage = 100;
 
   React.useEffect(() => {
     setCurrentPage(1);
+    if (searchTerm.trim() !== '') {
+      setSelectedIndex(0);
+    } else {
+      setSelectedIndex(-1);
+    }
   }, [searchTerm, selectedCategory, selectedStatus]);
+
+  React.useEffect(() => {
+    if (selectedIndex >= 0 && rowRefs.current[selectedIndex]) {
+      rowRefs.current[selectedIndex]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [selectedIndex]);
 
   const statusOptions = [
     { id: 'active', name: 'Active' },
@@ -57,7 +71,7 @@ export const ProductList: React.FC<ProductListProps> = ({
   ];
 
   const filteredProducts = products?.filter((p) => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.variants?.some(v => v.sku?.toLowerCase().includes(searchTerm.toLowerCase())));
     const matchesCategory = selectedCategory ? p.categoryId === selectedCategory : true;
     
     let matchesStatus = true;
@@ -75,6 +89,38 @@ export const ProductList: React.FC<ProductListProps> = ({
   const totalPages = Math.ceil((filteredProducts?.length || 0) / itemsPerPage);
   const paginatedProducts = filteredProducts?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+  // Keyboard navigation for Catalog page table (Up/Down/Enter)
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (restockProduct) return;
+
+      const items = paginatedProducts || [];
+      if (items.length === 0) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex((prev) => {
+          if (prev < 0) return 0;
+          return Math.min(prev + 1, items.length - 1);
+        });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex((prev) => {
+          if (prev < 0) return 0;
+          return Math.max(prev - 1, 0);
+        });
+      } else if (e.key === 'Enter') {
+        if (selectedIndex >= 0 && selectedIndex < items.length) {
+          e.preventDefault();
+          onEditProduct(items[selectedIndex]);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [paginatedProducts, selectedIndex, restockProduct, onEditProduct]);
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-[var(--color-border)] overflow-visible md:overflow-hidden flex flex-col h-auto md:h-full flex-1">
       
@@ -85,7 +131,9 @@ export const ProductList: React.FC<ProductListProps> = ({
         <div className="relative w-full xl:max-w-[320px] min-w-[200px] flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input 
+            ref={searchInputRef}
             type="text" 
+            placeholder="Search products by name, SKU..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full h-10 pl-9 pr-4 bg-white border border-gray-200 rounded-md text-sm text-gray-900 outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all shadow-sm placeholder:text-gray-400"
@@ -212,7 +260,8 @@ export const ProductList: React.FC<ProductListProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white font-medium text-gray-700">
-                  {paginatedProducts.map((product) => {
+                  {paginatedProducts.map((product, flatIndex) => {
+                    const isFocused = selectedIndex === flatIndex;
                     const primaryVariant = product.variants?.[0];
                     const totalStock = product.variants?.reduce((sum, v) => sum + parseFloat(v.baseStockQuantity as string), 0) || 0;
                     const hasMultipleVariants = (product.variants?.length || 0) > 1;
@@ -243,43 +292,66 @@ export const ProductList: React.FC<ProductListProps> = ({
                     return (
                       <tr 
                         key={product.id}
-                        onClick={() => setRestockProduct(product)}
-                        className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                        ref={(el) => (rowRefs.current[flatIndex] = el)}
+                        onClick={() => {
+                          setSelectedIndex(flatIndex);
+                          onEditProduct(product);
+                        }}
+                        style={isFocused ? { backgroundColor: '#D97706', color: '#ffffff' } : {}}
+                        className={`transition-all cursor-pointer group ${
+                          isFocused
+                            ? 'font-extrabold text-white shadow-md'
+                            : 'hover:bg-gray-50/50 text-gray-700'
+                        }`}
                       >
                         <td className="px-5 py-3 flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100 shrink-0">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden border shrink-0 ${
+                            isFocused ? 'bg-white/20 border-white/40' : 'bg-gray-50 border-gray-100'
+                          }`}>
                             {displayImage ? (
                               <img src={displayImage} className="w-full h-full object-cover" alt={product.name} />
                             ) : (
-                              <Package className="w-5 h-5 text-gray-400" />
+                              <Package className={`w-5 h-5 ${isFocused ? 'text-white' : 'text-gray-400'}`} />
                             )}
                           </div>
                           <div>
-                            <div className="font-bold text-gray-900 text-sm">{product.name}</div>
-                            {primaryVariant?.sku && <div className="text-[10px] text-gray-400 font-semibold mt-0.5">SKU: {primaryVariant.sku}</div>}
+                            <div className={`font-bold text-sm ${isFocused ? 'text-white' : 'text-gray-900'}`}>{product.name}</div>
+                            {primaryVariant?.sku && (
+                              <div className={`text-[10px] font-semibold mt-0.5 ${isFocused ? 'text-white/80' : 'text-gray-400'}`}>
+                                SKU: {primaryVariant.sku}
+                              </div>
+                            )}
                           </div>
                         </td>
                         {productMode !== 'SIMPLE' && (
                           <td className="px-5 py-3">
-                            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 uppercase tracking-wider">
+                            <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                              isFocused
+                                ? 'bg-white text-[#D97706] font-black shadow-sm'
+                                : 'text-amber-700 bg-amber-50 border border-amber-100'
+                            }`}>
                               {product.categoryName || 'Unclassified'}
                             </span>
                           </td>
                         )}
                         {productMode !== 'SIMPLE' && (
-                          <td className="px-5 py-3 text-center font-semibold text-gray-800">
+                          <td className={`px-5 py-3 text-center font-semibold ${isFocused ? 'text-white font-extrabold' : 'text-gray-800'}`}>
                             {product.variants?.length || 0}
                           </td>
                         )}
-                        <td className="px-5 py-3 text-right font-bold text-gray-900">
+                        <td className={`px-5 py-3 text-right font-bold ${isFocused ? 'text-white font-extrabold' : 'text-gray-900'}`}>
                           {priceLabel}
                         </td>
-                        <td className="px-5 py-3 text-right font-mono font-bold text-gray-900">
+                        <td className={`px-5 py-3 text-right font-mono font-bold ${isFocused ? 'text-white font-extrabold' : 'text-gray-900'}`}>
                           {totalStock.toLocaleString()}
                         </td>
                         <td className="px-5 py-3">
                           <div className="flex justify-center">
-                            <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badgeColor}`}>
+                            <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                              isFocused
+                                ? 'bg-white text-[#D97706] border-white shadow-sm font-extrabold'
+                                : badgeColor
+                            }`}>
                               {stockStatus}
                             </span>
                           </div>
@@ -288,7 +360,11 @@ export const ProductList: React.FC<ProductListProps> = ({
                           <div className="flex justify-center gap-2">
                             <button
                               onClick={() => onEditProduct(product)}
-                              className="px-3 py-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md transition-colors border border-amber-200/50 cursor-pointer"
+                              className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-colors border cursor-pointer ${
+                                isFocused
+                                  ? 'bg-white text-[#D97706] border-white shadow-sm font-extrabold'
+                                  : 'text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-200/50'
+                              }`}
                             >
                               Edit Details
                             </button>
