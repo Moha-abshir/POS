@@ -30,6 +30,20 @@ export class ReportsController {
     }
   }
 
+  static async getProductSales(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { startDate, endDate, search } = req.query;
+      const data = await ReportsService.getProductSalesReport(req.user!.businessId, {
+        startDate: startDate as string,
+        endDate: endDate as string,
+        search: search as string
+      });
+      res.status(200).json({ status: 'success', data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getProfitLoss(req: Request, res: Response, next: NextFunction) {
     try {
       const { startDate, endDate } = req.query;

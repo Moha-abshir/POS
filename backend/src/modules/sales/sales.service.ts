@@ -630,8 +630,8 @@ export class SalesService {
             updatedAt: new Date()
           })
           .where(and(eq(customers.id, sale.customerId), eq(customers.businessId, businessId)));
-      }
-
+      await flushPattern(`cache:${businessId}:*reports*`);
+      await flushPattern(`cache:${businessId}:customers:*`);
       return refundRecord;
     });
   }

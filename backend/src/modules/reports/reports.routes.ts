@@ -10,6 +10,7 @@ router.use(authenticate, authorize(['OWNER']));
 
 router.get('/overview', cacheMiddleware(1800), ReportsController.getOverview);
 router.get('/sales', cacheMiddleware(1800), ReportsController.getSales);
+router.get('/product-sales', ReportsController.getProductSales);
 router.get('/profit-loss', cacheMiddleware(1800), ReportsController.getProfitLoss);
 router.get('/inventory', cacheMiddleware(1800), ReportsController.getInventory);
 router.get('/customers', cacheMiddleware(1800), ReportsController.getCustomers);

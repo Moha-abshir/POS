@@ -5,6 +5,7 @@ import {
   purchases, purchaseItems, damagedGoods, expenses, refunds, refundItems, 
   categories, products, suppliers, mpesaTransactions, businessMpesaAccounts
 } from '../../db/schema';
+import { getCache, setCache, flushPattern } from '../../core/cache/redis';
 
 export class ReportsService {
   /**
@@ -265,6 +266,120 @@ export class ReportsService {
     }
 
     return [];
+  }
+
+  /**
+   * Detailed Product Sales Report (Date Sold, Product Name, Unit Cost, Unit Selling, Total Cost, Total Selling, Profit)
+   * Cached in Redis with TTL 900s (15 min) per business and date range.
+   */
+  static async getProductSalesReport(businessId: string, options: { startDate?: string; endDate?: string; search?: string }) {
+    const { start, end } = this.parseDateRange(options.startDate, options.endDate);
+    const startStr = start.toISOString();
+    const endStr = end.toISOString();
+    const search = (options.search || '').trim().toLowerCase();
+
+    const cacheKey = `cache:${businessId}:reports:product_sales:${startStr}:${endStr}`;
+
+    // 1. Try Redis cache first (only if no inline search filter)
+    if (!search) {
+      try {
+        const cached = await getCache(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      } catch (err) {
+        console.error('Redis read error on getProductSalesReport:', err);
+      }
+    }
+
+    // 2. Query DB
+    const conditions = [
+      eq(sales.businessId, businessId),
+      gte(sales.soldAt, start),
+      lte(sales.soldAt, end)
+    ];
+
+    const rows = await db.select({
+      id: saleItems.id,
+      soldAt: sales.soldAt,
+      productName: products.name,
+      variantName: productVariants.name,
+      unitName: variantUnits.name,
+      sku: productVariants.sku,
+      quantity: saleItems.quantity,
+      costPrice: saleItems.costPrice,
+      sellingPrice: saleItems.sellingPrice,
+      subtotal: saleItems.subtotal,
+    })
+    .from(saleItems)
+    .innerJoin(sales, eq(saleItems.saleId, sales.id))
+    .innerJoin(productVariants, eq(saleItems.variantId, productVariants.id))
+    .innerJoin(products, eq(productVariants.productId, products.id))
+    .innerJoin(variantUnits, eq(saleItems.unitId, variantUnits.id))
+    .where(and(...conditions))
+    .orderBy(desc(sales.soldAt));
+
+    // Map & calculate fields
+    const formattedRows = rows.map((r) => {
+      const qty = Number(r.quantity) || 0;
+      const cost = Number(r.costPrice) || 0;
+      const selling = Number(r.sellingPrice) || 0;
+      const totalCost = qty * cost;
+      const totalSelling = Number(r.subtotal) || (qty * selling);
+      const profit = totalSelling - totalCost;
+
+      const fullProductName = `${r.productName}${r.variantName && r.variantName !== 'Default' ? ` (${r.variantName})` : ''} • ${r.unitName}`;
+
+      return {
+        id: r.id,
+        soldAt: r.soldAt,
+        productName: fullProductName,
+        rawProductName: r.productName,
+        sku: r.sku || '',
+        quantity: qty,
+        costPrice: cost,
+        sellingPrice: selling,
+        totalCost,
+        totalSelling,
+        profit
+      };
+    });
+
+    // Compute grand totals
+    const grandTotals = formattedRows.reduce(
+      (acc, curr) => {
+        acc.totalQuantity += curr.quantity;
+        acc.totalCost += curr.totalCost;
+        acc.totalSelling += curr.totalSelling;
+        acc.totalProfit += curr.profit;
+        return acc;
+      },
+      { totalQuantity: 0, totalCost: 0, totalSelling: 0, totalProfit: 0 }
+    );
+
+    const result = {
+      items: formattedRows,
+      totals: grandTotals
+    };
+
+    // Cache result in Redis for 15 mins
+    if (!search) {
+      try {
+        await setCache(cacheKey, JSON.stringify(result), 900);
+      } catch (err) {
+        console.error('Redis write error on getProductSalesReport:', err);
+      }
+    }
+
+    return result;
+  }
+
+  static async invalidateReportCache(businessId: string) {
+    try {
+      await flushPattern(`cache:${businessId}:reports:*`);
+    } catch (err) {
+      console.error(`Error invalidating report cache for business ${businessId}:`, err);
+    }
   }
 
   /**

@@ -40,6 +40,8 @@ export const ReportsPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [overviewData, setOverviewData] = useState<any>(null);
   const [salesReportData, setSalesReportData] = useState<any[]>([]);
+  const [productSalesReportData, setProductSalesReportData] = useState<{ items: any[]; totals: any } | null>(null);
+  const [salesReportSearch, setSalesReportSearch] = useState<string>('');
   const [profitLossData, setProfitLossData] = useState<any>(null);
   const [inventoryData, setInventoryData] = useState<any>(null);
   const [customerData, setCustomerData] = useState<any>(null);
@@ -58,23 +60,15 @@ export const ReportsPage: React.FC = () => {
     let start = new Date();
     
     if (preset === 'today') {
-      start.setHours(0,0,0,0);
+      start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     } else if (preset === 'yesterday') {
-      start.setDate(today.getDate() - 1);
-      start.setHours(0,0,0,0);
-      today.setDate(today.getDate() - 1);
-      today.setHours(23,59,59,999);
+      start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
     } else if (preset === '7days') {
-      start.setDate(today.getDate() - 7);
+      start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
     } else if (preset === '30days') {
-      start.setDate(today.getDate() - 30);
-    } else if (preset === '90days') {
-      start.setDate(today.getDate() - 90);
-    } else if (preset === 'thismonth') {
+      start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30);
+    } else if (preset === 'month') {
       start = new Date(today.getFullYear(), today.getMonth(), 1);
-    } else if (preset === 'lastmonth') {
-      start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-      today.setDate(0); // last day of previous month
     }
 
     if (preset !== 'custom') {
@@ -94,8 +88,8 @@ export const ReportsPage: React.FC = () => {
         const res = await api.get('/reports/overview', { params });
         setOverviewData(res.data.data);
       } else if (activeTab === 'sales') {
-        const res = await api.get('/reports/sales', { params: { ...params, groupBy } });
-        setSalesReportData(res.data.data);
+        const res = await api.get('/reports/product-sales', { params });
+        setProductSalesReportData(res.data.data);
       } else if (activeTab === 'profit-loss') {
         const res = await api.get('/reports/profit-loss', { params });
         setProfitLossData(res.data.data);
@@ -562,102 +556,163 @@ Need support? Contact Smart POS Customer Support at +254714731331.
 
               {/* TAB: SALES REPORTS */}
               {activeTab === 'sales' && (
-                <div className="space-y-6">
-                  {/* Group selection toolbar */}
-                  <div className="bg-white p-4 rounded-lg border border-[var(--color-border)] shadow-sm flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-[var(--color-text-secondary)] uppercase">Group Sales By:</span>
-                      {[
-                        { id: 'day', name: 'Daily' },
-                        { id: 'week', name: 'Weekly' },
-                        { id: 'month', name: 'Monthly' },
-                        { id: 'category', name: 'Category' },
-                        { id: 'product', name: 'Top Products' },
-                        { id: 'customer', name: 'Top Customers' },
-                        { id: 'hour', name: 'Hourly Distribution' },
-                      ].map(g => (
-                        <button
-                          key={g.id}
-                          onClick={() => setGroupBy(g.id as any)}
-                          className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
-                            groupBy === g.id 
-                              ? 'bg-[var(--color-accent-subtle)] text-[var(--color-accent)] border border-[var(--color-accent)]/20' 
-                              : 'bg-gray-50 text-[var(--color-text-secondary)] hover:bg-gray-100'
-                          }`}
-                        >
-                          {g.name}
-                        </button>
-                      ))}
+                <div className="space-y-4">
+                  
+                  {/* Header Controls: Search + Export CSV */}
+                  <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Filter by product name or SKU..."
+                        value={salesReportSearch}
+                        onChange={(e) => setSalesReportSearch(e.target.value)}
+                        className="w-full h-10 pl-10 pr-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 font-medium outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all placeholder:text-gray-400"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => {
+                          const itemsToExport = (productSalesReportData?.items || []).filter((item: any) => 
+                            !salesReportSearch || 
+                            item.productName.toLowerCase().includes(salesReportSearch.toLowerCase()) || 
+                            item.sku.toLowerCase().includes(salesReportSearch.toLowerCase())
+                          );
+
+                          let csvContent = 'Date Sold,Product Name,SKU,Quantity,Unit Cost Price (KES),Unit Selling Price (KES),Total Cost (KES),Total Selling (KES),Profit (KES)\n';
+                          itemsToExport.forEach((item: any) => {
+                            const formattedDate = format(new Date(item.soldAt), 'yyyy-MM-dd HH:mm:ss');
+                            csvContent += `"${formattedDate}","${item.productName}","${item.sku}",${item.quantity},${item.costPrice},${item.sellingPrice},${item.totalCost},${item.totalSelling},${item.profit}\n`;
+                          });
+
+                          const totals = productSalesReportData?.totals || { totalCost: 0, totalSelling: 0, totalProfit: 0 };
+                          csvContent += `\n"GRAND TOTAL","","","","","",${totals.totalCost},${totals.totalSelling},${totals.totalProfit}\n`;
+
+                          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                          const url = URL.createObjectURL(blob);
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.setAttribute('download', `product_sales_report_${startDate}_to_${endDate}.csv`);
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        className="flex items-center justify-center gap-2 px-4 h-10 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-lg text-sm font-bold transition-all shadow-xs cursor-pointer"
+                      >
+                        <Download className="w-4 h-4" />
+                        Export CSV
+                      </button>
                     </div>
                   </div>
 
-                  {/* Chart representation */}
-                  <div className="bg-white p-5 rounded-lg border border-[var(--color-border)] shadow-sm">
-                    <h3 className="text-sm font-bold text-[var(--color-text-secondary)] uppercase tracking-wider mb-4">Visual Aggregate Analysis</h3>
-                    <div className="h-80">
-                      {salesReportData.length === 0 ? (
-                        <div className="h-full flex items-center justify-center text-gray-400 text-sm">No sales data found for current filters</div>
-                      ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={salesReportData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                            <XAxis dataKey="groupKey" tick={{fontSize: 11}} />
-                            <YAxis tick={{fontSize: 11}} />
-                            <Tooltip formatter={(value) => typeof value === 'number' && value < 1000 && groupBy === 'category' ? value : formatKES(Number(value))} />
-                            <Bar dataKey={groupBy === 'category' || groupBy === 'product' ? 'totalSales' : 'totalSales'} fill={COLORS.accent} radius={[4, 4, 0, 0]}>
-                              {salesReportData.map((_, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS.chartPalette[index % COLORS.chartPalette.length]} />
-                              ))}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
+                  {/* Detailed Product Sales Data Table */}
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+                    <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                      <h3 className="text-sm font-extrabold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                        <Receipt className="w-4 h-4 text-[#D97706]" />
+                        Detailed Product Sales Report
+                      </h3>
+                      {productSalesReportData?.items && (
+                        <span className="text-xs font-bold text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200 shadow-2xs">
+                          {productSalesReportData.items.length.toLocaleString()} Line Items
+                        </span>
                       )}
                     </div>
-                  </div>
 
-                  {/* Data Table */}
-                  <div className="bg-white rounded-lg border border-[var(--color-border)] shadow-sm overflow-hidden">
-                    <div className="p-4 border-b border-[var(--color-border)]">
-                      <h3 className="text-sm font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">Tabular sales breakdown</h3>
-                    </div>
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse whitespace-nowrap">
-                        <thead>
-                          <tr className="bg-gray-50 border-b border-[var(--color-border)] text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            <th className="p-4">Grouping Field</th>
-                            <th className="p-4 text-right">Total Revenue (KES)</th>
-                            {(groupBy === 'category' || groupBy === 'product') ? (
-                              <th className="p-4 text-right">Quantity Sold</th>
-                            ) : (
-                              <th className="p-4 text-right">Transactions Count</th>
-                            )}
-                            {!(groupBy === 'category' || groupBy === 'product' || groupBy === 'customer' || groupBy === 'hour') && (
-                              <th className="p-4 text-right">Average Transaction Basket</th>
-                            )}
+                      <table className="w-full text-left border-collapse whitespace-nowrap text-xs">
+                        <thead className="bg-gray-100/80 text-[11px] font-extrabold uppercase tracking-wider text-gray-700 border-b border-gray-200">
+                          <tr>
+                            <th className="p-4">Date Sold</th>
+                            <th className="p-4">Product Name</th>
+                            <th className="p-4 text-center">Qty</th>
+                            <th className="p-4 text-right">Unit Cost Price</th>
+                            <th className="p-4 text-right">Unit Selling Price</th>
+                            <th className="p-4 text-right">Total Cost</th>
+                            <th className="p-4 text-right">Total Selling</th>
+                            <th className="p-4 text-right">Profit Made</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[var(--color-border)] text-sm text-[var(--color-text-primary)]">
-                          {salesReportData.map((row, idx) => (
-                            <tr key={idx} className="hover:bg-gray-50">
-                              <td className="p-4 font-medium text-gray-900">{row.groupKey}</td>
-                              <td className="p-4 text-right">{formatKES(Number(row.totalSales || row.totalSales))}</td>
-                              <td className="p-4 text-right">
-                                {groupBy === 'category' || groupBy === 'product' ? Number(row.quantitySold).toLocaleString() : row.transactionCount}
-                              </td>
-                              {!(groupBy === 'category' || groupBy === 'product' || groupBy === 'customer' || groupBy === 'hour') && (
-                                <td className="p-4 text-right">{formatKES(Number(row.averageSale))}</td>
-                              )}
-                            </tr>
-                          ))}
-                          {salesReportData.length === 0 && (
-                            <tr>
-                              <td colSpan={4} className="p-8 text-center text-gray-400">No records available for the selected filters</td>
-                            </tr>
-                          )}
+                        <tbody className="divide-y divide-gray-100 bg-white font-medium text-gray-800">
+                          {(() => {
+                            const items = (productSalesReportData?.items || []).filter((item: any) => 
+                              !salesReportSearch || 
+                              item.productName.toLowerCase().includes(salesReportSearch.toLowerCase()) || 
+                              item.sku.toLowerCase().includes(salesReportSearch.toLowerCase())
+                            );
+
+                            if (items.length === 0) {
+                              return (
+                                <tr>
+                                  <td colSpan={8} className="p-12 text-center text-gray-400">
+                                    <Package className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                                    <p className="font-semibold text-sm">No sales items found for the selected period</p>
+                                  </td>
+                                </tr>
+                              );
+                            }
+
+                            return items.map((row: any) => (
+                              <tr key={row.id} className="hover:bg-gray-50/80 transition-colors">
+                                <td className="p-4 font-mono font-bold text-gray-700">
+                                  {format(new Date(row.soldAt), 'MMM d, yyyy - h:mm a')}
+                                </td>
+                                <td className="p-4 font-bold text-gray-900 text-sm">
+                                  {row.productName}
+                                </td>
+                                <td className="p-4 text-center font-extrabold text-gray-900">
+                                  {row.quantity}
+                                </td>
+                                <td className="p-4 text-right font-semibold text-gray-600">
+                                  KSh {Number(row.costPrice).toLocaleString()}
+                                </td>
+                                <td className="p-4 text-right font-bold text-gray-900">
+                                  KSh {Number(row.sellingPrice).toLocaleString()}
+                                </td>
+                                <td className="p-4 text-right font-semibold text-gray-600">
+                                  KSh {Number(row.totalCost).toLocaleString()}
+                                </td>
+                                <td className="p-4 text-right font-extrabold text-gray-900">
+                                  KSh {Number(row.totalSelling).toLocaleString()}
+                                </td>
+                                <td className={`p-4 text-right font-black ${
+                                  row.profit > 0 
+                                    ? 'text-green-600' 
+                                    : row.profit === 0 
+                                      ? 'text-gray-500' 
+                                      : 'text-rose-600'
+                                }`}>
+                                  KSh {Number(row.profit).toLocaleString()}
+                                </td>
+                              </tr>
+                            ));
+                          })()}
                         </tbody>
+
+                        {/* GRAND TOTAL ROW */}
+                        {productSalesReportData?.totals && (
+                          <tfoot className="bg-gray-100 font-extrabold border-t-2 border-gray-300 text-xs text-gray-900">
+                            <tr>
+                              <td colSpan={5} className="p-4 uppercase tracking-wider text-right font-black text-gray-800">
+                                GRAND TOTAL
+                              </td>
+                              <td className="p-4 text-right text-gray-900 font-black text-sm">
+                                KSh {Number(productSalesReportData.totals.totalCost || 0).toLocaleString()}
+                              </td>
+                              <td className="p-4 text-right text-gray-900 font-black text-sm">
+                                KSh {Number(productSalesReportData.totals.totalSelling || 0).toLocaleString()}
+                              </td>
+                              <td className="p-4 text-right text-green-700 font-black text-sm">
+                                KSh {Number(productSalesReportData.totals.totalProfit || 0).toLocaleString()}
+                              </td>
+                            </tr>
+                          </tfoot>
+                        )}
                       </table>
                     </div>
                   </div>
+
                 </div>
               )}
 
