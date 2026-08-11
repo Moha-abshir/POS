@@ -96,13 +96,16 @@ export const useCategories = () => {
 export const useProducts = () => {
   const queryClient = useQueryClient();
 
-  // Prime query cache from IndexedDB on startup
+  // Prime query cache from IndexedDB ONLY on initial cold startup if query cache is empty
   useQuery({
     queryKey: ['products-db-prime'],
     queryFn: async () => {
-      const cached = await IndexedDBCache.get('catalog_products');
-      if (cached && cached.products) {
-        queryClient.setQueryData(['products'], cached.products);
+      const existing = queryClient.getQueryData(['products']);
+      if (!existing) {
+        const cached = await IndexedDBCache.get('catalog_products');
+        if (cached && cached.products) {
+          queryClient.setQueryData(['products'], cached.products);
+        }
       }
       return null;
     },
@@ -192,8 +195,20 @@ export const useProducts = () => {
         throw error;
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
+};
+
+// Helper: Clear cache & force immediate catalog sync across all views
+const syncCatalogQueries = async (queryClient: any, productId?: string) => {
+  await IndexedDBCache.remove('catalog_products');
+  if (productId) {
+    queryClient.invalidateQueries({ queryKey: ['product', productId] });
+  }
+  queryClient.invalidateQueries({ queryKey: ['products'] });
+  queryClient.invalidateQueries({ queryKey: ['categories'] });
+  queryClient.refetchQueries({ queryKey: ['products'] });
 };
 
 // --- MUTATIONS ---
@@ -204,8 +219,8 @@ export const useCreateCategory = () => {
       const response = await api.post('/catalog/categories', { name });
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    onSuccess: async () => {
+      await syncCatalogQueries(queryClient);
     },
   });
 };
@@ -239,8 +254,8 @@ export const useCreateProduct = () => {
       const response = await api.post('/catalog/products', data);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+    onSuccess: async () => {
+      await syncCatalogQueries(queryClient);
     },
   });
 };
@@ -268,9 +283,8 @@ export const useCreateVariant = () => {
       const response = await api.post(`/catalog/products/${productId}/variants`, data);
       return response.data;
     },
-    onSuccess: (_, { productId }) => {
-      queryClient.invalidateQueries({ queryKey: ['product', productId] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+    onSuccess: async (_, { productId }) => {
+      await syncCatalogQueries(queryClient, productId);
     },
   });
 };
@@ -289,9 +303,8 @@ export const useCreateVariantUnit = () => {
       const response = await api.post(`/catalog/products/${id}/variants/${variantId}/units`, data);
       return response.data;
     },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['product', id] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+    onSuccess: async (_, { id }) => {
+      await syncCatalogQueries(queryClient, id);
     },
   });
 };
@@ -311,9 +324,8 @@ export const useUpdateVariantUnit = () => {
       const response = await api.patch(`/catalog/products/${id}/variants/${variantId}/units/${unitId}`, data);
       return response.data;
     },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['product', id] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+    onSuccess: async (_, { id }) => {
+      await syncCatalogQueries(queryClient, id);
     },
   });
 };
@@ -333,9 +345,8 @@ export const useUpdateProduct = () => {
       const response = await api.patch(`/catalog/products/${id}`, data);
       return response.data;
     },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['product', id] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+    onSuccess: async (_, { id }) => {
+      await syncCatalogQueries(queryClient, id);
     },
   });
 };
@@ -357,9 +368,8 @@ export const useUpdateVariant = () => {
       const response = await api.patch(`/catalog/products/${id}/variants/${variantId}`, data);
       return response.data;
     },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['product', id] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+    onSuccess: async (_, { id }) => {
+      await syncCatalogQueries(queryClient, id);
     },
   });
 };
