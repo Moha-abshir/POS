@@ -203,6 +203,40 @@ export const PosPage = () => {
     }
   }, [activeCartEditItem?.product?.id, activeCartEditItem?.variant?.id, activeCartEditItem?.unit?.id]);
 
+  // Global Type-to-Search: any printable key typed anywhere on the POS page focuses the search bar
+  useEffect(() => {
+    const handleGlobalTypeToSearch = (e: KeyboardEvent) => {
+      // If any modal is active or discount editing is active, don't hijack focus
+      if (activeCartEditItem || selectingUnitFor || isCheckoutOpen || priceViolations.length > 0 || isEditingDiscount) {
+        return;
+      }
+
+      // Ignore shortcut keys (e.g. Ctrl+C, Alt+Tab, Cmd+R)
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+      // Check if user is currently typing in an input or textarea
+      const activeEl = document.activeElement;
+      const isEditingField = activeEl && (
+        activeEl.tagName === 'INPUT' || 
+        activeEl.tagName === 'TEXTAREA' || 
+        activeEl.tagName === 'SELECT'
+      );
+
+      // If focus is already in an input element, do nothing
+      if (isEditingField) return;
+
+      // Direct printable characters (letters, numbers, space, backspace, symbols) to search input
+      if (e.key.length === 1 || e.key === 'Backspace') {
+        if (searchInputRef.current) {
+          searchInputRef.current.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalTypeToSearch);
+    return () => window.removeEventListener('keydown', handleGlobalTypeToSearch);
+  }, [activeCartEditItem, selectingUnitFor, isCheckoutOpen, priceViolations, isEditingDiscount]);
+
   // Keyboard navigation for main list (Up/Down/Enter)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
