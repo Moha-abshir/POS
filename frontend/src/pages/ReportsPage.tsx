@@ -13,6 +13,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 import { toast } from 'react-hot-toast';
+import { format } from 'date-fns';
 
 // Theme Colors
 const COLORS = {
