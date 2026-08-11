@@ -206,17 +206,56 @@ export const DashboardLayout: React.FC = () => {
     return amount.toLocaleString('en-KE', { style: 'currency', currency: 'KES' });
   };
 
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState<boolean>(() => {
+    return localStorage.getItem('sidebar_expanded') === 'true';
+  });
+
+  const toggleSidebar = () => {
+    setIsSidebarExpanded(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebar_expanded', String(next));
+      return next;
+    });
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-[var(--color-bg-base)] flex text-[var(--color-text-primary)] font-sans">
       {showOnboarding && <OnboardingModal />}
       
-      {/* Sidebar (56px wide, dark) */}
-      <div className="w-14 bg-[var(--color-bg-sidebar)] hidden md:flex flex-col items-center py-4 relative z-20">
-        <div className="h-10 w-10 bg-[var(--color-accent)]/20 rounded flex items-center justify-center mb-6">
-          <Store className="text-[var(--color-accent)] w-5 h-5" />
+      {/* Sidebar (56px collapsed / 240px expanded, dark) */}
+      <div 
+        className={`bg-[var(--color-bg-sidebar)] hidden md:flex flex-col py-4 relative z-20 transition-all duration-300 ease-in-out ${
+          isSidebarExpanded ? 'w-60 px-3' : 'w-14 items-center'
+        }`}
+      >
+        {/* Top Logo / Expand-Collapse Toggle Header */}
+        <div 
+          onClick={toggleSidebar}
+          className={`flex items-center mb-6 cursor-pointer group select-none ${
+            isSidebarExpanded ? 'justify-between px-2 w-full' : 'justify-center h-10 w-10 bg-[var(--color-accent)]/20 rounded'
+          }`}
+          title={isSidebarExpanded ? "Click to collapse sidebar" : "Click to expand sidebar (<->)"}
+          style={{ cursor: 'col-resize' }}
+        >
+          {isSidebarExpanded ? (
+            <>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-9 w-9 bg-[var(--color-accent)]/20 rounded flex items-center justify-center shrink-0">
+                  <Store className="text-[var(--color-accent)] w-5 h-5" />
+                </div>
+                <span className="font-bold text-sm text-[var(--color-text-inverse)] truncate">
+                  {user?.businessName || 'Smart Store'}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="relative group flex items-center justify-center w-full h-full">
+              <Store className="text-[var(--color-accent)] w-5 h-5 transition-transform group-hover:scale-110" />
+            </div>
+          )}
         </div>
 
-        <nav className="flex-1 min-h-0 w-full flex flex-col space-y-2 overflow-y-auto no-scrollbar">
+        <nav className="flex-1 min-h-0 w-full flex flex-col space-y-1.5 overflow-y-auto no-scrollbar">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path || (location.pathname.startsWith(item.path) && item.path !== '/');
             const Icon = item.icon;
@@ -224,29 +263,38 @@ export const DashboardLayout: React.FC = () => {
             return (
               <div 
                 key={item.name} 
-                className="relative w-full flex justify-center"
+                className="relative w-full"
                 onMouseEnter={() => setHoveredNav(item.name)}
                 onMouseLeave={() => setHoveredNav(null)}
               >
                 <Link
                   to={item.path}
-                  className={`relative flex items-center justify-center w-full h-12 transition-colors ${
+                  className={`relative flex items-center h-11 rounded-lg transition-all ${
+                    isSidebarExpanded ? 'px-3 justify-start' : 'justify-center w-full'
+                  } ${
                     isActive 
-                      ? 'text-[var(--color-accent)] bg-white/5' 
-                      : 'text-[var(--color-text-inverse)]/60 hover:text-[var(--color-text-inverse)] hover:bg-white/5'
+                      ? 'text-[var(--color-accent)] bg-white/10 font-bold' 
+                      : 'text-[var(--color-text-inverse)]/70 hover:text-[var(--color-text-inverse)] hover:bg-white/5'
                   }`}
                 >
-                  {/* Active Indicator (3px border on the left) */}
-                  <div className={`absolute left-0 top-0 bottom-0 w-[3px] transition-colors ${
-                    isActive ? 'bg-[var(--color-accent)]' : hoveredNav === item.name ? 'bg-[var(--color-border-strong)]/30' : 'bg-transparent'
-                  }`} />
+                  {/* Active Indicator (3px border on the left when collapsed) */}
+                  {!isSidebarExpanded && (
+                    <div className={`absolute left-0 top-0 bottom-0 w-[3px] transition-colors ${
+                      isActive ? 'bg-[var(--color-accent)]' : hoveredNav === item.name ? 'bg-[var(--color-border-strong)]/30' : 'bg-transparent'
+                    }`} />
+                  )}
                   
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {isSidebarExpanded && (
+                    <span className="ml-3 text-sm font-semibold truncate">
+                      {item.name}
+                    </span>
+                  )}
                 </Link>
 
-                {/* Tooltip */}
-                {hoveredNav === item.name && (
-                  <div className="absolute left-[72px] top-1/2 -translate-y-1/2 bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] px-3 py-1.5 rounded-md shadow-md text-sm font-medium whitespace-nowrap z-50 pointer-events-none">
+                {/* Tooltip (only in collapsed mode) */}
+                {!isSidebarExpanded && hoveredNav === item.name && (
+                  <div className="absolute left-[64px] top-1/2 -translate-y-1/2 bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] px-3 py-1.5 rounded-md shadow-md text-sm font-medium whitespace-nowrap z-50 pointer-events-none border border-[var(--color-border)]">
                     {item.name}
                   </div>
                 )}
@@ -255,16 +303,30 @@ export const DashboardLayout: React.FC = () => {
           })}
         </nav>
 
-        <div className="w-full flex flex-col items-center space-y-2 mt-auto">
-          <Link to="/settings" className="relative flex items-center justify-center w-full h-12 text-[var(--color-text-inverse)]/60 hover:text-[var(--color-text-inverse)] hover:bg-white/5 transition-colors" title="Settings">
-             <Settings className="h-5 w-5" />
+        <div className="w-full flex flex-col space-y-1.5 mt-auto pt-3 border-t border-white/10">
+          <Link 
+            to="/settings" 
+            className={`relative flex items-center h-11 rounded-lg text-[var(--color-text-inverse)]/70 hover:text-[var(--color-text-inverse)] hover:bg-white/5 transition-all ${
+              isSidebarExpanded ? 'px-3 justify-start' : 'justify-center w-full'
+            }`} 
+            title="Settings"
+          >
+            <Settings className="h-5 w-5 shrink-0" />
+            {isSidebarExpanded && (
+              <span className="ml-3 text-sm font-semibold truncate">Settings</span>
+            )}
           </Link>
           <button 
             onClick={logout}
-            className="relative flex items-center justify-center w-full h-12 text-red-400 hover:text-red-300 hover:bg-white/5 transition-colors"
+            className={`relative flex items-center h-11 rounded-lg text-red-400 hover:text-red-300 hover:bg-white/5 transition-all cursor-pointer ${
+              isSidebarExpanded ? 'px-3 justify-start' : 'justify-center w-full'
+            }`}
             title="Sign Out"
           >
-             <LogOut className="h-5 w-5" />
+            <LogOut className="h-5 w-5 shrink-0" />
+            {isSidebarExpanded && (
+              <span className="ml-3 text-sm font-semibold truncate">Sign Out</span>
+            )}
           </button>
         </div>
       </div>
