@@ -314,7 +314,13 @@ export class CustomersService {
       }).returning();
 
       await this.invalidateCustomerCache(businessId);
-      return { payment, customer: updatedCustomer };
+      return { 
+        payment, 
+        customer: updatedCustomer,
+        previousBalance: balanceNum,
+        amountPaid: data.amount,
+        newBalance
+      };
     });
   }
 

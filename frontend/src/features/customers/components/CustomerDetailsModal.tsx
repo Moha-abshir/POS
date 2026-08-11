@@ -5,17 +5,21 @@ import { format } from 'date-fns';
 import { LoadingSpinner } from '../../../components/ui/Loading';
 import { RecordCustomerPaymentModal } from './RecordCustomerPaymentModal';
 import { ReceiptModal } from '../../sales/components/ReceiptModal';
+import { CustomerPaymentReceiptModal } from './CustomerPaymentReceiptModal';
 
 interface CustomerDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   customer: Customer | null;
+  onRecordPayment: (customer: Customer) => void;
 }
 
-export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOpen, onClose, customer }) => {
+export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOpen, onClose, customer, onRecordPayment }) => {
   const [activeTab, setActiveTab] = useState<'purchases' | 'payments'>('purchases');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [receiptSaleId, setReceiptSaleId] = useState<string | null>(null);
+  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
+  const [selectedPaymentData, setSelectedPaymentData] = useState<any>(null);
 
   const { data: purchases, isLoading: isPurchasesLoading } = useCustomerPurchases(customer?.id);
   const { data: paymentsList, isLoading: isPaymentsLoading } = useCustomerPayments(customer?.id);
@@ -309,11 +313,27 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                               KSH {Number(payment.amount).toLocaleString()}
                             </span>
                           </div>
-                          <div className="flex justify-between text-xs text-gray-500 mt-2 pt-1 border-t border-gray-100">
+                          <div className="flex justify-between items-center text-xs text-gray-500 mt-2 pt-1 border-t border-gray-100">
                             <span>Method: <span className="font-bold text-gray-700">{payment.method}</span></span>
                             {payment.mpesaReceiptNumber && (
                               <span>M-Pesa Ref: <span className="font-mono font-bold text-amber-800">{payment.mpesaReceiptNumber}</span></span>
                             )}
+                            <button
+                              onClick={() => {
+                                const amt = Number(payment.amount) || 0;
+                                const currentBal = Number(customer?.balance) || 0;
+                                setSelectedPaymentData({
+                                  payment,
+                                  customer: customer || {},
+                                  previousBalance: currentBal + amt,
+                                  amountPaid: amt,
+                                  newBalance: currentBal
+                                });
+                              }}
+                              className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded text-[10px] transition-colors flex items-center gap-1 cursor-pointer"
+                            >
+                              Receipt
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -345,13 +365,22 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
 
       {isPaymentModalOpen && (
         <RecordCustomerPaymentModal
+          customer={customer!}
           onClose={() => setIsPaymentModalOpen(false)}
-          customer={customer}
         />
       )}
-      <ReceiptModal 
-        saleId={receiptSaleId} 
-        onClose={() => setReceiptSaleId(null)} 
+
+      {receiptSaleId && (
+        <ReceiptModal
+          saleId={receiptSaleId}
+          onClose={() => setReceiptSaleId(null)}
+        />
+      )}
+
+      <CustomerPaymentReceiptModal
+        isOpen={!!selectedPaymentData}
+        onClose={() => setSelectedPaymentData(null)}
+        paymentData={selectedPaymentData}
       />
     </div>
   );

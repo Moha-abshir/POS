@@ -5,6 +5,7 @@ import { X, DollarSign, AlertCircle, Smartphone } from 'lucide-react';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
 import { api } from '../../../lib/api';
 import toast from 'react-hot-toast';
+import { CustomerPaymentReceiptModal } from './CustomerPaymentReceiptModal';
 
 interface RecordCustomerPaymentModalProps {
   customer: Customer;
@@ -21,6 +22,7 @@ export function RecordCustomerPaymentModal({ customer, onClose }: RecordCustomer
   const [isPolling, setIsPolling] = useState(false);
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
   const [isInitiatingPush, setIsInitiatingPush] = useState(false);
+  const [paymentReceiptData, setPaymentReceiptData] = useState<any>(null);
   
   const [error, setError] = useState<string | null>(null);
 
@@ -176,9 +178,16 @@ export function RecordCustomerPaymentModal({ customer, onClose }: RecordCustomer
       method,
       mpesaReceiptNumber: method === 'MPESA' ? mpesaReceiptNumber.trim() : undefined
     }, {
-      onSuccess: () => {
+      onSuccess: (res: any) => {
         toast.success('Payment recorded successfully');
-        onClose();
+        const payload = res.data || res;
+        setPaymentReceiptData({
+          payment: payload.payment,
+          customer: payload.customer || customer,
+          previousBalance: payload.previousBalance ?? Number(customer.balance),
+          amountPaid: payload.amountPaid ?? Number(amount),
+          newBalance: payload.newBalance ?? (Number(customer.balance) - Number(amount))
+        });
       },
       onError: (err: any) => {
         setError(err.message || 'Failed to record payment');
@@ -452,6 +461,15 @@ export function RecordCustomerPaymentModal({ customer, onClose }: RecordCustomer
           </div>
         </form>
       </div>
+
+      <CustomerPaymentReceiptModal
+        isOpen={!!paymentReceiptData}
+        onClose={() => {
+          setPaymentReceiptData(null);
+          handleClose();
+        }}
+        paymentData={paymentReceiptData}
+      />
     </div>
   );
 }
