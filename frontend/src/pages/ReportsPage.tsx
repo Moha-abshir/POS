@@ -4,7 +4,8 @@ import { Navigate } from 'react-router-dom';
 import { 
   TrendingUp, TrendingDown, Receipt, DollarSign, Users, AlertTriangle, 
   Truck, Printer, Download, Calendar, RefreshCcw, 
-  Trash2, CreditCard, ShoppingBag, PiggyBank, BarChart3, Info, Percent
+  Trash2, CreditCard, ShoppingBag, PiggyBank, BarChart3, Info, Percent,
+  Search, Package
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { 
