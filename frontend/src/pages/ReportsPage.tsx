@@ -56,26 +56,43 @@ export const ReportsPage: React.FC = () => {
   // Customer Statement Print Modal
   const [statementCustomer, setStatementCustomer] = useState<any>(null);
 
+  // Sales Payment Method Filter State
+  const [salesPaymentMethod, setSalesPaymentMethod] = useState<string>('ALL');
+
+  // Helper for local calendar date formatting YYYY-MM-DD
+  const formatLocalDateString = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Preset Date Helper
   useEffect(() => {
     const today = new Date();
     let start = new Date();
+    let end = new Date();
     
     if (preset === 'today') {
       start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     } else if (preset === 'yesterday') {
       start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+      end = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
     } else if (preset === '7days') {
       start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
+      end = today;
     } else if (preset === '30days') {
       start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30);
+      end = today;
     } else if (preset === 'month') {
       start = new Date(today.getFullYear(), today.getMonth(), 1);
+      end = today;
     }
 
     if (preset !== 'custom') {
-      setStartDate(start.toISOString().split('T')[0]);
-      setEndDate(today.toISOString().split('T')[0]);
+      setStartDate(formatLocalDateString(start));
+      setEndDate(formatLocalDateString(end));
     }
   }, [preset]);
 
@@ -90,7 +107,7 @@ export const ReportsPage: React.FC = () => {
         const res = await api.get('/reports/overview', { params });
         setOverviewData(res.data.data);
       } else if (activeTab === 'sales') {
-        const res = await api.get('/reports/product-sales', { params });
+        const res = await api.get('/reports/product-sales', { params: { ...params, paymentMethod: salesPaymentMethod } });
         setProductSalesReportData(res.data.data);
       } else if (activeTab === 'profit-loss') {
         const res = await api.get('/reports/profit-loss', { params });
@@ -560,7 +577,7 @@ Need support? Contact Smart POS Customer Support at +254714731331.
               {activeTab === 'sales' && (
                 <div className="space-y-4">
                   
-                  {/* Header Controls: Search + Export CSV */}
+                  {/* Header Controls: Search + Payment Method Filter */}
                   <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
                     <div className="relative flex-1 max-w-md">
                       <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -573,38 +590,27 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                       />
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => {
-                          const itemsToExport = (productSalesReportData?.items || []).filter((item: any) => 
-                            !salesReportSearch || 
-                            item.productName.toLowerCase().includes(salesReportSearch.toLowerCase()) || 
-                            item.sku.toLowerCase().includes(salesReportSearch.toLowerCase())
-                          );
-
-                          let csvContent = 'Date Sold,Product Name,SKU,Quantity,Unit Cost Price (KES),Unit Selling Price (KES),Total Cost (KES),Total Selling (KES),Profit (KES)\n';
-                          itemsToExport.forEach((item: any) => {
-                            const formattedDate = format(new Date(item.soldAt), 'yyyy-MM-dd HH:mm:ss');
-                            csvContent += `"${formattedDate}","${item.productName}","${item.sku}",${item.quantity},${item.costPrice},${item.sellingPrice},${item.totalCost},${item.totalSelling},${item.profit}\n`;
-                          });
-
-                          const totals = productSalesReportData?.totals || { totalCost: 0, totalSelling: 0, totalProfit: 0 };
-                          csvContent += `\n"GRAND TOTAL","","","","","",${totals.totalCost},${totals.totalSelling},${totals.totalProfit}\n`;
-
-                          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                          const url = URL.createObjectURL(blob);
-                          const link = document.createElement('a');
-                          link.href = url;
-                          link.setAttribute('download', `product_sales_report_${startDate}_to_${endDate}.csv`);
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        }}
-                        className="flex items-center justify-center gap-2 px-4 h-10 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-lg text-sm font-bold transition-all shadow-xs cursor-pointer"
-                      >
-                        <Download className="w-4 h-4" />
-                        Export CSV
-                      </button>
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+                      <span className="text-xs font-bold text-gray-500 mr-1 shrink-0">Payment Method:</span>
+                      {[
+                        { id: 'ALL', label: 'All Sales' },
+                        { id: 'CASH', label: 'Cash' },
+                        { id: 'MPESA', label: 'M-Pesa' },
+                        { id: 'CREDIT', label: 'Credit' },
+                        { id: 'SPLIT', label: 'Split' },
+                      ].map((pm) => (
+                        <button
+                          key={pm.id}
+                          onClick={() => setSalesPaymentMethod(pm.id)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                            salesPaymentMethod === pm.id
+                              ? 'bg-amber-600 text-white shadow-xs'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {pm.label}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
@@ -628,6 +634,7 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                           <tr>
                             <th className="p-4">Date Sold</th>
                             <th className="p-4">Product Name</th>
+                            <th className="p-4 text-center">Method</th>
                             <th className="p-4 text-center">Qty</th>
                             <th className="p-4 text-right">Unit Cost Price</th>
                             <th className="p-4 text-right">Unit Selling Price</th>
@@ -647,9 +654,9 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                             if (items.length === 0) {
                               return (
                                 <tr>
-                                  <td colSpan={8} className="p-12 text-center text-gray-400">
+                                  <td colSpan={9} className="p-12 text-center text-gray-400">
                                     <Package className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-                                    <p className="font-semibold text-sm">No sales items found for the selected period</p>
+                                    <p className="font-semibold text-sm">No sales items found for the selected filter</p>
                                   </td>
                                 </tr>
                               );
@@ -662,6 +669,19 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                                 </td>
                                 <td className="p-4 font-bold text-gray-900 text-sm">
                                   {row.productName}
+                                </td>
+                                <td className="p-4 text-center">
+                                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                                    row.paymentMethod === 'CASH'
+                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      : row.paymentMethod === 'MPESA'
+                                        ? 'bg-teal-50 text-teal-700 border-teal-200'
+                                        : row.paymentMethod === 'CREDIT'
+                                          ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                          : 'bg-purple-50 text-purple-700 border-purple-200'
+                                  }`}>
+                                    {row.paymentMethod || 'CASH'}
+                                  </span>
                                 </td>
                                 <td className="p-4 text-center font-extrabold text-gray-900">
                                   {row.quantity}
@@ -696,7 +716,7 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                         {productSalesReportData?.totals && (
                           <tfoot className="bg-gray-100 font-extrabold border-t-2 border-gray-300 text-xs text-gray-900">
                             <tr>
-                              <td colSpan={5} className="p-4 uppercase tracking-wider text-right font-black text-gray-800">
+                              <td colSpan={6} className="p-4 uppercase tracking-wider text-right font-black text-gray-800">
                                 GRAND TOTAL
                               </td>
                               <td className="p-4 text-right text-gray-900 font-black text-sm">

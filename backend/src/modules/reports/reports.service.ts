@@ -3,7 +3,7 @@ import { db } from '../../db';
 import { 
   sales, saleItems, productVariants, variantUnits, customers, payments, 
   purchases, purchaseItems, damagedGoods, expenses, refunds, refundItems, 
-  categories, products, suppliers, mpesaTransactions, businessMpesaAccounts
+  categories, products, suppliers, mpesaTransactions, businessMpesaAccounts, businesses
 } from '../../db/schema';
 import { getCache, setCache, flushPattern } from '../../core/cache/redis';
 
@@ -19,15 +19,39 @@ export class ReportsService {
 
   /**
    * Helper to parse query parameters into start and end Date objects,
-   * setting them to local date boundaries (00:00:00.000 for start and 23:59:59.999 for end)
-   * so that transactions created on boundary days are correctly included.
+   * setting them to exact local date boundaries (00:00:00.000 for start and 23:59:59.999 for end)
+   * so that filtering strictly respects local calendar dates without timezone leakage.
    */
   private static parseDateRange(startDate?: string, endDate?: string) {
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const end = endDate ? new Date(endDate) : new Date();
+    let start: Date;
+    let end: Date;
 
-    start.setHours(0, 0, 0, 0);
-    end.setHours(23, 59, 59, 999);
+    if (startDate) {
+      const parts = startDate.split('-').map(Number);
+      if (parts.length === 3) {
+        start = new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0);
+      } else {
+        start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+      }
+    } else {
+      start = new Date();
+      start.setDate(start.getDate() - 30);
+      start.setHours(0, 0, 0, 0);
+    }
+
+    if (endDate) {
+      const parts = endDate.split('-').map(Number);
+      if (parts.length === 3) {
+        end = new Date(parts[0], parts[1] - 1, parts[2], 23, 59, 59, 999);
+      } else {
+        end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+      }
+    } else {
+      end = new Date();
+      end.setHours(23, 59, 59, 999);
+    }
 
     return { start, end };
   }
@@ -272,13 +296,14 @@ export class ReportsService {
    * Detailed Product Sales Report (Date Sold, Product Name, Unit Cost, Unit Selling, Total Cost, Total Selling, Profit)
    * Cached in Redis with TTL 900s (15 min) per business and date range.
    */
-  static async getProductSalesReport(businessId: string, options: { startDate?: string; endDate?: string; search?: string }) {
+  static async getProductSalesReport(businessId: string, options: { startDate?: string; endDate?: string; search?: string; paymentMethod?: string }) {
     const { start, end } = this.parseDateRange(options.startDate, options.endDate);
     const startStr = start.toISOString();
     const endStr = end.toISOString();
     const search = (options.search || '').trim().toLowerCase();
+    const paymentMethod = (options.paymentMethod || 'ALL').trim().toUpperCase();
 
-    const cacheKey = `cache:${businessId}:reports:product_sales:${startStr}:${endStr}`;
+    const cacheKey = `cache:${businessId}:reports:product_sales:${startStr}:${endStr}:${paymentMethod}`;
 
     // 1. Try Redis cache first (only if no inline search filter)
     if (!search) {
@@ -292,16 +317,25 @@ export class ReportsService {
       }
     }
 
-    // 2. Query DB
+    // 2. Fetch business productMode
+    const [biz] = await db.select({ productMode: businesses.productMode }).from(businesses).where(eq(businesses.id, businessId)).limit(1);
+    const isSimpleMode = biz?.productMode === 'SIMPLE';
+
+    // 3. Query DB
     const conditions = [
       eq(sales.businessId, businessId),
       gte(sales.soldAt, start),
       lte(sales.soldAt, end)
     ];
 
+    if (paymentMethod && paymentMethod !== 'ALL') {
+      conditions.push(eq(sales.paymentMethod, paymentMethod as any));
+    }
+
     const rows = await db.select({
       id: saleItems.id,
       soldAt: sales.soldAt,
+      paymentMethod: sales.paymentMethod,
       productName: products.name,
       variantName: productVariants.name,
       unitName: variantUnits.name,
@@ -328,11 +362,14 @@ export class ReportsService {
       const totalSelling = Number(r.subtotal) || (qty * selling);
       const profit = totalSelling - totalCost;
 
-      const fullProductName = `${r.productName}${r.variantName && r.variantName !== 'Default' ? ` (${r.variantName})` : ''} • ${r.unitName}`;
+      const fullProductName = isSimpleMode
+        ? r.productName
+        : `${r.productName}${r.variantName && r.variantName !== 'Default' && r.variantName !== 'Standard' ? ` (${r.variantName})` : ''}${r.unitName && r.unitName !== 'piece' && r.unitName !== 'default' ? ` • ${r.unitName}` : ''}`;
 
       return {
         id: r.id,
         soldAt: r.soldAt,
+        paymentMethod: r.paymentMethod,
         productName: fullProductName,
         rawProductName: r.productName,
         sku: r.sku || '',
@@ -359,7 +396,8 @@ export class ReportsService {
 
     const result = {
       items: formattedRows,
-      totals: grandTotals
+      totals: grandTotals,
+      isSimpleMode
     };
 
     // Cache result in Redis for 15 mins
