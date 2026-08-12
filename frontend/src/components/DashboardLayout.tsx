@@ -318,14 +318,15 @@ export const DashboardLayout: React.FC = () => {
           </Link>
           <button 
             onClick={logout}
-            className={`relative flex items-center h-11 rounded-lg text-red-400 hover:text-red-300 hover:bg-white/5 transition-all cursor-pointer ${
+            className={`relative flex items-center h-11 rounded-lg hover:bg-white/10 transition-all cursor-pointer ${
               isSidebarExpanded ? 'px-3 justify-start' : 'justify-center w-full'
             }`}
+            style={{ color: '#FF2222' }}
             title="Sign Out"
           >
-            <LogOut className="h-5 w-5 shrink-0" />
+            <LogOut className="h-5 w-5 shrink-0" style={{ color: '#FF2222' }} />
             {isSidebarExpanded && (
-              <span className="ml-3 text-sm font-semibold truncate">Sign Out</span>
+              <span className="ml-3 text-sm font-bold truncate" style={{ color: '#FF2222' }}>Sign Out</span>
             )}
           </button>
         </div>
@@ -682,10 +683,11 @@ export const DashboardLayout: React.FC = () => {
                   setIsMobileMenuOpen(false);
                   logout();
                 }}
-                className="flex items-center gap-3.5 px-4.5 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-white/5 transition-all font-semibold text-sm cursor-pointer text-left w-full"
+                className="flex items-center gap-3.5 px-4.5 py-3 rounded-xl hover:bg-white/10 transition-all font-bold text-sm cursor-pointer text-left w-full"
+                style={{ color: '#FF2222' }}
               >
-                <LogOut className="h-5 w-5" />
-                <span>Sign Out</span>
+                <LogOut className="h-5 w-5" style={{ color: '#FF2222' }} />
+                <span style={{ color: '#FF2222' }}>Sign Out</span>
               </button>
             </div>
           </div>
