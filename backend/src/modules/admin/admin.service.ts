@@ -100,7 +100,7 @@ export class AdminService {
           type: 'admin'
         },
         JWT_SECRET,
-        { expiresIn: '7d' } // Admin session valid for 7 days
+        { expiresIn: '30d' } // Admin session valid for 30 days
       );
 
       return {

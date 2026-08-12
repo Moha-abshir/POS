@@ -119,17 +119,17 @@ export class AuthService {
         }
       }
 
-      // 5. Generate Access Token (JWT) - 7 days
+      // 5. Generate Access Token (JWT) - 30 days
       const accessToken = jwt.sign(
         { sub: user.id, email: user.email, role: user.role, businessId: user.businessId },
         JWT_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: '30d' }
       );
 
-      // 6. Generate Refresh Token - 7 days
+      // 6. Generate Refresh Token - 30 days
       const rawRefreshToken = crypto.randomBytes(64).toString('hex');
       const refreshTokenHash = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
-      const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const refreshExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
       await tx.insert(sessions).values({
         userId: user.id,
@@ -219,7 +219,7 @@ export class AuthService {
     const accessToken = jwt.sign(
       { sub: user.id, email: user.email, role: user.role, businessId: user.businessId },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '30d' }
     );
 
     return accessToken;
