@@ -140,7 +140,7 @@ export const ReportsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, startDate, endDate, groupBy]);
+  }, [activeTab, startDate, endDate, groupBy, salesPaymentMethod]);
 
   useEffect(() => {
     fetchReportData();
@@ -156,7 +156,8 @@ export const ReportsPage: React.FC = () => {
           format,
           startDate,
           endDate,
-          groupBy
+          groupBy,
+          paymentMethod: salesPaymentMethod
         },
         responseType: 'blob'
       });

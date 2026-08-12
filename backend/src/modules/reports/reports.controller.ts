@@ -184,7 +184,8 @@ export class ReportsController {
           sheetName = 'Sales_Report';
           const report = await ReportsService.getProductSalesReport(businessId, {
             startDate: startDate as string,
-            endDate: endDate as string
+            endDate: endDate as string,
+            paymentMethod: req.query.paymentMethod as string
           });
           headers = ['Date Sold', 'Product Name', 'SKU', 'Payment Method', 'Quantity', 'Unit Cost Price (KES)', 'Unit Selling Price (KES)', 'Total Cost (KES)', 'Total Selling (KES)', 'Profit Made (KES)'];
           rows = report.items.map((r: any) => [
