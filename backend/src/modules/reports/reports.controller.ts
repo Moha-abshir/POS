@@ -32,11 +32,12 @@ export class ReportsController {
 
   static async getProductSales(req: Request, res: Response, next: NextFunction) {
     try {
-      const { startDate, endDate, search } = req.query;
+      const { startDate, endDate, search, paymentMethod } = req.query;
       const data = await ReportsService.getProductSalesReport(req.user!.businessId, {
         startDate: startDate as string,
         endDate: endDate as string,
-        search: search as string
+        search: search as string,
+        paymentMethod: paymentMethod as string
       });
       res.status(200).json({ status: 'success', data });
     } catch (error) {
@@ -181,25 +182,35 @@ export class ReportsController {
         }
         case 'sales': {
           sheetName = 'Sales_Report';
-          const data = await ReportsService.getSalesReport(businessId, {
+          const report = await ReportsService.getProductSalesReport(businessId, {
             startDate: startDate as string,
-            endDate: endDate as string,
-            groupBy: groupBy as any
+            endDate: endDate as string
           });
-          const isCategory = groupBy === 'category';
-          const isProduct = groupBy === 'product';
-          const isCustomer = groupBy === 'customer';
-          
-          if (isCategory || isProduct) {
-            headers = ['Group Item', 'Total Sales (KES)', 'Quantity Sold'];
-            rows = data.map((r: any) => [r.groupKey, Number(r.totalSales), Number(r.quantitySold)]);
-          } else if (isCustomer) {
-            headers = ['Customer Name', 'Total Sales (KES)', 'TransactionsCount'];
-            rows = data.map((r: any) => [r.groupKey, Number(r.totalSales), r.transactionCount]);
-          } else {
-            headers = ['Period / Time', 'Total Sales (KES)', 'TransactionsCount', 'Average Sale (KES)'];
-            rows = data.map((r: any) => [r.groupKey, Number(r.totalSales), r.transactionCount, Number(r.averageSale || 0)]);
-          }
+          headers = ['Date Sold', 'Product Name', 'SKU', 'Payment Method', 'Quantity', 'Unit Cost Price (KES)', 'Unit Selling Price (KES)', 'Total Cost (KES)', 'Total Selling (KES)', 'Profit Made (KES)'];
+          rows = report.items.map((r: any) => [
+            new Date(r.soldAt).toLocaleString(),
+            r.productName,
+            r.sku || '',
+            r.paymentMethod || 'CASH',
+            r.quantity,
+            r.costPrice,
+            r.sellingPrice,
+            r.totalCost,
+            r.totalSelling,
+            r.profit
+          ]);
+          rows.push([
+            'GRAND TOTAL',
+            '',
+            '',
+            '',
+            report.totals.totalQuantity,
+            '',
+            '',
+            report.totals.totalCost,
+            report.totals.totalSelling,
+            report.totals.totalProfit
+          ]);
           break;
         }
         case 'profit-loss': {
