@@ -334,14 +334,22 @@ export class ReportsService {
       sql`CAST(${sales.totalAmount} AS numeric) > CAST(${sales.amountPaid} AS numeric)`
     );
 
-    if ((paymentMethod === 'CREDIT' || paymentMethod === 'CREDIT_SALES') && creditCondition) {
-      conditions.push(creditCondition);
-    } else if (paymentMethod === 'CASH' || paymentMethod === 'CASH_SALES') {
-      conditions.push(
-        eq(sales.paymentStatus, 'PAID'),
-        sql`CAST(${sales.amountPaid} AS numeric) >= CAST(${sales.totalAmount} AS numeric)`,
-        sql`(${sales.paymentMethod} IS NULL OR ${sales.paymentMethod} != 'CREDIT')`
-      );
+    if (paymentMethod && paymentMethod !== 'ALL') {
+      if (paymentMethod === 'CREDIT' || paymentMethod === 'CREDIT_SALES') {
+        if (creditCondition) conditions.push(creditCondition);
+      } else if (paymentMethod === 'CASH' || paymentMethod === 'CASH_SALES') {
+        conditions.push(
+          eq(sales.paymentStatus, 'PAID'),
+          sql`CAST(${sales.amountPaid} AS numeric) >= CAST(${sales.totalAmount} AS numeric)`,
+          sql`(${sales.paymentMethod} IS NULL OR ${sales.paymentMethod} = 'CASH' OR ${sales.paymentMethod} != 'CREDIT')`
+        );
+      } else if (paymentMethod === 'MPESA') {
+        conditions.push(eq(sales.paymentMethod, 'MPESA'));
+      } else if (paymentMethod === 'SPLIT') {
+        conditions.push(eq(sales.paymentMethod, 'SPLIT'));
+      } else {
+        conditions.push(eq(sales.paymentMethod, paymentMethod as any));
+      }
     }
 
     const rows = await db.select({
