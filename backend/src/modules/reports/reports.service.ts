@@ -1,4 +1,4 @@
-import { eq, and, sql, desc, gte, lte, asc, sum, count, isNull } from 'drizzle-orm';
+import { eq, and, or, inArray, sql, desc, gte, lte, asc, sum, count, isNull, SQL } from 'drizzle-orm';
 import { db } from '../../db';
 import { 
   sales, saleItems, productVariants, variantUnits, customers, payments, 
@@ -322,20 +322,35 @@ export class ReportsService {
     const isSimpleMode = biz?.productMode === 'SIMPLE';
 
     // 3. Query DB
-    const conditions = [
+    const conditions: SQL<unknown>[] = [
       eq(sales.businessId, businessId),
       gte(sales.soldAt, start),
       lte(sales.soldAt, end)
     ];
 
-    if (paymentMethod && paymentMethod !== 'ALL') {
-      conditions.push(eq(sales.paymentMethod, paymentMethod as any));
+    const creditCondition = or(
+      eq(sales.paymentMethod, 'CREDIT'),
+      inArray(sales.paymentStatus, ['UNPAID', 'PARTIAL']),
+      sql`CAST(${sales.totalAmount} AS numeric) > CAST(${sales.amountPaid} AS numeric)`
+    );
+
+    if ((paymentMethod === 'CREDIT' || paymentMethod === 'CREDIT_SALES') && creditCondition) {
+      conditions.push(creditCondition);
+    } else if (paymentMethod === 'CASH' || paymentMethod === 'CASH_SALES') {
+      conditions.push(
+        eq(sales.paymentStatus, 'PAID'),
+        sql`CAST(${sales.amountPaid} AS numeric) >= CAST(${sales.totalAmount} AS numeric)`,
+        sql`(${sales.paymentMethod} IS NULL OR ${sales.paymentMethod} != 'CREDIT')`
+      );
     }
 
     const rows = await db.select({
       id: saleItems.id,
       soldAt: sales.soldAt,
       paymentMethod: sales.paymentMethod,
+      paymentStatus: sales.paymentStatus,
+      totalAmount: sales.totalAmount,
+      amountPaid: sales.amountPaid,
       productName: products.name,
       variantName: productVariants.name,
       unitName: variantUnits.name,
@@ -362,6 +377,16 @@ export class ReportsService {
       const totalSelling = Number(r.subtotal) || (qty * selling);
       const profit = totalSelling - totalCost;
 
+      const isCredit = 
+        r.paymentMethod === 'CREDIT' || 
+        r.paymentStatus === 'UNPAID' || 
+        r.paymentStatus === 'PARTIAL' || 
+        Number(r.totalAmount) > Number(r.amountPaid);
+
+      const effectivePaymentMethod = isCredit 
+        ? 'CREDIT' 
+        : (r.paymentMethod === 'MPESA' ? 'MPESA' : r.paymentMethod === 'SPLIT' ? 'SPLIT' : 'CASH');
+
       const fullProductName = isSimpleMode
         ? r.productName
         : `${r.productName}${r.variantName && r.variantName !== 'Default' && r.variantName !== 'Standard' ? ` (${r.variantName})` : ''}${r.unitName && r.unitName !== 'piece' && r.unitName !== 'default' ? ` • ${r.unitName}` : ''}`;
@@ -369,7 +394,7 @@ export class ReportsService {
       return {
         id: r.id,
         soldAt: r.soldAt,
-        paymentMethod: r.paymentMethod,
+        paymentMethod: effectivePaymentMethod,
         productName: fullProductName,
         rawProductName: r.productName,
         sku: r.sku || '',

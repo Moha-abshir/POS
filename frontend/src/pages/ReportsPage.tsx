@@ -591,13 +591,11 @@ Need support? Contact Smart POS Customer Support at +254714731331.
                     </div>
 
                     <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-                      <span className="text-xs font-bold text-gray-500 mr-1 shrink-0">Payment Method:</span>
+                      <span className="text-xs font-bold text-gray-500 mr-1 shrink-0">Filter:</span>
                       {[
                         { id: 'ALL', label: 'All Sales' },
-                        { id: 'CASH', label: 'Cash' },
-                        { id: 'MPESA', label: 'M-Pesa' },
-                        { id: 'CREDIT', label: 'Credit' },
-                        { id: 'SPLIT', label: 'Split' },
+                        { id: 'CASH', label: 'Cash Sales' },
+                        { id: 'CREDIT', label: 'Credit Sales' },
                       ].map((pm) => (
                         <button
                           key={pm.id}
