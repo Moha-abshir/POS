@@ -114,7 +114,15 @@ export const CustomerPaymentReceiptModal: React.FC<CustomerPaymentReceiptModalPr
     commands += GS + 'V' + '\x42' + '\x00'; // Partial cut
     commands += ESC + 'p' + '\x00' + '\x19' + '\xfa'; // Cash drawer kick
 
-    return btoa(unescape(encodeURIComponent(commands)));
+    const bytes = new Uint8Array(commands.length);
+    for (let i = 0; i < commands.length; i++) {
+      bytes[i] = commands.charCodeAt(i) & 0xff;
+    }
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
   };
 
   const handlePrint = async () => {
