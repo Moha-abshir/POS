@@ -1,10 +1,47 @@
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import { db } from '../../db';
 import { restockItems, productVariants, products } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 
 export class RestockService {
+  static async syncLowStockItems(businessId: string) {
+    try {
+      const lowStockVariants = await db
+        .select({
+          id: productVariants.id,
+        })
+        .from(productVariants)
+        .innerJoin(products, eq(productVariants.productId, products.id))
+        .where(
+          and(
+            eq(products.businessId, businessId),
+            eq(productVariants.isActive, true),
+            eq(products.isActive, true),
+            sql`${productVariants.baseStockQuantity} <= ${productVariants.lowStockThreshold}`
+          )
+        );
+
+      for (const v of lowStockVariants) {
+        const [existing] = await db
+          .select()
+          .from(restockItems)
+          .where(and(eq(restockItems.businessId, businessId), eq(restockItems.variantId, v.id)));
+
+        if (!existing) {
+          await db.insert(restockItems).values({
+            businessId,
+            variantId: v.id,
+          }).catch(() => {});
+        }
+      }
+    } catch (err) {
+      console.error('Error syncing low stock items to restock list:', err);
+    }
+  }
+
   static async getRestockItems(businessId: string) {
+    await this.syncLowStockItems(businessId);
+
     const items = await db.select({
       id: restockItems.id,
       variantId: restockItems.variantId,

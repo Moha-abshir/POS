@@ -3,6 +3,7 @@ import { db } from '../../db';
 import { productVariants, stockMovements, damagedGoods, purchases, products, users, suppliers } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 import { flushPattern } from '../../core/cache/redis';
+import { RestockService } from './restock.service';
 
 export class InventoryService {
   /**
@@ -48,6 +49,10 @@ export class InventoryService {
 
     if (Number(updatedVariant.baseStockQuantity) < 0) {
       throw new AppError(`Insufficient stock for variant ${updatedVariant.name}`, 400);
+    }
+
+    if (Number(updatedVariant.baseStockQuantity) <= Number(updatedVariant.lowStockThreshold)) {
+      RestockService.addToRestockList(businessId, data.userId, updatedVariant.id).catch(() => {});
     }
 
     return updatedVariant.baseStockQuantity;

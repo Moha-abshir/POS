@@ -3,6 +3,7 @@ import { db, transactionWithRetry } from '../../db';
 import { sales, saleItems, stockMovements, productVariants, customers, payments, variantUnits, products, refunds, refundItems } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 import { InventoryService } from '../inventory/inventory.service';
+import { RestockService } from '../inventory/restock.service';
 import { MpesaService } from '../mpesa/mpesa.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { flushPattern } from '../../core/cache/redis';
@@ -397,6 +398,7 @@ export class SalesService {
       await flushPattern(`cache:${businessId}:/catalog*`);
       await flushPattern(`cache:${businessId}:*reports*`);
       await flushPattern(`cache:${businessId}:customers:*`);
+      RestockService.syncLowStockItems(businessId).catch(() => {});
     } catch (err) {
       console.error('Failed to flush cache on sale:', err);
     }
