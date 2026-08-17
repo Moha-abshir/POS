@@ -18,7 +18,7 @@ export class AuthService {
 
     // 1. Generate 6 digit OTP
     const otp = crypto.randomInt(100000, 999999).toString();
-    
+    console.log(`Otp code is ${otp}`);
     
 
     // 2. Hash it
