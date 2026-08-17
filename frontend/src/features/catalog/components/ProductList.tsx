@@ -359,14 +359,14 @@ export const ProductList: React.FC<ProductListProps> = ({
                         <td className="px-5 py-3" onClick={(e) => e.stopPropagation()}>
                           <div className="flex justify-center gap-2">
                             <button
-                              onClick={() => onEditProduct(product)}
+                              onClick={() => setRestockProduct(product)}
                               className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-colors border cursor-pointer ${
                                 isFocused
                                   ? 'bg-white text-[#D97706] border-white shadow-sm font-extrabold'
                                   : 'text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-200/50'
                               }`}
                             >
-                              Edit Details
+                              Restock
                             </button>
                           </div>
                         </td>
