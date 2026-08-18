@@ -7,7 +7,7 @@ import { getCache, setCache, flushPattern } from '../../core/cache/redis';
 export class CustomersService {
   public static async invalidateCustomerCache(businessId: string) {
     try {
-      await flushPattern(`cache:${businessId}:customers:*`);
+      await flushPattern(`cache:${businessId}:*customers*`);
       await flushPattern(`cache:${businessId}:*reports*`);
     } catch (err) {
       console.error(`Error invalidating customer/report cache for business ${businessId}:`, err);
@@ -43,19 +43,6 @@ export class CustomersService {
     await this.syncEmployeeCustomers(businessId);
 
     const { limit = 1000, offset = 0, search } = filters;
-    const cacheKey = `cache:${businessId}:customers:${limit}:${offset}:${search || 'all'}`;
-
-    // 1. Check Redis Cache first
-    try {
-      const cached = await getCache(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
-      }
-    } catch (err) {
-      console.error(`Redis read error on getCustomers for business ${businessId}:`, err);
-    }
-
-    // 2. Fetch from Database on cache miss
     const conditions: any[] = [eq(customers.businessId, businessId)];
     
     if (search) {
@@ -94,19 +81,10 @@ export class CustomersService {
       .from(customers)
       .where(and(...conditions));
 
-    const result = {
+    return {
       data,
       meta: { total: count, limit, offset }
     };
-
-    // 3. Store in Redis with 15 minutes TTL
-    try {
-      await setCache(cacheKey, JSON.stringify(result), 900);
-    } catch (err) {
-      console.error(`Redis write error on getCustomers for business ${businessId}:`, err);
-    }
-
-    return result;
   }
 
   static async createCustomer(
