@@ -268,7 +268,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
   const paidVal = paymentMethod === 'SPLIT' ? (Number(cashAmount) + Number(mpesaAmount)) : (Number(amountPaid) || 0);
   const isCustomerRequired = isCreditSale || isBusinessSale;
   const filteredCustomers = customers.filter((c: any) => 
-    isBusinessSale ? c.type === 'BUSINESS' : (c.type === 'INDIVIDUAL' || c.type === 'EMPLOYEE' || !c.type)
+    isBusinessSale ? c.type === 'BUSINESS' : true
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -762,7 +762,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
                         label={`-- Choose a ${isBusinessSale ? 'Business' : 'Customer'} --`}
                         options={filteredCustomers.map((c: any) => ({
                           id: c.id,
-                          name: `${c.name} ${c.type === 'EMPLOYEE' ? '(Employee)' : ''} ${c.phone ? `(${c.phone})` : ''}`
+                          name: `${c.name} ${c.type === 'BUSINESS' ? '(Business)' : c.type === 'EMPLOYEE' ? '(Employee)' : ''} ${c.phone ? `(${c.phone})` : ''}`
                         }))}
                         value={customerId}
                         onChange={(e) => setCustomerId(e.target.value)}
