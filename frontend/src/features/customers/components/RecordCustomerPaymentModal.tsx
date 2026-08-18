@@ -56,6 +56,8 @@ export function RecordCustomerPaymentModal({ customer, onClose }: RecordCustomer
           queryClient.invalidateQueries({ queryKey: ['customers'] });
           queryClient.invalidateQueries({ queryKey: ['customers', customer.id, 'payments'] });
           queryClient.invalidateQueries({ queryKey: ['customers', customer.id, 'purchases'] });
+          queryClient.refetchQueries({ queryKey: ['customers', customer.id, 'payments'] });
+          queryClient.refetchQueries({ queryKey: ['customers'] });
           handleClose();
           return;
         } else if (res.data.status === 'FAILED') {
@@ -102,6 +104,8 @@ export function RecordCustomerPaymentModal({ customer, onClose }: RecordCustomer
           queryClient.invalidateQueries({ queryKey: ['customers'] });
           queryClient.invalidateQueries({ queryKey: ['customers', customer.id, 'payments'] });
           queryClient.invalidateQueries({ queryKey: ['customers', customer.id, 'purchases'] });
+          queryClient.refetchQueries({ queryKey: ['customers', customer.id, 'payments'] });
+          queryClient.refetchQueries({ queryKey: ['customers'] });
           handleClose();
           return;
         }
@@ -180,6 +184,11 @@ export function RecordCustomerPaymentModal({ customer, onClose }: RecordCustomer
     }, {
       onSuccess: (res: any) => {
         toast.success('Payment recorded successfully');
+        queryClient.invalidateQueries({ queryKey: ['customers'] });
+        queryClient.invalidateQueries({ queryKey: ['customers', customer.id, 'payments'] });
+        queryClient.invalidateQueries({ queryKey: ['customers', customer.id, 'purchases'] });
+        queryClient.refetchQueries({ queryKey: ['customers', customer.id, 'payments'] });
+        queryClient.refetchQueries({ queryKey: ['customers'] });
         const payload = res.data || res;
         setPaymentReceiptData({
           payment: payload.payment,

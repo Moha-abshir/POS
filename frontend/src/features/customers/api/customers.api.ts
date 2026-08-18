@@ -192,7 +192,8 @@ export const useCustomers = (filters?: { page?: number; limit?: number; search?:
   return useQuery({
     queryKey: ['customers', filters],
     queryFn: () => customersApi.getCustomers(filters),
-    staleTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 };
 
@@ -241,6 +242,8 @@ export const useCustomerPurchases = (id?: string) => {
     queryKey: ['customers', id, 'purchases'],
     queryFn: () => id ? customersApi.getCustomerPurchases(id) : Promise.resolve([]),
     enabled: !!id,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 };
 
@@ -252,6 +255,8 @@ export const useRecordCustomerPayment = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'payments'] });
+      queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'purchases'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
     },
   });
 };
@@ -261,6 +266,8 @@ export const useCustomerPayments = (id?: string) => {
     queryKey: ['customers', id, 'payments'],
     queryFn: () => id ? customersApi.getCustomerPayments(id) : Promise.resolve([]),
     enabled: !!id,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 };
 
