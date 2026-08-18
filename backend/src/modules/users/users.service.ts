@@ -1,8 +1,9 @@
 import { eq, and } from 'drizzle-orm';
 import { db } from '../../db';
-import { users } from '../../db/schema';
+import { users, customers } from '../../db/schema';
 import { AddUserInput } from './users.schema';
 import { AppError } from '../../core/utils/AppError';
+import { CustomersService } from '../customers/customers.service';
 
 export class UsersService {
   static async getUsersByBusinessId(businessId: string, limit = 50, offset = 0) {
@@ -48,6 +49,23 @@ export class UsersService {
       createdAt: users.createdAt,
     });
     
+    // Automatically create employee customer record for credit tracking
+    const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email;
+    const [existingCust] = await db.select().from(customers)
+      .where(and(eq(customers.businessId, businessId), eq(customers.name, fullName)));
+
+    if (!existingCust) {
+      await db.insert(customers).values({
+        businessId,
+        name: fullName,
+        phone: data.mobileNumber || undefined,
+        notes: `System User (${data.email})`,
+        type: 'EMPLOYEE',
+      }).catch(() => {});
+    }
+
+    await CustomersService.invalidateCustomerCache(businessId);
+
     return newUser;
   }
 

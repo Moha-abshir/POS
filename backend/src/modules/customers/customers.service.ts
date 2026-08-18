@@ -1,6 +1,6 @@
 import { eq, and, sql, desc, inArray } from 'drizzle-orm';
 import { db } from '../../db';
-import { customers, sales, payments, bankingTransactions, refunds } from '../../db/schema';
+import { customers, sales, payments, bankingTransactions, refunds, users } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 import { getCache, setCache, flushPattern } from '../../core/cache/redis';
 
@@ -14,7 +14,34 @@ export class CustomersService {
     }
   }
 
+  static async syncEmployeeCustomers(businessId: string) {
+    try {
+      const businessUsers = await db.select().from(users).where(eq(users.businessId, businessId));
+      for (const u of businessUsers) {
+        const fullName = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email;
+        if (!fullName) continue;
+
+        const [existing] = await db.select().from(customers)
+          .where(and(eq(customers.businessId, businessId), eq(customers.name, fullName)));
+
+        if (!existing) {
+          await db.insert(customers).values({
+            businessId,
+            name: fullName,
+            phone: u.mobileNumber || undefined,
+            notes: `System User (${u.email})`,
+            type: 'EMPLOYEE',
+          }).catch(() => {});
+        }
+      }
+    } catch (err) {
+      console.error('Error syncing employee customers:', err);
+    }
+  }
+
   static async getCustomers(businessId: string, filters: { limit?: number; offset?: number; search?: string } = {}) {
+    await this.syncEmployeeCustomers(businessId);
+
     const { limit = 1000, offset = 0, search } = filters;
     const cacheKey = `cache:${businessId}:customers:${limit}:${offset}:${search || 'all'}`;
 
