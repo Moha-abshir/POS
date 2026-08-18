@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { X, UserCircle, Phone, MapPin, Receipt, Calendar, Download, DollarSign, CreditCard } from 'lucide-react';
-import { type Customer, useCustomerPurchases, useCustomerPayments } from '../api/customers.api';
+import { X, UserCircle, Phone, MapPin, Receipt, Calendar, Download, DollarSign, CreditCard, RotateCcw, AlertTriangle } from 'lucide-react';
+import { type Customer, useCustomerPurchases, useCustomerPayments, useReverseCustomerPayment } from '../api/customers.api';
 import { format } from 'date-fns';
 import { LoadingSpinner } from '../../../components/ui/Loading';
 import { RecordCustomerPaymentModal } from './RecordCustomerPaymentModal';
 import { ReceiptModal } from '../../sales/components/ReceiptModal';
 import { CustomerPaymentReceiptModal } from './CustomerPaymentReceiptModal';
+import toast from 'react-hot-toast';
 
 interface CustomerDetailsModalProps {
   isOpen: boolean;
@@ -20,9 +21,11 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
   const [receiptSaleId, setReceiptSaleId] = useState<string | null>(null);
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
   const [selectedPaymentData, setSelectedPaymentData] = useState<any>(null);
+  const [paymentToReverse, setPaymentToReverse] = useState<any | null>(null);
 
   const { data: purchases, isLoading: isPurchasesLoading } = useCustomerPurchases(customer?.id);
   const { data: paymentsList, isLoading: isPaymentsLoading } = useCustomerPayments(customer?.id);
+  const reversePaymentMutation = useReverseCustomerPayment();
 
   if (!isOpen || !customer) return null;
 
@@ -318,22 +321,31 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                             {payment.mpesaReceiptNumber && (
                               <span>M-Pesa Ref: <span className="font-mono font-bold text-amber-800">{payment.mpesaReceiptNumber}</span></span>
                             )}
-                            <button
-                              onClick={() => {
-                                const amt = Number(payment.amount) || 0;
-                                const currentBal = Number(customer?.balance) || 0;
-                                setSelectedPaymentData({
-                                  payment,
-                                  customer: customer || {},
-                                  previousBalance: currentBal + amt,
-                                  amountPaid: amt,
-                                  newBalance: currentBal
-                                });
-                              }}
-                              className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded text-[10px] transition-colors flex items-center gap-1 cursor-pointer"
-                            >
-                              Receipt
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  const amt = Number(payment.amount) || 0;
+                                  const currentBal = Number(customer?.balance) || 0;
+                                  setSelectedPaymentData({
+                                    payment,
+                                    customer: customer || {},
+                                    previousBalance: currentBal + amt,
+                                    amountPaid: amt,
+                                    newBalance: currentBal
+                                  });
+                                }}
+                                className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded text-[10px] transition-colors flex items-center gap-1 cursor-pointer"
+                              >
+                                Receipt
+                              </button>
+                              <button
+                                onClick={() => setPaymentToReverse(payment)}
+                                className="px-2 py-0.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded text-[10px] transition-colors flex items-center gap-1 cursor-pointer border border-red-200"
+                              >
+                                <RotateCcw className="w-3 h-3" />
+                                Reverse
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -382,6 +394,70 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
         onClose={() => setSelectedPaymentData(null)}
         paymentData={selectedPaymentData}
       />
+
+      {paymentToReverse && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setPaymentToReverse(null)} />
+          <div className="relative bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl z-10 space-y-4 animate-in fade-in zoom-in-95 duration-200 border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Reverse Payment?</h3>
+                <p className="text-xs text-gray-500 mt-0.5">This action will void this payment and restore the customer's balance.</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200/80 text-xs space-y-2">
+              <div className="flex justify-between text-gray-600">
+                <span>Payment Date:</span>
+                <span className="font-semibold text-gray-900">{format(new Date(paymentToReverse.paidAt), 'MMM d, yyyy - h:mm a')}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Payment Amount:</span>
+                <span className="font-bold text-red-600">KSh {Number(paymentToReverse.amount).toLocaleString()} ({paymentToReverse.method})</span>
+              </div>
+              <div className="border-t border-amber-200/60 pt-2 flex justify-between font-bold text-gray-900">
+                <span>Restored Balance:</span>
+                <span className="text-amber-700">
+                  KSh {Number(customer.balance).toLocaleString()} + KSh {Number(paymentToReverse.amount).toLocaleString()} = KSh {(Number(customer.balance) + Number(paymentToReverse.amount)).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-2">
+              <button
+                onClick={() => setPaymentToReverse(null)}
+                disabled={reversePaymentMutation.isPending}
+                className="px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  reversePaymentMutation.mutate({
+                    customerId: customer.id,
+                    paymentId: paymentToReverse.id,
+                  }, {
+                    onSuccess: () => {
+                      toast.success(`Payment of KSh ${Number(paymentToReverse.amount).toLocaleString()} reversed successfully`);
+                      setPaymentToReverse(null);
+                    },
+                    onError: (err: any) => {
+                      toast.error(err.response?.data?.message || err.message || 'Failed to reverse payment');
+                    }
+                  });
+                }}
+                disabled={reversePaymentMutation.isPending}
+                className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                {reversePaymentMutation.isPending ? 'Reversing...' : 'Confirm Reversal'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -90,5 +90,17 @@ export class CustomersController {
     }
   }
 
-
+  static async reversePayment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await CustomersService.reversePayment(
+        req.user!.businessId,
+        req.user!.id,
+        req.params.id as string,
+        req.params.paymentId as string
+      );
+      res.status(200).json({ status: 'success', message: 'Payment reversed successfully', data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

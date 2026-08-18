@@ -15,6 +15,7 @@ router.delete('/clear-all', CustomersController.clearAllCustomers);
 router.delete('/:id', CustomersController.deleteCustomer);
 router.get('/:id/purchases', cacheMiddleware(300), CustomersController.getCustomerPurchases);
 router.post('/:id/payments', CustomersController.recordPayment);
+router.post('/:id/payments/:paymentId/reverse', CustomersController.reversePayment);
 router.get('/:id/payments', cacheMiddleware(300), CustomersController.getCustomerPayments);
 
 

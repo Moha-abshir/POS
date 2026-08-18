@@ -483,4 +483,102 @@ export class CustomersService {
 
     return ledger.reverse();
   }
+
+  static async reversePayment(
+    businessId: string,
+    userId: string,
+    customerId: string,
+    paymentId: string
+  ) {
+    return await db.transaction(async (tx) => {
+      // 1. Fetch payment and verify it exists and is completed
+      const [payment] = await tx.select()
+        .from(payments)
+        .where(and(
+          eq(payments.id, paymentId),
+          eq(payments.businessId, businessId),
+          eq(payments.referenceType, 'CUSTOMER_DEBT'),
+          eq(payments.referenceId, customerId),
+          eq(payments.status, 'COMPLETED')
+        ));
+
+      if (!payment) {
+        throw new AppError('Payment not found or already reversed', 404);
+      }
+
+      const payAmount = Number(payment.amount);
+
+      // 2. Fetch customer
+      const [customer] = await tx.select()
+        .from(customers)
+        .where(and(eq(customers.id, customerId), eq(customers.businessId, businessId)));
+
+      if (!customer) {
+        throw new AppError('Customer not found', 404);
+      }
+
+      const currentBal = Number(customer.balance);
+      const restoredBalance = currentBal + payAmount;
+
+      // 3. Update customer balance backwards
+      const [updatedCustomer] = await tx.update(customers)
+        .set({
+          balance: restoredBalance.toString(),
+          hasActiveCredit: true,
+          updatedAt: new Date()
+        })
+        .where(eq(customers.id, customerId))
+        .returning();
+
+      // 4. Update payment status to FAILED so it's removed from active payment history
+      await tx.update(payments)
+        .set({
+          status: 'FAILED',
+          notes: `Reversed by user: ${payment.notes || ''}`.trim()
+        })
+        .where(eq(payments.id, paymentId));
+
+      // 5. Reverse sale allocations (LIFO order: reverse latest paid sales first)
+      let remainingToReverse = payAmount;
+      const paidSales = await tx.select()
+        .from(sales)
+        .where(and(
+          eq(sales.businessId, businessId),
+          eq(sales.customerId, customerId),
+          sql`${sales.amountPaid} > 0`
+        ))
+        .orderBy(desc(sales.soldAt));
+
+      for (const sale of paidSales) {
+        if (remainingToReverse <= 0) break;
+
+        const salePaid = Number(sale.amountPaid);
+        if (salePaid <= 0) continue;
+
+        const reversalForSale = Math.min(salePaid, remainingToReverse);
+        const newPaidAmount = salePaid - reversalForSale;
+        const saleTotal = Number(sale.totalAmount);
+        const newPaymentStatus = newPaidAmount >= saleTotal ? 'PAID' : (newPaidAmount > 0 ? 'PARTIAL' : 'UNPAID');
+
+        await tx.update(sales)
+          .set({
+            amountPaid: newPaidAmount.toString(),
+            paymentStatus: newPaymentStatus,
+          })
+          .where(eq(sales.id, sale.id));
+
+        remainingToReverse -= reversalForSale;
+      }
+
+      await this.invalidateCustomerCache(businessId);
+
+      return {
+        payment,
+        customer: updatedCustomer,
+        previousBalance: currentBal,
+        reversedAmount: payAmount,
+        newBalance: restoredBalance
+      };
+    });
+  }
 }

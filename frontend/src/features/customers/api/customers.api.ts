@@ -177,6 +177,11 @@ export const customersApi = {
 
 
 
+  reversePayment: async (id: string, paymentId: string) => {
+    const response = await api.post(`/customers/${id}/payments/${paymentId}/reverse`);
+    return response.data;
+  },
+
   deleteCustomer: async (id: string) => {
     const { data } = await api.delete(`/customers/${id}`);
     return data;
@@ -256,6 +261,22 @@ export const useRecordCustomerPayment = () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'payments'] });
       queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'purchases'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+};
+
+export const useReverseCustomerPayment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ customerId, paymentId }: { customerId: string; paymentId: string }) => 
+      customersApi.reversePayment(customerId, paymentId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['customers', variables.customerId, 'payments'] });
+      queryClient.invalidateQueries({ queryKey: ['customers', variables.customerId, 'purchases'] });
+      queryClient.refetchQueries({ queryKey: ['customers', variables.customerId, 'payments'] });
+      queryClient.refetchQueries({ queryKey: ['customers'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
     },
   });
