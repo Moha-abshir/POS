@@ -96,6 +96,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
 
   const createSaleMutation = useMutation({
     mutationFn: salesApi.createSale,
+    networkMode: 'always',
     onMutate: async () => {
       // Cancel outgoing catalog queries so they don't overwrite our optimistic update
       await queryClient.cancelQueries({ queryKey: ['products'] });

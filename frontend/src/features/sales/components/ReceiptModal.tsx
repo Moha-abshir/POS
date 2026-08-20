@@ -18,7 +18,6 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
   const { data: sale, isLoading } = useSaleDetails(saleId);
   const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
   const [customerDetails, setCustomerDetails] = useState<any>(null);
-  const hasAutoPrintedRef = React.useRef<string | null>(null);
 
   // Fetch business and cashier details to display dynamically on the receipt
   const { data: meData } = useQuery({
@@ -64,17 +63,6 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
       }).catch(() => {});
     }
   }, [sale?.customerId]);
-
-  // Automatic silent thermal printing on receipt mount
-  useEffect(() => {
-    if (sale && sale.id && !isLoading && hasAutoPrintedRef.current !== sale.id) {
-      hasAutoPrintedRef.current = sale.id;
-      const timer = setTimeout(() => {
-        handlePrint();
-      }, 250);
-      return () => clearTimeout(timer);
-    }
-  }, [sale?.id, isLoading]);
 
   const getPreviouslyRefundedQty = (item: any) => {
     if (!sale?.refunds) return 0;
