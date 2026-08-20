@@ -348,14 +348,14 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
   let prevBal = 0;
   let totalBal = 0;
   
-  if (sale?.customerBalanceAtSale !== undefined && sale?.customerBalanceAtSale !== null) {
+  if (sale?.customerBalanceAtSale !== undefined && sale?.customerBalanceAtSale !== null && Number(sale.customerBalanceAtSale) > 0) {
     prevBal = Number(sale.customerBalanceAtSale);
     totalBal = prevBal + addedCredit;
   } else {
-    // Fallback for older receipts
-    const currentCustBal = sale?.customerBalance !== undefined && sale?.customerBalance !== null 
-      ? Number(sale.customerBalance) 
-      : Number(customerDetails?.balance || 0);
+    // Fallback to customer table balance
+    const currentCustBal = customerDetails?.balance !== undefined && customerDetails?.balance !== null 
+      ? Number(customerDetails.balance) 
+      : (sale?.customerBalance !== undefined && sale?.customerBalance !== null ? Number(sale.customerBalance) : 0);
     prevBal = Math.max(0, currentCustBal - addedCredit);
     totalBal = currentCustBal > 0 ? currentCustBal : (prevBal + addedCredit);
   }

@@ -334,6 +334,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
     createSaleMutation.mutate({
       customerId: customerId || undefined,
       customerName: selectedCustomer ? selectedCustomer.name : 'Walk-in Customer',
+      customerBalanceAtSale: selectedCustomer ? (Number(selectedCustomer.balance) || 0) : 0,
       items: cart.map((item: any) => ({
         variantId: item.variantId,
         unitId: item.unitId,
