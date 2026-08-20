@@ -328,13 +328,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
       ? (isStkPush ? Number(cashAmount) : Number(cashAmount) + Number(mpesaAmount))
       : ((paymentMethod === 'MPESA' && isStkPush) ? 0 : paidVal);
 
+    const selectedCustomer = customers.find((c: any) => c.id === customerId);
+
     createSaleMutation.mutate({
       customerId: customerId || undefined,
-      items: cart.map(item => ({
+      customerName: selectedCustomer ? selectedCustomer.name : 'Walk-in Customer',
+      items: cart.map((item: any) => ({
         variantId: item.variantId,
         unitId: item.unitId,
         quantity: item.quantity,
         sellingPrice: item.sellingPrice,
+        productName: item.productName || item.product?.name || item.name || 'Item',
+        variantName: item.variantName || item.variant?.name || 'Default',
+        unitName: item.unitName || item.unit?.name || 'Piece',
       })),
       amountPaid: finalPaid,
       discountAmount,

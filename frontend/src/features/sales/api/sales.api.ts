@@ -59,138 +59,117 @@ export const salesApi = {
       mpesaPhoneNumber?: string;
       isStkPush?: boolean;
     };
+    id?: string;
+    localId?: string;
+    customerName?: string;
   }) => {
-    try {
-      if (!navigator.onLine) {
-        throw new Error('Offline');
+    const localId = saleData.id || saleData.localId || uuidv4();
+
+    // Helper for executing instant local offline checkout in Dexie
+    const executeOfflineSale = async () => {
+      console.log('[Offline Sync] Executing instant local checkout sequence...');
+      const cleanSaleData = JSON.parse(JSON.stringify(saleData));
+
+      let customerBalanceAtSale = 0;
+      let customerName = saleData.customerName || 'Walk-in Customer';
+
+      if (saleData.customerId) {
+        try {
+          const customer = await db.customers.get(saleData.customerId);
+          if (customer) {
+            customerBalanceAtSale = Number(customer.balance) || 0;
+            customerName = customer.name;
+          }
+        } catch (cErr) {
+          console.warn('[Offline Sync] Error reading customer balance from Dexie:', cErr);
+        }
       }
-      const { data } = await api.post('/sales', saleData);
+
+      const subtotal = saleData.items.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
+      const discount = saleData.discountAmount || 0;
+      const totalAmount = Math.max(0, subtotal - discount);
+      const creditAmount = Math.max(0, totalAmount - Number(saleData.amountPaid || 0));
+
+      // 1. Queue the transaction in Dexie syncQueue
+      await queueManager.addToQueue('SALE', {
+        ...cleanSaleData,
+        id: localId,
+        localId,
+        customerName,
+        customerBalanceAtSale,
+        soldAt: new Date().toISOString()
+      }, localId);
+
+      // 2. Client-side stock deduction in Dexie variants table
+      if (saleData.items && Array.isArray(saleData.items)) {
+        for (const item of saleData.items) {
+          try {
+            const variant = await db.variants.get(item.variantId);
+            if (variant) {
+              const currentStock = Number(variant.baseStockQuantity) || 0;
+              const newStock = Math.max(0, currentStock - item.quantity);
+              await db.variants.update(item.variantId, {
+                baseStockQuantity: newStock.toString()
+              });
+            }
+          } catch (varErr) {
+            console.warn('[Offline Sync] Variant stock update warning:', varErr);
+          }
+        }
+      }
+
+      // 3. Update customer balance locally if credit purchase
+      if (saleData.customerId && creditAmount > 0) {
+        try {
+          const newBalance = customerBalanceAtSale + creditAmount;
+          await db.customers.update(saleData.customerId, {
+            balance: newBalance.toString(),
+            hasActiveCredit: true
+          });
+          console.log(`[Offline Sync] Updated customer balance for ${customerName}. Old: ${customerBalanceAtSale}, New: ${newBalance}`);
+        } catch (custErr) {
+          console.warn('[Offline Sync] Customer balance update warning:', custErr);
+        }
+      }
+
+      // Return mock response immediately for instant receipt generation
+      return {
+        id: localId,
+        totalAmount,
+        amountPaid: saleData.amountPaid,
+        paymentStatus: saleData.amountPaid >= totalAmount ? 'PAID' : (saleData.amountPaid > 0 ? 'PARTIAL' : 'UNPAID'),
+        paymentMethod: saleData.paymentMethod,
+        mpesaRef: saleData.mpesaRef,
+        soldAt: new Date().toISOString(),
+        customerName,
+        customerId: saleData.customerId,
+        customerBalanceAtSale,
+        isOffline: true,
+        localId
+      };
+    };
+
+    // If already offline, completely skip network and execute in < 10ms
+    if (!navigator.onLine) {
+      return await executeOfflineSale();
+    }
+
+    try {
+      const { data } = await api.post('/sales', { ...saleData, id: localId, localId }, { timeout: 3500 });
       return data.data;
     } catch (error: any) {
       const isNetworkError = 
         !navigator.onLine ||
         !error.response || 
+        error.code === 'ECONNABORTED' ||
         error.code === 'ERR_NETWORK' || 
         error.message === 'Offline' || 
         error.message === 'Network Error' ||
         (error.response && [502, 503, 504].includes(error.response.status));
 
       if (isNetworkError) {
-        console.warn('Network/offline state detected. Queueing transaction in Dexie...', error);
-
-        const localId = uuidv4();
-
-        try {
-          console.log('[Offline Sync] Starting offline checkout sequence...');
-          // Remove undefined values to prevent DataCloneError in IndexedDB
-          const cleanSaleData = JSON.parse(JSON.stringify(saleData));
-
-          let customerBalanceAtSale = 0;
-          if (saleData.customerId) {
-            const customer = await db.customers.get(saleData.customerId);
-            if (customer) {
-              customerBalanceAtSale = Number(customer.balance) || 0;
-            }
-          }
-
-          // 1. Queue the transaction in Dexie syncQueue
-          console.log('[Offline Sync] Writing checkout details to Dexie queue...');
-          await queueManager.addToQueue('SALE', {
-            ...cleanSaleData,
-            customerBalanceAtSale,
-            localId,
-            soldAt: new Date().toISOString()
-          }, localId);
-          console.log('[Offline Sync] Successfully wrote to Dexie queue');
-
-          // 2. Perform client-side stock deduction in Dexie variants table
-          console.log('[Offline Sync] Executing client-side stock deductions on variants table...');
-          if (saleData.items && Array.isArray(saleData.items)) {
-            for (const item of saleData.items) {
-              try {
-                const variant = await db.variants.get(item.variantId);
-                if (variant) {
-                  const currentStock = Number(variant.baseStockQuantity) || 0;
-                  const newStock = Math.max(0, currentStock - item.quantity);
-                  await db.variants.update(item.variantId, {
-                    baseStockQuantity: newStock.toString()
-                  });
-                }
-              } catch (varErr) {
-                console.warn('[Offline Sync] Variant stock update warning:', varErr);
-              }
-            }
-          }
-
-          // Update customer balance locally if customerId and credit purchase
-          if (saleData.customerId) {
-            try {
-              const subtotal = saleData.items.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
-              const discount = saleData.discountAmount || 0;
-              const totalAmt = Math.max(0, subtotal - discount);
-              const creditAmount = Math.max(0, totalAmt - Number(saleData.amountPaid || 0));
-
-              if (creditAmount > 0) {
-                const customer = await db.customers.get(saleData.customerId);
-                if (customer) {
-                  const currentBalance = Number(customer.balance) || 0;
-                  const newBalance = currentBalance + creditAmount;
-                  await db.customers.update(saleData.customerId, {
-                    balance: newBalance.toString(),
-                    hasActiveCredit: true
-                  });
-                  console.log(`[Offline Sync] Updated customer balance for ${customer.name}. New balance: KSh ${newBalance}`);
-                }
-              }
-            } catch (custErr) {
-              console.warn('[Offline Sync] Customer balance update warning:', custErr);
-            }
-          }
-
-          // Also update legacy catalog_products for compatibility
-          try {
-            const cached = await IndexedDBCache.get('catalog_products');
-            if (cached && cached.products) {
-              saleData.items.forEach(soldItem => {
-                for (const product of cached.products) {
-                  const variant = product.variants?.find((v: any) => v.id === soldItem.variantId);
-                  if (variant) {
-                    const currentStock = Number(variant.baseStockQuantity) || 0;
-                    variant.baseStockQuantity = Math.max(0, currentStock - soldItem.quantity).toString();
-                    break;
-                  }
-                }
-              });
-              await IndexedDBCache.set('catalog_products', {
-                products: cached.products,
-                timestamp: Date.now()
-              });
-            }
-          } catch (cacheErr) {
-            console.warn('[Offline Sync] Legacy catalog cache update warning:', cacheErr);
-          }
-        } catch (writeError) {
-          console.error('[Offline Sync] Error writing offline sale transaction to Dexie:', writeError);
-        }
-
-        console.log('[Offline Sync] Completed offline checkout sequence. Returning mock response.');
-
-        // 3. Return mock success payload
-        const subtotal = saleData.items.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
-        const discount = saleData.discountAmount || 0;
-        const totalAmount = Math.max(0, subtotal - discount);
-
-        return {
-          id: localId,
-          totalAmount,
-          amountPaid: saleData.amountPaid,
-          paymentStatus: saleData.amountPaid >= totalAmount ? 'PAID' : (saleData.amountPaid > 0 ? 'PARTIAL' : 'UNPAID'),
-          paymentMethod: saleData.paymentMethod,
-          mpesaRef: saleData.mpesaRef,
-          soldAt: new Date().toISOString(),
-          isOffline: true,
-          localId
-        };
+        console.warn('Network timeout / offline detected. Falling back to local offline sale...', error);
+        return await executeOfflineSale();
       }
 
       throw error;
@@ -202,7 +181,7 @@ export const salesApi = {
       if (!navigator.onLine) {
         throw new Error('Offline');
       }
-      const { data } = await api.get(`/sales/${id}`);
+      const { data } = await api.get(`/sales/${id}`, { timeout: 3000 });
       return data.data;
     } catch (error: any) {
       const queuedItem = await db.syncQueue.where('localId').equals(id).first();
@@ -211,16 +190,31 @@ export const salesApi = {
         const subtotal = p.items?.reduce((sum: number, item: any) => sum + (item.quantity * item.sellingPrice), 0) || 0;
         const discount = p.discountAmount || 0;
         const total = Math.max(0, subtotal - discount);
+
+        let customerName = p.customerName || 'Walk-in Customer';
+        let customerBalanceAtSale = p.customerBalanceAtSale || 0;
+        if (p.customerId) {
+          try {
+            const cust = await db.customers.get(p.customerId);
+            if (cust) {
+              customerName = cust.name;
+              if (p.customerBalanceAtSale === undefined) {
+                customerBalanceAtSale = Number(cust.balance) || 0;
+              }
+            }
+          } catch (e) {}
+        }
+
         return {
-          id: p.localId || id,
+          id: p.localId || p.id || id,
           totalAmount: total,
           amountPaid: p.amountPaid || 0,
           paymentStatus: (p.amountPaid || 0) >= total ? 'PAID' : ((p.amountPaid || 0) > 0 ? 'PARTIAL' : 'UNPAID'),
           paymentMethod: p.paymentMethod || 'CASH',
           soldAt: p.soldAt || new Date().toISOString(),
-          customerName: 'Offline Customer',
+          customerName,
           customerId: p.customerId,
-          customerBalanceAtSale: p.customerBalanceAtSale,
+          customerBalanceAtSale,
           items: p.items?.map((item: any) => ({
             id: item.variantId,
             variantId: item.variantId,
@@ -230,7 +224,7 @@ export const salesApi = {
             totalPrice: item.quantity * item.sellingPrice,
             productName: item.productName || 'Item',
             variantName: item.variantName || 'Default',
-            unitName: item.unitName || 'Pcs'
+            unitName: item.unitName || 'Piece'
           })) || [],
           isOffline: true
         };

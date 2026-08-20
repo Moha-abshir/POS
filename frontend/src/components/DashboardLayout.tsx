@@ -96,6 +96,17 @@ export const DashboardLayout: React.FC = () => {
   const fetchData = useCallback(async () => {
     if (!navigator.onLine) return;
 
+    // 0. Cache business & user profile for offline branding & receipt printing
+    try {
+      const meRes = await api.get('/auth/me');
+      if (meRes.data?.data) {
+        localStorage.setItem('pos_business_info', JSON.stringify(meRes.data.data));
+        await db.settings.put({ key: 'business_info', value: meRes.data.data });
+      }
+    } catch (err) {
+      console.warn('Error caching profile info:', err);
+    }
+
     // 1. Fetch notifications
     try {
       const notifRes = await api.get('/notifications');

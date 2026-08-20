@@ -181,6 +181,8 @@ export class SalesService {
     businessId: string,
     userId: string,
     data: {
+      id?: string;
+      localId?: string;
       customerId?: string;
       items: { variantId: string; unitId: string; quantity: number; sellingPrice: number; unitPrice?: number }[];
       amountPaid: number;
@@ -233,6 +235,14 @@ export class SalesService {
       : data.amountPaid;
 
     const result = await transactionWithRetry(async (tx) => {
+      const saleIdToUse = data.id || data.localId;
+      if (saleIdToUse) {
+        const [existing] = await tx.select().from(sales).where(and(eq(sales.id, saleIdToUse), eq(sales.businessId, businessId)));
+        if (existing) {
+          return existing;
+        }
+      }
+
       let currentCustomerBalance = '0';
       if (data.customerId) {
         const [customer] = await tx.select({ balance: customers.balance })
@@ -245,6 +255,7 @@ export class SalesService {
 
       // 1. Create Sale Record
       const [newSale] = await tx.insert(sales).values({
+        id: saleIdToUse || undefined,
         businessId,
         customerId: data.customerId || null,
         totalAmount: totalAmount.toString(),

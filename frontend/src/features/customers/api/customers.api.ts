@@ -31,6 +31,33 @@ export interface CustomerPayment {
 }
 
 export const customersApi = {
+  syncCustomerCache: async () => {
+    if (!navigator.onLine) return;
+    try {
+      const { data } = await api.get('/customers', { params: { limit: 2000 } });
+      if (data && Array.isArray(data.data)) {
+        const items = data.data.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          phoneNumber: c.phone || '',
+          nationalId: c.nationalId || '',
+          email: c.email || '',
+          address: c.address || '',
+          notes: c.notes || '',
+          balance: (c.balance || 0).toString(),
+          type: c.type || 'INDIVIDUAL',
+          baseSalary: (c.baseSalary || 0).toString(),
+          periodOwed: c.periodOwed || '',
+          hasActiveCredit: !!c.hasActiveCredit
+        }));
+        await db.customers.bulkPut(items);
+        console.log(`[Offline Sync] Synchronized ${items.length} customer records to IndexedDB`);
+      }
+    } catch (err) {
+      console.warn('[Offline Sync] Customer cache prefetch warning:', err);
+    }
+  },
+
   getCustomers: async (filters?: { page?: number; limit?: number; search?: string }) => {
     try {
       if (!navigator.onLine) {
@@ -39,27 +66,35 @@ export const customersApi = {
       const { data } = await api.get('/customers', { params: filters });
       
       if (data && Array.isArray(data.data)) {
-        await db.customers.clear();
-        for (const c of data.data) {
-          await db.customers.put({
-            id: c.id,
-            name: c.name,
-            phoneNumber: c.phone || '',
-            nationalId: c.nationalId || '',
-            email: c.email || '',
-            address: c.address || '',
-            notes: c.notes || '',
-            balance: (c.balance || 0).toString(),
-            type: c.type || 'INDIVIDUAL',
-            baseSalary: (c.baseSalary || 0).toString(),
-            periodOwed: c.periodOwed || '',
-            hasActiveCredit: !!c.hasActiveCredit
-          });
-        }
+        const items = data.data.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          phoneNumber: c.phone || '',
+          nationalId: c.nationalId || '',
+          email: c.email || '',
+          address: c.address || '',
+          notes: c.notes || '',
+          balance: (c.balance || 0).toString(),
+          type: c.type || 'INDIVIDUAL',
+          baseSalary: (c.baseSalary || 0).toString(),
+          periodOwed: c.periodOwed || '',
+          hasActiveCredit: !!c.hasActiveCredit
+        }));
+        await db.customers.bulkPut(items);
       }
       return data;
     } catch (error) {
-      const localCustomers = await db.customers.toArray();
+      let localCustomers = await db.customers.toArray();
+      
+      if (filters?.search) {
+        const q = filters.search.toLowerCase().trim();
+        localCustomers = localCustomers.filter(c => 
+          c.name.toLowerCase().includes(q) || 
+          (c.phoneNumber && c.phoneNumber.toLowerCase().includes(q)) ||
+          (c.nationalId && c.nationalId.toLowerCase().includes(q))
+        );
+      }
+
       if (localCustomers.length > 0) {
         return {
           data: localCustomers.map(c => ({

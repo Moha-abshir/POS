@@ -43,6 +43,8 @@ const NotFound = () => (
 
 import { Toaster } from 'react-hot-toast';
 
+import { customersApi } from './features/customers/api/customers.api';
+
 function App() {
   const { isAuthenticated, user } = useAuthStore();
   const queryClient = useQueryClient();
@@ -50,6 +52,7 @@ function App() {
   useEffect(() => {
     const handleOnline = () => {
       syncService.startSync(queryClient);
+      customersApi.syncCustomerCache();
     };
 
     if (navigator.onLine) {

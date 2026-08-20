@@ -18,6 +18,7 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
   const { data: sale, isLoading } = useSaleDetails(saleId);
   const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
   const [customerDetails, setCustomerDetails] = useState<any>(null);
+  const hasAutoPrintedRef = React.useRef<string | null>(null);
 
   // Fetch business and cashier details to display dynamically on the receipt
   const { data: meData } = useQuery({
@@ -29,7 +30,26 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     enabled: !!saleId,
   });
 
-  const productMode = meData?.business?.productMode || 'ADVANCED';
+  // Cache business info whenever available
+  useEffect(() => {
+    if (meData) {
+      try {
+        localStorage.setItem('pos_business_info', JSON.stringify(meData));
+        db.settings.put({ key: 'business_info', value: meData }).catch(() => {});
+      } catch (e) {}
+    }
+  }, [meData]);
+
+  const getCachedBusinessInfo = () => {
+    try {
+      const raw = localStorage.getItem('pos_business_info');
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return null;
+  };
+
+  const effectiveMeData = meData || getCachedBusinessInfo();
+  const productMode = effectiveMeData?.business?.productMode || 'ADVANCED';
 
   // Fetch customer details from Dexie or API when sale is loaded
   useEffect(() => {
@@ -44,6 +64,17 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
       }).catch(() => {});
     }
   }, [sale?.customerId]);
+
+  // Automatic silent thermal printing on receipt mount
+  useEffect(() => {
+    if (sale && sale.id && !isLoading && hasAutoPrintedRef.current !== sale.id) {
+      hasAutoPrintedRef.current = sale.id;
+      const timer = setTimeout(() => {
+        handlePrint();
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [sale?.id, isLoading]);
 
   const getPreviouslyRefundedQty = (item: any) => {
     if (!sale?.refunds) return 0;
@@ -273,7 +304,7 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
           targetPrinter = match || printersList[0];
         }
         
-        const rawBase64 = generateEscPosData(sale, meData, customerDetails);
+        const rawBase64 = generateEscPosData(sale, effectiveMeData, customerDetails);
         
         const printJob = await fetch('http://localhost:4000/print', {
           method: 'POST',
@@ -343,7 +374,7 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
 
   const invoiceNo = sale ? `#${sale.id.slice(0, 8).toUpperCase()}` : '';
   const customerName = sale ? (sale.customerName || customerDetails?.name || 'Walk-in Customer') : '';
-  const cashierName = ((meData?.user?.firstName || '') + ' ' + (meData?.user?.lastName || '')).trim() || 'Cashier';
+  const cashierName = ((effectiveMeData?.user?.firstName || '') + ' ' + (effectiveMeData?.user?.lastName || '')).trim() || 'Cashier';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -472,22 +503,22 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
                   {localStorage.getItem('receipt_headerless') !== 'true' && (
                     <div className="text-center space-y-0.5 mb-4">
                       <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-900">
-                        {meData?.business?.name || 'STORE RECEIPT'}
+                        {effectiveMeData?.business?.name || 'STORE RECEIPT'}
                       </h3>
-                      {meData?.business?.sector && (
-                        <p className="text-[11px] text-gray-600 uppercase tracking-widest">{meData.business.sector}</p>
+                      {effectiveMeData?.business?.sector && (
+                        <p className="text-[11px] text-gray-600 uppercase tracking-widest">{effectiveMeData.business.sector}</p>
                       )}
-                      {meData?.business?.email && (
-                        <p className="text-[11px] text-gray-600">{meData.business.email}</p>
+                      {effectiveMeData?.business?.email && (
+                        <p className="text-[11px] text-gray-600">{effectiveMeData.business.email}</p>
                       )}
-                      {meData?.business?.location && (
-                        <p className="text-[11px] text-gray-600">{meData.business.location}</p>
+                      {effectiveMeData?.business?.location && (
+                        <p className="text-[11px] text-gray-600">{effectiveMeData.business.location}</p>
                       )}
-                      {meData?.business?.phone && (
-                        <p className="text-[11px] text-gray-700 font-bold">TEL: {meData.business.phone}</p>
+                      {effectiveMeData?.business?.phone && (
+                        <p className="text-[11px] text-gray-700 font-bold">TEL: {effectiveMeData.business.phone}</p>
                       )}
-                      {meData?.business?.tillNumber && (
-                        <p className="text-[11px] font-extrabold text-gray-900">BUY GOODS : {meData.business.tillNumber}</p>
+                      {effectiveMeData?.business?.tillNumber && (
+                        <p className="text-[11px] font-extrabold text-gray-900">BUY GOODS : {effectiveMeData.business.tillNumber}</p>
                       )}
                     </div>
                   )}

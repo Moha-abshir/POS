@@ -1,5 +1,6 @@
 import { queueManager } from './queueManager';
 import { salesApi } from '../../features/sales/api/sales.api';
+import { customersApi } from '../../features/customers/api/customers.api';
 
 let syncInProgress = false;
 const retryTimers: Record<number, any> = {};
@@ -45,8 +46,13 @@ export const syncService = {
 
         try {
           if (item.type === 'SALE') {
-            const { id, isOffline, localId, ...cleanPayload } = item.payload;
-            const response = await salesApi.createSale(cleanPayload);
+            const { isOffline, ...cleanPayload } = item.payload;
+            const saleIdToSync = item.localId || item.payload?.id || item.payload?.localId;
+            const response = await salesApi.createSale({
+              ...cleanPayload,
+              id: saleIdToSync,
+              localId: saleIdToSync
+            });
             
             await queueManager.removeCompleted(item.id!);
             await queueManager.logSyncEvent(
@@ -98,7 +104,9 @@ export const syncService = {
         queryClient.invalidateQueries({ queryKey: ['products'] });
         queryClient.invalidateQueries({ queryKey: ['inventory'] });
         queryClient.invalidateQueries({ queryKey: ['sales'] });
+        queryClient.invalidateQueries({ queryKey: ['customers'] });
       }
+      customersApi.syncCustomerCache().catch(() => {});
     } catch (err: any) {
       console.error('Failed sync cycle:', err);
     } finally {
