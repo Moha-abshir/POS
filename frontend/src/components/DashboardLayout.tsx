@@ -94,18 +94,7 @@ export const DashboardLayout: React.FC = () => {
 
   // Fetch alerts and register session
   const fetchData = useCallback(async () => {
-    if (!navigator.onLine) return;
-
-    // 0. Cache business & user profile for offline branding & receipt printing
-    try {
-      const meRes = await api.get('/auth/me');
-      if (meRes.data?.data) {
-        localStorage.setItem('pos_business_info', JSON.stringify(meRes.data.data));
-        await db.settings.put({ key: 'business_info', value: meRes.data.data });
-      }
-    } catch (err) {
-      console.warn('Error caching profile info:', err);
-    }
+    if (!navigator.onLine || document.hidden) return;
 
     // 1. Fetch notifications
     try {
@@ -139,6 +128,16 @@ export const DashboardLayout: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // 0. Cache business & user profile once on mount
+    if (navigator.onLine) {
+      api.get('/auth/me').then(meRes => {
+        if (meRes.data?.data) {
+          localStorage.setItem('pos_business_info', JSON.stringify(meRes.data.data));
+          db.settings.put({ key: 'business_info', value: meRes.data.data }).catch(() => {});
+        }
+      }).catch(() => {});
+    }
+
     if (navigator.onLine) {
       fetchData();
     } else {
@@ -149,12 +148,12 @@ export const DashboardLayout: React.FC = () => {
       }).catch(() => {});
     }
 
-    // Poll every 30s for live updates only when online
+    // Poll every 60s for live notification updates only when online and active
     const interval = setInterval(() => {
-      if (navigator.onLine) {
+      if (navigator.onLine && !document.hidden) {
         fetchData();
       }
-    }, 30000);
+    }, 60000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
