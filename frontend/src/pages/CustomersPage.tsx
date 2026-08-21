@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { useCustomers, useDeleteCustomer, useClearAllCustomers, type Customer } from '../features/customers/api/customers.api';
-import { Search, Plus, UserCircle, Eye, Pencil, Filter, Upload, Download, Trash2 } from 'lucide-react';
+import { useCustomers, useClearAllCustomers, type Customer } from '../features/customers/api/customers.api';
+import { Search, Plus, UserCircle, Eye, Pencil, Filter, Upload, Download } from 'lucide-react';
 import { CustomerModal } from '../features/customers/components/CustomerModal';
 import { CustomerDetailsModal } from '../features/customers/components/CustomerDetailsModal';
 import { formatDistanceToNow } from 'date-fns';
@@ -55,19 +55,7 @@ export const CustomersPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const customers: Customer[] = customersResponse?.data || [];
 
-  const { mutateAsync: deleteCustomer } = useDeleteCustomer();
   const { mutateAsync: clearAllCustomers } = useClearAllCustomers();
-
-  const handleDeleteCustomer = async (customer: Customer) => {
-    if (window.confirm(`Are you sure you want to delete customer "${customer.name}"?`)) {
-      try {
-        await deleteCustomer(customer.id);
-        toast.success(`Customer "${customer.name}" deleted successfully`);
-      } catch (err: any) {
-        toast.error(err.response?.data?.message || 'Failed to delete customer');
-      }
-    }
-  };
 
   const handleClearAllCustomers = async () => {
     if (!customers.length) {
@@ -442,15 +430,6 @@ export const CustomersPage = () => {
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
-                          {currentUser?.role === 'OWNER' && (
-                            <button 
-                              className="p-1 text-gray-400 hover:text-red-600 transition-colors rounded cursor-pointer" 
-                              title="Delete customer"
-                              onClick={() => handleDeleteCustomer(customer)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>

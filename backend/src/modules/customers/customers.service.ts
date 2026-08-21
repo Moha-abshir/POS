@@ -16,13 +16,19 @@ export class CustomersService {
 
   static async syncEmployeeCustomers(businessId: string) {
     try {
-      const businessUsers = await db.select().from(users).where(eq(users.businessId, businessId));
+      const businessUsers = await db.select().from(users).where(and(eq(users.businessId, businessId), eq(users.isActive, true)));
       for (const u of businessUsers) {
-        const fullName = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email;
+        if (u.role === 'OWNER') continue; // Skip creating employee customer accounts for business owners
+        const cleanFirst = (u.firstName || '').trim();
+        const cleanLast = (u.lastName || '').trim();
+        const fullName = `${cleanFirst} ${cleanLast}`.trim() || u.email;
         if (!fullName) continue;
 
         const [existing] = await db.select().from(customers)
-          .where(and(eq(customers.businessId, businessId), eq(customers.name, fullName)));
+          .where(and(
+            eq(customers.businessId, businessId),
+            sql`LOWER(TRIM(${customers.name})) = LOWER(TRIM(${fullName}))`
+          ));
 
         if (!existing) {
           await db.insert(customers).values({
