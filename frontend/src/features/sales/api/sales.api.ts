@@ -71,18 +71,14 @@ export const salesApi = {
       console.log('[Offline Sync] Executing instant local checkout sequence...');
       const cleanSaleData = JSON.parse(JSON.stringify(saleData));
 
-      let customerBalanceAtSale = saleData.customerBalanceAtSale !== undefined && saleData.customerBalanceAtSale !== null
-        ? Number(saleData.customerBalanceAtSale)
-        : 0;
+      let customerBalanceAtSale = 0;
       let customerName = saleData.customerName || 'Walk-in Customer';
 
       if (saleData.customerId) {
         try {
           const customer = await db.customers.get(saleData.customerId);
           if (customer) {
-            if (customerBalanceAtSale === 0 && customer.balance !== undefined) {
-              customerBalanceAtSale = Number(customer.balance) || 0;
-            }
+            customerBalanceAtSale = Number(customer.balance) || 0;
             if (!saleData.customerName || saleData.customerName === 'Walk-in Customer') {
               customerName = customer.name;
             }

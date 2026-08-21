@@ -159,11 +159,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
           toast.success('Sale completed successfully!');
         }
 
-        if (navigator.onLine) {
-          queryClient.invalidateQueries({ queryKey: ['products'] });
-          queryClient.invalidateQueries({ queryKey: ['customers'] });
-          queryClient.invalidateQueries({ queryKey: ['sales'] });
-        }
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+        queryClient.invalidateQueries({ queryKey: ['customers'] });
+        queryClient.invalidateQueries({ queryKey: ['sales'] });
 
         onSuccessRef.current(data);
         handleClose();
