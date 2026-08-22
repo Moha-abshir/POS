@@ -58,8 +58,8 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
       return;
     }
 
-    if (method === 'MPESA' && !isStkPush && !mpesaReceiptNumber.trim()) {
-      setError('Please enter the M-Pesa transaction reference number');
+    if (method === 'MPESA' && !mpesaReceiptNumber.trim()) {
+      setError('M-Pesa transaction reference number is required');
       return;
     }
 
@@ -114,14 +114,9 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
         <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden flex flex-col border border-gray-100 animate-in zoom-in-95 duration-150">
           {/* Header */}
           <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
-                {activeTab === 'PAYOUT' ? <HandCoins className="w-5 h-5" /> : <PiggyBank className="w-5 h-5" />}
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-900 text-base">Employee Operations</h3>
-                <p className="text-xs text-gray-500 font-medium">{customer.name} (Employee)</p>
-              </div>
+            <div>
+              <h3 className="font-bold text-gray-900 text-base">Employee Operations</h3>
+              <p className="text-xs text-gray-500 font-medium">{customer.name} (Employee)</p>
             </div>
             <button
               onClick={handleClose}
@@ -137,25 +132,23 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
             <button
               type="button"
               onClick={() => { setActiveTab('PAYOUT'); setError(null); }}
-              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
                 activeTab === 'PAYOUT'
                   ? 'bg-white text-gray-900 shadow-sm border border-gray-200/80'
                   : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'
               }`}
             >
-              <HandCoins className="w-4 h-4 text-emerald-600" />
               Pay Salary / Advance
             </button>
             <button
               type="button"
               onClick={() => { setActiveTab('DEPOSIT'); setError(null); }}
-              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
                 activeTab === 'DEPOSIT'
                   ? 'bg-white text-gray-900 shadow-sm border border-gray-200/80'
                   : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'
               }`}
             >
-              <PiggyBank className="w-4 h-4 text-blue-600" />
               Add Savings / Deposit
             </button>
           </div>
@@ -222,22 +215,23 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
                 Payment Method
               </label>
               <CustomSelect
-                value={method}
-                onChange={(val) => setMethod(val as any)}
+                label="Select method..."
                 options={[
-                  { value: 'CASH', label: 'Cash' },
-                  { value: 'MPESA', label: 'M-PESA' },
+                  { id: 'CASH', name: 'Cash' },
+                  { id: 'MPESA', name: 'M-PESA' },
                 ]}
+                value={method}
+                onChange={(e) => setMethod(e.target.value as 'CASH' | 'MPESA')}
                 disabled={isPending || isPolling}
               />
             </div>
 
-            {/* M-PESA Reference / Phone input */}
+            {/* M-PESA Reference input */}
             {method === 'MPESA' && (
               <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-100 space-y-3">
                 <div>
                   <label className="block text-xs font-semibold text-emerald-900 mb-1">
-                    M-Pesa Transaction Ref / Receipt No.
+                    M-Pesa Transaction Ref / Receipt No. <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -245,7 +239,7 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
                     value={mpesaReceiptNumber}
                     onChange={(e) => setMpesaReceiptNumber(e.target.value.toUpperCase())}
                     placeholder="e.g. QBH7894561"
-                    className="w-full px-3 py-2 border border-emerald-300 rounded-lg text-sm uppercase font-mono font-bold focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
+                    className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg text-sm uppercase font-mono font-bold focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
                     disabled={isPending || isPolling}
                   />
                 </div>
