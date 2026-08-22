@@ -159,6 +159,29 @@ export const salesApi = {
 
     try {
       const { data } = await api.post('/sales', { ...saleData, id: localId, localId }, { timeout: 3500 });
+      
+      // Update local Dexie customer balance immediately on online sale success as well
+      if (saleData.customerId) {
+        const subtotal = saleData.items.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
+        const discount = saleData.discountAmount || 0;
+        const totalAmount = Math.max(0, subtotal - discount);
+        const creditAmount = Math.max(0, totalAmount - Number(saleData.amountPaid || 0));
+        if (creditAmount > 0) {
+          try {
+            const cust = await db.customers.get(saleData.customerId);
+            if (cust) {
+              const curBal = Number(cust.balance) || 0;
+              await db.customers.update(saleData.customerId, {
+                balance: (curBal + creditAmount).toString(),
+                hasActiveCredit: true
+              });
+            }
+          } catch (cErr) {
+            console.warn('[Local Sync] Failed to update local customer balance:', cErr);
+          }
+        }
+      }
+
       return data.data;
     } catch (error: any) {
       const isNetworkError = 

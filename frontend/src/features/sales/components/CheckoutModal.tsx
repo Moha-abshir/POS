@@ -162,6 +162,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
         queryClient.invalidateQueries({ queryKey: ['products'] });
         queryClient.invalidateQueries({ queryKey: ['customers'] });
         queryClient.invalidateQueries({ queryKey: ['sales'] });
+        queryClient.refetchQueries({ queryKey: ['customers'] });
+        customersApi.syncCustomerCache().catch(() => {});
 
         onSuccessRef.current(data);
         handleClose();

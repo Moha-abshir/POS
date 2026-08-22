@@ -406,9 +406,10 @@ export class SalesService {
     });
 
     try {
-      await flushPattern(`cache:${businessId}:/catalog*`);
+      await flushPattern(`cache:${businessId}:*catalog*`);
       await flushPattern(`cache:${businessId}:*reports*`);
-      await flushPattern(`cache:${businessId}:customers:*`);
+      await flushPattern(`cache:${businessId}:*customers*`);
+      await flushPattern(`cache:${businessId}:*sales*`);
       RestockService.syncLowStockItems(businessId).catch(() => {});
     } catch (err) {
       console.error('Failed to flush cache on sale:', err);
@@ -646,7 +647,9 @@ export class SalesService {
       }
 
       await flushPattern(`cache:${businessId}:*reports*`);
-      await flushPattern(`cache:${businessId}:customers:*`);
+      await flushPattern(`cache:${businessId}:*customers*`);
+      await flushPattern(`cache:${businessId}:*sales*`);
+      await flushPattern(`cache:${businessId}:*catalog*`);
       return refundRecord;
     });
   }
