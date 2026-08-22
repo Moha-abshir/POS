@@ -127,31 +127,31 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
 
       return { previousProducts };
     },
-    onSuccess: async (data: any) => {
+    onSuccess: (data: any) => {
       const isOfflineSale = data?.isOffline || !navigator.onLine;
       const needsStkPush = !isOfflineSale && ((paymentMethod === 'MPESA' && isStkPush) || (paymentMethod === 'SPLIT' && isStkPush && Number(mpesaAmount) > 0));
       
       if (needsStkPush) {
         setIsInitiatingPush(true);
-        try {
-          const pushAmount = paymentMethod === 'SPLIT' ? Number(mpesaAmount) : (Number(amountPaid) || 0);
-          const res = await api.post('/mpesa/checkout/push', {
-            saleId: data.id,
-            phoneNumber: mpesaPhoneNumber,
-            amount: pushAmount
-          });
-          setCheckoutRequestId(res.data.checkoutRequestId);
-          setIsPolling(true);
-          toast.success('STK Push sent to customer phone. Waiting for PIN...');
-        } catch (e: any) {
-          toast.error(e.response?.data?.message || 'Failed to send STK push');
-          if (navigator.onLine) {
+        (async () => {
+          try {
+            const pushAmount = paymentMethod === 'SPLIT' ? Number(mpesaAmount) : (Number(amountPaid) || 0);
+            const res = await api.post('/mpesa/checkout/push', {
+              saleId: data.id,
+              phoneNumber: mpesaPhoneNumber,
+              amount: pushAmount
+            });
+            setCheckoutRequestId(res.data.checkoutRequestId);
+            setIsPolling(true);
+            toast.success('STK Push sent to customer phone. Waiting for PIN...');
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || 'Failed to send STK push');
             queryClient.invalidateQueries({ queryKey: ['products'] });
             queryClient.invalidateQueries({ queryKey: ['sales'] });
+          } finally {
+            setIsInitiatingPush(false);
           }
-        } finally {
-          setIsInitiatingPush(false);
-        }
+        })();
       } else {
         if (isOfflineSale) {
           toast.success('Sale saved offline! Will sync automatically when back online.');
@@ -159,14 +159,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
           toast.success('Sale completed successfully!');
         }
 
+        try {
+          onSuccessRef.current(data);
+        } catch (e) {
+          console.error('Error in onSuccess callback:', e);
+        }
+        handleClose();
+
         queryClient.invalidateQueries({ queryKey: ['products'] });
         queryClient.invalidateQueries({ queryKey: ['customers'] });
         queryClient.invalidateQueries({ queryKey: ['sales'] });
-        queryClient.refetchQueries({ queryKey: ['customers'] });
         customersApi.syncCustomerCache().catch(() => {});
-
-        onSuccessRef.current(data);
-        handleClose();
       }
     },
     onError: (error: any, _, context) => {
