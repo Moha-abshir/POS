@@ -44,6 +44,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
 
   const onSuccessRef = useRef(onSuccess);
   const onCloseRef = useRef(onClose);
+  const isSubmittingRef = useRef(false);
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
@@ -51,6 +52,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
   }, [onSuccess, onClose]);
 
   const handleClose = () => {
+    isSubmittingRef.current = false;
     setIsCreditSale(false);
     setIsBusinessSale(false);
     setPaymentMethod('CASH');
@@ -173,6 +175,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
       }
     },
     onError: (error: any, _, context) => {
+      isSubmittingRef.current = false;
       // Rollback to the previous snapshot state if checkout fails
       if (context?.previousProducts) {
         queryClient.setQueryData(['products'], context.previousProducts);
@@ -277,6 +280,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isSubmittingRef.current || createSaleMutation.isPending) {
+      return;
+    }
+    isSubmittingRef.current = true;
 
     if (!navigator.onLine) {
       const cachedSession = await db.settings.get('active_session');

@@ -36,7 +36,7 @@ export class SalesController {
 
       const sale = await SalesService.createSale(req.user!.businessId, req.user!.id, req.body);
       if (req.body.customerId) {
-        await flushPattern(`cache:${req.user!.businessId}:/api/customers*`);
+        await flushPattern(`cache:${req.user!.businessId}:*customers*`);
       }
       res.status(201).json({ status: 'success', message: 'Sale recorded successfully', data: sale });
     } catch (error) {
