@@ -777,6 +777,7 @@ export const PosPage = () => {
         totalAmount={cartTotal}
         discountAmount={discount}
         onSuccess={(saleData) => {
+          localStorage.removeItem('pos_cart');
           setCart([]);
           setDiscount(0);
           setIsCheckoutOpen(false);

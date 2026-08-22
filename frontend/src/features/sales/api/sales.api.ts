@@ -158,7 +158,7 @@ export const salesApi = {
     }
 
     try {
-      const { data } = await api.post('/sales', { ...saleData, id: localId, localId }, { timeout: 3500 });
+      const { data } = await api.post('/sales', { ...saleData, id: localId, localId });
       
       // Update local Dexie customer balance immediately on online sale success as well
       if (saleData.customerId) {
@@ -207,7 +207,7 @@ export const salesApi = {
       if (!navigator.onLine) {
         throw new Error('Offline');
       }
-      const { data } = await api.get(`/sales/${id}`, { timeout: 3000 });
+      const { data } = await api.get(`/sales/${id}`);
       return data.data;
     } catch (error: any) {
       const queuedItem = await db.syncQueue.where('localId').equals(id).first();
