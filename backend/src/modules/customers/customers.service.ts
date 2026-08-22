@@ -416,19 +416,134 @@ export class CustomersService {
     await this.invalidateCustomerCache(customer.businessId);
   }
 
+  static async recordEmployeePayout(
+    businessId: string,
+    userId: string,
+    employeeId: string,
+    data: { amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string; notes?: string }
+  ) {
+    return await db.transaction(async (tx) => {
+      const [customer] = await tx.select()
+        .from(customers)
+        .where(and(eq(customers.id, employeeId), eq(customers.businessId, businessId)));
+
+      if (!customer) {
+        throw new AppError('Employee not found', 404);
+      }
+      if (customer.type !== 'EMPLOYEE') {
+        throw new AppError('Customer is not an employee', 400);
+      }
+
+      const baseSalary = Number(customer.baseSalary || 0);
+      const additionalSavings = Number(customer.additionalSavings || 0);
+      const currentDeductions = Number(customer.balance || 0);
+      const prevNetSalary = -( (baseSalary + additionalSavings) - currentDeductions );
+
+      const newDeductions = currentDeductions + data.amount;
+      const newNetSalary = -( (baseSalary + additionalSavings) - newDeductions );
+
+      const [updatedCustomer] = await tx.update(customers)
+        .set({
+          balance: newDeductions.toString(),
+          hasActiveCredit: newDeductions > 0,
+          updatedAt: new Date()
+        })
+        .where(eq(customers.id, employeeId))
+        .returning();
+
+      const [payment] = await tx.insert(payments).values({
+        businessId,
+        referenceType: 'EMPLOYEE_SALARY',
+        referenceId: employeeId,
+        amount: data.amount.toString(),
+        method: data.method,
+        mpesaReceiptNumber: data.method === 'MPESA' && data.mpesaReceiptNumber ? data.mpesaReceiptNumber.toUpperCase() : null,
+        notes: data.notes || 'Salary Payout / Advance',
+        createdBy: userId,
+      }).returning();
+
+      await this.invalidateCustomerCache(businessId);
+
+      return {
+        payment,
+        customer: updatedCustomer,
+        previousBalance: prevNetSalary,
+        amountPaid: data.amount,
+        newBalance: newNetSalary,
+        type: 'PAYOUT'
+      };
+    });
+  }
+
+  static async recordEmployeeDeposit(
+    businessId: string,
+    userId: string,
+    employeeId: string,
+    data: { amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string; notes?: string }
+  ) {
+    return await db.transaction(async (tx) => {
+      const [customer] = await tx.select()
+        .from(customers)
+        .where(and(eq(customers.id, employeeId), eq(customers.businessId, businessId)));
+
+      if (!customer) {
+        throw new AppError('Employee not found', 404);
+      }
+      if (customer.type !== 'EMPLOYEE') {
+        throw new AppError('Customer is not an employee', 400);
+      }
+
+      const baseSalary = Number(customer.baseSalary || 0);
+      const currentSavings = Number(customer.additionalSavings || 0);
+      const currentDeductions = Number(customer.balance || 0);
+      const prevNetSalary = -( (baseSalary + currentSavings) - currentDeductions );
+
+      const newSavings = currentSavings + data.amount;
+      const newNetSalary = -( (baseSalary + newSavings) - currentDeductions );
+
+      const [updatedCustomer] = await tx.update(customers)
+        .set({
+          additionalSavings: newSavings.toString(),
+          updatedAt: new Date()
+        })
+        .where(eq(customers.id, employeeId))
+        .returning();
+
+      const [payment] = await tx.insert(payments).values({
+        businessId,
+        referenceType: 'EMPLOYEE_DEPOSIT',
+        referenceId: employeeId,
+        amount: data.amount.toString(),
+        method: data.method,
+        mpesaReceiptNumber: data.method === 'MPESA' && data.mpesaReceiptNumber ? data.mpesaReceiptNumber.toUpperCase() : null,
+        notes: data.notes || 'Employee Personal Savings Deposit',
+        createdBy: userId,
+      }).returning();
+
+      await this.invalidateCustomerCache(businessId);
+
+      return {
+        payment,
+        customer: updatedCustomer,
+        previousBalance: prevNetSalary,
+        amountPaid: data.amount,
+        newBalance: newNetSalary,
+        type: 'DEPOSIT'
+      };
+    });
+  }
+
   static async getCustomerPayments(businessId: string, customerId: string) {
     return await db.select()
       .from(payments)
       .where(and(
         eq(payments.businessId, businessId),
-        eq(payments.referenceType, 'CUSTOMER_DEBT'),
+        inArray(payments.referenceType, ['CUSTOMER_DEBT', 'EMPLOYEE_SALARY', 'EMPLOYEE_DEPOSIT']),
         eq(payments.referenceId, customerId),
         eq(payments.status, 'COMPLETED')
       ))
       .orderBy(desc(payments.paidAt));
   }
-
-
 
   static async getCustomerLedger(businessId: string, customerId: string) {
     const salesList = await db.select().from(sales).where(and(eq(sales.businessId, businessId), eq(sales.customerId, customerId)));
@@ -444,7 +559,12 @@ export class CustomersService {
       ));
     }
 
-    const debtPaymentsList = await db.select().from(payments).where(and(eq(payments.businessId, businessId), eq(payments.referenceType, 'CUSTOMER_DEBT'), eq(payments.referenceId, customerId), eq(payments.status, 'COMPLETED')));
+    const debtPaymentsList = await db.select().from(payments).where(and(
+      eq(payments.businessId, businessId), 
+      inArray(payments.referenceType, ['CUSTOMER_DEBT', 'EMPLOYEE_SALARY', 'EMPLOYEE_DEPOSIT']), 
+      eq(payments.referenceId, customerId), 
+      eq(payments.status, 'COMPLETED')
+    ));
 
     const ledger: any[] = [];
     
@@ -458,35 +578,29 @@ export class CustomersService {
           id: s.id,
           date: s.soldAt,
           transNo: s.id.substring(0, 8).toUpperCase(),
-          type: 'SALE_CREDIT',
-          loan: debt,
+          description: 'Credit Sale',
+          debtIncrease: debt,
           payment: 0,
-          notes: 'Credit Sale'
         });
       }
     });
 
     debtPaymentsList.forEach(p => {
+      let desc = 'Debt Payment';
+      if (p.referenceType === 'EMPLOYEE_SALARY') desc = 'Salary Payout / Advance';
+      if (p.referenceType === 'EMPLOYEE_DEPOSIT') desc = 'Personal Savings Deposit';
+
       ledger.push({
         id: p.id,
         date: p.paidAt,
-        transNo: p.mpesaReceiptNumber || p.id.substring(0, 8).toUpperCase(),
-        type: 'CUSTOMER_DEBT_PAYMENT',
-        loan: 0,
-        payment: Number(p.amount),
-        notes: `Payment (${p.method})`
+        transNo: (p.mpesaReceiptNumber || p.id).substring(0, 10).toUpperCase(),
+        description: desc,
+        debtIncrease: p.referenceType === 'EMPLOYEE_SALARY' ? Number(p.amount) : 0,
+        payment: p.referenceType !== 'EMPLOYEE_SALARY' ? Number(p.amount) : 0,
       });
     });
 
     ledger.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    let runningBalance = 0;
-    ledger.forEach(entry => {
-      runningBalance += entry.loan;
-      runningBalance -= entry.payment;
-      entry.runningBalance = runningBalance;
-    });
-
     return ledger.reverse();
   }
 
@@ -503,7 +617,7 @@ export class CustomersService {
         .where(and(
           eq(payments.id, paymentId),
           eq(payments.businessId, businessId),
-          eq(payments.referenceType, 'CUSTOMER_DEBT'),
+          inArray(payments.referenceType, ['CUSTOMER_DEBT', 'EMPLOYEE_SALARY', 'EMPLOYEE_DEPOSIT']),
           eq(payments.referenceId, customerId),
           eq(payments.status, 'COMPLETED')
         ));
@@ -512,8 +626,6 @@ export class CustomersService {
         throw new AppError('Payment not found or already reversed', 404);
       }
 
-      const payAmount = Number(payment.amount);
-
       // 2. Fetch customer
       const [customer] = await tx.select()
         .from(customers)
@@ -521,6 +633,65 @@ export class CustomersService {
 
       if (!customer) {
         throw new AppError('Customer not found', 404);
+      }
+
+      const payAmount = Number(payment.amount);
+
+      if (payment.referenceType === 'EMPLOYEE_DEPOSIT') {
+        const currentSavings = Number(customer.additionalSavings || 0);
+        const restoredSavings = Math.max(0, currentSavings - payAmount);
+        const [updatedCustomer] = await tx.update(customers)
+          .set({
+            additionalSavings: restoredSavings.toString(),
+            updatedAt: new Date()
+          })
+          .where(eq(customers.id, customerId))
+          .returning();
+
+        await tx.update(payments)
+          .set({
+            status: 'FAILED',
+            notes: `Reversed by user: ${payment.notes || ''}`.trim()
+          })
+          .where(eq(payments.id, paymentId));
+
+        await this.invalidateCustomerCache(businessId);
+        return {
+          payment,
+          customer: updatedCustomer,
+          previousBalance: currentSavings,
+          reversedAmount: payAmount,
+          newBalance: restoredSavings
+        };
+      }
+
+      if (payment.referenceType === 'EMPLOYEE_SALARY') {
+        const currentBal = Number(customer.balance || 0);
+        const restoredBalance = Math.max(0, currentBal - payAmount);
+        const [updatedCustomer] = await tx.update(customers)
+          .set({
+            balance: restoredBalance.toString(),
+            hasActiveCredit: restoredBalance > 0,
+            updatedAt: new Date()
+          })
+          .where(eq(customers.id, customerId))
+          .returning();
+
+        await tx.update(payments)
+          .set({
+            status: 'FAILED',
+            notes: `Reversed by user: ${payment.notes || ''}`.trim()
+          })
+          .where(eq(payments.id, paymentId));
+
+        await this.invalidateCustomerCache(businessId);
+        return {
+          payment,
+          customer: updatedCustomer,
+          previousBalance: currentBal,
+          reversedAmount: payAmount,
+          newBalance: restoredBalance
+        };
       }
 
       const currentBal = Number(customer.balance);

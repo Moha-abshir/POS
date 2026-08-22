@@ -148,7 +148,7 @@ export const variantUnits = pgTable('variant_units', {
 
 export const movementTypeEnum = pgEnum('movement_type', ['PURCHASE', 'SALE', 'REFUND', 'DAMAGE', 'ADJUSTMENT']);
 export const paymentMethodEnum = pgEnum('payment_method', ['CASH', 'MPESA']);
-export const paymentReferenceTypeEnum = pgEnum('payment_reference_type', ['SALE', 'PURCHASE', 'CUSTOMER_DEBT', 'SUPPLIER_DEBT']);
+export const paymentReferenceTypeEnum = pgEnum('payment_reference_type', ['SALE', 'PURCHASE', 'CUSTOMER_DEBT', 'SUPPLIER_DEBT', 'EMPLOYEE_SALARY', 'EMPLOYEE_DEPOSIT']);
 export const paymentStatusEnum = pgEnum('payment_status', ['PAID', 'PARTIAL', 'UNPAID']);
 export const auditActionEnum = pgEnum('audit_action', ['CREATE', 'UPDATE', 'DELETE']);
 export const accountTypeEnum = pgEnum('mpesa_account_type', ['TILL', 'PAYBILL']);
@@ -292,6 +292,7 @@ export const customers = pgTable('customers', {
   notes: text('notes'),
   balance: decimal('balance', { precision: 12, scale: 2 }).notNull().default('0'),
   baseSalary: decimal('base_salary', { precision: 12, scale: 2 }).default('0'),
+  additionalSavings: decimal('additional_savings', { precision: 12, scale: 2 }).notNull().default('0'),
   periodOwed: varchar('period_owed', { length: 50 }),
   hasActiveCredit: boolean('has_active_credit').notNull().default(false),
   isActive: boolean('is_active').notNull().default(true),

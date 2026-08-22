@@ -248,10 +248,25 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     commands += alignRow('Amount Paid', paidAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
     if (isCredit || sale.customerId) {
-      commands += alignRow('Previous Balance', prevBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-      commands += ESC + 'E' + '\x01';
-      commands += alignRow('New Total Balance', totalBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-      commands += ESC + 'E' + '\x00';
+      if (customerDetails?.type === 'EMPLOYEE') {
+        const bSal = Number(customerDetails.baseSalary || 0);
+        const aSav = Number(customerDetails.additionalSavings || 0);
+        const newNet = -( (bSal + aSav) - totalBal );
+        commands += alignRow('Base Salary', bSal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        if (aSav > 0) {
+          commands += alignRow('Personal Savings', aSav.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        }
+        commands += alignRow('Prev Deductions', prevBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        commands += alignRow('Total Deductions', totalBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        commands += ESC + 'E' + '\x01';
+        commands += alignRow('Net Salary Left', newNet < 0 ? `- ${Math.abs(newNet).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `+ ${newNet.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+        commands += ESC + 'E' + '\x00';
+      } else {
+        commands += alignRow('Previous Balance', prevBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        commands += ESC + 'E' + '\x01';
+        commands += alignRow('New Total Balance', totalBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        commands += ESC + 'E' + '\x00';
+      }
     }
     commands += SEPARATOR;
 
@@ -655,16 +670,47 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
                     </div>
 
                     {(isCredit || sale.customerId) && (
-                      <>
-                        <div className="flex justify-between">
-                          <span>Previous Balance :</span>
-                          <span>{prevBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        </div>
-                        <div className="flex justify-between font-extrabold text-gray-950 pt-0.5">
-                          <span>New Total Balance :</span>
-                          <span>{totalBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        </div>
-                      </>
+                      customerDetails?.type === 'EMPLOYEE' ? (
+                        <>
+                          <div className="flex justify-between">
+                            <span>Base Salary :</span>
+                            <span>{Number(customerDetails.baseSalary || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                          {Number(customerDetails.additionalSavings || 0) > 0 && (
+                            <div className="flex justify-between text-blue-700">
+                              <span>Personal Savings :</span>
+                              <span>{Number(customerDetails.additionalSavings || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span>Prev Deductions :</span>
+                            <span>{prevBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Total Deductions :</span>
+                            <span>{totalBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="flex justify-between font-extrabold text-gray-950 pt-0.5">
+                            <span>Net Salary Left :</span>
+                            <span className={((Number(customerDetails.baseSalary || 0) + Number(customerDetails.additionalSavings || 0)) - totalBal) > 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold'}>
+                              {((Number(customerDetails.baseSalary || 0) + Number(customerDetails.additionalSavings || 0)) - totalBal) > 0
+                                ? `- KSh ${((Number(customerDetails.baseSalary || 0) + Number(customerDetails.additionalSavings || 0)) - totalBal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                : `+ KSh ${Math.abs((Number(customerDetails.baseSalary || 0) + Number(customerDetails.additionalSavings || 0)) - totalBal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Owed)`}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex justify-between">
+                            <span>Previous Balance :</span>
+                            <span>{prevBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="flex justify-between font-extrabold text-gray-950 pt-0.5">
+                            <span>New Total Balance :</span>
+                            <span>{totalBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                        </>
+                      )
                     )}
                   </div>
 

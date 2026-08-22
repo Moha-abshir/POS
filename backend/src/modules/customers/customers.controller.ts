@@ -98,9 +98,41 @@ export class CustomersController {
         req.params.id as string,
         req.params.paymentId as string
       );
+      await flushPattern(`cache:${req.user!.businessId}:/api/customers*`);
       res.status(200).json({ status: 'success', message: 'Payment reversed successfully', data: result });
     } catch (error) {
       next(error);
     }
   }
+
+  static async recordEmployeePayout(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await CustomersService.recordEmployeePayout(
+        req.user!.businessId,
+        req.user!.id,
+        req.params.id as string,
+        req.body
+      );
+      await flushPattern(`cache:${req.user!.businessId}:/api/customers*`);
+      res.status(200).json({ status: 'success', message: 'Employee payout recorded successfully', data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async recordEmployeeDeposit(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await CustomersService.recordEmployeeDeposit(
+        req.user!.businessId,
+        req.user!.id,
+        req.params.id as string,
+        req.body
+      );
+      await flushPattern(`cache:${req.user!.businessId}:/api/customers*`);
+      res.status(200).json({ status: 'success', message: 'Employee deposit recorded successfully', data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
+

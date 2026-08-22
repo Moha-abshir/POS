@@ -11,6 +11,7 @@ export interface Customer {
   notes?: string;
   balance: number;
   baseSalary?: number | string;
+  additionalSavings?: number | string;
   periodOwed?: string;
   isActive: boolean;
   createdAt: string;
@@ -28,6 +29,8 @@ export interface CustomerPayment {
   mpesaReceiptNumber?: string;
   paidAt: string;
   createdBy: string;
+  notes?: string;
+  referenceType?: string;
 }
 
 export const customersApi = {
@@ -47,6 +50,7 @@ export const customersApi = {
           balance: (c.balance || 0).toString(),
           type: c.type || 'INDIVIDUAL',
           baseSalary: (c.baseSalary || 0).toString(),
+          additionalSavings: (c.additionalSavings || 0).toString(),
           periodOwed: c.periodOwed || '',
           hasActiveCredit: !!c.hasActiveCredit
         }));
@@ -77,6 +81,7 @@ export const customersApi = {
           balance: (c.balance || 0).toString(),
           type: c.type || 'INDIVIDUAL',
           baseSalary: (c.baseSalary || 0).toString(),
+          additionalSavings: (c.additionalSavings || 0).toString(),
           periodOwed: c.periodOwed || '',
           hasActiveCredit: !!c.hasActiveCredit
         }));
@@ -108,6 +113,7 @@ export const customersApi = {
             balance: Number(c.balance) || 0,
             type: c.type || 'INDIVIDUAL',
             baseSalary: Number(c.baseSalary) || 0,
+            additionalSavings: Number(c.additionalSavings) || 0,
             periodOwed: c.periodOwed,
             hasActiveCredit: c.hasActiveCredit,
             isActive: true,
@@ -204,13 +210,21 @@ export const customersApi = {
     const response = await api.post(`/customers/${id}/payments`, data);
     return response.data;
   },
+
+  recordEmployeePayout: async (id: string, data: { amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string; notes?: string }) => {
+    const response = await api.post(`/customers/${id}/employee-payout`, data);
+    return response.data;
+  },
+
+  recordEmployeeDeposit: async (id: string, data: { amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string; notes?: string }) => {
+    const response = await api.post(`/customers/${id}/employee-deposit`, data);
+    return response.data;
+  },
   
   getCustomerPayments: async (id: string) => {
     const { data } = await api.get(`/customers/${id}/payments`);
     return data.data;
   },
-
-
 
   reversePayment: async (id: string, paymentId: string) => {
     const response = await api.post(`/customers/${id}/payments/${paymentId}/reverse`);
@@ -292,6 +306,34 @@ export const useRecordCustomerPayment = () => {
   return useMutation({
     mutationFn: ({ id, ...data }: { id: string; amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string }) => 
       customersApi.recordPayment(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'payments'] });
+      queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'purchases'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+};
+
+export const useRecordEmployeePayout = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string; amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string; notes?: string }) => 
+      customersApi.recordEmployeePayout(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'payments'] });
+      queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'purchases'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+};
+
+export const useRecordEmployeeDeposit = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string; amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string; notes?: string }) => 
+      customersApi.recordEmployeeDeposit(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'payments'] });
