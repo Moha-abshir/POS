@@ -105,7 +105,6 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
     // ── Metadata (Left aligned) ──
     commands += ESC + 'a' + '\x00'; // Left align
     commands += alignRow('Receipt No', receiptNo);
-    commands += alignRow('Employee ID', customerNo);
     commands += alignRow('Employee', (rData.customer?.name || '').toUpperCase());
     commands += alignRow('Date', format(transactionDate, 'dd/MM/yyyy'));
     commands += alignRow('Time', format(transactionDate, 'hh:mm:ss a'));
@@ -118,7 +117,6 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
     }
     commands += alignRow('Prev Net Salary', formatNetVal(rData.previousBalance));
     commands += alignRow(isDeposit ? 'Deposit Amount' : 'Payout Amount', rData.amountPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-    commands += alignRow('Payment Method', rData.payment?.method || 'CASH');
     if (rData.payment?.mpesaReceiptNumber) {
       commands += alignRow('M-Pesa Ref', rData.payment.mpesaReceiptNumber);
     }
@@ -345,10 +343,6 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
                     <span className="font-bold">{receiptNo}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Employee ID:</span>
-                    <span className="font-bold">{customerNo}</span>
-                  </div>
-                  <div className="flex justify-between">
                     <span>Employee   :</span>
                     <span className="font-bold truncate max-w-[180px]">{(receiptData.customer?.name || '').toUpperCase()}</span>
                   </div>
@@ -390,11 +384,6 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
                     <span className={isDeposit ? 'text-blue-700' : 'text-emerald-700'}>
                       {receiptData.amountPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
-                  </div>
-
-                  <div className="flex justify-between text-gray-600 text-[10px]">
-                    <span>Payment Method :</span>
-                    <span className="font-bold">{receiptData.payment?.method || 'CASH'}</span>
                   </div>
 
                   {receiptData.payment?.mpesaReceiptNumber && (
