@@ -100,24 +100,24 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
               <h3 className="text-lg font-semibold text-gray-900 mt-1">{customer.name}</h3>
               
               {customer.type === 'EMPLOYEE' ? (
-                <div className="w-full mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg text-left space-y-1.5 text-xs">
+                <div className="w-full mt-3 p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-left space-y-2 text-xs">
                   <div className="flex justify-between text-gray-600">
                     <span>Base Salary:</span>
                     <span className="font-semibold text-gray-900">KSh {Number(customer.baseSalary || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-amber-700">
                     <span>Total Amount Taken:</span>
-                    <span className="font-bold">KSh {Number(customer.balance || 0).toLocaleString()}</span>
+                    <span className="font-bold text-sm">KSh {Number(customer.balance || 0).toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between border-t border-gray-200 pt-1.5 font-bold text-gray-900">
+                  <div className="flex justify-between border-t border-gray-200 pt-2 font-bold text-gray-900">
                     <span>Net Salary Remaining:</span>
-                    <span className={Number(customer.baseSalary || 0) - Number(customer.balance || 0) < 0 ? 'text-red-600' : 'text-green-600'}>
+                    <span className={`text-sm ${Number(customer.baseSalary || 0) - Number(customer.balance || 0) < 0 ? 'text-red-600' : 'text-green-600'}`}>
                       KSh {(Number(customer.baseSalary || 0) - Number(customer.balance || 0)).toLocaleString()}
                     </span>
                   </div>
                 </div>
               ) : (
-                <p className={`mt-1 text-sm font-medium ${Number(customer.balance) > 0 ? 'text-[#D97706]' : 'text-green-600'}`}>
+                <p className={`mt-1.5 text-lg sm:text-xl font-bold ${Number(customer.balance) > 0 ? 'text-[#D97706]' : 'text-green-600'}`}>
                   Balance: KSH {Number(customer.balance).toLocaleString()}
                 </p>
               )}
