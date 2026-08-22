@@ -180,7 +180,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
       if (context?.previousProducts) {
         queryClient.setQueryData(['products'], context.previousProducts);
       }
-      toast.error(error.response?.data?.message || 'Failed to complete sale');
+      //toast.error(error.response?.data?.message || 'Failed to complete sale');
+      console.log("Failed To Complete Sale")
       setIsPolling(false);
       setIsInitiatingPush(false);
     }
