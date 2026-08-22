@@ -121,11 +121,11 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                     </div>
                   )}
                   <div className="flex justify-between text-amber-700 font-medium">
-                    <span>Goods Taken / Deductions:</span>
+                    <span>Goods Taken:</span>
                     <span>KSh {totalDeductions.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between border-t border-gray-200 pt-2 font-extrabold text-sm">
-                    <span className="text-gray-900">Net Salary Payable:</span>
+                    <span className="text-gray-900">Net Salary:</span>
                     <span className={netSalaryOwed < 0 ? 'text-red-600' : 'text-emerald-600'}>
                       {netSalaryOwed < 0 ? `- KSh ${Math.abs(netSalaryOwed).toLocaleString()}` : `+ KSh ${netSalaryOwed.toLocaleString()} (Owed)`}
                     </span>
