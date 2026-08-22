@@ -51,6 +51,7 @@ export interface LocalCustomer {
   type?: 'INDIVIDUAL' | 'BUSINESS' | 'EMPLOYEE';
   baseSalary?: string;
   additionalSavings?: string;
+  lastSalarySettledAt?: string;
   periodOwed?: string;
   hasActiveCredit?: boolean;
 }

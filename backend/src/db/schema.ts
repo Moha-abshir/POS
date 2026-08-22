@@ -293,6 +293,7 @@ export const customers = pgTable('customers', {
   balance: decimal('balance', { precision: 12, scale: 2 }).notNull().default('0'),
   baseSalary: decimal('base_salary', { precision: 12, scale: 2 }).default('0'),
   additionalSavings: decimal('additional_savings', { precision: 12, scale: 2 }).notNull().default('0'),
+  lastSalarySettledAt: timestamp('last_salary_settled_at', { withTimezone: true }),
   periodOwed: varchar('period_owed', { length: 50 }),
   hasActiveCredit: boolean('has_active_credit').notNull().default(false),
   isActive: boolean('is_active').notNull().default(true),

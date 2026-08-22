@@ -27,6 +27,8 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
   const [selectedEmployeeReceiptData, setSelectedEmployeeReceiptData] = useState<EmployeeReceiptData | null>(null);
   const [paymentToReverse, setPaymentToReverse] = useState<any | null>(null);
 
+  const [showAllPurchases, setShowAllPurchases] = useState(false);
+
   const { data: purchases, isLoading: isPurchasesLoading } = useCustomerPurchases(customer?.id);
   const { data: paymentsList, isLoading: isPaymentsLoading } = useCustomerPayments(customer?.id);
   const reversePaymentMutation = useReverseCustomerPayment();
@@ -39,6 +41,13 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
   const additionalSavings = Number(customer.additionalSavings || 0);
   const totalDeductions = Number(customer.balance || 0);
   const netSalaryOwed = -( (baseSalary + additionalSavings) - totalDeductions );
+
+  const filteredPurchases = (purchases || []).filter((p: any) => {
+    if (customer.type === 'EMPLOYEE' && !showAllPurchases) {
+      return !p.isPriorCycle;
+    }
+    return true;
+  });
 
   const handleExportCSV = () => {
     if (!purchases || purchases.length === 0) return;
@@ -235,10 +244,10 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
             <div className="flex-1 overflow-y-auto min-h-0">
               {activeTab === 'purchases' ? (
                 <div>
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                       <Receipt className="w-4 h-4 text-gray-400" />
-                      Recent Purchases
+                      {customer.type === 'EMPLOYEE' ? (showAllPurchases ? 'All Purchases History' : 'Current Cycle Purchases') : 'Recent Purchases'}
                     </h4>
                     {purchases && purchases.length > 0 && (
                       <button
@@ -252,13 +261,36 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                     )}
                   </div>
 
+                  {customer.type === 'EMPLOYEE' && (
+                    <div className="flex items-center gap-1 mb-3 bg-gray-100 p-1 rounded-xl text-xs font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setShowAllPurchases(false)}
+                        className={`flex-1 py-1.5 px-2.5 rounded-lg transition-all cursor-pointer text-center ${
+                          !showAllPurchases ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-900'
+                        }`}
+                      >
+                        Current Cycle
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowAllPurchases(true)}
+                        className={`flex-1 py-1.5 px-2.5 rounded-lg transition-all cursor-pointer text-center ${
+                          showAllPurchases ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-900'
+                        }`}
+                      >
+                        All Historical Purchases ({purchases?.length || 0})
+                      </button>
+                    </div>
+                  )}
+
                   {isPurchasesLoading ? (
                     <div className="flex justify-center py-8">
                       <LoadingSpinner size="sm" />
                     </div>
-                  ) : purchases && purchases.length > 0 ? (
+                  ) : filteredPurchases.length > 0 ? (
                     <div className="space-y-3">
-                      {purchases.map((purchase: any) => {
+                      {filteredPurchases.map((purchase: any) => {
                         const refundsTotal = (purchase.refunds || []).reduce((sum: number, r: any) => sum + Number(r.totalAmount), 0);
                         const netTotal = Math.max(0, Number(purchase.totalAmount) - refundsTotal);
                         const netDebt = Math.max(0, netTotal - Number(purchase.amountPaid));
@@ -267,12 +299,21 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                           <div 
                             key={purchase.id} 
                             onClick={() => setReceiptSaleId(purchase.id)}
-                            className="p-3 border border-gray-100 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
+                            className={`p-3 border rounded-xl transition-colors cursor-pointer ${
+                              purchase.isPriorCycle ? 'border-gray-100 bg-gray-50/50 opacity-80' : 'border-gray-200/90 hover:bg-gray-50 bg-white'
+                            }`}
                           >
                             <div className="flex justify-between items-start mb-1">
-                              <span className="text-sm font-medium text-gray-900">
-                                {format(new Date(purchase.createdAt), 'MMM d, yyyy - h:mm a')}
-                              </span>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium text-gray-900">
+                                  {format(new Date(purchase.createdAt), 'MMM d, yyyy - h:mm a')}
+                                </span>
+                                {purchase.isPriorCycle && (
+                                  <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">
+                                    Settled in prior cycle
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-right">
                                 <span className="text-sm font-semibold text-gray-900">
                                   Total: KSH {netTotal.toLocaleString()}
@@ -305,9 +346,22 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                       })}
                     </div>
                   ) : (
-                    <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
                       <Receipt className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500">No purchases found for this customer.</p>
+                      <p className="text-sm text-gray-500">
+                        {customer.type === 'EMPLOYEE' && !showAllPurchases 
+                          ? 'No purchases taken in the current pay cycle.' 
+                          : 'No purchases found for this customer.'}
+                      </p>
+                      {customer.type === 'EMPLOYEE' && !showAllPurchases && purchases && purchases.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAllPurchases(true)}
+                          className="mt-2 text-xs font-bold text-amber-600 hover:underline cursor-pointer"
+                        >
+                          View {purchases.length} previous cycle purchase{purchases.length > 1 ? 's' : ''}
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

@@ -12,6 +12,7 @@ export interface Customer {
   balance: number;
   baseSalary?: number | string;
   additionalSavings?: number | string;
+  lastSalarySettledAt?: string;
   periodOwed?: string;
   isActive: boolean;
   createdAt: string;
@@ -216,6 +217,11 @@ export const customersApi = {
     return response.data;
   },
 
+  settleEmployeeSalary: async (id: string, data: { amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string; notes?: string }) => {
+    const response = await api.post(`/customers/${id}/employee-settlement`, data);
+    return response.data;
+  },
+
   recordEmployeeDeposit: async (id: string, data: { amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string; notes?: string }) => {
     const response = await api.post(`/customers/${id}/employee-deposit`, data);
     return response.data;
@@ -320,6 +326,20 @@ export const useRecordEmployeePayout = () => {
   return useMutation({
     mutationFn: ({ id, ...data }: { id: string; amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string; notes?: string }) => 
       customersApi.recordEmployeePayout(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'payments'] });
+      queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'purchases'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+};
+
+export const useSettleEmployeeSalary = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string; amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string; notes?: string }) => 
+      customersApi.settleEmployeeSalary(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'payments'] });

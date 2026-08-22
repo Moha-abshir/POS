@@ -17,6 +17,7 @@ router.get('/:id/purchases', cacheMiddleware(300), CustomersController.getCustom
 router.post('/:id/payments', CustomersController.recordPayment);
 router.post('/:id/payments/:paymentId/reverse', CustomersController.reversePayment);
 router.post('/:id/employee-payout', CustomersController.recordEmployeePayout);
+router.post('/:id/employee-settlement', CustomersController.settleEmployeeSalary);
 router.post('/:id/employee-deposit', CustomersController.recordEmployeeDeposit);
 router.get('/:id/payments', cacheMiddleware(300), CustomersController.getCustomerPayments);
 

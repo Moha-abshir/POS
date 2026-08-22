@@ -6,7 +6,7 @@ import { api } from '../../../lib/api';
 import toast from 'react-hot-toast';
 
 export interface EmployeeReceiptData {
-  type: 'PAYOUT' | 'DEPOSIT';
+  type: 'SETTLEMENT' | 'PAYOUT' | 'DEPOSIT';
   payment: any;
   customer: any;
   previousBalance: number;
@@ -40,7 +40,8 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
   const cashierName = ((meData?.user?.firstName || '') + ' ' + (meData?.user?.lastName || '')).trim() || meData?.user?.name || meData?.user?.username || 'Cashier';
 
   const isDeposit = receiptData.type === 'DEPOSIT';
-  const receiptTitle = isDeposit ? 'EMPLOYEE SAVINGS DEPOSIT' : 'EMPLOYEE SALARY PAYOUT';
+  const isSettlement = receiptData.type === 'SETTLEMENT';
+  const receiptTitle = isSettlement ? 'EMPLOYEE SALARY SETTLEMENT' : (isDeposit ? 'EMPLOYEE SAVINGS DEPOSIT' : 'EMPLOYEE SALARY ADVANCE');
 
   const receiptNo = receiptData.payment?.mpesaReceiptNumber 
     ? `EMP-${receiptData.payment.mpesaReceiptNumber}`
@@ -128,7 +129,9 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
     // ── Footer (Centered) ──
     commands += ESC + 'a' + '\x01';
     commands += `You were served by : ${cashierName}\n\n`;
-    commands += isDeposit ? `Thank you! Savings safely recorded.\n` : `Salary payout confirmed.\n`;
+    commands += isSettlement 
+      ? `Full salary settled. Cycle closed.\n` 
+      : (isDeposit ? `Thank you! Savings safely recorded.\n` : `Salary advance confirmed.\n`);
 
     // ── Paper Feed & Cut ──
     commands += '\n\n\n\n';
@@ -406,7 +409,9 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
                 {/* Footer Information */}
                 <div className="text-center space-y-2 mt-4 text-[10px] text-gray-800">
                   <p>You were served by : {cashierName}</p>
-                  <p className="font-semibold">{isDeposit ? 'Personal savings held in safekeeping.' : 'Thank you for your service!'}</p>
+                  <p className="font-semibold">
+                    {isSettlement ? 'Full salary settled. Cycle closed.' : (isDeposit ? 'Personal savings held in safekeeping.' : 'Salary advance confirmed.')}
+                  </p>
                 </div>
 
               </div>

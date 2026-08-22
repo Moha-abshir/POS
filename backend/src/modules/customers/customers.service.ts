@@ -204,6 +204,12 @@ export class CustomersService {
   }
 
   static async getCustomerPurchases(businessId: string, customerId: string) {
+    const [customer] = await db.select({
+      id: customers.id,
+      type: customers.type,
+      lastSalarySettledAt: customers.lastSalarySettledAt,
+    }).from(customers).where(and(eq(customers.id, customerId), eq(customers.businessId, businessId)));
+
     const customerSales = await db.select()
       .from(sales)
       .where(and(
@@ -211,6 +217,8 @@ export class CustomersService {
         eq(sales.customerId, customerId)
       ))
       .orderBy(desc(sales.soldAt));
+
+    const settledAtTime = customer?.lastSalarySettledAt ? new Date(customer.lastSalarySettledAt).getTime() : null;
 
     const salesWithRefunds = await Promise.all(customerSales.map(async (sale) => {
       const saleRefunds = await db.select({
@@ -222,7 +230,10 @@ export class CustomersService {
       .from(refunds)
       .where(and(eq(refunds.saleId, sale.id), eq(refunds.businessId, businessId)));
 
-      return { ...sale, refunds: saleRefunds };
+      const saleTime = new Date(sale.soldAt).getTime();
+      const isPriorCycle = settledAtTime ? saleTime <= settledAtTime : false;
+
+      return { ...sale, refunds: saleRefunds, isPriorCycle };
     }));
 
     return salesWithRefunds;
@@ -471,6 +482,95 @@ export class CustomersService {
         amountPaid: data.amount,
         newBalance: newNetSalary,
         type: 'PAYOUT'
+      };
+    });
+  }
+
+  static async settleEmployeeSalary(
+    businessId: string,
+    userId: string,
+    employeeId: string,
+    data: { amount: number; method: 'CASH' | 'MPESA'; mpesaReceiptNumber?: string; notes?: string }
+  ) {
+    return await db.transaction(async (tx) => {
+      const [customer] = await tx.select()
+        .from(customers)
+        .where(and(eq(customers.id, employeeId), eq(customers.businessId, businessId)));
+
+      if (!customer) {
+        throw new AppError('Employee not found', 404);
+      }
+      if (customer.type !== 'EMPLOYEE') {
+        throw new AppError('Customer is not an employee', 400);
+      }
+
+      const baseSalary = Number(customer.baseSalary || 0);
+      const additionalSavings = Number(customer.additionalSavings || 0);
+      const currentDeductions = Number(customer.balance || 0);
+      const grossEntitlement = baseSalary + additionalSavings;
+      const netPayable = grossEntitlement - currentDeductions;
+      const prevNetSalary = -( netPayable );
+
+      // If current deductions exceeded gross entitlement, remainder carries over as starting balance
+      const newDeductions = currentDeductions > grossEntitlement ? (currentDeductions - grossEntitlement) : 0;
+      const settlementDate = new Date();
+
+      // Mark all unpaid/partial credit sales up to settlementDate as PAID (settled against salary)
+      await tx.update(sales)
+        .set({
+          amountPaid: sales.totalAmount,
+          paymentStatus: 'PAID',
+        })
+        .where(and(
+          eq(sales.businessId, businessId),
+          eq(sales.customerId, employeeId),
+          sql`${sales.paymentStatus} IN ('UNPAID', 'PARTIAL')`
+        ));
+
+      // Reset customer balance to newDeductions (0 if fully settled), additionalSavings to 0, and record lastSalarySettledAt
+      const [updatedCustomer] = await tx.update(customers)
+        .set({
+          balance: newDeductions.toString(),
+          additionalSavings: '0',
+          hasActiveCredit: newDeductions > 0,
+          lastSalarySettledAt: settlementDate,
+          updatedAt: settlementDate
+        })
+        .where(eq(customers.id, employeeId))
+        .returning();
+
+      // Record settlement payment if amount > 0
+      let payment: any = null;
+      if (data.amount > 0) {
+        const [p] = await tx.insert(payments).values({
+          businessId,
+          referenceType: 'EMPLOYEE_SALARY',
+          referenceId: employeeId,
+          amount: data.amount.toString(),
+          method: data.method,
+          mpesaReceiptNumber: data.method === 'MPESA' && data.mpesaReceiptNumber ? data.mpesaReceiptNumber.toUpperCase() : null,
+          notes: data.notes || 'Full Salary Settlement & Pay Cycle Close',
+          createdBy: userId,
+          paidAt: settlementDate
+        }).returning();
+        payment = p;
+      }
+
+      await this.invalidateCustomerCache(businessId);
+
+      return {
+        payment: payment || {
+          id: 'SETTLED',
+          amount: data.amount,
+          method: data.method,
+          notes: data.notes || 'Full Salary Settlement & Pay Cycle Close',
+          paidAt: settlementDate
+        },
+        customer: updatedCustomer,
+        previousBalance: prevNetSalary,
+        amountPaid: data.amount,
+        newBalance: 0,
+        type: 'SETTLEMENT'
       };
     });
   }

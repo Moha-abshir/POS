@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useRecordEmployeePayout, useRecordEmployeeDeposit, type Customer } from '../api/customers.api';
+import { useRecordEmployeePayout, useSettleEmployeeSalary, useRecordEmployeeDeposit, type Customer } from '../api/customers.api';
 import { useQueryClient } from '@tanstack/react-query';
-import { X, DollarSign, PiggyBank, HandCoins, AlertCircle, Smartphone } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
-import { api } from '../../../lib/api';
 import toast from 'react-hot-toast';
 import { EmployeeTransactionReceiptModal, type EmployeeReceiptData } from './EmployeeTransactionReceiptModal';
 
@@ -13,23 +12,17 @@ interface EmployeeFinancialModalProps {
 }
 
 export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialModalProps) {
-  const [activeTab, setActiveTab] = useState<'PAYOUT' | 'DEPOSIT'>('PAYOUT');
+  const [activeTab, setActiveTab] = useState<'SETTLEMENT' | 'ADVANCE' | 'DEPOSIT'>('SETTLEMENT');
   const [amount, setAmount] = useState<number | ''>('');
   const [method, setMethod] = useState<'CASH' | 'MPESA'>('CASH');
   const [mpesaReceiptNumber, setMpesaReceiptNumber] = useState('');
   const [notes, setNotes] = useState('');
-  const [isStkPush, setIsStkPush] = useState(true);
-  const [mpesaPhoneNumber, setMpesaPhoneNumber] = useState(customer.phone || '');
-  
-  const [isPolling, setIsPolling] = useState(false);
-  const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
-  const [isInitiatingPush, setIsInitiatingPush] = useState(false);
   const [receiptData, setReceiptData] = useState<EmployeeReceiptData | null>(null);
-  
   const [error, setError] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
   const payoutMutation = useRecordEmployeePayout();
+  const settlementMutation = useSettleEmployeeSalary();
   const depositMutation = useRecordEmployeeDeposit();
   const onCloseRef = useRef(onClose);
 
@@ -40,12 +33,20 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
   const baseSalary = Number(customer.baseSalary || 0);
   const additionalSavings = Number(customer.additionalSavings || 0);
   const deductions = Number(customer.balance || 0);
-  const netSalary = -( (baseSalary + additionalSavings) - deductions );
+  const rawNet = -( (baseSalary + additionalSavings) - deductions );
+  const netSalary = Math.round(rawNet * 100) / 100;
+  const netPayable = Math.max(0, (baseSalary + additionalSavings) - deductions);
+
+  // Set default amount when switching tabs
+  useEffect(() => {
+    if (activeTab === 'SETTLEMENT') {
+      setAmount(netPayable > 0 ? netPayable : '');
+    } else {
+      setAmount('');
+    }
+  }, [activeTab, netPayable]);
 
   const handleClose = () => {
-    setIsPolling(false);
-    setCheckoutRequestId(null);
-    setIsInitiatingPush(false);
     onCloseRef.current();
   };
 
@@ -53,39 +54,59 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
     e.preventDefault();
     setError(null);
 
-    if (!amount || amount <= 0) {
+    const numericAmount = Number(amount) || 0;
+
+    if (activeTab !== 'SETTLEMENT' && numericAmount <= 0) {
       setError('Please enter a valid amount greater than 0');
       return;
     }
 
-    if (method === 'MPESA' && !mpesaReceiptNumber.trim()) {
+    if (method === 'MPESA' && numericAmount > 0 && !mpesaReceiptNumber.trim()) {
       setError('M-Pesa transaction reference number is required');
       return;
     }
 
     try {
-      if (activeTab === 'PAYOUT') {
-        const res = await payoutMutation.mutateAsync({
+      if (activeTab === 'SETTLEMENT') {
+        const res = await settlementMutation.mutateAsync({
           id: customer.id,
-          amount: Number(amount),
+          amount: numericAmount,
           method,
           mpesaReceiptNumber: method === 'MPESA' ? mpesaReceiptNumber.trim() : undefined,
-          notes: notes.trim() || 'Salary Payout / Advance'
+          notes: notes.trim() || 'Full Salary Settlement & Pay Cycle Close'
         });
 
-        toast.success('Salary payout recorded successfully');
+        toast.success('Salary settled and pay cycle closed successfully');
+        setReceiptData({
+          type: 'SETTLEMENT',
+          payment: res.data.payment,
+          customer: res.data.customer,
+          previousBalance: res.data.previousBalance,
+          amountPaid: numericAmount,
+          newBalance: res.data.newBalance
+        });
+      } else if (activeTab === 'ADVANCE') {
+        const res = await payoutMutation.mutateAsync({
+          id: customer.id,
+          amount: numericAmount,
+          method,
+          mpesaReceiptNumber: method === 'MPESA' ? mpesaReceiptNumber.trim() : undefined,
+          notes: notes.trim() || 'Salary Advance'
+        });
+
+        toast.success('Salary advance recorded successfully');
         setReceiptData({
           type: 'PAYOUT',
           payment: res.data.payment,
           customer: res.data.customer,
           previousBalance: res.data.previousBalance,
-          amountPaid: Number(amount),
+          amountPaid: numericAmount,
           newBalance: res.data.newBalance
         });
       } else {
         const res = await depositMutation.mutateAsync({
           id: customer.id,
-          amount: Number(amount),
+          amount: numericAmount,
           method,
           mpesaReceiptNumber: method === 'MPESA' ? mpesaReceiptNumber.trim() : undefined,
           notes: notes.trim() || 'Personal Savings Deposit'
@@ -97,7 +118,7 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
           payment: res.data.payment,
           customer: res.data.customer,
           previousBalance: res.data.previousBalance,
-          amountPaid: Number(amount),
+          amountPaid: numericAmount,
           newBalance: res.data.newBalance
         });
       }
@@ -106,7 +127,7 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
     }
   };
 
-  const isPending = payoutMutation.isPending || depositMutation.isPending || isInitiatingPush;
+  const isPending = payoutMutation.isPending || settlementMutation.isPending || depositMutation.isPending;
 
   return (
     <>
@@ -120,7 +141,7 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
             </div>
             <button
               onClick={handleClose}
-              disabled={isPending || isPolling}
+              disabled={isPending}
               className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
             >
               <X className="w-5 h-5" />
@@ -128,28 +149,39 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex border-b border-gray-100 bg-gray-50/80 p-1.5 gap-1.5">
+          <div className="flex border-b border-gray-100 bg-gray-50/80 p-1.5 gap-1">
             <button
               type="button"
-              onClick={() => { setActiveTab('PAYOUT'); setError(null); }}
-              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
-                activeTab === 'PAYOUT'
+              onClick={() => { setActiveTab('SETTLEMENT'); setError(null); }}
+              className={`flex-1 py-2 px-2 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center cursor-pointer text-center ${
+                activeTab === 'SETTLEMENT'
                   ? 'bg-white text-gray-900 shadow-sm border border-gray-200/80'
                   : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'
               }`}
             >
-              Pay Salary / Advance
+              Settle & Close Cycle
+            </button>
+            <button
+              type="button"
+              onClick={() => { setActiveTab('ADVANCE'); setError(null); }}
+              className={`flex-1 py-2 px-2 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center cursor-pointer text-center ${
+                activeTab === 'ADVANCE'
+                  ? 'bg-white text-gray-900 shadow-sm border border-gray-200/80'
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'
+              }`}
+            >
+              Salary Advance
             </button>
             <button
               type="button"
               onClick={() => { setActiveTab('DEPOSIT'); setError(null); }}
-              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
+              className={`flex-1 py-2 px-2 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center cursor-pointer text-center ${
                 activeTab === 'DEPOSIT'
                   ? 'bg-white text-gray-900 shadow-sm border border-gray-200/80'
                   : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'
               }`}
             >
-              Add Savings / Deposit
+              Add Savings
             </button>
           </div>
 
@@ -169,19 +201,27 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
                 <span>KSh {deductions.toLocaleString()}</span>
               </div>
               <div className="flex justify-between border-t border-gray-200 pt-2 font-extrabold text-sm">
-                <span className="text-gray-900">Net Salary Payable (Money Out):</span>
+                <span className="text-gray-900">Net Salary Payable:</span>
                 {(() => {
-                  const rounded = Math.round(netSalary * 100) / 100;
-                  if (rounded === 0 || Object.is(rounded, -0)) {
+                  if (netSalary === 0 || Object.is(netSalary, -0)) {
                     return <span className="text-gray-900 font-extrabold">KSh 0.00</span>;
                   }
-                  if (rounded < 0) {
-                    return <span className="text-red-600 font-extrabold">- KSh ${Math.abs(rounded).toLocaleString()}</span>;
+                  if (netSalary < 0) {
+                    return <span className="text-red-600 font-extrabold">- KSh {Math.abs(netSalary).toLocaleString()}</span>;
                   }
-                  return <span className="text-amber-700 font-extrabold">+ KSh ${rounded.toLocaleString()} (Owed)</span>;
+                  return <span className="text-amber-700 font-extrabold">+ KSh {netSalary.toLocaleString()} (Owed)</span>;
                 })()}
               </div>
             </div>
+
+            {activeTab === 'SETTLEMENT' && (
+              <div className="p-3 bg-emerald-50 text-emerald-900 text-xs rounded-xl border border-emerald-200/60 leading-relaxed">
+                <p className="font-semibold mb-0.5">Full Salary Settlement:</p>
+                <p className="text-[11px] text-emerald-800">
+                  Pays remaining net salary, settles all goods taken in this pay period, and starts a clean cycle.
+                </p>
+              </div>
+            )}
 
             {error && (
               <div className="p-3 bg-red-50 text-red-700 text-xs rounded-xl flex items-center gap-2 border border-red-100">
@@ -193,7 +233,7 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
             {/* Amount Field */}
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                {activeTab === 'PAYOUT' ? 'Payout Amount (KSH)' : 'Deposit Amount (KSH)'}
+                {activeTab === 'SETTLEMENT' ? 'Settlement Payout (KSH)' : (activeTab === 'ADVANCE' ? 'Advance Amount (KSH)' : 'Deposit Amount (KSH)')}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
@@ -202,16 +242,16 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
                 <input
                   type="number"
                   step="any"
-                  min="1"
+                  min="0"
                   required
                   value={amount}
                   onChange={(e) => {
                     const val = e.target.value === '' ? '' : Number(e.target.value);
                     setAmount(val);
                   }}
-                  placeholder={activeTab === 'PAYOUT' ? 'Enter salary payout amount' : 'Enter deposit amount'}
+                  placeholder={activeTab === 'SETTLEMENT' ? 'Enter settlement payout amount' : 'Enter amount'}
                   className="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-black focus:border-black text-sm font-semibold"
-                  disabled={isPending || isPolling}
+                  disabled={isPending}
                 />
               </div>
             </div>
@@ -229,7 +269,7 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
                 ]}
                 value={method}
                 onChange={(e) => setMethod(e.target.value as 'CASH' | 'MPESA')}
-                disabled={isPending || isPolling}
+                disabled={isPending}
               />
             </div>
 
@@ -247,7 +287,7 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
                     onChange={(e) => setMpesaReceiptNumber(e.target.value.toUpperCase())}
                     placeholder="e.g. QBH7894561"
                     className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg text-sm uppercase font-mono font-bold focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
-                    disabled={isPending || isPolling}
+                    disabled={isPending}
                   />
                 </div>
               </div>
@@ -262,9 +302,13 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder={activeTab === 'PAYOUT' ? 'e.g. End month salary balance payout' : 'e.g. Personal savings for safekeeping'}
+                placeholder={
+                  activeTab === 'SETTLEMENT' 
+                    ? 'e.g. End month salary settlement' 
+                    : (activeTab === 'ADVANCE' ? 'e.g. Mid-month salary advance' : 'e.g. Personal savings for safekeeping')
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black focus:border-black"
-                disabled={isPending || isPolling}
+                disabled={isPending}
               />
             </div>
 
@@ -273,19 +317,24 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
               <button
                 type="button"
                 onClick={handleClose}
-                disabled={isPending || isPolling}
+                disabled={isPending}
                 className="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm transition-colors cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={isPending || isPolling || !amount || amount <= 0}
+                disabled={isPending}
                 className={`flex-1 py-2.5 px-4 text-white font-bold rounded-xl text-sm transition-colors shadow-sm cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 ${
-                  activeTab === 'PAYOUT' ? 'bg-black hover:bg-neutral-800' : 'bg-blue-600 hover:bg-blue-700'
+                  activeTab === 'SETTLEMENT' 
+                    ? 'bg-emerald-600 hover:bg-emerald-700' 
+                    : (activeTab === 'ADVANCE' ? 'bg-black hover:bg-neutral-800' : 'bg-blue-600 hover:bg-blue-700')
                 }`}
               >
-                {isPending ? 'Processing...' : (activeTab === 'PAYOUT' ? 'Confirm Payout' : 'Confirm Deposit')}
+                {isPending 
+                  ? 'Processing...' 
+                  : (activeTab === 'SETTLEMENT' ? 'Settle & Close Cycle' : (activeTab === 'ADVANCE' ? 'Confirm Advance' : 'Confirm Deposit'))
+                }
               </button>
             </div>
           </form>
