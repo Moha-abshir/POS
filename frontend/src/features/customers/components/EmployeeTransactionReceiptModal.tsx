@@ -9,9 +9,9 @@ export interface EmployeeReceiptData {
   type: 'PAYOUT' | 'DEPOSIT';
   payment: any;
   customer: any;
-  previousBalance: number; // Previous Net Salary
+  previousBalance: number;
   amountPaid: number;
-  newBalance: number; // New Net Salary
+  newBalance: number;
 }
 
 interface EmployeeTransactionReceiptModalProps {
@@ -40,7 +40,7 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
   const cashierName = ((meData?.user?.firstName || '') + ' ' + (meData?.user?.lastName || '')).trim() || meData?.user?.name || meData?.user?.username || 'Cashier';
 
   const isDeposit = receiptData.type === 'DEPOSIT';
-  const title = isDeposit ? 'EMPLOYEE SAVINGS DEPOSIT' : 'EMPLOYEE SALARY PAYOUT';
+  const receiptTitle = isDeposit ? 'EMPLOYEE SAVINGS DEPOSIT' : 'EMPLOYEE SALARY PAYOUT';
 
   const receiptNo = receiptData.payment?.mpesaReceiptNumber 
     ? `EMP-${receiptData.payment.mpesaReceiptNumber}`
@@ -50,22 +50,22 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
     ? `EMP${receiptData.customer.nationalId}`
     : `EMP${(receiptData.customer?.id || '').slice(0, 6).toUpperCase()}`;
 
-  const transactionDate = receiptData.payment?.paidAt ? new Date(receiptData.payment.paidAt) : (receiptData.payment?.createdAt ? new Date(receiptData.payment.createdAt) : new Date());
+  const transactionDate = receiptData.payment?.paidAt 
+    ? new Date(receiptData.payment.paidAt) 
+    : (receiptData.payment?.createdAt ? new Date(receiptData.payment.createdAt) : new Date());
 
-  const formatNetSalary = (val: number) => {
-    if (val < 0) {
-      return `- KSh ${Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    } else if (val > 0) {
-      return `+ KSh ${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Owed to Store)`;
-    }
-    return `KSh 0.00`;
+  const formatNetVal = (val: number) => {
+    const num = Math.round(Number(val || 0) * 100) / 100;
+    if (num === 0 || Object.is(num, -0)) return 'KSh 0.00';
+    if (num < 0) return `- KSh ${Math.abs(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `+ KSh ${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Owed)`;
   };
 
   const generateEscPosData = (rData: EmployeeReceiptData, meData: any) => {
     const ESC = '\x1b';
     const GS = '\x1d';
     const LINE_WIDTH = 42;
-    const SEPARATOR = '-'.repeat(LINE_WIDTH) + '\n';
+    const SEPARATOR = '------------------------------------------\n';
     
     const alignRow = (label: string, value: string) => {
       const gap = Math.max(1, LINE_WIDTH - label.length - value.length);
@@ -96,9 +96,9 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
     }
 
     // ── Receipt Title ──
-    commands += ESC + 'a' + '\x01'; // Center
+    commands += ESC + 'a' + '\x01';
     commands += ESC + 'E' + '\x01';
-    commands += `${title}\n`;
+    commands += `${receiptTitle}\n`;
     commands += ESC + 'E' + '\x00';
     commands += SEPARATOR;
 
@@ -116,21 +116,21 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
     if (Number(rData.customer?.additionalSavings || 0) > 0 || isDeposit) {
       commands += alignRow('Personal Savings', Number(rData.customer?.additionalSavings || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
     }
-    commands += alignRow('Prev Net Salary', formatNetSalary(rData.previousBalance));
+    commands += alignRow('Prev Net Salary', formatNetVal(rData.previousBalance));
     commands += alignRow(isDeposit ? 'Deposit Amount' : 'Payout Amount', rData.amountPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-    commands += alignRow('Method', rData.payment?.method || 'CASH');
+    commands += alignRow('Payment Method', rData.payment?.method || 'CASH');
     if (rData.payment?.mpesaReceiptNumber) {
       commands += alignRow('M-Pesa Ref', rData.payment.mpesaReceiptNumber);
     }
     commands += ESC + 'E' + '\x01';
-    commands += alignRow('New Net Salary', formatNetSalary(rData.newBalance));
+    commands += alignRow('New Net Salary', formatNetVal(rData.newBalance));
     commands += ESC + 'E' + '\x00';
     commands += SEPARATOR;
 
     // ── Footer (Centered) ──
     commands += ESC + 'a' + '\x01';
-    commands += `Served by : ${cashierName}\n\n`;
-    commands += isDeposit ? `Savings acknowledged.\n` : `Salary payout confirmed.\n`;
+    commands += `You were served by : ${cashierName}\n\n`;
+    commands += isDeposit ? `Thank you! Savings safely recorded.\n` : `Salary payout confirmed.\n`;
 
     // ── Paper Feed & Cut ──
     commands += '\n\n\n\n';
@@ -149,6 +149,7 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
   };
 
   const handlePrint = async () => {
+    // 1. Try silent print via local print agent
     try {
       const agentCheck = await fetch('http://localhost:4000/status', { method: 'GET' });
       if (agentCheck.ok && receiptData) {
@@ -179,6 +180,7 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
       console.log('Local print agent offline, falling back to browser print dialog.');
     }
 
+    // 2. Fallback to standard browser print
     const printContent = document.getElementById('printable-employee-receipt');
     if (!printContent) return;
 
@@ -204,138 +206,223 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Print styles stylesheet */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          @page {
+            size: 80mm auto;
+            margin: 0;
+          }
+          html, body {
+            width: 80mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            color: black !important;
+          }
+          body > *:not(#temp-print-container) {
+            display: none !important;
+          }
+          body > #temp-print-container {
+            display: block !important;
+            position: relative !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 76mm !important;
+            background: white !important;
+            color: black !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            page-break-inside: avoid !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+          #printable-employee-receipt {
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 2mm !important;
+            display: block !important;
+            background: white !important;
+            color: black !important;
+            page-break-inside: avoid !important;
+          }
+          #printable-employee-receipt * {
+            color: black !important;
+            text-shadow: none !important;
+          }
+        }
+      `}} />
+
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Modal Container */}
+      <div className="relative w-full max-w-lg bg-[var(--color-bg-base)] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-[var(--color-border)] z-10">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/80 shrink-0">
-          <div className="flex items-center gap-2">
-            <div className={`w-8 h-8 rounded-lg ${isDeposit ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'} flex items-center justify-center`}>
-              <Receipt className="w-4 h-4" />
+        <div className="px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center bg-white z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-amber-100 text-amber-700 rounded-lg flex items-center justify-center">
+              <Receipt size={20} />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm">{title}</h3>
-              <p className="text-xs text-gray-500 font-mono">{receiptNo}</p>
+              <h2 className="text-base font-bold text-[var(--color-text-primary)]">Receipt Preview</h2>
+              <p className="text-xs text-[var(--color-text-muted)] font-mono">{receiptNo}</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Receipt Content Visualizer */}
-        <div className="p-6 overflow-y-auto font-mono text-xs text-gray-800 leading-relaxed bg-white">
-          <div id="printable-employee-receipt" className="p-4 bg-gray-50/50 rounded-xl border border-gray-100">
-            {/* Store branding */}
-            <div className="text-center pb-3 border-b border-dashed border-gray-300">
-              <h2 className="font-bold text-sm tracking-wide text-gray-900 uppercase">
-                {business.name || 'STORE RECEIPT'}
-              </h2>
-              {business.location && <p className="text-[11px] text-gray-500">{business.location}</p>}
-              {business.phone && <p className="text-[11px] text-gray-500">TEL: {business.phone}</p>}
-              {(business.tillNumber || business.mpesaShortcode) && (
-                <p className="text-[11px] font-semibold text-gray-600">
-                  BUY GOODS: {business.tillNumber || business.mpesaShortcode}
-                </p>
-              )}
-            </div>
-
-            {/* Receipt Type Title */}
-            <div className="py-2 text-center border-b border-dashed border-gray-300">
-              <span className={`font-bold text-[11px] tracking-wider uppercase ${isDeposit ? 'text-blue-700' : 'text-emerald-700'}`}>
-                {title}
-              </span>
-            </div>
-
-            {/* Transaction details */}
-            <div className="py-3 border-b border-dashed border-gray-300 space-y-1">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Receipt No:</span>
-                <span className="font-semibold">{receiptNo}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Employee ID:</span>
-                <span>{customerNo}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Employee:</span>
-                <span className="font-semibold">{receiptData.customer?.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Date:</span>
-                <span>{format(transactionDate, 'dd/MM/yyyy hh:mm a')}</span>
-              </div>
-            </div>
-
-            {/* Financial Breakdown */}
-            <div className="py-3 border-b border-dashed border-gray-300 space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Base Salary:</span>
-                <span>KSh {Number(receiptData.customer?.baseSalary || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
-              {(Number(receiptData.customer?.additionalSavings || 0) > 0 || isDeposit) && (
-                <div className="flex justify-between text-blue-700">
-                  <span>Personal Savings:</span>
-                  <span className="font-semibold">KSh {Number(receiptData.customer?.additionalSavings || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-gray-500">Prev Net Salary:</span>
-                <span className={receiptData.previousBalance < 0 ? 'text-red-600 font-bold' : 'text-gray-900 font-semibold'}>
-                  {formatNetSalary(receiptData.previousBalance)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-sm font-bold pt-1 border-t border-gray-200">
-                <span className="text-gray-900">{isDeposit ? 'Deposit Received:' : 'Payout Given:'}</span>
-                <span className={isDeposit ? 'text-blue-700' : 'text-emerald-700'}>
-                  KSh {receiptData.amountPaid.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-              <div className="flex justify-between text-[11px] text-gray-500">
-                <span>Payment Method:</span>
-                <span>{receiptData.payment?.method || 'CASH'}</span>
-              </div>
-              {receiptData.payment?.mpesaReceiptNumber && (
-                <div className="flex justify-between text-[11px] text-emerald-600 font-semibold">
-                  <span>M-Pesa Ref:</span>
-                  <span>{receiptData.payment.mpesaReceiptNumber}</span>
-                </div>
-              )}
-              <div className="flex justify-between items-center text-sm font-extrabold pt-2 border-t border-gray-300">
-                <span className="text-gray-900">New Net Salary:</span>
-                <span className={receiptData.newBalance < 0 ? 'text-red-600' : 'text-emerald-600'}>
-                  {formatNetSalary(receiptData.newBalance)}
-                </span>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="pt-3 text-center text-gray-500 space-y-1">
-              <p>Served by: <span className="font-semibold text-gray-700">{cashierName}</span></p>
-              <p className="text-[10px] text-gray-400 font-sans">
-                {isDeposit ? 'Personal savings held in safekeeping.' : 'Thank you for your service!'}
-              </p>
-            </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handlePrint}
+              className="p-2 text-gray-500 hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] rounded-md transition-colors cursor-pointer"
+              title="Print Receipt"
+            >
+              <Printer size={20} />
+            </button>
+            <div className="w-px h-6 bg-gray-200 mx-1"></div>
+            <button 
+              onClick={onClose}
+              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+            >
+              <X size={20} />
+            </button>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50 flex gap-3 shrink-0">
-          <button
-            onClick={handlePrint}
-            className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm transition-colors shadow-sm cursor-pointer"
-          >
-            <Printer className="w-4 h-4" />
-            Print Receipt
-          </button>
-          <button
-            onClick={onClose}
-            className="px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-xl text-sm transition-colors cursor-pointer"
-          >
-            Close
-          </button>
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto p-6 bg-gray-100/50 flex justify-center items-start">
+          <div id="print-root-wrapper" className="w-full">
+            {/* Receipt Roll Container */}
+            <div 
+              id="printable-employee-receipt" 
+              className="relative w-full max-w-[360px] mx-auto bg-white text-gray-900 shadow-lg border border-gray-200/60 flex flex-col"
+            >
+              {/* Receipt Inner Paper */}
+              <div className="px-6 py-6 font-mono text-xs leading-relaxed">
+                
+                {/* Store Header */}
+                {localStorage.getItem('receipt_headerless') !== 'true' && (
+                  <div className="text-center space-y-0.5 mb-4">
+                    <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-900">
+                      {business.name || 'STORE RECEIPT'}
+                    </h3>
+                    {business.sector && (
+                      <p className="text-[11px] text-gray-600 uppercase tracking-widest">{business.sector}</p>
+                    )}
+                    {business.email && (
+                      <p className="text-[11px] text-gray-600">{business.email}</p>
+                    )}
+                    {business.location && (
+                      <p className="text-[11px] text-gray-600">{business.location}</p>
+                    )}
+                    {business.phone && (
+                      <p className="text-[11px] text-gray-700 font-bold">TEL: {business.phone}</p>
+                    )}
+                    {(business.tillNumber || business.mpesaShortcode) && (
+                      <p className="text-[11px] font-extrabold text-gray-900">BUY GOODS : {business.tillNumber || business.mpesaShortcode}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Receipt Type */}
+                <div className="text-center my-3">
+                  <h4 className="text-xs font-extrabold tracking-widest text-gray-900 uppercase">
+                    {receiptTitle}
+                  </h4>
+                  <div className="text-gray-400 text-[10px]">------------------------------------------------</div>
+                </div>
+
+                {/* Receipt Metadata */}
+                <div className="space-y-1 text-[11px] text-gray-900 mb-3">
+                  <div className="flex justify-between">
+                    <span>Receipt No :</span>
+                    <span className="font-bold">{receiptNo}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Employee ID:</span>
+                    <span className="font-bold">{customerNo}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Employee   :</span>
+                    <span className="font-bold truncate max-w-[180px]">{(receiptData.customer?.name || '').toUpperCase()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Date       :</span>
+                    <span>{format(transactionDate, 'dd/MM/yyyy')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Time       :</span>
+                    <span>{format(transactionDate, 'hh:mm:ss a')}</span>
+                  </div>
+                </div>
+
+                <div className="text-gray-400 text-[10px]">------------------------------------------------</div>
+
+                {/* Financial Breakdown */}
+                <div className="space-y-1.5 text-[11px] font-medium text-gray-900 my-3">
+                  <div className="flex justify-between">
+                    <span>Base Salary :</span>
+                    <span>{Number(receiptData.customer?.baseSalary || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+
+                  {(Number(receiptData.customer?.additionalSavings || 0) > 0 || isDeposit) && (
+                    <div className="flex justify-between text-blue-700">
+                      <span>Personal Savings :</span>
+                      <span className="font-bold">{Number(receiptData.customer?.additionalSavings || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between">
+                    <span>Prev Net Salary :</span>
+                    <span className={receiptData.previousBalance < 0 ? 'text-red-600 font-bold' : 'text-gray-900'}>
+                      {formatNetVal(receiptData.previousBalance)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between font-bold text-gray-900 pt-1 border-t border-dashed border-gray-200">
+                    <span>{isDeposit ? 'Deposit Received :' : 'Payout Given :'}</span>
+                    <span className={isDeposit ? 'text-blue-700' : 'text-emerald-700'}>
+                      {receiptData.amountPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between text-gray-600 text-[10px]">
+                    <span>Payment Method :</span>
+                    <span className="font-bold">{receiptData.payment?.method || 'CASH'}</span>
+                  </div>
+
+                  {receiptData.payment?.mpesaReceiptNumber && (
+                    <div className="flex justify-between text-amber-800 text-[10px]">
+                      <span>M-Pesa Ref :</span>
+                      <span className="font-mono font-bold">{receiptData.payment.mpesaReceiptNumber}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between font-extrabold text-gray-950 pt-1.5 border-t border-dashed border-gray-300">
+                    <span>New Net Salary :</span>
+                    <span className={receiptData.newBalance < 0 ? 'text-red-600' : 'text-emerald-600'}>
+                      {formatNetVal(receiptData.newBalance)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-gray-400 text-[10px]">------------------------------------------------</div>
+
+                {/* Footer Information */}
+                <div className="text-center space-y-2 mt-4 text-[10px] text-gray-800">
+                  <p>You were served by : {cashierName}</p>
+                  <p className="font-semibold">{isDeposit ? 'Personal savings held in safekeeping.' : 'Thank you for your service!'}</p>
+                </div>
+
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

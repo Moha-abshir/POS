@@ -170,9 +170,16 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
               </div>
               <div className="flex justify-between border-t border-gray-200 pt-2 font-extrabold text-sm">
                 <span className="text-gray-900">Net Salary Payable (Money Out):</span>
-                <span className={netSalary < 0 ? 'text-red-600' : 'text-emerald-600'}>
-                  {netSalary < 0 ? `- KSh ${Math.abs(netSalary).toLocaleString()}` : `+ KSh ${netSalary.toLocaleString()} (Owed)`}
-                </span>
+                {(() => {
+                  const rounded = Math.round(netSalary * 100) / 100;
+                  if (rounded === 0 || Object.is(rounded, -0)) {
+                    return <span className="text-gray-900 font-extrabold">KSh 0.00</span>;
+                  }
+                  if (rounded < 0) {
+                    return <span className="text-red-600 font-extrabold">- KSh ${Math.abs(rounded).toLocaleString()}</span>;
+                  }
+                  return <span className="text-amber-700 font-extrabold">+ KSh ${rounded.toLocaleString()} (Owed)</span>;
+                })()}
               </div>
             </div>
 

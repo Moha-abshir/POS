@@ -126,9 +126,16 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                   </div>
                   <div className="flex justify-between border-t border-gray-200 pt-2 font-extrabold text-sm">
                     <span className="text-gray-900">Net Salary:</span>
-                    <span className={netSalaryOwed < 0 ? 'text-red-600' : 'text-emerald-600'}>
-                      {netSalaryOwed < 0 ? `- KSh ${Math.abs(netSalaryOwed).toLocaleString()}` : `+ KSh ${netSalaryOwed.toLocaleString()} (Owed)`}
-                    </span>
+                    {(() => {
+                      const rounded = Math.round(netSalaryOwed * 100) / 100;
+                      if (rounded === 0 || Object.is(rounded, -0)) {
+                        return <span className="text-gray-900 font-extrabold">KSh 0.00</span>;
+                      }
+                      if (rounded < 0) {
+                        return <span className="text-red-600 font-extrabold">- KSh {Math.abs(rounded).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>;
+                      }
+                      return <span className="text-amber-700 font-extrabold">+ KSh {rounded.toLocaleString(undefined, { minimumFractionDigits: 2 })} (Owed)</span>;
+                    })()}
                   </div>
                 </div>
               ) : (
