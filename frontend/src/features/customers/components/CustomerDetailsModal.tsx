@@ -32,8 +32,6 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
 
   const initials = customer.name.substring(0, 2).toUpperCase();
   const currentBalance = Number(customer.balance) || 0;
-  const baseSalaryNum = Number(customer.baseSalary) || 0;
-  const remainingNetSalary = baseSalaryNum - currentBalance;
 
   const handleExportCSV = () => {
     if (!purchases || purchases.length === 0) return;
@@ -118,28 +116,6 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                   </p>
                 );
               })()}
-
-              {/* Employee Salary Breakdown & Remaining Balance */}
-              {customer.type === 'EMPLOYEE' && baseSalaryNum > 0 && (
-                <div className="mt-2.5 w-full p-2.5 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-1.5 text-left">
-                  <div className="flex justify-between text-gray-600">
-                    <span>Base Salary:</span>
-                    <span className="font-semibold text-gray-900">KSh {baseSalaryNum.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-600">
-                    <span>Goods Taken / Debt:</span>
-                    <span className={`font-semibold ${currentBalance > 0 ? 'text-amber-700' : 'text-gray-900'}`}>
-                      KSh {currentBalance.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between font-bold pt-1.5 border-t border-gray-200 text-gray-900">
-                    <span>Remaining Balance:</span>
-                    <span className={remainingNetSalary >= 0 ? 'text-green-600' : 'text-red-600'}>
-                      KSh {remainingNetSalary.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              )}
 
               {currentBalance > 0 && customer.periodOwed && customer.type !== 'EMPLOYEE' && (
                 <span className="mt-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-medium border border-amber-200">
