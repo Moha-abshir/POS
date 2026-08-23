@@ -97,10 +97,17 @@ export const CustomerPaymentReceiptModal: React.FC<CustomerPaymentReceiptModalPr
     commands += SEPARATOR;
 
     // ── Breakdown Block ──
-    commands += alignRow('Previous Balance', paymentData.previousBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    const prevBalStr = paymentData.previousBalance < 0 
+      ? `- ${Math.abs(paymentData.previousBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : paymentData.previousBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const totalBalStr = paymentData.newBalance < 0 
+      ? `- ${Math.abs(paymentData.newBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : paymentData.newBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    commands += alignRow('Previous Balance', prevBalStr);
     commands += alignRow('Amount Paid', paymentData.amountPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
     commands += ESC + 'E' + '\x01';
-    commands += alignRow('New Total Balance', paymentData.newBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    commands += alignRow('New Total Balance', totalBalStr);
     commands += ESC + 'E' + '\x00';
     commands += SEPARATOR;
 
@@ -345,7 +352,11 @@ export const CustomerPaymentReceiptModal: React.FC<CustomerPaymentReceiptModalPr
                 <div className="space-y-1.5 text-[11px] font-medium text-gray-900 my-3">
                   <div className="flex justify-between">
                     <span>Previous Balance :</span>
-                    <span>{paymentData.previousBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className={paymentData.previousBalance < 0 ? 'text-red-600 font-semibold' : ''}>
+                      {paymentData.previousBalance < 0 
+                        ? `- ${Math.abs(paymentData.previousBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : paymentData.previousBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
                   </div>
 
                   <div className="flex justify-between">
@@ -355,7 +366,11 @@ export const CustomerPaymentReceiptModal: React.FC<CustomerPaymentReceiptModalPr
 
                   <div className="flex justify-between font-extrabold text-gray-950 pt-0.5 border-t border-dashed border-gray-300">
                     <span>New Total Balance :</span>
-                    <span>{paymentData.newBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className={paymentData.newBalance < 0 ? 'text-red-600 font-extrabold' : ''}>
+                      {paymentData.newBalance < 0 
+                        ? `- ${Math.abs(paymentData.newBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : paymentData.newBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
                   </div>
                 </div>
 
