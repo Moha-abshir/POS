@@ -9,6 +9,7 @@ export interface EmployeeReceiptData {
   type: 'SETTLEMENT' | 'PAYOUT' | 'DEPOSIT';
   payment: any;
   customer: any;
+  goodsTaken?: number;
   previousBalance: number;
   amountPaid: number;
   newBalance: number;
@@ -54,6 +55,10 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
   const transactionDate = receiptData.payment?.paidAt 
     ? new Date(receiptData.payment.paidAt) 
     : (receiptData.payment?.createdAt ? new Date(receiptData.payment.createdAt) : new Date());
+
+  const goodsTaken = receiptData.goodsTaken !== undefined 
+    ? Number(receiptData.goodsTaken) 
+    : Number(receiptData.customer?.balance || 0);
 
   const formatNetVal = (val: number) => {
     const num = Math.round(Number(val || 0) * 100) / 100;
@@ -116,8 +121,11 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
     if (Number(rData.customer?.additionalSavings || 0) > 0 || isDeposit) {
       commands += alignRow('Personal Savings', Number(rData.customer?.additionalSavings || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
     }
+    if (goodsTaken > 0 || isSettlement || !isDeposit) {
+      commands += alignRow('Goods Taken', goodsTaken.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    }
     commands += alignRow('Prev Net Salary', formatNetVal(rData.previousBalance));
-    commands += alignRow(isDeposit ? 'Deposit Amount' : 'Payout Amount', rData.amountPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    commands += alignRow(isSettlement ? 'Settlement Payout' : (isDeposit ? 'Deposit Received' : 'Payout Given'), rData.amountPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
     if (rData.payment?.mpesaReceiptNumber) {
       commands += alignRow('M-Pesa Ref', rData.payment.mpesaReceiptNumber);
     }
@@ -375,6 +383,13 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
                     </div>
                   )}
 
+                  {(goodsTaken > 0 || isSettlement || !isDeposit) && (
+                    <div className="flex justify-between text-gray-900">
+                      <span>Goods Taken :</span>
+                      <span className="font-bold">{goodsTaken.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between">
                     <span>Prev Net Salary :</span>
                     <span className="font-bold text-gray-900">
@@ -383,7 +398,7 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
                   </div>
 
                   <div className="flex justify-between font-bold text-gray-900 pt-1 border-t border-dashed border-gray-200">
-                    <span>{isDeposit ? 'Deposit Received :' : 'Payout Given :'}</span>
+                    <span>{isSettlement ? 'Settlement Payout :' : (isDeposit ? 'Deposit Received :' : 'Payout Given :')}</span>
                     <span className="font-bold text-gray-900">
                       {receiptData.amountPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>

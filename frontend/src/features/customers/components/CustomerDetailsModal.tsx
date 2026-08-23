@@ -412,15 +412,18 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                                   const amt = Number(payment.amount) || 0;
                                   if (customer?.type === 'EMPLOYEE') {
                                     const isDep = payment.referenceType === 'EMPLOYEE_DEPOSIT';
+                                    const isSet = payment.notes?.includes('Settlement') || payment.referenceType === 'EMPLOYEE_SALARY_SETTLEMENT';
                                     const bSal = Number(customer.baseSalary || 0);
                                     const aSav = Number(customer.additionalSavings || 0);
                                     const ded = Number(customer.balance || 0);
                                     const curNet = -( (bSal + aSav) - ded );
                                     const prevNet = isDep ? (curNet + amt) : (curNet - amt);
+                                    const goodsTaken = isDep ? ded : (isSet ? ded : Math.max(0, ded - amt));
                                     setSelectedEmployeeReceiptData({
-                                      type: isDep ? 'DEPOSIT' : 'PAYOUT',
+                                      type: isSet ? 'SETTLEMENT' : (isDep ? 'DEPOSIT' : 'PAYOUT'),
                                       payment,
                                       customer: customer,
+                                      goodsTaken,
                                       previousBalance: prevNet,
                                       amountPaid: amt,
                                       newBalance: curNet

@@ -479,7 +479,12 @@ export class CustomersService {
 
       return {
         payment,
-        customer: updatedCustomer,
+        customer: {
+          ...updatedCustomer,
+          balance: currentDeductions.toString(),
+          additionalSavings: additionalSavings.toString()
+        },
+        goodsTaken: currentDeductions,
         previousBalance: prevNetSalary,
         amountPaid: data.amount,
         newBalance: newNetSalary,
@@ -568,7 +573,12 @@ export class CustomersService {
           notes: data.notes || 'Full Salary Settlement & Pay Cycle Close',
           paidAt: settlementDate
         },
-        customer: updatedCustomer,
+        customer: {
+          ...updatedCustomer,
+          balance: currentDeductions.toString(),
+          additionalSavings: additionalSavings.toString()
+        },
+        goodsTaken: currentDeductions,
         previousBalance: prevNetSalary,
         amountPaid: data.amount,
         newBalance: 0,
@@ -626,7 +636,12 @@ export class CustomersService {
 
       return {
         payment,
-        customer: updatedCustomer,
+        customer: {
+          ...updatedCustomer,
+          balance: currentDeductions.toString(),
+          additionalSavings: newSavings.toString()
+        },
+        goodsTaken: currentDeductions,
         previousBalance: prevNetSalary,
         amountPaid: data.amount,
         newBalance: newNetSalary,
