@@ -412,21 +412,63 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                                   const amt = Number(payment.amount) || 0;
                                   if (customer?.type === 'EMPLOYEE') {
                                     const isDep = payment.referenceType === 'EMPLOYEE_DEPOSIT';
-                                    const isSet = payment.notes?.includes('Settlement') || payment.referenceType === 'EMPLOYEE_SALARY_SETTLEMENT';
+                                    const isSet = (payment.notes || '').toLowerCase().includes('settlement') || 
+                                                  (payment.notes || '').toLowerCase().includes('pay cycle close') ||
+                                                  payment.referenceType === 'EMPLOYEE_SALARY_SETTLEMENT';
                                     const bSal = Number(customer.baseSalary || 0);
                                     const aSav = Number(customer.additionalSavings || 0);
                                     const ded = Number(customer.balance || 0);
-                                    const curNet = -( (bSal + aSav) - ded );
-                                    const prevNet = isDep ? (curNet + amt) : (curNet - amt);
-                                    const goodsTaken = isDep ? ded : (isSet ? ded : Math.max(0, ded - amt));
+
+                                    let prevNet = 0;
+                                    let newNet = 0;
+                                    let goodsTaken = 0;
+                                    let receiptCustomer = { ...customer };
+
+                                    if (isSet) {
+                                      // On settlement, remaining balance carried over is in aSav
+                                      // Total settled entitlement was (amt + aSav)
+                                      const prevGross = amt + aSav;
+                                      prevNet = -( prevGross );
+                                      newNet = -( aSav );
+                                      goodsTaken = 0;
+                                      receiptCustomer = {
+                                        ...customer,
+                                        baseSalary: bSal.toString(),
+                                        additionalSavings: Math.max(0, prevGross - bSal).toString(),
+                                        balance: '0'
+                                      };
+                                    } else if (isDep) {
+                                      // On deposit, previous savings was (aSav - amt)
+                                      const prevSav = Math.max(0, aSav - amt);
+                                      prevNet = -( (bSal + prevSav) - ded );
+                                      newNet = -( (bSal + aSav) - ded );
+                                      goodsTaken = ded;
+                                      receiptCustomer = {
+                                        ...customer,
+                                        additionalSavings: aSav.toString(),
+                                        balance: ded.toString()
+                                      };
+                                    } else {
+                                      // On payout / advance, previous deductions was (ded - amt)
+                                      const prevDed = Math.max(0, ded - amt);
+                                      prevNet = -( (bSal + aSav) - prevDed );
+                                      newNet = -( (bSal + aSav) - ded );
+                                      goodsTaken = prevDed;
+                                      receiptCustomer = {
+                                        ...customer,
+                                        additionalSavings: aSav.toString(),
+                                        balance: prevDed.toString()
+                                      };
+                                    }
+
                                     setSelectedEmployeeReceiptData({
                                       type: isSet ? 'SETTLEMENT' : (isDep ? 'DEPOSIT' : 'PAYOUT'),
                                       payment,
-                                      customer: customer,
+                                      customer: receiptCustomer,
                                       goodsTaken,
                                       previousBalance: prevNet,
                                       amountPaid: amt,
-                                      newBalance: curNet
+                                      newBalance: newNet
                                     });
                                   } else {
                                     const currentBal = Number(customer?.balance) || 0;

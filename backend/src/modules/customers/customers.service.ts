@@ -585,7 +585,7 @@ export class CustomersService {
 
       await this.invalidateCustomerCache(businessId);
 
-      const newNetSalary = -( (Number(updatedCustomer.baseSalary || 0) + newAdditionalSavings) - newDeductions );
+      const newNetSalary = -( newAdditionalSavings - newDeductions );
 
       return {
         payment: payment || {
