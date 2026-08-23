@@ -101,39 +101,17 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
               
               {/* Balance Display */}
               {(() => {
-                if (currentBalance > 0) {
-                  return (
-                    <div className="mt-1 text-center">
-                      <p className="text-xl font-bold text-[#D97706]">
-                        Balance: KSH {currentBalance.toLocaleString()}
-                      </p>
-                      <span className="inline-block mt-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                        Owing / Debt
-                      </span>
-                    </div>
-                  );
-                }
                 if (currentBalance < 0) {
                   return (
-                    <div className="mt-1 text-center">
-                      <p className="text-xl font-bold text-green-600">
-                        Balance: - KSH {Math.abs(currentBalance).toLocaleString()}
-                      </p>
-                      <span className="inline-block mt-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
-                        Store Credit / Savings
-                      </span>
-                    </div>
+                    <p className="mt-1.5 text-lg sm:text-xl font-bold text-red-600">
+                      Balance: - KSH {Math.abs(currentBalance).toLocaleString()}
+                    </p>
                   );
                 }
                 return (
-                  <div className="mt-1 text-center">
-                    <p className="text-xl font-bold text-gray-800">
-                      Balance: KSH 0.00
-                    </p>
-                    <span className="inline-block mt-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
-                      Settled
-                    </span>
-                  </div>
+                  <p className="mt-1.5 text-lg sm:text-xl font-bold text-green-600">
+                    Balance: KSH {currentBalance.toLocaleString()}
+                  </p>
                 );
               })()}
 

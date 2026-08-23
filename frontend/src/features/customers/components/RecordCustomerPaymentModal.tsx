@@ -352,30 +352,14 @@ export function RecordCustomerPaymentModal({ customer, onClose }: RecordCustomer
 
           {(() => {
             const currentBal = Number(customer.balance) || 0;
-            const numericAmount = typeof amount === 'number' ? amount : 0;
-            const projectedBalance = currentBal - numericAmount;
             return (
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500 font-medium">
-                    {currentBal > 0 ? 'Outstanding Debt:' : (currentBal < 0 ? 'Store Credit / Savings:' : 'Current Balance:')}
-                  </span>
-                  <span className={`text-base font-bold ${currentBal > 0 ? 'text-[#D97706]' : (currentBal < 0 ? 'text-green-600' : 'text-gray-800')}`}>
-                    {currentBal > 0 
-                      ? `KSH ${currentBal.toLocaleString()}` 
-                      : (currentBal < 0 ? `- KSH ${Math.abs(currentBal).toLocaleString()} (Credit)` : 'KSH 0.00')}
-                  </span>
-                </div>
-                {numericAmount > 0 && (
-                  <div className="pt-2 border-t border-gray-200 flex justify-between items-center text-xs font-semibold">
-                    <span className="text-gray-500">New Balance after payment:</span>
-                    <span className={projectedBalance > 0 ? 'text-amber-700' : (projectedBalance < 0 ? 'text-green-700 font-bold' : 'text-gray-800 font-bold')}>
-                      {projectedBalance > 0 
-                        ? `KSH ${projectedBalance.toLocaleString()} (Remaining Debt)` 
-                        : (projectedBalance < 0 ? `- KSH ${Math.abs(projectedBalance).toLocaleString()} (Store Credit / Advance)` : 'KSH 0.00 (Fully Settled)')}
-                    </span>
-                  </div>
-                )}
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex justify-between items-center">
+                <span className="text-sm text-gray-500">
+                  {currentBal > 0 ? 'Outstanding Debt:' : 'Current Balance:'}
+                </span>
+                <span className={`text-lg font-bold ${currentBal < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {currentBal < 0 ? `- KSH ${Math.abs(currentBal).toLocaleString()}` : `KSH ${currentBal.toLocaleString()}`}
+                </span>
               </div>
             );
           })()}
