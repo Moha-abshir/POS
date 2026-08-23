@@ -260,12 +260,8 @@ export class CustomersService {
       }
 
       const balanceNum = Number(customer.balance);
-      if (balanceNum < data.amount) {
-        throw new AppError(`Payment amount (${data.amount}) exceeds outstanding balance (${customer.balance})`, 400);
-      }
-
       const newBalance = balanceNum - data.amount;
-      const paymentStatusStr = data.amount === balanceNum ? 'completed' : 'partial';
+      const paymentStatusStr = newBalance <= 0 ? 'completed' : 'partial';
 
       // 2. Decrease balance
       const [updatedCustomer] = await tx.update(customers)
@@ -365,8 +361,8 @@ export class CustomersService {
     }
 
     const balanceNum = Number(customer.balance);
-    const newBalance = Math.max(0, balanceNum - amount);
-    const paymentStatusStr = amount === balanceNum ? 'completed' : 'partial';
+    const newBalance = balanceNum - amount;
+    const paymentStatusStr = newBalance <= 0 ? 'completed' : 'partial';
 
     // 2. Decrease customer balance
     await tx.update(customers)
@@ -782,63 +778,6 @@ export class CustomersService {
 
       const payAmount = Number(payment.amount);
 
-      if (payment.referenceType === 'EMPLOYEE_DEPOSIT') {
-        const currentSavings = Number(customer.additionalSavings || 0);
-        const restoredSavings = Math.max(0, currentSavings - payAmount);
-        const [updatedCustomer] = await tx.update(customers)
-          .set({
-            additionalSavings: restoredSavings.toString(),
-            updatedAt: new Date()
-          })
-          .where(eq(customers.id, customerId))
-          .returning();
-
-        await tx.update(payments)
-          .set({
-            status: 'FAILED',
-            notes: `Reversed by user: ${payment.notes || ''}`.trim()
-          })
-          .where(eq(payments.id, paymentId));
-
-        await this.invalidateCustomerCache(businessId);
-        return {
-          payment,
-          customer: updatedCustomer,
-          previousBalance: currentSavings,
-          reversedAmount: payAmount,
-          newBalance: restoredSavings
-        };
-      }
-
-      if (payment.referenceType === 'EMPLOYEE_SALARY') {
-        const currentBal = Number(customer.balance || 0);
-        const restoredBalance = Math.max(0, currentBal - payAmount);
-        const [updatedCustomer] = await tx.update(customers)
-          .set({
-            balance: restoredBalance.toString(),
-            hasActiveCredit: restoredBalance > 0,
-            updatedAt: new Date()
-          })
-          .where(eq(customers.id, customerId))
-          .returning();
-
-        await tx.update(payments)
-          .set({
-            status: 'FAILED',
-            notes: `Reversed by user: ${payment.notes || ''}`.trim()
-          })
-          .where(eq(payments.id, paymentId));
-
-        await this.invalidateCustomerCache(businessId);
-        return {
-          payment,
-          customer: updatedCustomer,
-          previousBalance: currentBal,
-          reversedAmount: payAmount,
-          newBalance: restoredBalance
-        };
-      }
-
       const currentBal = Number(customer.balance);
       const restoredBalance = currentBal + payAmount;
 
@@ -846,7 +785,7 @@ export class CustomersService {
       const [updatedCustomer] = await tx.update(customers)
         .set({
           balance: restoredBalance.toString(),
-          hasActiveCredit: true,
+          hasActiveCredit: restoredBalance > 0,
           updatedAt: new Date()
         })
         .where(eq(customers.id, customerId))

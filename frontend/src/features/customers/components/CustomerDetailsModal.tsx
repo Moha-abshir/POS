@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { X, UserCircle, Phone, MapPin, Receipt, Calendar, Download, DollarSign, CreditCard, RotateCcw, AlertTriangle, HandCoins, PiggyBank } from 'lucide-react';
+import { X, UserCircle, Phone, MapPin, Receipt, Calendar, Download, DollarSign, CreditCard, RotateCcw, AlertTriangle } from 'lucide-react';
 import { type Customer, useCustomerPurchases, useCustomerPayments, useReverseCustomerPayment } from '../api/customers.api';
 import { format } from 'date-fns';
 import { LoadingSpinner } from '../../../components/ui/Loading';
 import { RecordCustomerPaymentModal } from './RecordCustomerPaymentModal';
-import { EmployeeFinancialModal } from './EmployeeFinancialModal';
-import { EmployeeTransactionReceiptModal, type EmployeeReceiptData } from './EmployeeTransactionReceiptModal';
 import { ReceiptModal } from '../../sales/components/ReceiptModal';
 import { CustomerPaymentReceiptModal } from './CustomerPaymentReceiptModal';
 import toast from 'react-hot-toast';
@@ -17,17 +15,12 @@ interface CustomerDetailsModalProps {
   onRecordPayment: (customer: Customer) => void;
 }
 
-export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOpen, onClose, customer, onRecordPayment }) => {
+export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOpen, onClose, customer }) => {
   const [activeTab, setActiveTab] = useState<'purchases' | 'payments'>('purchases');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
   const [receiptSaleId, setReceiptSaleId] = useState<string | null>(null);
-  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
   const [selectedPaymentData, setSelectedPaymentData] = useState<any>(null);
-  const [selectedEmployeeReceiptData, setSelectedEmployeeReceiptData] = useState<EmployeeReceiptData | null>(null);
   const [paymentToReverse, setPaymentToReverse] = useState<any | null>(null);
-
-  const [showAllPurchases, setShowAllPurchases] = useState(false);
 
   const { data: purchases, isLoading: isPurchasesLoading } = useCustomerPurchases(customer?.id);
   const { data: paymentsList, isLoading: isPaymentsLoading } = useCustomerPayments(customer?.id);
@@ -36,18 +29,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
   if (!isOpen || !customer) return null;
 
   const initials = customer.name.substring(0, 2).toUpperCase();
-
-  const baseSalary = Number(customer.baseSalary || 0);
-  const additionalSavings = Number(customer.additionalSavings || 0);
-  const totalDeductions = Number(customer.balance || 0);
-  const netSalaryOwed = -( (baseSalary + additionalSavings) - totalDeductions );
-
-  const filteredPurchases = (purchases || []).filter((p: any) => {
-    if (customer.type === 'EMPLOYEE' && !showAllPurchases) {
-      return !p.isPriorCycle;
-    }
-    return true;
-  });
+  const currentBalance = Number(customer.balance) || 0;
 
   const handleExportCSV = () => {
     if (!purchases || purchases.length === 0) return;
@@ -105,77 +87,70 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
         <div className="p-6 overflow-y-auto flex-1 flex flex-col md:flex-row gap-6">
           
           {/* Left Column: Details */}
-          <div className="w-full md:w-1/3 space-y-6 shrink-0">
+          <div className="w-full md:w-1/3 space-y-5 shrink-0">
             <div className="flex flex-col items-center text-center">
-              <div className="w-20 h-20 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-2xl font-bold mb-3">
+              <div className="w-20 h-20 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-2xl font-bold mb-2">
                 {initials}
               </div>
               {customer.type === 'EMPLOYEE' && (
-                <span className="mt-1 px-2.5 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-extrabold rounded-full uppercase tracking-wider border border-purple-200">
+                <span className="mb-1 px-2.5 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-extrabold rounded-full uppercase tracking-wider border border-purple-200">
                   Employee
                 </span>
               )}
-              <h3 className="text-lg font-semibold text-gray-900 mt-1">{customer.name}</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{customer.name}</h3>
               
-              {customer.type === 'EMPLOYEE' ? (
-                <div className="w-full mt-3 p-4 bg-gray-50 border border-gray-200/90 rounded-2xl text-left space-y-2.5 text-xs">
-                  <div className="flex justify-between text-gray-600">
-                    <span>Base Salary:</span>
-                    <span className="font-semibold text-gray-900">KSh {baseSalary.toLocaleString()}</span>
-                  </div>
-                  {additionalSavings > 0 && (
-                    <div className="flex justify-between text-blue-700 font-medium">
-                      <span>Personal Savings:</span>
-                      <span>KSh {additionalSavings.toLocaleString()}</span>
+              {/* Balance Display */}
+              {(() => {
+                if (currentBalance > 0) {
+                  return (
+                    <div className="mt-1 text-center">
+                      <p className="text-xl font-bold text-[#D97706]">
+                        Balance: KSH {currentBalance.toLocaleString()}
+                      </p>
+                      <span className="inline-block mt-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                        Owing / Debt
+                      </span>
                     </div>
-                  )}
-                  <div className="flex justify-between text-amber-700 font-medium">
-                    <span>Goods Taken:</span>
-                    <span>KSh {totalDeductions.toLocaleString()}</span>
+                  );
+                }
+                if (currentBalance < 0) {
+                  return (
+                    <div className="mt-1 text-center">
+                      <p className="text-xl font-bold text-green-600">
+                        Balance: - KSH {Math.abs(currentBalance).toLocaleString()}
+                      </p>
+                      <span className="inline-block mt-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
+                        Store Credit / Savings
+                      </span>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="mt-1 text-center">
+                    <p className="text-xl font-bold text-gray-800">
+                      Balance: KSH 0.00
+                    </p>
+                    <span className="inline-block mt-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                      Settled
+                    </span>
                   </div>
-                  <div className="flex justify-between border-t border-gray-200 pt-2 font-extrabold text-sm">
-                    <span className="text-gray-900">Net Salary:</span>
-                    {(() => {
-                      const rounded = Math.round(netSalaryOwed * 100) / 100;
-                      if (rounded === 0 || Object.is(rounded, -0)) {
-                        return <span className="text-gray-900 font-extrabold">KSh 0.00</span>;
-                      }
-                      if (rounded < 0) {
-                        return <span className="text-red-600 font-extrabold">- KSh {Math.abs(rounded).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>;
-                      }
-                      return <span className="text-amber-700 font-extrabold">+ KSh {rounded.toLocaleString(undefined, { minimumFractionDigits: 2 })} (Owed)</span>;
-                    })()}
-                  </div>
-                </div>
-              ) : (
-                <p className={`mt-1.5 text-lg sm:text-xl font-bold ${Number(customer.balance) > 0 ? 'text-[#D97706]' : 'text-green-600'}`}>
-                  Balance: KSH {Number(customer.balance).toLocaleString()}
-                </p>
-              )}
+                );
+              })()}
 
-              {Number(customer.balance) > 0 && customer.periodOwed && customer.type !== 'EMPLOYEE' && (
+              {currentBalance > 0 && customer.periodOwed && customer.type !== 'EMPLOYEE' && (
                 <span className="mt-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-medium border border-amber-200">
                   Period Owed: {customer.periodOwed}
                 </span>
               )}
 
-              {customer.type === 'EMPLOYEE' ? (
-                <button
-                  onClick={() => setIsEmployeeModalOpen(true)}
-                  className="mt-3 w-full flex items-center justify-center gap-2 bg-black hover:bg-neutral-800 text-white text-xs font-bold py-2.5 px-3 rounded-xl transition-colors shadow-sm cursor-pointer"
-                >
-                  <HandCoins className="w-4 h-4 text-emerald-400" />
-                  Employee Payout & Savings
-                </button>
-              ) : Number(customer.balance) > 0 ? (
-                <button
-                  onClick={() => setIsPaymentModalOpen(true)}
-                  className="mt-3 w-full flex items-center justify-center gap-2 bg-black hover:bg-neutral-800 text-white text-xs font-bold py-2.5 px-3 rounded-xl transition-colors shadow-sm cursor-pointer"
-                >
-                  <DollarSign className="w-4 h-4 text-emerald-400" />
-                  Record Payment
-                </button>
-              ) : null}
+              {/* Record Payment Button - ALWAYS VISIBLE */}
+              <button
+                onClick={() => setIsPaymentModalOpen(true)}
+                className="mt-3 w-full flex items-center justify-center gap-2 bg-black hover:bg-neutral-800 text-white text-xs font-bold py-2.5 px-3 rounded-xl transition-colors shadow-sm cursor-pointer"
+              >
+                <DollarSign className="w-4 h-4 text-emerald-400" />
+                Record Payment
+              </button>
             </div>
 
             <div className="space-y-3 pt-4 border-t border-gray-100">
@@ -247,7 +222,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                       <Receipt className="w-4 h-4 text-gray-400" />
-                      {customer.type === 'EMPLOYEE' ? (showAllPurchases ? 'All Purchases History' : 'Current Cycle Purchases') : 'Recent Purchases'}
+                      Recent Purchases
                     </h4>
                     {purchases && purchases.length > 0 && (
                       <button
@@ -261,36 +236,13 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                     )}
                   </div>
 
-                  {customer.type === 'EMPLOYEE' && (
-                    <div className="flex items-center gap-1 mb-3 bg-gray-100 p-1 rounded-xl text-xs font-bold">
-                      <button
-                        type="button"
-                        onClick={() => setShowAllPurchases(false)}
-                        className={`flex-1 py-1.5 px-2.5 rounded-lg transition-all cursor-pointer text-center ${
-                          !showAllPurchases ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-900'
-                        }`}
-                      >
-                        Current Cycle
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowAllPurchases(true)}
-                        className={`flex-1 py-1.5 px-2.5 rounded-lg transition-all cursor-pointer text-center ${
-                          showAllPurchases ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-900'
-                        }`}
-                      >
-                        All Historical Purchases ({purchases?.length || 0})
-                      </button>
-                    </div>
-                  )}
-
                   {isPurchasesLoading ? (
                     <div className="flex justify-center py-8">
                       <LoadingSpinner size="sm" />
                     </div>
-                  ) : filteredPurchases.length > 0 ? (
+                  ) : purchases && purchases.length > 0 ? (
                     <div className="space-y-3">
-                      {filteredPurchases.map((purchase: any) => {
+                      {purchases.map((purchase: any) => {
                         const refundsTotal = (purchase.refunds || []).reduce((sum: number, r: any) => sum + Number(r.totalAmount), 0);
                         const netTotal = Math.max(0, Number(purchase.totalAmount) - refundsTotal);
                         const netDebt = Math.max(0, netTotal - Number(purchase.amountPaid));
@@ -299,21 +251,12 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                           <div 
                             key={purchase.id} 
                             onClick={() => setReceiptSaleId(purchase.id)}
-                            className={`p-3 border rounded-xl transition-colors cursor-pointer ${
-                              purchase.isPriorCycle ? 'border-gray-100 bg-gray-50/50 opacity-80' : 'border-gray-200/90 hover:bg-gray-50 bg-white'
-                            }`}
+                            className="p-3 border rounded-xl transition-colors cursor-pointer border-gray-200/90 hover:bg-gray-50 bg-white"
                           >
                             <div className="flex justify-between items-start mb-1">
-                              <div className="flex flex-col">
-                                <span className="text-sm font-medium text-gray-900">
-                                  {format(new Date(purchase.createdAt), 'MMM d, yyyy - h:mm a')}
-                                </span>
-                                {purchase.isPriorCycle && (
-                                  <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">
-                                    Settled in prior cycle
-                                  </span>
-                                )}
-                              </div>
+                              <span className="text-sm font-medium text-gray-900">
+                                {format(new Date(purchase.createdAt), 'MMM d, yyyy - h:mm a')}
+                              </span>
                               <div className="text-right">
                                 <span className="text-sm font-semibold text-gray-900">
                                   Total: KSH {netTotal.toLocaleString()}
@@ -349,19 +292,8 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                     <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
                       <Receipt className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                       <p className="text-sm text-gray-500">
-                        {customer.type === 'EMPLOYEE' && !showAllPurchases 
-                          ? 'No purchases taken in the current pay cycle.' 
-                          : 'No purchases found for this customer.'}
+                        No purchases found for this customer.
                       </p>
-                      {customer.type === 'EMPLOYEE' && !showAllPurchases && purchases && purchases.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setShowAllPurchases(true)}
-                          className="mt-2 text-xs font-bold text-amber-600 hover:underline cursor-pointer"
-                        >
-                          View {purchases.length} previous cycle purchase{purchases.length > 1 ? 's' : ''}
-                        </button>
-                      )}
                     </div>
                   )}
                 </div>
@@ -370,7 +302,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-gray-400" />
-                      Debt Payments
+                      Payment History
                     </h4>
                   </div>
 
@@ -410,95 +342,26 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                               <button
                                 onClick={() => {
                                   const amt = Number(payment.amount) || 0;
-                                  if (customer?.type === 'EMPLOYEE') {
-                                    const isDep = payment.referenceType === 'EMPLOYEE_DEPOSIT';
-                                    const isSet = (payment.notes || '').toLowerCase().includes('settlement') || 
-                                                  (payment.notes || '').toLowerCase().includes('pay cycle close') ||
-                                                  payment.referenceType === 'EMPLOYEE_SALARY_SETTLEMENT';
-                                    const bSal = Number(customer.baseSalary || 0);
-                                    const aSav = Number(customer.additionalSavings || 0);
-                                    const ded = Number(customer.balance || 0);
-
-                                    let prevNet = 0;
-                                    let newNet = 0;
-                                    let goodsTaken = 0;
-                                    let receiptCustomer = { ...customer };
-
-                                    if (isSet) {
-                                      // On settlement, remaining balance carried over is in aSav
-                                      // Total settled entitlement was (amt + aSav)
-                                      const prevGross = amt + aSav;
-                                      prevNet = -( prevGross );
-                                      newNet = -( aSav );
-                                      goodsTaken = 0;
-                                      receiptCustomer = {
-                                        ...customer,
-                                        baseSalary: bSal.toString(),
-                                        additionalSavings: Math.max(0, prevGross - bSal).toString(),
-                                        balance: '0'
-                                      };
-                                    } else if (isDep) {
-                                      // On deposit, previous savings was (aSav - amt)
-                                      const prevSav = Math.max(0, aSav - amt);
-                                      prevNet = -( (bSal + prevSav) - ded );
-                                      newNet = -( (bSal + aSav) - ded );
-                                      goodsTaken = ded;
-                                      receiptCustomer = {
-                                        ...customer,
-                                        additionalSavings: aSav.toString(),
-                                        balance: ded.toString()
-                                      };
-                                    } else {
-                                      // On payout / advance, previous deductions was (ded - amt)
-                                      const prevDed = Math.max(0, ded - amt);
-                                      prevNet = -( (bSal + aSav) - prevDed );
-                                      newNet = -( (bSal + aSav) - ded );
-                                      goodsTaken = prevDed;
-                                      receiptCustomer = {
-                                        ...customer,
-                                        additionalSavings: aSav.toString(),
-                                        balance: prevDed.toString()
-                                      };
-                                    }
-
-                                    setSelectedEmployeeReceiptData({
-                                      type: isSet ? 'SETTLEMENT' : (isDep ? 'DEPOSIT' : 'PAYOUT'),
-                                      payment,
-                                      customer: receiptCustomer,
-                                      goodsTaken,
-                                      previousBalance: prevNet,
-                                      amountPaid: amt,
-                                      newBalance: newNet
-                                    });
-                                  } else {
-                                    const currentBal = Number(customer?.balance) || 0;
-                                    setSelectedPaymentData({
-                                      payment,
-                                      customer: customer || {},
-                                      previousBalance: currentBal + amt,
-                                      amountPaid: amt,
-                                      newBalance: currentBal
-                                    });
-                                  }
+                                  const currentBal = Number(customer?.balance) || 0;
+                                  setSelectedPaymentData({
+                                    payment,
+                                    customer: customer || {},
+                                    previousBalance: currentBal + amt,
+                                    amountPaid: amt,
+                                    newBalance: currentBal
+                                  });
                                 }}
                                 className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded text-[10px] transition-colors flex items-center gap-1 cursor-pointer"
                               >
                                 Receipt
                               </button>
-                              {(() => {
-                                const isSettlement = (payment.notes || '').toLowerCase().includes('settlement') || 
-                                                     (payment.notes || '').toLowerCase().includes('pay cycle close');
-                                if (isSettlement) return null;
-                                return (
-                                  <button
-                                    onClick={() => setPaymentToReverse(payment)}
-                                    className="px-2 py-0.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded text-[10px] transition-colors flex items-center gap-1 cursor-pointer border border-red-200"
-                                  >
-                                    <RotateCcw className="w-3 h-3" />
-                                    Reverse
-                                  </button>
-                                );
-                              })()}
+                              <button
+                                onClick={() => setPaymentToReverse(payment)}
+                                className="px-2 py-0.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded text-[10px] transition-colors flex items-center gap-1 cursor-pointer border border-red-200"
+                              >
+                                <RotateCcw className="w-3 h-3" />
+                                Reverse
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -536,25 +399,10 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
         />
       )}
 
-      {isEmployeeModalOpen && (
-        <EmployeeFinancialModal
-          customer={customer!}
-          onClose={() => setIsEmployeeModalOpen(false)}
-        />
-      )}
-
       {receiptSaleId && (
         <ReceiptModal
           saleId={receiptSaleId}
           onClose={() => setReceiptSaleId(null)}
-        />
-      )}
-
-      {selectedEmployeeReceiptData && (
-        <EmployeeTransactionReceiptModal
-          isOpen={!!selectedEmployeeReceiptData}
-          onClose={() => setSelectedEmployeeReceiptData(null)}
-          receiptData={selectedEmployeeReceiptData}
         />
       )}
 
@@ -574,12 +422,8 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-gray-900">
-                  {paymentToReverse.referenceType === 'EMPLOYEE_DEPOSIT' 
-                    ? 'Reverse Savings Deposit?' 
-                    : (paymentToReverse.referenceType === 'EMPLOYEE_SALARY' ? 'Reverse Salary Advance?' : 'Reverse Debt Payment?')}
-                </h3>
-                <p className="text-xs text-gray-500 mt-0.5">This action will void this payment and restore the financial balance.</p>
+                <h3 className="text-base font-bold text-gray-900">Reverse Payment?</h3>
+                <p className="text-xs text-gray-500 mt-0.5">This action will void this payment and restore the customer's balance.</p>
               </div>
             </div>
 
@@ -592,45 +436,12 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                 <span>Payment Amount:</span>
                 <span className="font-bold text-red-600">KSh {Number(paymentToReverse.amount).toLocaleString()} ({paymentToReverse.method})</span>
               </div>
-              
-              {paymentToReverse.referenceType === 'EMPLOYEE_DEPOSIT' ? (
-                <>
-                  <div className="border-t border-amber-200/60 pt-2 flex justify-between font-bold text-gray-900">
-                    <span>Restored Savings:</span>
-                    <span className="text-amber-800">
-                      KSh {additionalSavings.toLocaleString()} - KSh {Number(paymentToReverse.amount).toLocaleString()} = KSh {Math.max(0, additionalSavings - Number(paymentToReverse.amount)).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between font-bold text-gray-900">
-                    <span>Restored Net Salary:</span>
-                    <span className="text-amber-800">
-                      KSh {((baseSalary + Math.max(0, additionalSavings - Number(paymentToReverse.amount))) - totalDeductions).toLocaleString()}
-                    </span>
-                  </div>
-                </>
-              ) : paymentToReverse.referenceType === 'EMPLOYEE_SALARY' ? (
-                <>
-                  <div className="border-t border-amber-200/60 pt-2 flex justify-between font-bold text-gray-900">
-                    <span>Restored Deductions:</span>
-                    <span className="text-amber-800">
-                      KSh {totalDeductions.toLocaleString()} - KSh {Number(paymentToReverse.amount).toLocaleString()} = KSh {Math.max(0, totalDeductions - Number(paymentToReverse.amount)).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between font-bold text-gray-900">
-                    <span>Restored Net Salary:</span>
-                    <span className="text-amber-800">
-                      KSh {((baseSalary + additionalSavings) - Math.max(0, totalDeductions - Number(paymentToReverse.amount))).toLocaleString()}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <div className="border-t border-amber-200/60 pt-2 flex justify-between font-bold text-gray-900">
-                  <span>Restored Balance:</span>
-                  <span className="text-amber-800">
-                    KSh {Number(customer.balance).toLocaleString()} + KSh {Number(paymentToReverse.amount).toLocaleString()} = KSh {(Number(customer.balance) + Number(paymentToReverse.amount)).toLocaleString()}
-                  </span>
-                </div>
-              )}
+              <div className="border-t border-amber-200/60 pt-2 flex justify-between font-bold text-gray-900">
+                <span>Restored Balance:</span>
+                <span className="text-amber-800">
+                  KSh {Number(customer.balance).toLocaleString()} + KSh {Number(paymentToReverse.amount).toLocaleString()} = KSh {(Number(customer.balance) + Number(paymentToReverse.amount)).toLocaleString()}
+                </span>
+              </div>
             </div>
 
             <div className="flex gap-3 justify-end pt-2">

@@ -139,11 +139,6 @@ export function RecordCustomerPaymentModal({ customer, onClose }: RecordCustomer
       return;
     }
 
-    if (amount > Number(customer.balance)) {
-      setError(`Amount cannot exceed the outstanding debt of KSH ${Number(customer.balance).toLocaleString()}`);
-      return;
-    }
-
     if (method === 'MPESA') {
       if (isStkPush) {
         if (!mpesaPhoneNumber.trim()) {
@@ -355,10 +350,35 @@ export function RecordCustomerPaymentModal({ customer, onClose }: RecordCustomer
             </div>
           )}
 
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex justify-between items-center">
-            <span className="text-sm text-gray-500">Outstanding Debt:</span>
-            <span className="text-lg font-bold text-[#D97706]">KSH {Number(customer.balance).toLocaleString()}</span>
-          </div>
+          {(() => {
+            const currentBal = Number(customer.balance) || 0;
+            const numericAmount = typeof amount === 'number' ? amount : 0;
+            const projectedBalance = currentBal - numericAmount;
+            return (
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-500 font-medium">
+                    {currentBal > 0 ? 'Outstanding Debt:' : (currentBal < 0 ? 'Store Credit / Savings:' : 'Current Balance:')}
+                  </span>
+                  <span className={`text-base font-bold ${currentBal > 0 ? 'text-[#D97706]' : (currentBal < 0 ? 'text-green-600' : 'text-gray-800')}`}>
+                    {currentBal > 0 
+                      ? `KSH ${currentBal.toLocaleString()}` 
+                      : (currentBal < 0 ? `- KSH ${Math.abs(currentBal).toLocaleString()} (Credit)` : 'KSH 0.00')}
+                  </span>
+                </div>
+                {numericAmount > 0 && (
+                  <div className="pt-2 border-t border-gray-200 flex justify-between items-center text-xs font-semibold">
+                    <span className="text-gray-500">New Balance after payment:</span>
+                    <span className={projectedBalance > 0 ? 'text-amber-700' : (projectedBalance < 0 ? 'text-green-700 font-bold' : 'text-gray-800 font-bold')}>
+                      {projectedBalance > 0 
+                        ? `KSH ${projectedBalance.toLocaleString()} (Remaining Debt)` 
+                        : (projectedBalance < 0 ? `- KSH ${Math.abs(projectedBalance).toLocaleString()} (Store Credit / Advance)` : 'KSH 0.00 (Fully Settled)')}
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -371,7 +391,6 @@ export function RecordCustomerPaymentModal({ customer, onClose }: RecordCustomer
                 required
                 min={0.01}
                 step="any"
-                max={Number(customer.balance)}
                 value={amount === '' ? '' : amount}
                 onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))}
                 className="w-full h-10 pl-12 pr-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-sm"

@@ -169,6 +169,9 @@ export const CustomersPage = () => {
       }
       return { label: 'Owing', className: 'bg-amber-100 text-amber-700' };
     }
+    if (balance < 0) {
+      return { label: 'In Credit', className: 'bg-emerald-100 text-emerald-800' };
+    }
     if (purchaseCount > 10) {
       return { label: 'Frequent', className: 'bg-purple-100 text-purple-700' };
     }
@@ -351,10 +354,6 @@ export const CustomersPage = () => {
                   const initials = customer.name.substring(0, 2).toUpperCase();
                   const isLastRow = index === paginatedCustomers.length - 1;
 
-                  const baseSalaryNum = Number(customer.baseSalary || 0);
-                  const savingsNum = Number(customer.additionalSavings || 0);
-                  const employeeNetSalary = (baseSalaryNum + savingsNum) - balance;
-
                   return (
                     <tr 
                       key={customer.id} 
@@ -387,18 +386,16 @@ export const CustomersPage = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-col items-start">
-                          <span className={`text-sm ${balance > 0 ? 'text-[var(--color-accent)] font-semibold' : 'text-[var(--color-text-muted)]'}`}>
-                            KSH {balance.toLocaleString()}
+                          <span className={`text-sm font-semibold ${balance > 0 ? 'text-[#D97706]' : (balance < 0 ? 'text-green-600' : 'text-gray-500')}`}>
+                            {balance > 0 
+                              ? `KSH ${balance.toLocaleString()}` 
+                              : (balance < 0 ? `- KSH ${Math.abs(balance).toLocaleString()}` : 'KSH 0.00')}
                           </span>
-                          {customer.type === 'EMPLOYEE' && customer.baseSalary ? (
-                            <span className="text-[10px] text-gray-500 font-medium mt-0.5 whitespace-nowrap">
-                              Net: KSh {employeeNetSalary.toLocaleString()} (Base: {baseSalaryNum.toLocaleString()}{savingsNum > 0 ? ` + Sav: ${savingsNum.toLocaleString()}` : ''})
-                            </span>
-                          ) : balance > 0 && customer.periodOwed ? (
+                          {balance > 0 && customer.periodOwed && customer.type !== 'EMPLOYEE' && (
                             <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-medium border border-amber-200/60 mt-0.5 whitespace-nowrap">
                               {customer.periodOwed}
                             </span>
-                          ) : null}
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3">
