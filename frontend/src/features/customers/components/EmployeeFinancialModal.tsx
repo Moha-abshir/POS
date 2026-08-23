@@ -193,11 +193,11 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
                 <span className="font-semibold text-gray-900">KSh {baseSalary.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-blue-700 font-medium">
-                <span>Personal Savings Deposited:</span>
+                <span>Personal Savings:</span>
                 <span>KSh {additionalSavings.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-amber-700 font-medium">
-                <span>Goods Taken / Deductions:</span>
+                <span>Goods Taken:</span>
                 <span>KSh {deductions.toLocaleString()}</span>
               </div>
               <div className="flex justify-between border-t border-gray-200 pt-2 font-extrabold text-sm">

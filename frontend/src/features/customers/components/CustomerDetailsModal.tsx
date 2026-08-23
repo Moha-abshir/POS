@@ -125,7 +125,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                   </div>
                   {additionalSavings > 0 && (
                     <div className="flex justify-between text-blue-700 font-medium">
-                      <span>Personal Savings Deposited:</span>
+                      <span>Personal Savings:</span>
                       <span>KSh {additionalSavings.toLocaleString()}</span>
                     </div>
                   )}
