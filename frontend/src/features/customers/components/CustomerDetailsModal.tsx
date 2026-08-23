@@ -443,13 +443,20 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                               >
                                 Receipt
                               </button>
-                              <button
-                                onClick={() => setPaymentToReverse(payment)}
-                                className="px-2 py-0.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded text-[10px] transition-colors flex items-center gap-1 cursor-pointer border border-red-200"
-                              >
-                                <RotateCcw className="w-3 h-3" />
-                                Reverse
-                              </button>
+                              {(() => {
+                                const isSettlement = (payment.notes || '').toLowerCase().includes('settlement') || 
+                                                     (payment.notes || '').toLowerCase().includes('pay cycle close');
+                                if (isSettlement) return null;
+                                return (
+                                  <button
+                                    onClick={() => setPaymentToReverse(payment)}
+                                    className="px-2 py-0.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded text-[10px] transition-colors flex items-center gap-1 cursor-pointer border border-red-200"
+                                  >
+                                    <RotateCcw className="w-3 h-3" />
+                                    Reverse
+                                  </button>
+                                );
+                              })()}
                             </div>
                           </div>
                         </div>
@@ -515,8 +522,9 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
         paymentData={selectedPaymentData}
       />
 
+      {/* Payment Reversal Confirmation Modal */}
       {paymentToReverse && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setPaymentToReverse(null)} />
           <div className="relative bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl z-10 space-y-4 animate-in fade-in zoom-in-95 duration-200 border border-gray-100">
             <div className="flex items-center gap-3">
@@ -524,8 +532,12 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-gray-900">Reverse Payment?</h3>
-                <p className="text-xs text-gray-500 mt-0.5">This action will void this payment and restore the customer's balance.</p>
+                <h3 className="text-base font-bold text-gray-900">
+                  {paymentToReverse.referenceType === 'EMPLOYEE_DEPOSIT' 
+                    ? 'Reverse Savings Deposit?' 
+                    : (paymentToReverse.referenceType === 'EMPLOYEE_SALARY' ? 'Reverse Salary Advance?' : 'Reverse Debt Payment?')}
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">This action will void this payment and restore the financial balance.</p>
               </div>
             </div>
 
@@ -538,12 +550,45 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                 <span>Payment Amount:</span>
                 <span className="font-bold text-red-600">KSh {Number(paymentToReverse.amount).toLocaleString()} ({paymentToReverse.method})</span>
               </div>
-              <div className="border-t border-amber-200/60 pt-2 flex justify-between font-bold text-gray-900">
-                <span>Restored Balance:</span>
-                <span className="text-amber-700">
-                  KSh {Number(customer.balance).toLocaleString()} + KSh {Number(paymentToReverse.amount).toLocaleString()} = KSh {(Number(customer.balance) + Number(paymentToReverse.amount)).toLocaleString()}
-                </span>
-              </div>
+              
+              {paymentToReverse.referenceType === 'EMPLOYEE_DEPOSIT' ? (
+                <>
+                  <div className="border-t border-amber-200/60 pt-2 flex justify-between font-bold text-gray-900">
+                    <span>Restored Savings:</span>
+                    <span className="text-amber-800">
+                      KSh {additionalSavings.toLocaleString()} - KSh {Number(paymentToReverse.amount).toLocaleString()} = KSh {Math.max(0, additionalSavings - Number(paymentToReverse.amount)).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between font-bold text-gray-900">
+                    <span>Restored Net Salary:</span>
+                    <span className="text-amber-800">
+                      KSh {((baseSalary + Math.max(0, additionalSavings - Number(paymentToReverse.amount))) - totalDeductions).toLocaleString()}
+                    </span>
+                  </div>
+                </>
+              ) : paymentToReverse.referenceType === 'EMPLOYEE_SALARY' ? (
+                <>
+                  <div className="border-t border-amber-200/60 pt-2 flex justify-between font-bold text-gray-900">
+                    <span>Restored Deductions:</span>
+                    <span className="text-amber-800">
+                      KSh {totalDeductions.toLocaleString()} - KSh {Number(paymentToReverse.amount).toLocaleString()} = KSh {Math.max(0, totalDeductions - Number(paymentToReverse.amount)).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between font-bold text-gray-900">
+                    <span>Restored Net Salary:</span>
+                    <span className="text-amber-800">
+                      KSh {((baseSalary + additionalSavings) - Math.max(0, totalDeductions - Number(paymentToReverse.amount))).toLocaleString()}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="border-t border-amber-200/60 pt-2 flex justify-between font-bold text-gray-900">
+                  <span>Restored Balance:</span>
+                  <span className="text-amber-800">
+                    KSh {Number(customer.balance).toLocaleString()} + KSh {Number(paymentToReverse.amount).toLocaleString()} = KSh {(Number(customer.balance) + Number(paymentToReverse.amount)).toLocaleString()}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 justify-end pt-2">

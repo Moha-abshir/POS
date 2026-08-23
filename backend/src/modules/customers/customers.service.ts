@@ -743,6 +743,12 @@ export class CustomersService {
         throw new AppError('Payment not found or already reversed', 404);
       }
 
+      const isSettlement = (payment.notes || '').toLowerCase().includes('settlement') || 
+                           (payment.notes || '').toLowerCase().includes('pay cycle close');
+      if (isSettlement) {
+        throw new AppError('Full cycle salary settlement payments cannot be reversed directly.', 400);
+      }
+
       // 2. Fetch customer
       const [customer] = await tx.select()
         .from(customers)
