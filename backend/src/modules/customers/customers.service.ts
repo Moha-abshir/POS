@@ -1,6 +1,6 @@
 import { eq, and, sql, desc, inArray } from 'drizzle-orm';
 import { db } from '../../db';
-import { customers, sales, payments, bankingTransactions, refunds, users } from '../../db/schema';
+import { customers, sales, saleItems, payments, bankingTransactions, refunds, stockMovements, users } from '../../db/schema';
 import { AppError } from '../../core/utils/AppError';
 import { getCache, setCache, flushPattern } from '../../core/cache/redis';
 
@@ -120,7 +120,7 @@ export class CustomersService {
       address: data.address,
       notes: data.notes,
       type: data.type || 'INDIVIDUAL',
-      balance: amountOwed > 0 ? amountOwed.toString() : '0',
+      balance: amountOwed !== 0 ? amountOwed.toString() : '0',
       baseSalary: data.baseSalary !== undefined ? data.baseSalary.toString() : '0',
       periodOwed: amountOwed > 0 ? (data.periodOwed || null) : null,
       hasActiveCredit: amountOwed > 0,
@@ -184,16 +184,54 @@ export class CustomersService {
   }
 
   static async deleteCustomer(businessId: string, customerId: string) {
-    const [deleted] = await db.delete(customers)
-      .where(and(eq(customers.id, customerId), eq(customers.businessId, businessId)))
-      .returning();
+    return await db.transaction(async (tx) => {
+      // 1. Delete associated payments
+      await tx.delete(payments)
+        .where(and(
+          eq(payments.businessId, businessId),
+          eq(payments.referenceId, customerId)
+        ));
 
-    if (!deleted) {
-      throw new Error('Customer not found');
-    }
+      // 2. Fetch sales for this customer to delete associated records
+      const customerSales = await tx.select({ id: sales.id })
+        .from(sales)
+        .where(and(eq(sales.businessId, businessId), eq(sales.customerId, customerId)));
 
-    await this.invalidateCustomerCache(businessId);
-    return deleted;
+      const saleIds = customerSales.map(s => s.id);
+      if (saleIds.length > 0) {
+        // Delete sale items
+        await tx.delete(saleItems)
+          .where(and(eq(saleItems.businessId, businessId), inArray(saleItems.saleId, saleIds)));
+
+        // Delete refunds
+        await tx.delete(refunds)
+          .where(and(eq(refunds.businessId, businessId), inArray(refunds.saleId, saleIds)));
+
+        // Delete stock movements
+        await tx.delete(stockMovements)
+          .where(and(eq(stockMovements.businessId, businessId), inArray(stockMovements.referenceId, saleIds)));
+
+        // Delete sales payments
+        await tx.delete(payments)
+          .where(and(eq(payments.businessId, businessId), inArray(payments.referenceId, saleIds)));
+
+        // Delete sales
+        await tx.delete(sales)
+          .where(and(eq(sales.businessId, businessId), eq(sales.customerId, customerId)));
+      }
+
+      // 3. Delete customer
+      const [deleted] = await tx.delete(customers)
+        .where(and(eq(customers.id, customerId), eq(customers.businessId, businessId)))
+        .returning();
+
+      if (!deleted) {
+        throw new AppError('Customer not found', 404);
+      }
+
+      await this.invalidateCustomerCache(businessId);
+      return deleted;
+    });
   }
 
   static async clearAllCustomers(businessId: string) {

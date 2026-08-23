@@ -273,6 +273,7 @@ export const useUpdateCustomer = () => {
     mutationFn: ({ id, ...data }: Partial<Customer> & { id: string }) => customersApi.updateCustomer(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+      customersApi.syncCustomerCache().catch(() => {});
     },
   });
 };
@@ -283,6 +284,7 @@ export const useDeleteCustomer = () => {
     mutationFn: customersApi.deleteCustomer,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+      customersApi.syncCustomerCache().catch(() => {});
     },
   });
 };
@@ -293,6 +295,7 @@ export const useClearAllCustomers = () => {
     mutationFn: customersApi.clearAllCustomers,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+      customersApi.syncCustomerCache().catch(() => {});
     },
   });
 };

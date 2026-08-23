@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, UserCircle, Phone, MapPin, Receipt, Calendar, Download, DollarSign, CreditCard, RotateCcw, AlertTriangle } from 'lucide-react';
-import { type Customer, useCustomerPurchases, useCustomerPayments, useReverseCustomerPayment } from '../api/customers.api';
+import { X, UserCircle, Phone, MapPin, Receipt, Calendar, Download, DollarSign, CreditCard, RotateCcw, AlertTriangle, Trash2 } from 'lucide-react';
+import { type Customer, useCustomerPurchases, useCustomerPayments, useReverseCustomerPayment, useDeleteCustomer } from '../api/customers.api';
 import { format } from 'date-fns';
 import { LoadingSpinner } from '../../../components/ui/Loading';
 import { RecordCustomerPaymentModal } from './RecordCustomerPaymentModal';
@@ -18,6 +18,7 @@ interface CustomerDetailsModalProps {
 export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOpen, onClose, customer }) => {
   const [activeTab, setActiveTab] = useState<'purchases' | 'payments'>('purchases');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [receiptSaleId, setReceiptSaleId] = useState<string | null>(null);
   const [selectedPaymentData, setSelectedPaymentData] = useState<any>(null);
   const [paymentToReverse, setPaymentToReverse] = useState<any | null>(null);
@@ -25,11 +26,14 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
   const { data: purchases, isLoading: isPurchasesLoading } = useCustomerPurchases(customer?.id);
   const { data: paymentsList, isLoading: isPaymentsLoading } = useCustomerPayments(customer?.id);
   const reversePaymentMutation = useReverseCustomerPayment();
+  const deleteCustomerMutation = useDeleteCustomer();
 
   if (!isOpen || !customer) return null;
 
   const initials = customer.name.substring(0, 2).toUpperCase();
   const currentBalance = Number(customer.balance) || 0;
+  const baseSalaryNum = Number(customer.baseSalary) || 0;
+  const remainingNetSalary = baseSalaryNum - currentBalance;
 
   const handleExportCSV = () => {
     if (!purchases || purchases.length === 0) return;
@@ -115,20 +119,51 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                 );
               })()}
 
+              {/* Employee Salary Breakdown & Remaining Balance */}
+              {customer.type === 'EMPLOYEE' && baseSalaryNum > 0 && (
+                <div className="mt-2.5 w-full p-2.5 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-1.5 text-left">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Base Salary:</span>
+                    <span className="font-semibold text-gray-900">KSh {baseSalaryNum.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Goods Taken / Debt:</span>
+                    <span className={`font-semibold ${currentBalance > 0 ? 'text-amber-700' : 'text-gray-900'}`}>
+                      KSh {currentBalance.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between font-bold pt-1.5 border-t border-gray-200 text-gray-900">
+                    <span>Remaining Balance:</span>
+                    <span className={remainingNetSalary >= 0 ? 'text-green-600' : 'text-red-600'}>
+                      KSh {remainingNetSalary.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {currentBalance > 0 && customer.periodOwed && customer.type !== 'EMPLOYEE' && (
                 <span className="mt-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-medium border border-amber-200">
                   Period Owed: {customer.periodOwed}
                 </span>
               )}
 
-              {/* Record Payment Button - ALWAYS VISIBLE */}
-              <button
-                onClick={() => setIsPaymentModalOpen(true)}
-                className="mt-3 w-full flex items-center justify-center gap-2 bg-black hover:bg-neutral-800 text-white text-xs font-bold py-2.5 px-3 rounded-xl transition-colors shadow-sm cursor-pointer"
-              >
-                <DollarSign className="w-4 h-4 text-emerald-400" />
-                Record Payment
-              </button>
+              {/* Action Buttons: Record Payment & Delete */}
+              <div className="space-y-2 mt-3 w-full">
+                <button
+                  onClick={() => setIsPaymentModalOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 bg-black hover:bg-neutral-800 text-white text-xs font-bold py-2.5 px-3 rounded-xl transition-colors shadow-sm cursor-pointer"
+                >
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                  Record Payment
+                </button>
+                <button
+                  onClick={() => setIsDeleteConfirmOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 text-xs font-bold py-2 px-3 rounded-xl transition-colors shadow-xs cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {customer.type === 'EMPLOYEE' ? 'Delete Employee' : 'Delete Customer'}
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3 pt-4 border-t border-gray-100">
@@ -449,6 +484,66 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ isOp
                 className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
               >
                 {reversePaymentMutation.isPending ? 'Reversing...' : 'Confirm Reversal'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Customer / Employee Delete Confirmation Modal */}
+      {isDeleteConfirmOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+            onClick={() => !deleteCustomerMutation.isPending && setIsDeleteConfirmOpen(false)} 
+          />
+          <div className="relative bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl z-10 space-y-4 animate-in fade-in zoom-in-95 duration-200 border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900">
+                  {customer.type === 'EMPLOYEE' ? 'Delete Employee?' : 'Delete Customer?'}
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Are you sure you want to permanently delete <strong className="text-gray-900">{customer.name}</strong>?
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-red-50 rounded-xl border border-red-200/80 text-xs text-red-800 space-y-1">
+              <p className="font-semibold">⚠️ This action is permanent and cannot be undone.</p>
+              <p className="text-red-700 leading-relaxed">
+                All associated purchase history, debt allocations, and recorded payment records for this {customer.type === 'EMPLOYEE' ? 'employee' : 'customer'} will be completely removed.
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-2 border-t border-gray-100">
+              <button
+                onClick={() => setIsDeleteConfirmOpen(false)}
+                disabled={deleteCustomerMutation.isPending}
+                className="px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  deleteCustomerMutation.mutate(customer.id, {
+                    onSuccess: () => {
+                      toast.success(`${customer.type === 'EMPLOYEE' ? 'Employee' : 'Customer'} deleted successfully`);
+                      setIsDeleteConfirmOpen(false);
+                      onClose();
+                    },
+                    onError: (err: any) => {
+                      toast.error(err.response?.data?.message || err.message || 'Failed to delete');
+                    }
+                  });
+                }}
+                disabled={deleteCustomerMutation.isPending}
+                className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                {deleteCustomerMutation.isPending ? 'Deleting...' : 'Yes, Delete'}
               </button>
             </div>
           </div>

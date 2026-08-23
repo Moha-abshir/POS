@@ -184,12 +184,13 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
                     type="number"
                     min="0"
                     step="any"
+                    placeholder="e.g. 12000"
                     value={formData.baseSalary}
                     onChange={(e) => setFormData(prev => ({ ...prev, baseSalary: e.target.value }))}
                     className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400"
                   />
                   <p className="text-[10px] text-gray-500 mt-1">
-                    Credit purchases made by this employee will be deducted from their base salary in the Employees tab.
+                    The remaining net balance will be automatically computed as Base Salary minus Goods Taken.
                   </p>
                 </div>
               )}
@@ -199,17 +200,17 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
           {/* Initial Debt / Amount Owed Section */}
           <div>
             <h3 className="text-xs font-medium uppercase tracking-wide text-gray-400 pb-2 border-b border-[#E5E1DA] mb-3">
-              Existing Balance / Debt <span className="text-gray-400 font-normal">(optional)</span>
+              {formData.type === 'EMPLOYEE' ? 'Existing Goods Taken / Debt' : 'Existing Balance / Debt'} <span className="text-gray-400 font-normal">(optional)</span>
             </h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Amount Owed <span className="text-gray-400 font-normal">(KES)</span>
+                  {formData.type === 'EMPLOYEE' ? 'Amount Owed / Goods' : 'Amount Owed'} <span className="text-gray-400 font-normal">(KES)</span>
                 </label>
                 <input
                   type="number"
-                  min="0"
                   step="any"
+                  placeholder="0"
                   value={formData.amountOwed}
                   onChange={(e) => setFormData(prev => ({ ...prev, amountOwed: e.target.value }))}
                   className="w-full bg-[#F7F6F4] border border-[#E5E1DA] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400"
