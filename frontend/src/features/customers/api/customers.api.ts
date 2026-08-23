@@ -331,6 +331,7 @@ export const useRecordEmployeePayout = () => {
       queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'payments'] });
       queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'purchases'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
+      customersApi.syncCustomerCache().catch(() => {});
     },
   });
 };
@@ -345,6 +346,7 @@ export const useSettleEmployeeSalary = () => {
       queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'payments'] });
       queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'purchases'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
+      customersApi.syncCustomerCache().catch(() => {});
     },
   });
 };
@@ -359,6 +361,7 @@ export const useRecordEmployeeDeposit = () => {
       queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'payments'] });
       queryClient.invalidateQueries({ queryKey: ['customers', variables.id, 'purchases'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
+      customersApi.syncCustomerCache().catch(() => {});
     },
   });
 };
@@ -375,6 +378,7 @@ export const useReverseCustomerPayment = () => {
       queryClient.refetchQueries({ queryKey: ['customers', variables.customerId, 'payments'] });
       queryClient.refetchQueries({ queryKey: ['customers'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
+      customersApi.syncCustomerCache().catch(() => {});
     },
   });
 };

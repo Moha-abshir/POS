@@ -215,11 +215,23 @@ export function EmployeeFinancialModal({ customer, onClose }: EmployeeFinancialM
             </div>
 
             {activeTab === 'SETTLEMENT' && (
-              <div className="p-3 bg-emerald-50 text-emerald-900 text-xs rounded-xl border border-emerald-200/60 leading-relaxed">
-                <p className="font-semibold mb-0.5">Full Salary Settlement:</p>
+              <div className="p-3 bg-emerald-50 text-emerald-900 text-xs rounded-xl border border-emerald-200/60 leading-relaxed space-y-1.5">
+                <p className="font-semibold">Cycle Settlement & Carry-Over:</p>
                 <p className="text-[11px] text-emerald-800">
-                  Pays remaining net salary, settles all goods taken in this pay period, and starts a clean cycle.
+                  Settles all goods taken in this pay period. Any unpaid portion of net salary automatically carries over into the next cycle as personal savings.
                 </p>
+                {typeof amount === 'number' && (
+                  <div className="pt-1.5 border-t border-emerald-200/60 flex justify-between font-bold text-[11px] text-emerald-950">
+                    <span>Carry-Over into Next Cycle:</span>
+                    <span>
+                      {netPayable - amount > 0
+                        ? `+ KSh ${(netPayable - amount).toLocaleString()} (Savings)`
+                        : (netPayable - amount < 0
+                            ? `- KSh ${Math.abs(netPayable - amount).toLocaleString()} (Debt)`
+                            : 'KSh 0.00 (Fully Settled)')}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 

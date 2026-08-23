@@ -518,8 +518,28 @@ export class CustomersService {
       const netPayable = grossEntitlement - currentDeductions;
       const prevNetSalary = -( netPayable );
 
-      // If current deductions exceeded gross entitlement, remainder carries over as starting balance
-      const newDeductions = currentDeductions > grossEntitlement ? (currentDeductions - grossEntitlement) : 0;
+      // Settlement payout & carry-over calculation:
+      // data.amount is the cash/mpesa paid out to the employee now.
+      // remainingEntitlement carries over into the next cycle as savings/credit
+      const remainingEntitlement = netPayable - data.amount;
+
+      let newAdditionalSavings = 0;
+      let newDeductions = 0;
+
+      if (remainingEntitlement > 0) {
+        // Employee has leftover unpaid balance / savings to carry over
+        newAdditionalSavings = remainingEntitlement;
+        newDeductions = 0;
+      } else if (remainingEntitlement < 0) {
+        // Employee took more advances / goods taken than total entitlement
+        newAdditionalSavings = 0;
+        newDeductions = Math.abs(remainingEntitlement);
+      } else {
+        // Exactly paid in full
+        newAdditionalSavings = 0;
+        newDeductions = 0;
+      }
+
       const settlementDate = new Date();
 
       // Mark all unpaid/partial credit sales up to settlementDate as PAID (settled against salary)
@@ -534,11 +554,11 @@ export class CustomersService {
           sql`${sales.paymentStatus} IN ('UNPAID', 'PARTIAL')`
         ));
 
-      // Reset customer balance to newDeductions (0 if fully settled), additionalSavings to 0, and record lastSalarySettledAt
+      // Reset customer balance to newDeductions, additionalSavings to newAdditionalSavings, and record lastSalarySettledAt
       const [updatedCustomer] = await tx.update(customers)
         .set({
           balance: newDeductions.toString(),
-          additionalSavings: '0',
+          additionalSavings: newAdditionalSavings.toString(),
           hasActiveCredit: newDeductions > 0,
           lastSalarySettledAt: settlementDate,
           updatedAt: settlementDate
@@ -565,6 +585,8 @@ export class CustomersService {
 
       await this.invalidateCustomerCache(businessId);
 
+      const newNetSalary = -( (Number(updatedCustomer.baseSalary || 0) + newAdditionalSavings) - newDeductions );
+
       return {
         payment: payment || {
           id: 'SETTLED',
@@ -581,7 +603,7 @@ export class CustomersService {
         goodsTaken: currentDeductions,
         previousBalance: prevNetSalary,
         amountPaid: data.amount,
-        newBalance: 0,
+        newBalance: newNetSalary,
         type: 'SETTLEMENT'
       };
     });
