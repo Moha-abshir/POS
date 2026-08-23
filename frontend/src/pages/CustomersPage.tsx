@@ -351,10 +351,15 @@ export const CustomersPage = () => {
                   const initials = customer.name.substring(0, 2).toUpperCase();
                   const isLastRow = index === paginatedCustomers.length - 1;
 
+                  const baseSalaryNum = Number(customer.baseSalary || 0);
+                  const savingsNum = Number(customer.additionalSavings || 0);
+                  const employeeNetSalary = (baseSalaryNum + savingsNum) - balance;
+
                   return (
                     <tr 
                       key={customer.id} 
-                      className={`hover:bg-[var(--color-bg-base)] transition-colors ${isLastRow ? '' : 'border-b border-[var(--color-border)]'}`}
+                      onClick={() => setCustomerToView(customer)}
+                      className={`hover:bg-gray-50/80 cursor-pointer transition-colors group ${isLastRow ? '' : 'border-b border-[var(--color-border)]'}`}
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -362,7 +367,7 @@ export const CustomersPage = () => {
                             {initials}
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-[var(--color-text-primary)]">{customer.name}</span>
+                            <span className="text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-black">{customer.name}</span>
                             {customer.phone && (
                               <span className="text-xs text-[var(--color-text-muted)]">{customer.phone}</span>
                             )}
@@ -387,7 +392,7 @@ export const CustomersPage = () => {
                           </span>
                           {customer.type === 'EMPLOYEE' && customer.baseSalary ? (
                             <span className="text-[10px] text-gray-500 font-medium mt-0.5 whitespace-nowrap">
-                              Net: KSh {(Number(customer.baseSalary) - balance).toLocaleString()} (Base: {Number(customer.baseSalary).toLocaleString()})
+                              Net: KSh {employeeNetSalary.toLocaleString()} (Base: {baseSalaryNum.toLocaleString()}{savingsNum > 0 ? ` + Sav: ${savingsNum.toLocaleString()}` : ''})
                             </span>
                           ) : balance > 0 && customer.periodOwed ? (
                             <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-medium border border-amber-200/60 mt-0.5 whitespace-nowrap">
@@ -416,14 +421,18 @@ export const CustomersPage = () => {
                           <button 
                             className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors rounded cursor-pointer" 
                             title="View details" 
-                            onClick={() => setCustomerToView(customer)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCustomerToView(customer);
+                            }}
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button 
                             className="p-1 text-gray-400 hover:text-[#D97706] transition-colors rounded cursor-pointer" 
                             title="Edit customer"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setCustomerToEdit(customer);
                               setIsModalOpen(true);
                             }}

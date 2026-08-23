@@ -369,7 +369,7 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
                   </div>
 
                   {(Number(receiptData.customer?.additionalSavings || 0) > 0 || isDeposit) && (
-                    <div className="flex justify-between text-blue-700">
+                    <div className="flex justify-between text-gray-900">
                       <span>Personal Savings :</span>
                       <span className="font-bold">{Number(receiptData.customer?.additionalSavings || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
@@ -377,20 +377,20 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
 
                   <div className="flex justify-between">
                     <span>Prev Net Salary :</span>
-                    <span className={receiptData.previousBalance < 0 ? 'text-red-600 font-bold' : 'text-gray-900'}>
+                    <span className="font-bold text-gray-900">
                       {formatNetVal(receiptData.previousBalance)}
                     </span>
                   </div>
 
                   <div className="flex justify-between font-bold text-gray-900 pt-1 border-t border-dashed border-gray-200">
                     <span>{isDeposit ? 'Deposit Received :' : 'Payout Given :'}</span>
-                    <span className={isDeposit ? 'text-blue-700' : 'text-emerald-700'}>
+                    <span className="font-bold text-gray-900">
                       {receiptData.amountPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
 
                   {receiptData.payment?.mpesaReceiptNumber && (
-                    <div className="flex justify-between text-amber-800 text-[10px]">
+                    <div className="flex justify-between text-gray-900 text-[10px]">
                       <span>M-Pesa Ref :</span>
                       <span className="font-mono font-bold">{receiptData.payment.mpesaReceiptNumber}</span>
                     </div>
@@ -398,7 +398,7 @@ export const EmployeeTransactionReceiptModal: React.FC<EmployeeTransactionReceip
 
                   <div className="flex justify-between font-extrabold text-gray-950 pt-1.5 border-t border-dashed border-gray-300">
                     <span>New Net Salary :</span>
-                    <span className={receiptData.newBalance < 0 ? 'text-red-600' : 'text-emerald-600'}>
+                    <span className="text-gray-950 font-extrabold">
                       {formatNetVal(receiptData.newBalance)}
                     </span>
                   </div>

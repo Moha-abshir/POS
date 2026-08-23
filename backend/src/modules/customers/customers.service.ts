@@ -66,6 +66,8 @@ export class CustomersService {
       type: customers.type,
       balance: customers.balance,
       baseSalary: customers.baseSalary,
+      additionalSavings: customers.additionalSavings,
+      lastSalarySettledAt: customers.lastSalarySettledAt,
       periodOwed: customers.periodOwed,
       hasActiveCredit: customers.hasActiveCredit,
       isActive: customers.isActive,
