@@ -148,13 +148,34 @@ export const DashboardLayout: React.FC = () => {
       }).catch(() => {});
     }
 
-    // Poll every 60s for live notification updates only when online and active
+    // Smart Polling: Poll every 60s only when the user is actively at the terminal
+    // If inactive for > 2 minutes (overnight, lunch break, idle screen), pause polling so Neon can suspend to 0
+    let lastActivityTime = Date.now();
+    const IDLE_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
+
+    const onUserActivity = () => {
+      const wasIdle = Date.now() - lastActivityTime > IDLE_TIMEOUT_MS;
+      lastActivityTime = Date.now();
+      if (wasIdle && navigator.onLine && !document.hidden) {
+        // User came back to the terminal - immediately refresh once
+        fetchData();
+      }
+    };
+
+    const activityEvents = ['mousemove', 'keydown', 'touchstart', 'scroll', 'click'];
+    activityEvents.forEach(evt => window.addEventListener(evt, onUserActivity, { passive: true }));
+
     const interval = setInterval(() => {
-      if (navigator.onLine && !document.hidden) {
+      const isIdle = Date.now() - lastActivityTime > IDLE_TIMEOUT_MS;
+      if (navigator.onLine && !document.hidden && !isIdle) {
         fetchData();
       }
     }, 60000);
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+      activityEvents.forEach(evt => window.removeEventListener(evt, onUserActivity));
+    };
   }, [fetchData]);
 
   const handleOpenRegister = async () => {
