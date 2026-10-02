@@ -252,8 +252,8 @@ export const useCustomers = (filters?: { page?: number; limit?: number; search?:
   return useQuery({
     queryKey: ['customers', filters],
     queryFn: () => customersApi.getCustomers(filters),
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 3 * 60 * 1000,
+    refetchOnMount: false,
   });
 };
 
@@ -305,8 +305,8 @@ export const useCustomerPurchases = (id?: string) => {
     queryKey: ['customers', id, 'purchases'],
     queryFn: () => id ? customersApi.getCustomerPurchases(id) : Promise.resolve([]),
     enabled: !!id,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 60 * 1000,
+    refetchOnMount: false,
   });
 };
 
@@ -391,8 +391,8 @@ export const useCustomerPayments = (id?: string) => {
     queryKey: ['customers', id, 'payments'],
     queryFn: () => id ? customersApi.getCustomerPayments(id) : Promise.resolve([]),
     enabled: !!id,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 60 * 1000,
+    refetchOnMount: false,
   });
 };
 
