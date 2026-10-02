@@ -7,8 +7,8 @@ dotenv.config();
 
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: Number(process.env.DB_POOL_MAX || 20),
-  idleTimeoutMillis: 30000,
+  max: Number(process.env.DB_POOL_MAX || 10),
+  idleTimeoutMillis: 10000, // 10s idle closes socket so Neon can scale to zero
   connectionTimeoutMillis: 30000, // 30s to allow Neon serverless compute wake up
 });
 
