@@ -195,8 +195,8 @@ export const useProducts = () => {
         throw error;
       }
     },
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
   });
 };
 
