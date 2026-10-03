@@ -66,7 +66,7 @@ const envSchema = z.object({
 envSchema.parse(process.env);
 
 import { getRedisClient } from './core/cache/redis';
-import { logger } from './core/utils/logger'; 
+import { logger } from './core/utils/logger';  
 
 // Initialize Redis connection on server startup
 getRedisClient().catch(err => logger.error(err, 'Failed to initialize Redis on startup'));
