@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useCustomers } from '../../customers/api/customers.api';
+import { useCustomers, customersApi } from '../../customers/api/customers.api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { salesApi } from '../api/sales.api';
 import { db } from '../../../core/offline/offlineDatabase';
@@ -130,6 +130,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
       return { previousProducts };
     },
     onSuccess: (data: any) => {
+      isSubmittingRef.current = false;
       const isOfflineSale = data?.isOffline || !navigator.onLine;
       const needsStkPush = !isOfflineSale && ((paymentMethod === 'MPESA' && isStkPush) || (paymentMethod === 'SPLIT' && isStkPush && Number(mpesaAmount) > 0));
       
@@ -180,8 +181,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
       if (context?.previousProducts) {
         queryClient.setQueryData(['products'], context.previousProducts);
       }
-      //toast.error(error.response?.data?.message || 'Failed to complete sale');
-      console.log("Failed To Complete Sale")
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to complete sale';
+      toast.error(errorMessage, { duration: 5000 });
+      console.error('Failed to complete sale:', errorMessage);
       setIsPolling(false);
       setIsInitiatingPush(false);
     }
@@ -285,7 +287,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
     if (isSubmittingRef.current || createSaleMutation.isPending) {
       return;
     }
-    isSubmittingRef.current = true;
 
     if (!navigator.onLine) {
       const cachedSession = await db.settings.get('active_session');
@@ -343,6 +344,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
 
     const selectedCustomer = customers.find((c: any) => c.id === customerId);
 
+    isSubmittingRef.current = true;
     createSaleMutation.mutate({
       customerId: customerId || undefined,
       customerName: selectedCustomer ? selectedCustomer.name : 'Walk-in Customer',
