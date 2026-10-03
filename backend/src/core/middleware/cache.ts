@@ -1,7 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import { getCache, setCache } from '../cache/redis';
 
-export const cacheMiddleware = (ttlSeconds: number) => {
+export interface CacheOptions {
+  ttlSeconds: number;
+  userScoped?: boolean;
+}
+
+export const cacheMiddleware = (options: number | CacheOptions) => {
+  const ttlSeconds = typeof options === 'number' ? options : options.ttlSeconds;
+  const userScoped = typeof options === 'number' ? false : !!options.userScoped;
+
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     if (req.method !== 'GET') {
       return next();
@@ -12,8 +20,9 @@ export const cacheMiddleware = (ttlSeconds: number) => {
       return next();
     }
 
+    const userSuffix = userScoped && req.user?.id ? `:user:${req.user.id}` : '';
     const queryStr = Object.keys(req.query).length > 0 ? `:${JSON.stringify(req.query)}` : '';
-    const cacheKey = `cache:${businessId}:${req.baseUrl}${req.path}${queryStr}`;
+    const cacheKey = `cache:${businessId}:${req.baseUrl}${req.path}${userSuffix}${queryStr}`;
 
     try {
       const cachedResponse = await getCache(cacheKey);

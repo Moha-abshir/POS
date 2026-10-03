@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { CashSessionsService } from './cash-sessions.service';
+import { flushPattern } from '../../core/cache/redis';
 
 export class CashSessionsController {
   static async getActive(req: Request, res: Response, next: NextFunction) {
@@ -22,6 +23,7 @@ export class CashSessionsController {
         req.user!.id,
         Number(openingFloat)
       );
+      await flushPattern(`cache:${req.user!.businessId}:*cash-sessions*`);
       res.status(200).json({ status: 'success', data });
     } catch (error: any) {
       res.status(400).json({ status: 'error', message: error.message });
@@ -41,6 +43,7 @@ export class CashSessionsController {
         Number(actualCash),
         notes
       );
+      await flushPattern(`cache:${req.user!.businessId}:*cash-sessions*`);
       res.status(200).json({ status: 'success', data });
     } catch (error: any) {
       res.status(400).json({ status: 'error', message: error.message });
@@ -75,6 +78,7 @@ export class CashSessionsController {
         id,
         { resolutionType, notes }
       );
+      await flushPattern(`cache:${req.user!.businessId}:*cash-sessions*`);
       res.status(200).json({ status: 'success', data });
     } catch (error: any) {
       res.status(400).json({ status: 'error', message: error.message });

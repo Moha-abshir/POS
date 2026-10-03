@@ -35,6 +35,7 @@ export class SalesController {
       }
 
       const sale = await SalesService.createSale(req.user!.businessId, req.user!.id, req.body);
+      await flushPattern(`cache:${req.user!.businessId}:*cash-sessions*`);
       if (req.body.customerId) {
         await flushPattern(`cache:${req.user!.businessId}:*customers*`);
       }

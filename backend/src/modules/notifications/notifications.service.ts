@@ -1,6 +1,7 @@
 import { db } from '../../db';
 import { notifications } from '../../db/schema';
 import { eq, and, desc, not } from 'drizzle-orm';
+import { flushPattern } from '../../core/cache/redis';
 
 export class NotificationsService {
   /**
@@ -19,6 +20,7 @@ export class NotificationsService {
       message,
       isRead: false,
     }).returning();
+    await flushPattern(`cache:${businessId}:*notifications*`);
     return notification;
   }
 

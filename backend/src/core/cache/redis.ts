@@ -43,17 +43,37 @@ export async function getRedisClient() {
   return redisClient;
 }
 
+interface CacheEntry {
+  value: string;
+  expiresAt: number | null;
+}
+
+const memoryCache = new Map<string, CacheEntry>();
+
 export async function getCache(key: string): Promise<string | null> {
   try {
     const client = await getRedisClient();
-    return await client.get(key);
+    const val = await client.get(key);
+    if (val !== null) return val;
   } catch (error) {
-    console.error(`Error getting Redis cache for key ${key}:`, error);
-    return null;
+    // Redis unavailable - fall back to memory cache
   }
+
+  const entry = memoryCache.get(key);
+  if (entry) {
+    if (entry.expiresAt && entry.expiresAt < Date.now()) {
+      memoryCache.delete(key);
+      return null;
+    }
+    return entry.value;
+  }
+  return null;
 }
 
 export async function setCache(key: string, value: string, ttlSeconds?: number): Promise<void> {
+  const expiresAt = ttlSeconds ? Date.now() + ttlSeconds * 1000 : null;
+  memoryCache.set(key, { value, expiresAt });
+
   try {
     const client = await getRedisClient();
     if (ttlSeconds) {
@@ -62,20 +82,29 @@ export async function setCache(key: string, value: string, ttlSeconds?: number):
       await client.set(key, value);
     }
   } catch (error) {
-    console.error(`Error setting Redis cache for key ${key}:`, error);
+    console.warn(`[Cache] Redis set error for key ${key} (memory fallback used):`, error);
   }
 }
 
 export async function deleteCache(key: string): Promise<void> {
+  memoryCache.delete(key);
   try {
     const client = await getRedisClient();
     await client.del(key);
   } catch (error) {
-    console.error(`Error deleting Redis cache for key ${key}:`, error);
+    console.warn(`[Cache] Redis del error for key ${key}:`, error);
   }
 }
 
 export async function flushPattern(pattern: string): Promise<void> {
+  // Convert glob pattern (e.g. cache:123:*notifications*) to regex
+  const regexPattern = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+  for (const k of memoryCache.keys()) {
+    if (regexPattern.test(k)) {
+      memoryCache.delete(k);
+    }
+  }
+
   try {
     const client = await getRedisClient();
     const keys = await client.keys(pattern);
@@ -83,6 +112,6 @@ export async function flushPattern(pattern: string): Promise<void> {
       await client.del(keys);
     }
   } catch (error) {
-    console.error(`Error flushing pattern ${pattern} from Redis:`, error);
+    console.warn(`[Cache] Redis flushPattern error for ${pattern}:`, error);
   }
 }

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { NotificationsService } from './notifications.service';
+import { flushPattern } from '../../core/cache/redis';
 
 export class NotificationsController {
   static async getNotifications(req: Request, res: Response, next: NextFunction) {
@@ -27,6 +28,7 @@ export class NotificationsController {
       if (!data) {
         return res.status(404).json({ status: 'error', message: 'Notification not found' });
       }
+      await flushPattern(`cache:${req.user!.businessId}:*notifications*`);
       res.status(200).json({ status: 'success', data });
     } catch (error) {
       next(error);
@@ -36,6 +38,7 @@ export class NotificationsController {
   static async markAllAsRead(req: Request, res: Response, next: NextFunction) {
     try {
       await NotificationsService.markAllAsRead(req.user!.businessId, req.user!.role);
+      await flushPattern(`cache:${req.user!.businessId}:*notifications*`);
       res.status(200).json({ status: 'success', message: 'All notifications marked as read' });
     } catch (error) {
       next(error);
