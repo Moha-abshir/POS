@@ -42,6 +42,7 @@ const NotFound = () => (
 );
 
 import { Toaster } from 'react-hot-toast';
+import { VersionUpdateModal } from './components/VersionUpdateModal';
 
 import { customersApi } from './features/customers/api/customers.api';
 
@@ -79,6 +80,7 @@ function App() {
         <OfflineBanner />
         <div className="flex-1 min-h-0 flex flex-col">
           <Toaster position="top-right" />
+          <VersionUpdateModal />
           <Routes>
           {/* Public Routes */}
           <Route 
