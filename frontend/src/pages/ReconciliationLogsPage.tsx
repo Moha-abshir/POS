@@ -46,10 +46,6 @@ export const ReconciliationLogsPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchHistory();
-  }, []);
-
   const fetchHistory = async () => {
     try {
       const res = await api.get('/cash-sessions/history');
@@ -60,6 +56,10 @@ export const ReconciliationLogsPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
 
   const formatKES = (amount: number) => {
     return amount.toLocaleString('en-KE', { style: 'currency', currency: 'KES' });

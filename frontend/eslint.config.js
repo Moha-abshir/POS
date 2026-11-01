@@ -22,6 +22,7 @@ export default defineConfig([
       '@typescript-eslint/no-explicit-any': 'off',
       'react-hooks/set-state-in-effect': 'off',
       '@typescript-eslint/no-unused-vars': 'warn',
+      'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
 ])

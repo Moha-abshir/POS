@@ -35,7 +35,9 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
       try {
         localStorage.setItem('pos_business_info', JSON.stringify(meData));
         db.settings.put({ key: 'business_info', value: meData }).catch(() => {});
-      } catch (e) {}
+      } catch {
+        // Ignore cache storage errors
+      }
     }
   }, [meData]);
 
@@ -43,7 +45,9 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     try {
       const raw = localStorage.getItem('pos_business_info');
       if (raw) return JSON.parse(raw);
-    } catch (e) {}
+    } catch {
+      // Ignore cache retrieval errors
+    }
     return null;
   };
 
@@ -194,8 +198,8 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     const totalRefunded = (sale.refunds || []).reduce((sum: number, r: any) => sum + Number(r.totalAmount), 0);
     const netTotal = currentTotal - totalRefunded;
     const addedCredit = Math.max(0, netTotal - paidAmount);
-    let prevBal = 0;
-    let totalBal = 0;
+    let prevBal: number;
+    let totalBal: number;
     
     if (sale?.customerBalanceAtSale !== undefined && sale?.customerBalanceAtSale !== null && sale?.customerBalanceAtSale !== '') {
       prevBal = Number(sale.customerBalanceAtSale);
@@ -352,8 +356,8 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
   const totalRefunded = sale?.refunds ? sale.refunds.reduce((sum: number, r: any) => sum + Number(r.totalAmount), 0) : 0;
   const netTotal = currentTotal - totalRefunded;
   const addedCredit = Math.max(0, netTotal - paidAmount);
-  let prevBal = 0;
-  let totalBal = 0;
+  let prevBal: number;
+  let totalBal: number;
   
   if (sale?.customerBalanceAtSale !== undefined && sale?.customerBalanceAtSale !== null && sale?.customerBalanceAtSale !== '') {
     prevBal = Number(sale.customerBalanceAtSale);

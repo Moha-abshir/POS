@@ -228,7 +228,9 @@ export const salesApi = {
                 customerBalanceAtSale = Number(cust.balance) || 0;
               }
             }
-          } catch (e) {}
+          } catch {
+            // Ignore customer resolution errors for offline fallback
+          }
         }
 
         return {

@@ -39,7 +39,9 @@ export const VersionUpdateModal: React.FC = () => {
               console.log('[VersionChecker] Update available, but cart is not empty. Deferring.');
               return;
             }
-          } catch (e) {}
+          } catch {
+            // Ignore cart parsing errors
+          }
 
           setHasUpdate(true);
         }
