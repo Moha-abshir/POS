@@ -137,4 +137,25 @@ export class AdminController {
       next(error);
     }
   }
+
+  static async updateProductMode(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const { productMode } = req.body;
+      if (productMode !== 'SIMPLE' && productMode !== 'ADVANCED') {
+        return res.status(400).json({ 
+          success: false, 
+          error: { message: 'Invalid product mode. Must be SIMPLE or ADVANCED' } 
+        });
+      }
+      const data = await AdminService.updateBusinessProductMode(id, productMode);
+      res.json({
+        success: true,
+        message: `Product mode changed to ${productMode === 'SIMPLE' ? 'Simple Flat' : 'Advanced'} mode successfully`,
+        data
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

@@ -166,6 +166,7 @@ export class AdminService {
       phone: businesses.phone,
       location: businesses.location,
       status: businesses.status,
+      productMode: businesses.productMode,
       createdAt: businesses.createdAt,
       approvedAt: businesses.approvedAt,
       approvedBy: businesses.approvedBy,
@@ -270,5 +271,20 @@ export class AdminService {
       .returning();
 
     return deleted;
+  }
+
+  static async updateBusinessProductMode(businessId: string, productMode: 'SIMPLE' | 'ADVANCED') {
+    const [business] = await db.select().from(businesses).where(eq(businesses.id, businessId));
+    if (!business) throw new AppError('Business not found', 404);
+
+    const [updated] = await db.update(businesses)
+      .set({
+        productMode,
+        updatedAt: new Date()
+      })
+      .where(eq(businesses.id, businessId))
+      .returning();
+
+    return updated;
   }
 }
