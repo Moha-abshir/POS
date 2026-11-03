@@ -3,7 +3,8 @@ import { api } from '../lib/api';
 import { AdminHeader } from '../components/AdminHeader';
 import { 
   Building2, Check, X, ShieldAlert, Ban, RefreshCw, 
-  MapPin, Phone, Mail, FileText, CheckCircle2, User, Trash2
+  MapPin, Phone, Mail, FileText, CheckCircle2, User, Trash2,
+  Layers, ArrowLeftRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -14,6 +15,7 @@ interface Business {
   phone: string | null;
   location: string | null;
   status: 'pending' | 'active' | 'suspended' | 'rejected';
+  productMode?: 'SIMPLE' | 'ADVANCED';
   createdAt: string;
   approvedAt: string | null;
   approvedBy: string | null;
@@ -66,6 +68,32 @@ export const AdminBusinessesPage: React.FC = () => {
       fetchBusinesses(filter);
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || `Failed to ${action} business`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleProductModeChange = async (biz: Business) => {
+    const currentMode = biz.productMode || 'ADVANCED';
+    const targetMode = currentMode === 'SIMPLE' ? 'ADVANCED' : 'SIMPLE';
+    const currentModeLabel = currentMode === 'SIMPLE' ? 'Simple Flat Mode' : 'Advanced Mode';
+    const targetModeLabel = targetMode === 'SIMPLE' ? 'Simple Flat Mode' : 'Advanced Mode';
+
+    const confirmed = window.confirm(
+      `Change Product Management Mode for "${biz.name}"?\n\nCurrent: ${currentModeLabel}\nTarget: ${targetModeLabel}\n\nDo you want to proceed?`
+    );
+
+    if (!confirmed) return;
+
+    setActionLoading(biz.id);
+    try {
+      await api.put(`/admin/businesses/${biz.id}/product-mode`, {
+        productMode: targetMode,
+      });
+      toast.success(`Product mode for "${biz.name}" changed to ${targetModeLabel}!`);
+      fetchBusinesses(filter);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || 'Failed to update product mode');
     } finally {
       setActionLoading(null);
     }
@@ -146,6 +174,9 @@ export const AdminBusinessesPage: React.FC = () => {
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                       Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                      Product Mode
                     </th>
                     <th className="px-6 py-4 text-right text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                       Actions
@@ -236,6 +267,29 @@ export const AdminBusinessesPage: React.FC = () => {
                         }`}>
                           {biz.status}
                         </span>
+                      </td>
+
+                      {/* Product Mode */}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1.5 items-start">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                            biz.productMode === 'SIMPLE' 
+                              ? 'bg-sky-50 text-sky-700 border border-sky-200' 
+                              : 'bg-purple-50 text-purple-700 border border-purple-200'
+                          }`}>
+                            <Layers className="w-3 h-3" />
+                            {biz.productMode === 'SIMPLE' ? 'Simple Flat' : 'Advanced'}
+                          </span>
+                          <button
+                            onClick={() => handleProductModeChange(biz)}
+                            disabled={actionLoading !== null}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--color-accent)] hover:underline cursor-pointer disabled:opacity-50 select-none"
+                            title={`Switch ${biz.name} to ${biz.productMode === 'SIMPLE' ? 'Advanced' : 'Simple Flat'} Mode`}
+                          >
+                            <ArrowLeftRight className="w-3 h-3" />
+                            Switch to {biz.productMode === 'SIMPLE' ? 'Advanced' : 'Simple'}
+                          </button>
+                        </div>
                       </td>
 
                       {/* Actions */}
