@@ -32,5 +32,32 @@ export default defineConfig({
   ],
   define: {
     __APP_VERSION__: JSON.stringify(buildVersion),
-  }
+  },
+  build: {
+    chunkSizeWarningLimit: 1600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            return
+          }
+          if (id.includes('recharts') || id.includes('d3')) {
+            return 'vendor-charts'
+          }
+          if (id.includes('lucide-react') || id.includes('react-hot-toast')) {
+            return 'vendor-ui'
+          }
+          if (id.includes('date-fns')) {
+            return 'vendor-date'
+          }
+          if (id.includes('@tanstack') || id.includes('dexie') || id.includes('axios') || id.includes('zustand')) {
+            return 'vendor-data'
+          }
+          if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+            return 'vendor-react'
+          }
+        },
+      },
+    },
+  },
 })
