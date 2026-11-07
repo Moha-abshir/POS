@@ -77,7 +77,7 @@ export class SalesController {
         saleId,
         req.body
       );
-      await flushPattern(`cache:${req.user!.businessId}:/api/customers*`);
+      await flushPattern(`cache:${req.user!.businessId}:*customers*`);
       res.status(201).json({ status: 'success', message: 'Refund processed successfully', data: refund });
     } catch (error) {
       next(error);

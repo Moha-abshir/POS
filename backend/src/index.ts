@@ -87,6 +87,7 @@ app.use(cors({
     process.env.FRONTEND_URL || ''
   ].filter(Boolean),
   credentials: true,
+  maxAge: 86400,
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));

@@ -6,34 +6,17 @@ import { AppError } from '../../core/utils/AppError';
 export class RestockService {
   static async syncLowStockItems(businessId: string) {
     try {
-      const lowStockVariants = await db
-        .select({
-          id: productVariants.id,
-        })
-        .from(productVariants)
-        .innerJoin(products, eq(productVariants.productId, products.id))
-        .where(
-          and(
-            eq(products.businessId, businessId),
-            eq(productVariants.isActive, true),
-            eq(products.isActive, true),
-            sql`${productVariants.baseStockQuantity} <= ${productVariants.lowStockThreshold}`
-          )
-        );
-
-      for (const v of lowStockVariants) {
-        const [existing] = await db
-          .select()
-          .from(restockItems)
-          .where(and(eq(restockItems.businessId, businessId), eq(restockItems.variantId, v.id)));
-
-        if (!existing) {
-          await db.insert(restockItems).values({
-            businessId,
-            variantId: v.id,
-          }).catch(() => {});
-        }
-      }
+      await db.execute(sql`
+        INSERT INTO restock_items (id, business_id, variant_id, is_ordered, created_at)
+        SELECT gen_random_uuid(), p.business_id, pv.id, false, NOW()
+        FROM product_variants pv
+        JOIN products p ON pv.product_id = p.id
+        WHERE p.business_id = ${businessId}
+          AND pv.is_active = true
+          AND p.is_active = true
+          AND CAST(pv.base_stock_quantity AS numeric) <= CAST(pv.low_stock_threshold AS numeric)
+        ON CONFLICT (business_id, variant_id) DO NOTHING
+      `);
     } catch (err) {
       console.error('Error syncing low stock items to restock list:', err);
     }
