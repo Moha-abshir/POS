@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useCustomers, customersApi } from '../../customers/api/customers.api';
+import { useCustomers } from '../../customers/api/customers.api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { salesApi } from '../api/sales.api';
 import { db } from '../../../core/offline/offlineDatabase';
@@ -170,9 +170,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
         handleClose();
 
         queryClient.invalidateQueries({ queryKey: ['products'] });
-        queryClient.invalidateQueries({ queryKey: ['customers'] });
         queryClient.invalidateQueries({ queryKey: ['sales'] });
-        customersApi.syncCustomerCache().catch(() => {});
+        if (customerId) {
+          queryClient.invalidateQueries({ queryKey: ['customers'] });
+        }
       }
     },
     onError: (error: any, _, context) => {

@@ -7,7 +7,6 @@ import { CheckoutModal } from '../features/sales/components/CheckoutModal';
 import { UnitSelectionModal } from '../features/sales/components/UnitSelectionModal';
 import { ReceiptModal } from '../features/sales/components/ReceiptModal';
 import { CardSkeleton } from '../components/ui/Loading';
-import { customersApi } from '../features/customers/api/customers.api';
 import toast from 'react-hot-toast';
 
 export const PosPage = () => {
@@ -19,10 +18,6 @@ export const PosPage = () => {
     },
   });
   const productMode = meData?.business?.productMode || 'ADVANCED';
-
-  useEffect(() => {
-    customersApi.syncCustomerCache();
-  }, []);
 
   // Input value state (instant UI reaction)
   const [searchInputVal, setSearchInputVal] = useState('');

@@ -92,21 +92,18 @@ export const DashboardLayout: React.FC = () => {
 
   const totalCounted = Object.entries(counts).reduce((acc, [val, qty]) => acc + (Number(val) * qty), 0);
 
-  // Fetch alerts and register session
-  const fetchData = useCallback(async () => {
-    if (!navigator.onLine || document.hidden) return;
-
-    // 1. Fetch notifications
-    try {
-      const notifRes = await api.get('/notifications');
-      setNotificationsList(notifRes.data.data);
-      const unreadRes = await api.get('/notifications/unread-count');
-      setUnreadCount(unreadRes.data.count);
-    } catch (err) {
-      console.warn('Error fetching notifications (possibly offline):', err);
+  // Fetch active cash register session
+  const fetchActiveSession = useCallback(async () => {
+    if (!navigator.onLine) {
+      try {
+        const cached = await db.settings.get('active_session');
+        setActiveSession(cached?.value || null);
+      } catch {
+        setActiveSession(null);
+      }
+      return;
     }
 
-    // 2. Fetch active cash register session
     try {
       const sessionRes = await api.get('/cash-sessions/active');
       const active = sessionRes.data.data;
@@ -115,20 +112,30 @@ export const DashboardLayout: React.FC = () => {
     } catch (err) {
       console.warn('Error fetching active register session (using local offline cache):', err);
       try {
-        const cachedSession = await db.settings.get('active_session');
-        if (cachedSession) {
-          setActiveSession(cachedSession.value);
-        } else {
-          setActiveSession(null);
-        }
-      } catch (dbErr) {
-        console.error('Error reading cached session:', dbErr);
+        const cached = await db.settings.get('active_session');
+        setActiveSession(cached?.value || null);
+      } catch {
+        setActiveSession(null);
       }
     }
   }, []);
 
+  // Fetch notifications list and derive unread count in a single request
+  const fetchNotifications = useCallback(async () => {
+    if (!navigator.onLine || document.hidden) return;
+    try {
+      const notifRes = await api.get('/notifications');
+      const list = notifRes.data.data || [];
+      setNotificationsList(list);
+      const unread = list.filter((n: any) => !n.isRead).length;
+      setUnreadCount(unread);
+    } catch (err) {
+      console.warn('Error fetching notifications (possibly offline):', err);
+    }
+  }, []);
+
+  // Initial load on mount - no continuous background polling intervals
   useEffect(() => {
-    // 0. Cache business & user profile once on mount
     if (navigator.onLine) {
       api.get('/auth/me').then(meRes => {
         if (meRes.data?.data) {
@@ -138,45 +145,23 @@ export const DashboardLayout: React.FC = () => {
       }).catch(() => {});
     }
 
-    if (navigator.onLine) {
-      fetchData();
-    } else {
-      db.settings.get('active_session').then(cachedSession => {
-        if (cachedSession) {
-          setActiveSession(cachedSession.value);
-        }
-      }).catch(() => {});
+    fetchActiveSession();
+    fetchNotifications();
+  }, [fetchActiveSession, fetchNotifications]);
+
+  // Refresh active session figures only when opening the register modal
+  useEffect(() => {
+    if (isRegisterModalOpen && activeSession) {
+      fetchActiveSession();
     }
+  }, [isRegisterModalOpen, activeSession, fetchActiveSession]);
 
-    // Smart Polling: Poll every 60s only when the user is actively at the terminal
-    // If inactive for > 2 minutes (overnight, lunch break, idle screen), pause polling so Neon can suspend to 0
-    let lastActivityTime = Date.now();
-    const IDLE_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
-
-    const onUserActivity = () => {
-      const wasIdle = Date.now() - lastActivityTime > IDLE_TIMEOUT_MS;
-      lastActivityTime = Date.now();
-      if (wasIdle && navigator.onLine && !document.hidden) {
-        // User came back to the terminal - immediately refresh once
-        fetchData();
-      }
-    };
-
-    const activityEvents = ['mousemove', 'keydown', 'touchstart', 'scroll', 'click'];
-    activityEvents.forEach(evt => window.addEventListener(evt, onUserActivity, { passive: true }));
-
-    const interval = setInterval(() => {
-      const isIdle = Date.now() - lastActivityTime > IDLE_TIMEOUT_MS;
-      if (navigator.onLine && !document.hidden && !isIdle) {
-        fetchData();
-      }
-    }, 60000);
-
-    return () => {
-      clearInterval(interval);
-      activityEvents.forEach(evt => window.removeEventListener(evt, onUserActivity));
-    };
-  }, [fetchData]);
+  // Refresh notifications when user opens notification dropdown
+  useEffect(() => {
+    if (isNotificationsOpen) {
+      fetchNotifications();
+    }
+  }, [isNotificationsOpen, fetchNotifications]);
 
   const handleOpenRegister = async () => {
     if (!openingFloat || Number(openingFloat) < 0) {
@@ -186,11 +171,11 @@ export const DashboardLayout: React.FC = () => {
     try {
       const res = await api.post('/cash-sessions/open', { openingFloat: Number(openingFloat) });
       const newSession = res.data.data;
+      setActiveSession(newSession);
       await db.settings.put({ key: 'active_session', value: newSession });
       toast.success('Cash register opened successfully');
       setOpeningFloat('');
       setIsRegisterModalOpen(false);
-      fetchData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to open register');
     }
@@ -203,33 +188,37 @@ export const DashboardLayout: React.FC = () => {
         actualCash: totalCounted,
         notes: notes.trim(),
       });
+      setActiveSession(null);
       await db.settings.put({ key: 'active_session', value: null });
       toast.success('Cash register closed successfully');
       setNotes('');
       setCounts({ 1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0, 5: 0, 1: 0 });
       setIsClosingStep(false);
       setIsRegisterModalOpen(false);
-      fetchData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to close register');
     }
   };
 
   const handleMarkRead = async (id: string) => {
+    setNotificationsList(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    setUnreadCount(prev => Math.max(0, prev - 1));
     try {
       await api.post(`/notifications/${id}/read`);
-      fetchData();
     } catch (err) {
       console.error(err);
+      fetchNotifications();
     }
   };
 
   const handleMarkAllRead = async () => {
+    setNotificationsList(prev => prev.map(n => ({ ...n, isRead: true })));
+    setUnreadCount(0);
     try {
       await api.post('/notifications/mark-all-read');
-      fetchData();
     } catch (err) {
       console.error(err);
+      fetchNotifications();
     }
   };
 
