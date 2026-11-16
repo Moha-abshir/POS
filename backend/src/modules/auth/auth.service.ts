@@ -87,6 +87,9 @@ export class AuthService {
       let isBankingEnabled = false;
       let businessName = 'Smart Store POS';
       let businessStatus = 'pending';
+      let isPaymentLocked = false;
+      let paymentLockReason: string | null = null;
+      let paymentAmountDue: string | null = null;
 
       if (!user) {
         const [newBusiness] = await tx.insert(businesses).values({
@@ -97,6 +100,9 @@ export class AuthService {
         isSetupComplete = newBusiness.isSetupComplete;
         isBankingEnabled = newBusiness.isBankingEnabled;
         businessStatus = newBusiness.status;
+        isPaymentLocked = newBusiness.isPaymentLocked;
+        paymentLockReason = newBusiness.paymentLockReason;
+        paymentAmountDue = newBusiness.paymentAmountDue;
 
         const [newUser] = await tx.insert(users).values({
           email,
@@ -116,6 +122,9 @@ export class AuthService {
           isBankingEnabled = business.isBankingEnabled;
           businessName = business.name;
           businessStatus = business.status;
+          isPaymentLocked = business.isPaymentLocked;
+          paymentLockReason = business.paymentLockReason;
+          paymentAmountDue = business.paymentAmountDue;
         }
       }
 
@@ -152,7 +161,10 @@ export class AuthService {
           businessName,
           isSetupComplete,
           isBankingEnabled,
-          businessStatus
+          businessStatus,
+          isPaymentLocked,
+          paymentLockReason,
+          paymentAmountDue
         }
       };
     });

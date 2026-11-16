@@ -158,4 +158,24 @@ export class AdminController {
       next(error);
     }
   }
+
+  static async togglePaymentLock(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const { isPaymentLocked, reason, amountDue } = req.body;
+      const data = await AdminService.togglePaymentLock(id, {
+        isPaymentLocked: Boolean(isPaymentLocked),
+        reason: reason || null,
+        amountDue: amountDue !== undefined && amountDue !== null && amountDue !== '' ? Number(amountDue) : undefined,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: isPaymentLocked ? 'Payment lock enabled successfully' : 'Payment lock removed successfully',
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

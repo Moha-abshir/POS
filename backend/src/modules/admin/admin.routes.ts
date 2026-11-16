@@ -19,6 +19,8 @@ router.post('/businesses/:id/suspend', authenticate, requireAdmin, AdminControll
 router.post('/businesses/:id/reactivate', authenticate, requireAdmin, AdminController.reactivate);
 router.put('/businesses/:id/product-mode', authenticate, requireAdmin, AdminController.updateProductMode);
 router.post('/businesses/:id/product-mode', authenticate, requireAdmin, AdminController.updateProductMode);
+router.put('/businesses/:id/payment-lock', authenticate, requireAdmin, AdminController.togglePaymentLock);
+router.post('/businesses/:id/payment-lock', authenticate, requireAdmin, AdminController.togglePaymentLock);
 router.delete('/businesses/:id', authenticate, requireAdmin, AdminController.deleteBusiness);
 
 export default router;

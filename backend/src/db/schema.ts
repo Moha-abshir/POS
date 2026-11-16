@@ -27,6 +27,10 @@ export const businesses = pgTable('businesses', {
   approvedBy: uuid('approved_by').references(() => admins.id, { onDelete: 'set null' }),
   productMode: varchar('product_mode', { length: 50 }).notNull().default('ADVANCED'),
   isBankingEnabled: boolean('is_banking_enabled').notNull().default(false),
+  isPaymentLocked: boolean('is_payment_locked').notNull().default(false),
+  paymentLockReason: text('payment_lock_reason'),
+  paymentAmountDue: decimal('payment_amount_due', { precision: 12, scale: 2 }),
+  paymentLockedAt: timestamp('payment_locked_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
 });

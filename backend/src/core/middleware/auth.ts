@@ -151,6 +151,22 @@ export const requireActiveBusiness = async (req: Request, res: Response, next: N
       });
     }
 
+    if (business.isPaymentLocked) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'PAYMENT_REQUIRED',
+          message: business.paymentLockReason || 'Subscription payment required for this business account',
+          status: 'payment_locked',
+          redirect: '/payment-required',
+          paymentDetails: {
+            reason: business.paymentLockReason,
+            amountDue: business.paymentAmountDue,
+          }
+        }
+      });
+    }
+
     next();
   } catch (error) {
     return res.status(500).json({

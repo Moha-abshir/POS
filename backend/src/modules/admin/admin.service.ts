@@ -167,6 +167,10 @@ export class AdminService {
       location: businesses.location,
       status: businesses.status,
       productMode: businesses.productMode,
+      isPaymentLocked: businesses.isPaymentLocked,
+      paymentLockReason: businesses.paymentLockReason,
+      paymentAmountDue: businesses.paymentAmountDue,
+      paymentLockedAt: businesses.paymentLockedAt,
       createdAt: businesses.createdAt,
       approvedAt: businesses.approvedAt,
       approvedBy: businesses.approvedBy,
@@ -180,7 +184,11 @@ export class AdminService {
     .leftJoin(admins, eq(businesses.approvedBy, admins.id));
 
     if (statusFilter && statusFilter !== 'all') {
-      query = query.where(eq(businesses.status, statusFilter)) as any;
+      if (statusFilter === 'payment_locked') {
+        query = query.where(eq(businesses.isPaymentLocked, true)) as any;
+      } else {
+        query = query.where(eq(businesses.status, statusFilter)) as any;
+      }
     }
 
     return await query.orderBy(desc(businesses.createdAt));
@@ -280,6 +288,24 @@ export class AdminService {
     const [updated] = await db.update(businesses)
       .set({
         productMode,
+        updatedAt: new Date()
+      })
+      .where(eq(businesses.id, businessId))
+      .returning();
+
+    return updated;
+  }
+
+  static async togglePaymentLock(businessId: string, data: { isPaymentLocked: boolean; reason?: string | null; amountDue?: number | null }) {
+    const [business] = await db.select().from(businesses).where(eq(businesses.id, businessId));
+    if (!business) throw new AppError('Business not found', 404);
+
+    const [updated] = await db.update(businesses)
+      .set({
+        isPaymentLocked: data.isPaymentLocked,
+        paymentLockReason: data.isPaymentLocked ? (data.reason || null) : null,
+        paymentAmountDue: data.isPaymentLocked && data.amountDue !== undefined && data.amountDue !== null ? String(data.amountDue) : null,
+        paymentLockedAt: data.isPaymentLocked ? new Date() : null,
         updatedAt: new Date()
       })
       .where(eq(businesses.id, businessId))
