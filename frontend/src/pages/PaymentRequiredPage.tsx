@@ -86,7 +86,7 @@ export const PaymentRequiredPage: React.FC = () => {
     }
   };
 
-  const amountDisplay = businessData.amountDue 
+  const amountDisplay = businessData.amountDue
     ? Number(businessData.amountDue).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : null;
 
@@ -106,7 +106,7 @@ export const PaymentRequiredPage: React.FC = () => {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-lg px-4 sm:px-0">
         <div className="bg-[var(--color-bg-surface)] rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] border border-[var(--color-border)] p-6 sm:p-8 space-y-6">
-          
+
           {/* Business & Amount Banner */}
           <div className="bg-amber-50/60 border border-amber-200/80 rounded-[var(--radius-md)] p-4 flex flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -146,11 +146,11 @@ export const PaymentRequiredPage: React.FC = () => {
               <AlertCircle className="w-3.5 h-3.5 text-[var(--color-accent)]" />
               M-Pesa Payment Instructions
             </h4>
-            
+
             <div className="text-xs text-[var(--color-text-secondary)] space-y-2">
               <div className="flex justify-between items-center py-1 border-b border-[var(--color-border)]">
                 <span className="font-medium text-[var(--color-text-muted)]">Payment Mode:</span>
-                <span className="font-semibold text-[var(--color-text-primary)]">Lipa na M-Pesa / Send Money</span>
+                <span className="font-semibold text-[var(--color-text-primary)]"> Send Money</span>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-[var(--color-border)]">
                 <span className="font-medium text-[var(--color-text-muted)]">Recipient Number:</span>
@@ -161,7 +161,7 @@ export const PaymentRequiredPage: React.FC = () => {
                 <span className="font-semibold text-[var(--color-text-primary)]">{businessData.name || 'Your Business Name'}</span>
               </div>
             </div>
-            
+
             <p className="text-[11px] text-[var(--color-text-muted)] pt-1">
               After sending payment, contact platform support or click the button below to verify and instantly reactivate your service.
             </p>
@@ -173,17 +173,17 @@ export const PaymentRequiredPage: React.FC = () => {
               Need Assistance? Contact Support
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-[var(--color-text-secondary)]">
-              <a 
-                href="tel:+254714731331" 
+              <a
+                href="tel:+254714731331"
                 className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-sunken)] hover:text-[var(--color-accent)] transition-colors"
               >
                 <Phone className="w-4 h-4 text-[var(--color-accent)]" />
                 <span>+254 714 731 331</span>
               </a>
-              <a 
-                href="https://wa.me/254714731331" 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href="https://wa.me/254714731331"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-sunken)] hover:text-green-600 transition-colors"
               >
                 <MessageCircle className="w-4 h-4 text-green-500" />
