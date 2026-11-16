@@ -9,7 +9,12 @@ export const api = axios.create({
 });
 
 // Add an interceptor to inject the Access Token if we have it in memory
-export const setupInterceptors = (getAccessToken: () => string | null, setAccessToken: (token: string) => void, logout: () => void) => {
+export const setupInterceptors = (
+  getAccessToken: () => string | null,
+  setAccessToken: (token: string) => void,
+  logout: () => void,
+  updateUser?: (fields: any) => void
+) => {
   api.interceptors.request.use((config) => {
     const token = getAccessToken();
     if (token) {
@@ -19,7 +24,40 @@ export const setupInterceptors = (getAccessToken: () => string | null, setAccess
   });
 
   api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      // Check response headers for real-time payment status
+      try {
+        const paymentStatus = response.headers['x-business-payment-status'];
+        if (paymentStatus && updateUser) {
+          const rawStorage = localStorage.getItem('pos-auth-storage-v2');
+          if (rawStorage) {
+            const parsed = JSON.parse(rawStorage);
+            const currentUser = parsed.state?.user;
+            if (currentUser && currentUser.type !== 'admin') {
+              const amountHeader = response.headers['x-business-payment-amount'];
+              const reasonHeader = response.headers['x-business-payment-reason'];
+              const reason = reasonHeader ? decodeURIComponent(reasonHeader) : null;
+              const isLocked = paymentStatus === 'locked';
+
+              if (
+                currentUser.paymentStatus !== paymentStatus ||
+                Boolean(currentUser.isPaymentLocked) !== isLocked
+              ) {
+                updateUser({
+                  paymentStatus,
+                  isPaymentLocked: isLocked,
+                  paymentAmountDue: amountHeader !== undefined ? amountHeader : currentUser.paymentAmountDue,
+                  paymentLockReason: reason !== null ? reason : currentUser.paymentLockReason,
+                });
+              }
+            }
+          }
+        }
+      } catch {
+        // Silently ignore header parsing errors
+      }
+      return response;
+    },
     async (error) => {
       const originalRequest = error.config;
       

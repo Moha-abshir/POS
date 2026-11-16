@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { AdminHeader } from '../components/AdminHeader';
+import { broadcastBusinessStatus } from '../core/events/syncChannel';
 import { 
   Building2, Check, X, ShieldAlert, Ban, RefreshCw, 
   MapPin, Phone, Mail, FileText, CheckCircle2, User, Trash2,
@@ -75,6 +76,16 @@ export const AdminBusinessesPage: React.FC = () => {
       } else {
         await api.post(`/admin/businesses/${businessId}/${action}`);
       }
+
+      if (action === 'suspend' || action === 'reactivate') {
+        broadcastBusinessStatus({
+          businessId,
+          paymentStatus: 'normal',
+          isPaymentLocked: false,
+          businessStatus: action === 'suspend' ? 'suspended' : 'active',
+        });
+      }
+
       toast.success(`Business ${action}ed successfully!`);
       fetchBusinesses(filter);
     } catch (err: any) {
@@ -127,6 +138,15 @@ export const AdminBusinessesPage: React.FC = () => {
         paymentStatus: 'normal',
         isPaymentLocked: false,
       });
+
+      broadcastBusinessStatus({
+        businessId: biz.id,
+        paymentStatus: 'normal',
+        isPaymentLocked: false,
+        amountDue: null,
+        reason: null,
+      });
+
       toast.success(`Payment status cleared for "${biz.name}". Access is normal.`);
       fetchBusinesses(filter);
     } catch (err: any) {
@@ -147,6 +167,14 @@ export const AdminBusinessesPage: React.FC = () => {
         isPaymentLocked: modalMode === 'locked',
         amountDue: amountDueInput ? Number(amountDueInput) : undefined,
         reason: reasonInput.trim() || undefined,
+      });
+
+      broadcastBusinessStatus({
+        businessId: paymentModalBiz.id,
+        paymentStatus: modalMode,
+        isPaymentLocked: modalMode === 'locked',
+        amountDue: amountDueInput ? Number(amountDueInput) : null,
+        reason: reasonInput.trim() || null,
       });
 
       const successMsg = modalMode === 'warning'

@@ -21,21 +21,21 @@ export const PaymentWarningBanner: React.FC = () => {
   return (
     <>
       {/* Brown-Yellowish Glowing/Dimming Banner */}
-      <div className="bg-gradient-to-r from-amber-900 via-amber-800 to-yellow-900 text-amber-50 px-4 py-2.5 shadow-md border-b border-amber-600/40 relative z-[9998] transition-all duration-300">
+      <div className="bg-gradient-to-r from-[#451a03] via-[#78350f] to-[#451a03] text-amber-50 px-4 py-2.5 shadow-lg border-b border-amber-500/50 relative z-[9998] transition-all duration-300">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs sm:text-sm">
           
           {/* Pulsing Alert Content */}
           <div className="flex items-center gap-2.5 animate-pulse">
-            <span className="flex h-2.5 w-2.5 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-300"></span>
+            <span className="flex h-3 w-3 relative shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-80"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-400 shadow-[0_0_8px_#f59e0b]"></span>
             </span>
             <AlertTriangle className="w-4 h-4 text-amber-300 shrink-0" />
-            <span className="font-semibold text-amber-100">
+            <span className="font-semibold text-amber-100 tracking-wide">
               Payment Reminder: Please make payment to avoid service disruption.
             </span>
             {amountDisplay && (
-              <span className="hidden md:inline font-mono font-bold bg-amber-950/60 text-amber-200 px-2 py-0.5 rounded border border-amber-600/50">
+              <span className="hidden md:inline-flex items-center font-mono font-bold bg-amber-950/80 text-amber-200 px-2.5 py-0.5 rounded border border-amber-500/60 shadow-xs">
                 Amount Due: KES {amountDisplay}
               </span>
             )}
@@ -50,7 +50,7 @@ export const PaymentWarningBanner: React.FC = () => {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setShowDetailsModal(true)}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 hover:text-white border border-amber-400/40 rounded-[var(--radius-sm)] text-xs font-semibold transition-colors cursor-pointer select-none"
+              className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 hover:text-white border border-amber-400/50 rounded-[var(--radius-sm)] text-xs font-semibold transition-colors cursor-pointer select-none shadow-xs"
             >
               <CreditCard className="w-3.5 h-3.5" />
               <span>How to Pay</span>

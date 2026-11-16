@@ -32,6 +32,7 @@ import { salesApi } from './features/sales/api/sales.api';
 import OfflineBanner from './components/OfflineBanner';
 import PaymentWarningBanner from './components/PaymentWarningBanner';
 import { syncService } from './core/offline/syncService';
+import { useBusinessStatusSync } from './core/events/useBusinessStatusSync';
 
 const NotFound = () => (
   <div className="flex flex-col items-center justify-center h-full p-6 text-center">
@@ -49,6 +50,7 @@ import { VersionUpdateModal } from './components/VersionUpdateModal';
 import { customersApi } from './features/customers/api/customers.api';
 
 function App() {
+  useBusinessStatusSync();
   const { isAuthenticated, user } = useAuthStore();
   const queryClient = useQueryClient();
 

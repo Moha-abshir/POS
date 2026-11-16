@@ -39,7 +39,8 @@ export const useAuthStore = create<AuthState>()(
       setupInterceptors(
         () => get().accessToken,
         (token) => set({ accessToken: token }),
-        () => get().logout()
+        () => get().logout(),
+        (fields) => get().updateUser(fields)
       );
 
       return {

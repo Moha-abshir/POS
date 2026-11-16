@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../features/auth/stores/auth.store';
 import { api } from '../lib/api';
 import { CreditCard, Phone, MessageCircle, LogOut, RefreshCw, AlertCircle, Building2, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const PaymentRequiredPage: React.FC = () => {
+  const navigate = useNavigate();
   const { user, logout, setAuth } = useAuthStore();
   const [checking, setChecking] = useState(false);
   const [businessData, setBusinessData] = useState<{
@@ -16,6 +18,15 @@ export const PaymentRequiredPage: React.FC = () => {
     amountDue: user?.paymentAmountDue,
     reason: user?.paymentLockReason,
   });
+
+  // Watch for real-time unlock from admin
+  useEffect(() => {
+    const isLocked = Boolean(user?.isPaymentLocked || user?.paymentStatus === 'locked' || user?.businessStatus === 'payment_locked');
+    if (!isLocked && user?.businessStatus === 'active') {
+      toast.success('Account access unlocked!');
+      navigate('/', { replace: true });
+    }
+  }, [user?.isPaymentLocked, user?.paymentStatus, user?.businessStatus, navigate]);
 
   const fetchLatestDetails = async () => {
     try {
