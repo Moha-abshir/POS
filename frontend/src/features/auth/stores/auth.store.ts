@@ -15,6 +15,9 @@ interface User {
   isSetupComplete?: boolean;
   isBankingEnabled?: boolean;
   businessStatus?: string;
+  isPaymentLocked?: boolean;
+  paymentLockReason?: string | null;
+  paymentAmountDue?: string | number | null;
   type?: 'user' | 'admin';
 }
 
@@ -24,6 +27,7 @@ interface AuthState {
   isAuthenticated: boolean;
   hasSkippedOnboarding?: boolean;
   setAuth: (user: User, accessToken: string) => void;
+  updateUser: (fields: Partial<User>) => void;
   logout: () => void;
   skipOnboarding: () => void;
 }
@@ -48,6 +52,10 @@ export const useAuthStore = create<AuthState>()(
           accessToken,
           isAuthenticated: true
         }),
+        
+        updateUser: (fields) => set((state) => ({
+          user: state.user ? { ...state.user, ...fields } : null
+        })),
         
         logout: async () => {
           set({

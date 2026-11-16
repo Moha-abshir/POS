@@ -40,9 +40,12 @@ export const setupInterceptors = (getAccessToken: () => string | null, setAccess
           return Promise.reject(refreshError);
         }
       }
-      if (error.response?.status === 403 && error.response?.data?.error?.code === 'INACTIVE_BUSINESS') {
-        const redirectUrl = error.response?.data?.error?.redirect;
-        if (redirectUrl) {
+      if (
+        error.response?.status === 403 && 
+        (error.response?.data?.error?.code === 'INACTIVE_BUSINESS' || error.response?.data?.error?.code === 'PAYMENT_REQUIRED')
+      ) {
+        const redirectUrl = error.response?.data?.error?.redirect || '/payment-required';
+        if (redirectUrl && window.location.pathname !== redirectUrl) {
           window.location.href = redirectUrl;
           return new Promise(() => {});
         }

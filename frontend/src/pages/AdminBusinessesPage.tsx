@@ -4,7 +4,7 @@ import { AdminHeader } from '../components/AdminHeader';
 import { 
   Building2, Check, X, ShieldAlert, Ban, RefreshCw, 
   MapPin, Phone, Mail, FileText, CheckCircle2, User, Trash2,
-  Layers, ArrowLeftRight
+  Layers, ArrowLeftRight, CreditCard, Lock, Unlock, AlertTriangle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -16,6 +16,10 @@ interface Business {
   location: string | null;
   status: 'pending' | 'active' | 'suspended' | 'rejected';
   productMode?: 'SIMPLE' | 'ADVANCED';
+  isPaymentLocked?: boolean;
+  paymentLockReason?: string | null;
+  paymentAmountDue?: string | number | null;
+  paymentLockedAt?: string | null;
   createdAt: string;
   approvedAt: string | null;
   approvedBy: string | null;
@@ -25,13 +29,19 @@ interface Business {
   ownerPhone: string | null;
 }
 
-type StatusFilter = 'all' | 'pending' | 'active' | 'suspended' | 'rejected';
+type StatusFilter = 'all' | 'pending' | 'active' | 'payment_locked' | 'suspended' | 'rejected';
 
 export const AdminBusinessesPage: React.FC = () => {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Payment Lock Modal state
+  const [paymentModalBiz, setPaymentModalBiz] = useState<Business | null>(null);
+  const [amountDueInput, setAmountDueInput] = useState('');
+  const [reasonInput, setReasonInput] = useState('');
+  const [submittingLock, setSubmittingLock] = useState(false);
 
   const fetchBusinesses = async (statusFilter: StatusFilter) => {
     setLoading(true);
@@ -99,10 +109,56 @@ export const AdminBusinessesPage: React.FC = () => {
     }
   };
 
+  const handleTogglePaymentLock = async (biz: Business, lock: boolean) => {
+    if (!lock) {
+      if (!window.confirm(`Restore access for "${biz.name}" and remove payment lock?`)) {
+        return;
+      }
+      setActionLoading(biz.id);
+      try {
+        await api.put(`/admin/businesses/${biz.id}/payment-lock`, {
+          isPaymentLocked: false,
+        });
+        toast.success(`Payment lock removed for "${biz.name}". Access restored.`);
+        fetchBusinesses(filter);
+      } catch (err: any) {
+        toast.error(err.response?.data?.error?.message || 'Failed to remove payment lock');
+      } finally {
+        setActionLoading(null);
+      }
+    } else {
+      setPaymentModalBiz(biz);
+      setAmountDueInput(biz.paymentAmountDue ? String(biz.paymentAmountDue) : '');
+      setReasonInput(biz.paymentLockReason || '');
+    }
+  };
+
+  const handleConfirmLock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!paymentModalBiz) return;
+
+    setSubmittingLock(true);
+    try {
+      await api.put(`/admin/businesses/${paymentModalBiz.id}/payment-lock`, {
+        isPaymentLocked: true,
+        amountDue: amountDueInput ? Number(amountDueInput) : undefined,
+        reason: reasonInput.trim() || undefined,
+      });
+      toast.success(`Payment lock enabled for "${paymentModalBiz.name}". Features are now locked.`);
+      setPaymentModalBiz(null);
+      fetchBusinesses(filter);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || 'Failed to enable payment lock');
+    } finally {
+      setSubmittingLock(false);
+    }
+  };
+
   const filters: Array<{ label: string; value: StatusFilter }> = [
     { label: 'All Businesses', value: 'all' },
     { label: 'Pending Approval', value: 'pending' },
     { label: 'Active', value: 'active' },
+    { label: 'Payment Due', value: 'payment_locked' },
     { label: 'Suspended', value: 'suspended' },
     { label: 'Rejected', value: 'rejected' },
   ];
@@ -116,7 +172,7 @@ export const AdminBusinessesPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">Businesses Management</h1>
             <p className="text-[var(--color-text-secondary)] text-sm mt-1">
-              Verify, approve, suspend, or reactivate platform tenants.
+              Verify, approve, suspend, manage payment locks, or reactivate platform tenants.
             </p>
           </div>
           
@@ -174,6 +230,9 @@ export const AdminBusinessesPage: React.FC = () => {
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                       Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                      Payment Status
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                       Product Mode
@@ -248,15 +307,14 @@ export const AdminBusinessesPage: React.FC = () => {
                         )}
                         {biz.approvedByName && (
                           <div className="flex items-center gap-1 text-[var(--color-text-muted)] italic">
-                            <ShieldAlert className="w-3 h-3 text-[var(--color-accent)]" />
-                            Approved by: {biz.approvedByName}
+                            <Check className="w-3.5 h-3.5 text-green-600" /> By {biz.approvedByName}
                           </div>
                         )}
                       </td>
 
                       {/* Status */}
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase ${
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
                           biz.status === 'active' 
                             ? 'bg-green-100 text-green-800'
                             : biz.status === 'pending'
@@ -267,6 +325,55 @@ export const AdminBusinessesPage: React.FC = () => {
                         }`}>
                           {biz.status}
                         </span>
+                      </td>
+
+                      {/* Payment Status & Toggle */}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1.5 items-start">
+                          {biz.isPaymentLocked ? (
+                            <>
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300">
+                                <Lock className="w-3 h-3 text-amber-700" />
+                                Payment Locked
+                              </span>
+                              {biz.paymentAmountDue && (
+                                <span className="text-xs font-bold text-amber-950 font-mono">
+                                  KES {Number(biz.paymentAmountDue).toLocaleString('en-KE', { minimumFractionDigits: 2 })}
+                                </span>
+                              )}
+                              {biz.paymentLockReason && (
+                                <span className="text-[11px] text-[var(--color-text-muted)] italic max-w-[160px] truncate" title={biz.paymentLockReason}>
+                                  {biz.paymentLockReason}
+                                </span>
+                              )}
+                              <button
+                                onClick={() => handleTogglePaymentLock(biz, false)}
+                                disabled={actionLoading !== null}
+                                className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 hover:bg-green-100 text-green-700 hover:text-green-800 border border-green-200 rounded-[var(--radius-sm)] text-[11px] font-semibold transition-colors cursor-pointer select-none disabled:opacity-50"
+                                title="Unlock business and restore full access"
+                              >
+                                <Unlock className="w-3 h-3" />
+                                Unlock Access
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                                <CheckCircle2 className="w-3 h-3" />
+                                Unlocked
+                              </span>
+                              <button
+                                onClick={() => handleTogglePaymentLock(biz, true)}
+                                disabled={actionLoading !== null}
+                                className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 hover:text-amber-900 border border-amber-200 rounded-[var(--radius-sm)] text-[11px] font-semibold transition-colors cursor-pointer select-none disabled:opacity-50"
+                                title="Lock business for payment and display payment page"
+                              >
+                                <CreditCard className="w-3 h-3 text-amber-700" />
+                                Lock for Payment
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
 
                       {/* Product Mode */}
@@ -367,6 +474,94 @@ export const AdminBusinessesPage: React.FC = () => {
           )}
         </div>
       </main>
+
+      {/* Payment Lock Modal */}
+      {paymentModalBiz && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[var(--color-text-primary)]">
+                    Lock Business for Payment
+                  </h3>
+                  <p className="text-xs text-[var(--color-text-muted)]">
+                    {paymentModalBiz.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPaymentModalBiz(null)}
+                className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] p-1 rounded-md cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+              Enabling the payment lock pauses all POS operations for <strong className="text-[var(--color-text-primary)]">{paymentModalBiz.name}</strong>. The users will see the dedicated Payment Required page and cannot access any features until you unlock them.
+            </p>
+
+            <form onSubmit={handleConfirmLock} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-[var(--color-text-primary)] mb-1">
+                  Amount Due (KES) - Optional
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="e.g. 3000"
+                  value={amountDueInput}
+                  onChange={(e) => setAmountDueInput(e.target.value)}
+                  className="w-full h-10 px-3 border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm bg-[var(--color-bg-base)] focus:outline-none focus:border-[var(--color-accent)] font-mono"
+                />
+                <span className="text-[11px] text-[var(--color-text-muted)] mt-0.5 block">
+                  Displayed on the tenant's payment page as the total due.
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[var(--color-text-primary)] mb-1">
+                  Billing Reason / Notes - Optional
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Monthly subscription renewal for November"
+                  value={reasonInput}
+                  onChange={(e) => setReasonInput(e.target.value)}
+                  className="w-full h-10 px-3 border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm bg-[var(--color-bg-base)] focus:outline-none focus:border-[var(--color-accent)]"
+                />
+                <span className="text-[11px] text-[var(--color-text-muted)] mt-0.5 block">
+                  Explanation or invoice note visible to the tenant.
+                </span>
+              </div>
+
+              <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPaymentModalBiz(null)}
+                  disabled={submittingLock}
+                  className="px-4 h-9 rounded-[var(--radius-md)] text-xs font-semibold text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-sunken)] border border-[var(--color-border)] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingLock}
+                  className="px-4 h-9 rounded-[var(--radius-md)] text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 cursor-pointer shadow-xs disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  {submittingLock ? 'Activating Lock...' : 'Lock for Payment'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

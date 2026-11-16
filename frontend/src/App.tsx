@@ -18,6 +18,7 @@ import { ReconciliationLogsPage } from './pages/ReconciliationLogsPage';
 // Import New Pages
 import { AwaitingApprovalPage } from './pages/AwaitingApprovalPage';
 import { AccountSuspendedPage } from './pages/AccountSuspendedPage';
+import { PaymentRequiredPage } from './pages/PaymentRequiredPage';
 import { AccountRejectedPage } from './pages/AccountRejectedPage';
 import { AdminLoginPage } from './pages/AdminLoginPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
@@ -72,7 +73,8 @@ function App() {
   const isPending = isUser && user?.businessStatus === 'pending';
   const isSuspended = isUser && user?.businessStatus === 'suspended';
   const isRejected = isUser && user?.businessStatus === 'rejected';
-  const isActive = isUser && user?.businessStatus === 'active';
+  const isPaymentLocked = isUser && (user?.isPaymentLocked || user?.businessStatus === 'payment_locked');
+  const isActive = isUser && user?.businessStatus === 'active' && !isPaymentLocked;
 
   return (
     <BrowserRouter>
@@ -118,6 +120,14 @@ function App() {
             }
           />
           <Route 
+            path="/payment-required" 
+            element={
+              isPaymentLocked 
+                ? <PaymentRequiredPage /> 
+                : (isAuthenticated ? <Navigate to="/" replace /> : <Navigate to="/login" replace />)
+            }
+          />
+          <Route 
             path="/account-rejected" 
             element={
               isRejected 
@@ -144,7 +154,9 @@ function App() {
                     ? <Navigate to="/admin" replace /> 
                     : (isActive 
                         ? <DashboardLayout /> 
-                        : (isPending 
+                        : (isPaymentLocked
+                            ? <Navigate to="/payment-required" replace />
+                            : isPending 
                             ? <Navigate to="/awaiting-approval" replace /> 
                             : isSuspended 
                             ? <Navigate to="/account-suspended" replace /> 
