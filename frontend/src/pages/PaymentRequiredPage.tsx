@@ -28,20 +28,22 @@ export const PaymentRequiredPage: React.FC = () => {
           reason: business.paymentLockReason,
         });
 
+        const isLocked = Boolean(business.isPaymentLocked || business.paymentStatus === 'locked');
         const currentToken = useAuthStore.getState().accessToken;
         if (currentToken && user) {
           setAuth({
             ...user,
             businessName: business.name,
             businessStatus: business.status,
-            isPaymentLocked: business.isPaymentLocked,
+            paymentStatus: business.paymentStatus || (isLocked ? 'locked' : 'normal'),
+            isPaymentLocked: isLocked,
             paymentLockReason: business.paymentLockReason,
             paymentAmountDue: business.paymentAmountDue,
           }, currentToken);
         }
 
         // If the admin unlocked the business, redirect to dashboard immediately
-        if (!business.isPaymentLocked && business.status === 'active') {
+        if (!isLocked && business.status === 'active') {
           toast.success('Payment confirmed! Full access has been restored.');
           window.location.href = '/';
         }
@@ -61,19 +63,21 @@ export const PaymentRequiredPage: React.FC = () => {
       const res = await api.get('/auth/me');
       const { business } = res.data.data;
 
+      const isLocked = Boolean(business.isPaymentLocked || business.paymentStatus === 'locked');
       const currentToken = useAuthStore.getState().accessToken;
       if (currentToken && user) {
         setAuth({
           ...user,
           businessName: business.name,
           businessStatus: business.status,
-          isPaymentLocked: business.isPaymentLocked,
+          paymentStatus: business.paymentStatus || (isLocked ? 'locked' : 'normal'),
+          isPaymentLocked: isLocked,
           paymentLockReason: business.paymentLockReason,
           paymentAmountDue: business.paymentAmountDue,
         }, currentToken);
       }
 
-      if (!business.isPaymentLocked && business.status === 'active') {
+      if (!isLocked && business.status === 'active') {
         toast.success('Payment verified! Your account is now active.');
         window.location.href = '/';
       } else {

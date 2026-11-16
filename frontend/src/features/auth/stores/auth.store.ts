@@ -15,6 +15,7 @@ interface User {
   isSetupComplete?: boolean;
   isBankingEnabled?: boolean;
   businessStatus?: string;
+  paymentStatus?: 'normal' | 'warning' | 'locked';
   isPaymentLocked?: boolean;
   paymentLockReason?: string | null;
   paymentAmountDue?: string | number | null;

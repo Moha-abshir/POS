@@ -30,6 +30,7 @@ import { toast } from 'react-hot-toast';
 import { IndexedDBCache } from './features/catalog/utils/indexedDb';
 import { salesApi } from './features/sales/api/sales.api';
 import OfflineBanner from './components/OfflineBanner';
+import PaymentWarningBanner from './components/PaymentWarningBanner';
 import { syncService } from './core/offline/syncService';
 
 const NotFound = () => (
@@ -73,13 +74,14 @@ function App() {
   const isPending = isUser && user?.businessStatus === 'pending';
   const isSuspended = isUser && user?.businessStatus === 'suspended';
   const isRejected = isUser && user?.businessStatus === 'rejected';
-  const isPaymentLocked = isUser && (user?.isPaymentLocked || user?.businessStatus === 'payment_locked');
+  const isPaymentLocked = isUser && (user?.isPaymentLocked || user?.paymentStatus === 'locked' || user?.businessStatus === 'payment_locked');
   const isActive = isUser && user?.businessStatus === 'active' && !isPaymentLocked;
 
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
         <OfflineBanner />
+        <PaymentWarningBanner />
         <div className="flex-1 min-h-0 flex flex-col">
           <Toaster position="top-right" />
           <VersionUpdateModal />
@@ -122,9 +124,9 @@ function App() {
           <Route 
             path="/payment-required" 
             element={
-              isPaymentLocked 
+              isAuthenticated 
                 ? <PaymentRequiredPage /> 
-                : (isAuthenticated ? <Navigate to="/" replace /> : <Navigate to="/login" replace />)
+                : <Navigate to="/login" replace />
             }
           />
           <Route 

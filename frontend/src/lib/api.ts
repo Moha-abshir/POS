@@ -44,6 +44,26 @@ export const setupInterceptors = (getAccessToken: () => string | null, setAccess
         error.response?.status === 403 && 
         (error.response?.data?.error?.code === 'INACTIVE_BUSINESS' || error.response?.data?.error?.code === 'PAYMENT_REQUIRED')
       ) {
+        if (error.response?.data?.error?.code === 'PAYMENT_REQUIRED') {
+          try {
+            const rawStorage = localStorage.getItem('pos-auth-storage-v2');
+            if (rawStorage) {
+              const parsed = JSON.parse(rawStorage);
+              if (parsed.state?.user) {
+                parsed.state.user.isPaymentLocked = true;
+                parsed.state.user.paymentStatus = 'locked';
+                if (error.response?.data?.error?.paymentDetails?.reason) {
+                  parsed.state.user.paymentLockReason = error.response.data.error.paymentDetails.reason;
+                }
+                if (error.response?.data?.error?.paymentDetails?.amountDue) {
+                  parsed.state.user.paymentAmountDue = error.response.data.error.paymentDetails.amountDue;
+                }
+                localStorage.setItem('pos-auth-storage-v2', JSON.stringify(parsed));
+              }
+            }
+          } catch {}
+        }
+
         const redirectUrl = error.response?.data?.error?.redirect || '/payment-required';
         if (redirectUrl && window.location.pathname !== redirectUrl) {
           window.location.href = redirectUrl;

@@ -139,6 +139,17 @@ export const DashboardLayout: React.FC = () => {
     if (navigator.onLine) {
       api.get('/auth/me').then(meRes => {
         if (meRes.data?.data) {
+          const { business } = meRes.data.data;
+          if (business) {
+            useAuthStore.getState().updateUser({
+              businessName: business.name,
+              businessStatus: business.status,
+              paymentStatus: business.paymentStatus || (business.isPaymentLocked ? 'locked' : 'normal'),
+              isPaymentLocked: Boolean(business.isPaymentLocked || business.paymentStatus === 'locked'),
+              paymentLockReason: business.paymentLockReason,
+              paymentAmountDue: business.paymentAmountDue,
+            });
+          }
           localStorage.setItem('pos_business_info', JSON.stringify(meRes.data.data));
           db.settings.put({ key: 'business_info', value: meRes.data.data }).catch(() => {});
         }
