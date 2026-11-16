@@ -244,6 +244,8 @@ To use silent printing with your thermal printer (e.g., E-POS ECO250, Xprinter, 
 Comprehensive architectural designs and technical documentation are available in the `/docs` directory:
 
 - [System Architecture](docs/ARCHITECTURE.md) - Layer definitions, data flow, and architectural principles.
+- [UML Use Cases](docs/USE_CASES.md) - System actors, functional use cases, and relationship models.
+- [UML Activity Diagram](docs/ACTIVITY_DIAGRAM.md) - End-to-end checkout, multi-payment flow, and hardware concurrency.
 - [Database Schema](docs/DATABASE_SCHEMA.md) - Complete table definitions, indexes, relations, and migrations.
 - [API Design](docs/API_DESIGN.md) - REST API specification and request/response contracts.
 - [Authentication & Security](docs/AUTH_DESIGN.md) - Token lifecycle, permissions, and security controls.
