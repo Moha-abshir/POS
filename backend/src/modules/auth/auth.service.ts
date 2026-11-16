@@ -87,6 +87,7 @@ export class AuthService {
       let isBankingEnabled = false;
       let businessName = 'Smart Store POS';
       let businessStatus = 'pending';
+      let paymentStatus = 'normal';
       let isPaymentLocked = false;
       let paymentLockReason: string | null = null;
       let paymentAmountDue: string | null = null;
@@ -100,7 +101,8 @@ export class AuthService {
         isSetupComplete = newBusiness.isSetupComplete;
         isBankingEnabled = newBusiness.isBankingEnabled;
         businessStatus = newBusiness.status;
-        isPaymentLocked = newBusiness.isPaymentLocked;
+        paymentStatus = newBusiness.paymentStatus || 'normal';
+        isPaymentLocked = newBusiness.isPaymentLocked || paymentStatus === 'locked';
         paymentLockReason = newBusiness.paymentLockReason;
         paymentAmountDue = newBusiness.paymentAmountDue;
 
@@ -122,7 +124,8 @@ export class AuthService {
           isBankingEnabled = business.isBankingEnabled;
           businessName = business.name;
           businessStatus = business.status;
-          isPaymentLocked = business.isPaymentLocked;
+          paymentStatus = business.paymentStatus || 'normal';
+          isPaymentLocked = business.isPaymentLocked || paymentStatus === 'locked';
           paymentLockReason = business.paymentLockReason;
           paymentAmountDue = business.paymentAmountDue;
         }
@@ -162,6 +165,7 @@ export class AuthService {
           isSetupComplete,
           isBankingEnabled,
           businessStatus,
+          paymentStatus,
           isPaymentLocked,
           paymentLockReason,
           paymentAmountDue

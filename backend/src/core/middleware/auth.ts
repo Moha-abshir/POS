@@ -151,7 +151,7 @@ export const requireActiveBusiness = async (req: Request, res: Response, next: N
       });
     }
 
-    if (business.isPaymentLocked) {
+    if (business.isPaymentLocked || business.paymentStatus === 'locked') {
       return res.status(403).json({
         success: false,
         error: {

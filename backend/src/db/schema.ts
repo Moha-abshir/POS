@@ -28,6 +28,7 @@ export const businesses = pgTable('businesses', {
   productMode: varchar('product_mode', { length: 50 }).notNull().default('ADVANCED'),
   isBankingEnabled: boolean('is_banking_enabled').notNull().default(false),
   isPaymentLocked: boolean('is_payment_locked').notNull().default(false),
+  paymentStatus: varchar('payment_status', { length: 30 }).notNull().default('normal'),
   paymentLockReason: text('payment_lock_reason'),
   paymentAmountDue: decimal('payment_amount_due', { precision: 12, scale: 2 }),
   paymentLockedAt: timestamp('payment_locked_at', { withTimezone: true }),

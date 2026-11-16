@@ -162,16 +162,21 @@ export class AdminController {
   static async togglePaymentLock(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      const { isPaymentLocked, reason, amountDue } = req.body;
+      const { isPaymentLocked, paymentStatus, reason, amountDue } = req.body;
       const data = await AdminService.togglePaymentLock(id, {
-        isPaymentLocked: Boolean(isPaymentLocked),
+        isPaymentLocked: isPaymentLocked !== undefined ? Boolean(isPaymentLocked) : undefined,
+        paymentStatus,
         reason: reason || null,
         amountDue: amountDue !== undefined && amountDue !== null && amountDue !== '' ? Number(amountDue) : undefined,
       });
 
+      const message = data.paymentStatus === 'warning'
+        ? 'Payment warning banner enabled successfully'
+        : (data.isPaymentLocked ? 'Payment lock enabled successfully' : 'Payment status cleared successfully');
+
       res.status(200).json({
         success: true,
-        message: isPaymentLocked ? 'Payment lock enabled successfully' : 'Payment lock removed successfully',
+        message,
         data,
       });
     } catch (error) {
