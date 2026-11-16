@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
 import { requestOtpSchema, verifyOtpSchema, onboardingSchema } from './auth.schema';
+import { addSSEClient } from '../../core/events/eventHub';
 
 export class AuthController {
   static async requestOtp(req: Request, res: Response, next: NextFunction) {
@@ -125,5 +126,34 @@ export class AuthController {
     } catch (error) {
       next(error);
     }
+  }
+
+  static statusStream(req: Request, res: Response) {
+    const businessId = (req as any).user?.businessId;
+    if (!businessId) {
+      res.status(400).end();
+      return;
+    }
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+    res.flushHeaders();
+
+    res.write(`data: ${JSON.stringify({ type: 'CONNECTED' })}\n\n`);
+
+    const remove = addSSEClient(businessId, res);
+
+    const heartbeat = setInterval(() => {
+      res.write(': keep-alive\n\n');
+    }, 25000);
+
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      remove();
+    });
   }
 }

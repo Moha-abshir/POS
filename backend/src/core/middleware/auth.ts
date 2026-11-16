@@ -24,8 +24,15 @@ declare global {
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
+  let token: string | undefined;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (req.query && typeof req.query.token === 'string') {
+    token = req.query.token;
+  }
   
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!token) {
     return res.status(401).json({
       success: false,
       error: {
@@ -34,8 +41,6 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
       }
     });
   }
-
-  const token = authHeader.split(' ')[1];
 
   try {
     const payload = jwt.verify(token, JWT_SECRET) as any;
@@ -149,6 +154,15 @@ export const requireActiveBusiness = async (req: Request, res: Response, next: N
           redirect: redirectUrl
         }
       });
+    }
+
+    // Expose payment status and details in response headers
+    res.setHeader('x-business-payment-status', business.paymentStatus || (business.isPaymentLocked ? 'locked' : 'normal'));
+    if (business.paymentAmountDue) {
+      res.setHeader('x-business-payment-amount', String(business.paymentAmountDue));
+    }
+    if (business.paymentLockReason) {
+      res.setHeader('x-business-payment-reason', encodeURIComponent(business.paymentLockReason));
     }
 
     if (business.isPaymentLocked || business.paymentStatus === 'locked') {

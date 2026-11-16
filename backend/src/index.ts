@@ -88,6 +88,7 @@ app.use(cors({
   ].filter(Boolean),
   credentials: true,
   maxAge: 86400,
+  exposedHeaders: ['x-business-payment-status', 'x-business-payment-amount', 'x-business-payment-reason'],
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));

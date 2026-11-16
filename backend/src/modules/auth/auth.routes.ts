@@ -12,5 +12,6 @@ router.post('/logout', authenticate, AuthController.logout);
 router.put('/onboarding', authenticate, AuthController.onboarding);
 router.put('/business/settings', authenticate, AuthController.updateBusinessSettings);
 router.get('/me', authenticate, AuthController.me);
+router.get('/status-stream', authenticate, AuthController.statusStream);
 
 export default router;

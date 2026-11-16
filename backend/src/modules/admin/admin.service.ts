@@ -6,6 +6,7 @@ import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
 import { EmailService } from '../../core/services/email.service';
 import { AppError } from '../../core/utils/AppError';
+import { broadcastBusinessEvent } from '../../core/events/eventHub';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -214,6 +215,17 @@ export class AdminService {
       .where(eq(businesses.id, businessId))
       .returning();
 
+    // Broadcast event in real-time to any connected tenant SSE streams
+    broadcastBusinessEvent(businessId, {
+      type: 'PAYMENT_STATUS_UPDATE',
+      businessId,
+      businessStatus: updated.status,
+      paymentStatus: updated.paymentStatus,
+      isPaymentLocked: updated.isPaymentLocked,
+      amountDue: updated.paymentAmountDue,
+      reason: updated.paymentLockReason,
+    });
+
     return updated;
   }
 
@@ -234,6 +246,17 @@ export class AdminService {
       .where(eq(businesses.id, businessId))
       .returning();
 
+    // Broadcast event in real-time to any connected tenant SSE streams
+    broadcastBusinessEvent(businessId, {
+      type: 'PAYMENT_STATUS_UPDATE',
+      businessId,
+      businessStatus: updated.status,
+      paymentStatus: updated.paymentStatus,
+      isPaymentLocked: updated.isPaymentLocked,
+      amountDue: updated.paymentAmountDue,
+      reason: updated.paymentLockReason,
+    });
+
     return updated;
   }
 
@@ -252,6 +275,17 @@ export class AdminService {
       .where(eq(businesses.id, businessId))
       .returning();
 
+    // Broadcast event in real-time to any connected tenant SSE streams
+    broadcastBusinessEvent(businessId, {
+      type: 'PAYMENT_STATUS_UPDATE',
+      businessId,
+      businessStatus: updated.status,
+      paymentStatus: updated.paymentStatus,
+      isPaymentLocked: updated.isPaymentLocked,
+      amountDue: updated.paymentAmountDue,
+      reason: updated.paymentLockReason,
+    });
+
     return updated;
   }
 
@@ -269,6 +303,17 @@ export class AdminService {
       })
       .where(eq(businesses.id, businessId))
       .returning();
+
+    // Broadcast event in real-time to any connected tenant SSE streams
+    broadcastBusinessEvent(businessId, {
+      type: 'PAYMENT_STATUS_UPDATE',
+      businessId,
+      businessStatus: updated.status,
+      paymentStatus: updated.paymentStatus,
+      isPaymentLocked: updated.isPaymentLocked,
+      amountDue: updated.paymentAmountDue,
+      reason: updated.paymentLockReason,
+    });
 
     return updated;
   }
@@ -296,6 +341,17 @@ export class AdminService {
       .where(eq(businesses.id, businessId))
       .returning();
 
+    // Broadcast event in real-time to any connected tenant SSE streams
+    broadcastBusinessEvent(businessId, {
+      type: 'PAYMENT_STATUS_UPDATE',
+      businessId,
+      businessStatus: updated.status,
+      paymentStatus: updated.paymentStatus,
+      isPaymentLocked: updated.isPaymentLocked,
+      amountDue: updated.paymentAmountDue,
+      reason: updated.paymentLockReason,
+    });
+
     return updated;
   }
 
@@ -317,6 +373,17 @@ export class AdminService {
       })
       .where(eq(businesses.id, businessId))
       .returning();
+
+    // Broadcast event in real-time to any connected tenant SSE streams
+    broadcastBusinessEvent(businessId, {
+      type: 'PAYMENT_STATUS_UPDATE',
+      businessId,
+      businessStatus: updated.status,
+      paymentStatus: updated.paymentStatus,
+      isPaymentLocked: updated.isPaymentLocked,
+      amountDue: updated.paymentAmountDue,
+      reason: updated.paymentLockReason,
+    });
 
     return updated;
   }
