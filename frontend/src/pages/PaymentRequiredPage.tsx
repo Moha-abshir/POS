@@ -56,7 +56,7 @@ export const PaymentRequiredPage: React.FC = () => {
         // If the admin unlocked the business, redirect to dashboard immediately
         if (!isLocked && business.status === 'active') {
           toast.success('Payment confirmed! Full access has been restored.');
-          window.location.href = '/';
+          navigate('/', { replace: true });
         }
       }
     } catch (err) {
@@ -90,7 +90,7 @@ export const PaymentRequiredPage: React.FC = () => {
 
       if (!isLocked && business.status === 'active') {
         toast.success('Payment verified! Your account is now active.');
-        window.location.href = '/';
+        navigate('/', { replace: true });
       } else {
         toast.error('Payment lock is still active. If you have made payment, please contact platform administration to confirm.');
       }

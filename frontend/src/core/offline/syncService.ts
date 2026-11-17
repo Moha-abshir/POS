@@ -14,6 +14,17 @@ export const syncService = {
     if (syncInProgress) return;
     if (!navigator.onLine) return;
 
+    // Check if user is authenticated before attempting any background sync
+    try {
+      const rawStorage = localStorage.getItem('pos-auth-storage-v2');
+      const parsed = rawStorage ? JSON.parse(rawStorage) : null;
+      if (!parsed?.state?.isAuthenticated) {
+        return;
+      }
+    } catch {
+      return;
+    }
+
     syncInProgress = true;
     await queueManager.logSyncEvent('SYSTEM', 'info', 'Synchronization process started');
 
@@ -70,8 +81,20 @@ export const syncService = {
           }
         } catch (error: any) {
           console.error(`Sync error for item ${item.id}:`, error);
-          const errorMessage = error?.response?.data?.message || error?.message || 'Unknown network error';
+          const errorCode = error?.response?.data?.error?.code;
+          const errorMessage = error?.response?.data?.error?.message || error?.response?.data?.message || error?.message || 'Unknown network error';
           
+          // Stop retrying automatically if unauthorized or blocked by business/payment status
+          if (errorCode === 'PAYMENT_REQUIRED' || errorCode === 'INACTIVE_BUSINESS' || error?.response?.status === 401 || error?.response?.status === 403) {
+            await queueManager.updateQueueStatus(item.id!, 'failed', errorMessage);
+            await queueManager.logSyncEvent(
+              item.type,
+              'failed',
+              `Sync blocked: ${errorMessage}. Automated retries paused.`
+            );
+            continue;
+          }
+
           const nextRetryCount = (item.retryCount || 0) + 1;
           
           if (nextRetryCount >= 10) {

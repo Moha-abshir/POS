@@ -100,11 +100,24 @@ export const setupInterceptors = (
               }
             }
           } catch {}
+
+          if (updateUser) {
+            updateUser({
+              isPaymentLocked: true,
+              paymentStatus: 'locked',
+              paymentLockReason: error.response?.data?.error?.paymentDetails?.reason,
+              paymentAmountDue: error.response?.data?.error?.paymentDetails?.amountDue,
+            });
+          }
         }
 
+        const currentPath = window.location.pathname;
+        const isAuthPage = currentPath === '/login' || currentPath === '/admin/login';
         const redirectUrl = error.response?.data?.error?.redirect || '/payment-required';
-        if (redirectUrl && window.location.pathname !== redirectUrl) {
-          window.location.href = redirectUrl;
+
+        // Never redirect away if already on an auth page or already at destination
+        if (!isAuthPage && redirectUrl && currentPath !== redirectUrl) {
+          window.location.replace(redirectUrl);
           return new Promise(() => {});
         }
       }

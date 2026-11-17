@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../features/auth/stores/auth.store';
 import { api } from '../lib/api';
 import { Clock, Phone, MessageCircle, LogOut, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const AwaitingApprovalPage: React.FC = () => {
+  const navigate = useNavigate();
   const { user, logout, setAuth } = useAuthStore();
   const [checking, setChecking] = useState(false);
   const [regDate, setRegDate] = useState<string>('');
@@ -48,7 +50,7 @@ export const AwaitingApprovalPage: React.FC = () => {
 
       if (business.status === 'active') {
         toast.success('Congratulations! Your account has been approved.');
-        window.location.href = '/';
+        navigate('/', { replace: true });
       } else {
         toast.error(`Your account status is currently: ${business.status}`);
       }

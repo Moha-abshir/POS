@@ -55,6 +55,9 @@ function App() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    // Only run offline synchronization and customer caching for authenticated tenant users
+    if (!isAuthenticated || !user || user.type === 'admin') return;
+
     const handleOnline = () => {
       syncService.startSync(queryClient);
       customersApi.syncCustomerCache();
@@ -68,7 +71,7 @@ function App() {
     return () => {
       window.removeEventListener('online', handleOnline);
     };
-  }, [queryClient]);
+  }, [queryClient, isAuthenticated, user]);
 
   const isAdmin = isAuthenticated && user?.type === 'admin';
   const isUser = isAuthenticated && user?.type !== 'admin';

@@ -38,6 +38,10 @@ export const customersApi = {
   syncCustomerCache: async () => {
     if (!navigator.onLine) return;
     try {
+      const rawStorage = localStorage.getItem('pos-auth-storage-v2');
+      const parsed = rawStorage ? JSON.parse(rawStorage) : null;
+      if (!parsed?.state?.isAuthenticated) return;
+
       const { data } = await api.get('/customers', { params: { limit: 2000 } });
       if (data && Array.isArray(data.data)) {
         const items = data.data.map((c: any) => ({

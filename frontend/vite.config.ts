@@ -10,6 +10,7 @@ const buildVersion = Date.now().toString()
 const versionPlugin = () => {
   return {
     name: 'version-generator',
+    apply: 'build' as const,
     buildStart() {
       const publicDir = path.resolve(__dirname, 'public')
       if (!fs.existsSync(publicDir)) {
